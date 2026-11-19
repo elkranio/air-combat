@@ -31,7 +31,7 @@ namespace AirCombat
 
         private void OnGUI()
         {
-            if (Event.current.type != EventType.Repaint || player == null || enemy == null || arrow == null)
+            if (Event.current.type != EventType.Repaint || player == null || enemy == null || !enemy.gameObject.activeInHierarchy || arrow == null)
                 return;
 
             var viewport = viewCamera.WorldToViewportPoint(enemy.position);

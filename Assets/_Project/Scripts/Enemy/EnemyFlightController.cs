@@ -34,6 +34,7 @@ namespace AirCombat
 
         private AircraftMotor motor;
         private float cruiseTime;
+        private Quaternion visualRestRotation;
 
         private void OnValidate()
         {
@@ -44,7 +45,22 @@ namespace AirCombat
 
         private void Awake()
         {
+            visualRestRotation = visual != null ? visual.localRotation : Quaternion.identity;
+            ResetFlight();
+        }
+
+        public void Respawn(Vector3 position, Quaternion rotation)
+        {
+            transform.SetPositionAndRotation(position, rotation);
+            ResetFlight();
+            gameObject.SetActive(true);
+        }
+
+        private void ResetFlight()
+        {
             State = FlightState.Cruise;
+            cruiseTime = 0f;
+            if (visual != null) visual.localRotation = visualRestRotation;
             motor = new AircraftMotor(transform, visual, cruiseSpeed);
         }
 

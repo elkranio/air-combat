@@ -2961,6 +2961,8 @@ GameObject:
   - component: {fileID: 1604994118}
   - component: {fileID: 1604994121}
   - component: {fileID: 1604994122}
+  - component: {fileID: 1604994124}
+  - component: {fileID: 1604994123}
   m_Layer: 0
   m_Name: Main Camera
   m_TagString: MainCamera
@@ -3073,6 +3075,36 @@ MonoBehaviour:
   arrowSize: 36
   edgePadding: 12
   arrowColor: {r: 1, g: 0.3, b: 0.24, a: 1}
+--- !u!114 &1604994123
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1604994117}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f46a6cac213419946a815d0fe08f1e7e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::AirCombat.TargetLockHud
+--- !u!114 &1604994124
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1604994117}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5fe74dc9e8742734ea36f2c6c7f3619d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::AirCombat.TargetLock
+  target: {fileID: 1533627360}
+  lockSeconds: 1.5
+  graceSeconds: 1
+  aimRadius: 8.5
+  soundEnabled: 1
+  soundVolume: 0.2
 --- !u!1 &1642185564
 GameObject:
   m_ObjectHideFlags: 0
@@ -3920,6 +3952,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1971567200}
   - component: {fileID: 1971567201}
+  - component: {fileID: 1971567202}
   m_Layer: 0
   m_Name: Player
   m_TagString: Untagged
@@ -3964,6 +3997,23 @@ MonoBehaviour:
   turnRate: 125
   maxBank: 40
   bankRate: 160
+--- !u!114 &1971567202
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1971567199}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fee782dfa2baf674c8d530b7d1805055, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::AirCombat.MissileLauncher
+  targetLock: {fileID: 1604994124}
+  missilePrefab: {fileID: 1166229602950883390, guid: 22d60401b2f22264a94c1483e5f97a30, type: 3}
+  effectMaterial: {fileID: 2100000, guid: 5930cc9d78e3a764ebb9c9b0fa80227d, type: 2}
+  launchOffset: 6
+  respawnDelay: 1
 --- !u!1 &1996664698
 GameObject:
   m_ObjectHideFlags: 0
