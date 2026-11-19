@@ -34,3 +34,17 @@
 - License: Creative Commons Zero (CC0); original License.txt included
 - Path: Assets/ThirdParty/Kenney/Skyboxes/
 - Modifications: Selected original day skybox only
+
+## Kenney City Kit Industrial (2.0)
+- Author: Kenney
+- Source: https://kenney.nl/assets/city-kit-industrial
+- License: Creative Commons Zero (CC0); original License.txt included
+- Path: Assets/ThirdParty/Kenney/CityKitIndustrial/
+- Modifications: Selected original OBJ, MTL and colormap only
+
+## Kenney City Kit Suburban (2.0)
+- Author: Kenney
+- Source: https://kenney.nl/assets/city-kit-suburban
+- License: Creative Commons Zero (CC0); original License.txt included
+- Path: Assets/ThirdParty/Kenney/CityKitSuburban/
+- Modifications: Selected original OBJ, MTL and colormap only
