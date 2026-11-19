@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using UnityEngine;
+using Unity.Profiling;
 
 namespace AirCombat
 {
@@ -12,46 +13,55 @@ namespace AirCombat
         private const float Step = (float)Size / Cells;
         private const float WaterHeight = -0.15f;
         private const int TreeCells = 12;
+        private static readonly ProfilerMarker PaintMarker = new ProfilerMarker("Landscape.GroundPaint");
+        private static readonly ProfilerMarker GeometryMarker = new ProfilerMarker("Landscape.Geometry");
+        private static readonly ProfilerMarker PropsMarker = new ProfilerMarker("Landscape.Props");
+        private static readonly ProfilerMarker UploadMarker = new ProfilerMarker("Landscape.Upload");
 
         public static Mesh Build(Vector2Int tile, int seed, float treeDensity, Transform owner, GameObject[] trees, GameObject[] rocks, GameObject[] bushes, Material[] materials, out Texture2D groundTexture)
         {
             var originX = tile.x * (float)Size;
             var originZ = tile.y * (float)Size;
             var data = new MeshData(seed);
-            var paint = new LandscapeGroundPaint(originX, originZ, (x, z) => GroundTint(x, z, seed));
+            LandscapeGroundPaint paint;
+            using (PaintMarker.Auto())
+                paint = new LandscapeGroundPaint(originX, originZ, (x, z) => GroundTint(x, z, seed));
             var heights = new float[Cells + 1, Cells + 1];
-            var normals = new Vector3[Cells + 1, Cells + 1];
-            for (int z = 0; z <= Cells; z++)
+            using (GeometryMarker.Auto())
+            {
+                // Sample a one-vertex halo once, rather than evaluating Height five
+                // times per vertex. Adjacent chunks use the same world-space samples.
+                var halo = new float[Cells + 3, Cells + 3];
+                for (int z = -1; z <= Cells + 1; z++)
+                for (int x = -1; x <= Cells + 1; x++)
+                    halo[x + 1, z + 1] = Height(originX + x * Step, originZ + z * Step, seed);
+
+                for (int z = 0; z <= Cells; z++)
                 for (int x = 0; x <= Cells; x++)
                 {
-                    float wx = originX + x * Step, wz = originZ + z * Step;
-                    heights[x, z] = Height(wx, wz, seed);
-                    normals[x, z] = new Vector3(
-                        Height(wx - Step, wz, seed) - Height(wx + Step, wz, seed), 2f * Step,
-                        Height(wx, wz - Step, seed) - Height(wx, wz + Step, seed)).normalized;
+                    float height = halo[x + 1, z + 1];
+                    heights[x, z] = height;
+                    var normal = new Vector3(halo[x, z + 1] - halo[x + 2, z + 1], 2f * Step,
+                        halo[x + 1, z] - halo[x + 1, z + 2]).normalized;
+                    data.GroundVertex(new Vector3(x * Step, height, z * Step), normal);
                 }
 
-            for (int z = 0; z < Cells; z++)
-            {
+                // One vertex per grid point, with the same triangle winding/diagonals.
+                for (int z = 0; z < Cells; z++)
                 for (int x = 0; x < Cells; x++)
                 {
-                    var a = new Vector3(x * Step, heights[x, z], z * Step);
-                    var b = new Vector3((x + 1) * Step, heights[x + 1, z], z * Step);
-                    var c = new Vector3(x * Step, heights[x, z + 1], (z + 1) * Step);
-                    var d = new Vector3((x + 1) * Step, heights[x + 1, z + 1], (z + 1) * Step);
-                    var gx = tile.x * Cells + x;
-                    var gz = tile.y * Cells + z;
-                    var na = normals[x, z]; var nb = normals[x + 1, z];
-                    var nc = normals[x, z + 1]; var nd = normals[x + 1, z + 1];
+                    int a = z * (Cells + 1) + x;
+                    int b = a + 1, c = a + Cells + 1, d = c + 1;
+                    int gx = tile.x * Cells + x, gz = tile.y * Cells + z;
                     if (((gx + gz) & 1) == 0)
                     {
-                        data.GroundTriangle(a, c, d, na, nc, nd, LandscapePalette.Grass);
-                        data.GroundTriangle(a, d, b, na, nd, nb, LandscapePalette.Grass);
+                        data.GroundTriangle(a, c, d);
+                        data.GroundTriangle(a, d, b);
                     }
                     else
                     {
-                        data.GroundTriangle(a, c, b, na, nc, nb, LandscapePalette.Grass);
-                        data.GroundTriangle(b, c, d, nb, nc, nd, LandscapePalette.Grass);
+                        data.GroundTriangle(a, c, b);
+                        data.GroundTriangle(b, c, d);
                     }
                 }
             }
@@ -65,12 +75,18 @@ namespace AirCombat
             data.Triangle(wa, wc, wb, LandscapePalette.Water);
             data.Triangle(wb, wc, wd, LandscapePalette.Water);
 
-            if (trees != null && trees.Length > 0)
-                AddProps(tile, seed, treeDensity, heights, owner, trees, rocks, bushes, materials, paint);
-            else
-                AddTrees(data, tile, originX, originZ, seed, treeDensity, heights);
-            groundTexture = paint.ToTexture("Ground color " + tile.x + "," + tile.y);
-            return data.ToMesh("Landscape " + tile.x + "," + tile.y);
+            using (PropsMarker.Auto())
+            {
+                if (trees != null && trees.Length > 0)
+                    AddProps(tile, seed, treeDensity, heights, owner, trees, rocks, bushes, materials, paint);
+                else
+                    AddTrees(data, tile, originX, originZ, seed, treeDensity, heights);
+            }
+            using (UploadMarker.Auto())
+            {
+                groundTexture = paint.ToTexture("Ground color " + tile.x + "," + tile.y);
+                return data.ToMesh("Landscape " + tile.x + "," + tile.y);
+            }
         }
 
         private static float RiverDistance(float x, float z, int seed)
@@ -88,13 +104,20 @@ namespace AirCombat
 
         private static float Height(float x, float z, int seed)
         {
+            return ApplyRiver(LandHeight(x, z, seed), RiverDistance(x, z, seed), RiverHalfWidth(z, seed));
+        }
+
+        private static float LandHeight(float x, float z, int seed)
+        {
             var hill = Noise(x, z, 0.009f, seed);
             var detail = Noise(x, z, 0.034f, seed + 13);
             // Taller hills, with smooth normals; props are capped below flight altitude.
-            var land = 0.65f + 6.4f * hill * hill + 1.25f * detail;
-            var width = RiverHalfWidth(z, seed);
-            var bank = Mathf.SmoothStep(0f, 1f,
-                Mathf.InverseLerp(width - 3f, width + 7f, RiverDistance(x, z, seed)));
+            return 0.65f + 6.4f * hill * hill + 1.25f * detail;
+        }
+
+        private static float ApplyRiver(float land, float distance, float width)
+        {
+            var bank = Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(width - 3f, width + 7f, distance));
             return Mathf.Lerp(-2f, land, bank);
         }
 
@@ -105,11 +128,12 @@ namespace AirCombat
             var meadow = Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(0.52f, 0.73f, Noise(x, z, 0.012f, seed + 101)));
             Color color = Color.Lerp(new Color32(124, 154, 101, 255), new Color32(91, 126, 87, 255), forest);
             color = Color.Lerp(color, new Color32(165, 166, 112, 255), meadow);
-            var bank = 1f - Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(0f, 6f,
-                RiverDistance(x, z, seed) - RiverHalfWidth(z, seed)));
+            float distance = RiverDistance(x, z, seed), width = RiverHalfWidth(z, seed);
+            var bank = 1f - Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(0f, 6f, distance - width));
             color = Color.Lerp(color, new Color32(166, 158, 119, 255), bank);
             // Gentle height/detail tint keeps the hills readable from an overhead camera.
-            float heightTint = Mathf.Lerp(0.92f, 1.09f, Mathf.Clamp01(Height(x, z, seed) / 6f));
+            float heightTint = Mathf.Lerp(0.92f, 1.09f,
+                Mathf.Clamp01(ApplyRiver(LandHeight(x, z, seed), distance, width) / 6f));
             float detail = Mathf.Lerp(0.96f, 1.04f, Noise(x, z, 0.052f, seed + 111));
             return new Color(color.r * heightTint * detail, color.g * heightTint * detail,
                 color.b * heightTint * detail, 1f);
@@ -279,9 +303,9 @@ namespace AirCombat
 
         private sealed class MeshData
         {
-            private readonly List<Vector3> vertices = new List<Vector3>(8192);
-            private readonly List<Vector3> normals = new List<Vector3>(8192);
-            private readonly List<Vector2> uvs = new List<Vector2>(8192);
+            private readonly List<Vector3> vertices = new List<Vector3>((Cells + 1) * (Cells + 1) + 6);
+            private readonly List<Vector3> normals = new List<Vector3>((Cells + 1) * (Cells + 1) + 6);
+            private readonly List<Vector2> uvs = new List<Vector2>((Cells + 1) * (Cells + 1) + 6);
             private readonly List<int>[] triangles = new List<int>[LandscapePalette.Count];
             public int Seed { get; }
 
@@ -289,7 +313,7 @@ namespace AirCombat
             {
                 Seed = seed;
                 for (int i = 0; i < triangles.Length; i++)
-                    triangles[i] = new List<int>();
+                    triangles[i] = new List<int>(i == LandscapePalette.Grass ? Cells * Cells * 6 : 0);
             }
 
             public void Triangle(Vector3 a, Vector3 b, Vector3 c, int material)
@@ -308,14 +332,19 @@ namespace AirCombat
                 triangles[material].Add(index + 2);
             }
 
-            public void GroundTriangle(Vector3 a, Vector3 b, Vector3 c,
-                Vector3 na, Vector3 nb, Vector3 nc, int material)
+            public void GroundVertex(Vector3 point, Vector3 normal)
             {
-                int index = vertices.Count;
-                Triangle(a, b, c, material);
-                normals[index] = na;
-                normals[index + 1] = nb;
-                normals[index + 2] = nc;
+                vertices.Add(point);
+                normals.Add(normal);
+                uvs.Add(LandscapeGroundPaint.Uv(point));
+            }
+
+            public void GroundTriangle(int a, int b, int c)
+            {
+                var indices = triangles[LandscapePalette.Grass];
+                indices.Add(a);
+                indices.Add(b);
+                indices.Add(c);
             }
 
             public Mesh ToMesh(string name)
