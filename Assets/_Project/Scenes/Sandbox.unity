@@ -2420,6 +2420,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1459593748}
   - component: {fileID: 1459593747}
+  - component: {fileID: 1459593749}
   m_Layer: 0
   m_Name: Directional Light
   m_TagString: Untagged
@@ -2507,6 +2508,35 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1459593749
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1459593746}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 474bcb49853aa07438625e644c072ee6, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Unity.RenderPipelines.Universal.Runtime::UnityEngine.Rendering.Universal.UniversalAdditionalLightData
+  m_UsePipelineSettings: 1
+  m_AdditionalLightsShadowResolutionTier: 2
+  m_CustomShadowLayers: 0
+  m_LightCookieSize: {x: 1, y: 1}
+  m_LightCookieOffset: {x: 0, y: 0}
+  m_SoftShadowQuality: 0
+  m_RenderingLayersMask:
+    serializedVersion: 0
+    m_Bits: 1
+  m_ShadowRenderingLayersMask:
+    serializedVersion: 0
+    m_Bits: 1
+  m_Version: 4
+  m_LightLayerMask: 1
+  m_ShadowLayerMask: 1
+  m_RenderingLayers: 1
+  m_ShadowRenderingLayers: 1
 --- !u!1 &1518244132
 GameObject:
   m_ObjectHideFlags: 0
@@ -2788,6 +2818,7 @@ GameObject:
   - component: {fileID: 1604994120}
   - component: {fileID: 1604994119}
   - component: {fileID: 1604994118}
+  - component: {fileID: 1604994121}
   m_Layer: 0
   m_Name: Main Camera
   m_TagString: MainCamera
@@ -2869,6 +2900,20 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1604994121
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1604994117}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7a075b26549b70b42bcb80a7281c8246, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::AirCombat.TopDownCameraFollow
+  target: {fileID: 1971567200}
+  smoothTime: 0.12
 --- !u!1 &1642185564
 GameObject:
   m_ObjectHideFlags: 0
@@ -2881,6 +2926,7 @@ GameObject:
   - component: {fileID: 1642185567}
   - component: {fileID: 1642185566}
   - component: {fileID: 1642185565}
+  - component: {fileID: 1642185569}
   m_Layer: 0
   m_Name: Ground
   m_TagString: Untagged
@@ -2982,6 +3028,21 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1642185569
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1642185564}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b48773d9b16b05f4c8b0fce709c1b68d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::AirCombat.SandboxSurface
+  cameraTarget: {fileID: 1604994120}
+  grid: {fileID: 820715477}
+  gridSpacing: 20
 --- !u!1 &1653896342
 GameObject:
   m_ObjectHideFlags: 0
@@ -3621,6 +3682,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1971567200}
+  - component: {fileID: 1971567201}
   m_Layer: 0
   m_Name: Player
   m_TagString: Untagged
@@ -3644,6 +3706,27 @@ Transform:
   - {fileID: 584904254}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1971567201
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1971567199}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d1f1cb0e8dfe2d84ab4549656b268910, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::AirCombat.FlightController
+  visual: {fileID: 584904254}
+  minSpeed: 25
+  cruiseSpeed: 45
+  maxSpeed: 70
+  acceleration: 35
+  deceleration: 45
+  turnRate: 85
+  maxBank: 40
+  bankRate: 160
 --- !u!1 &1996664698
 GameObject:
   m_ObjectHideFlags: 0
