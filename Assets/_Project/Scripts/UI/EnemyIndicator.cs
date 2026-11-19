@@ -35,7 +35,8 @@ namespace AirCombat
                 return;
 
             var viewport = viewCamera.WorldToViewportPoint(enemy.position);
-            if (viewport.z <= 0f || (viewport.x >= 0f && viewport.x <= 1f && viewport.y >= 0f && viewport.y <= 1f))
+            // Orthographic X/Y still give a valid bearing behind the tilted camera.
+            if (viewport.x >= 0f && viewport.x <= 1f && viewport.y >= 0f && viewport.y <= 1f)
                 return;
 
             var pixels = viewCamera.pixelRect;
@@ -77,8 +78,11 @@ namespace AirCombat
             var fromCenter = new Vector2(viewport.x - 0.5f, viewport.y - 0.5f);
             var edgeFactor = 2f * Mathf.Max(Mathf.Abs(fromCenter.x), Mathf.Abs(fromCenter.y));
             var edge = new Vector3(0.5f + fromCenter.x / edgeFactor,
-                0.5f + fromCenter.y / edgeFactor, viewport.z);
-            var offscreenOffset = enemy.position - viewCamera.ViewportToWorldPoint(edge);
+                0.5f + fromCenter.y / edgeFactor, 0f);
+            var ray = viewCamera.ViewportPointToRay(edge);
+            var flightPlane = new Plane(Vector3.up, enemy.position);
+            if (!flightPlane.Raycast(ray, out float edgeDistance)) return;
+            var offscreenOffset = enemy.position - ray.GetPoint(edgeDistance);
             offscreenOffset.y = 0f;
             var text = Mathf.CeilToInt(offscreenOffset.magnitude).ToString();
             var labelCenter = position - direction * (size * 0.95f);

@@ -14842,6 +14842,7 @@ MonoBehaviour:
   boostShakeAmplitude: 0.55
   boostShakeFrequency: 9
   smoothTime: 0.12
+  pitch: 60
 --- !u!114 &1604994122
 MonoBehaviour:
   m_ObjectHideFlags: 0
