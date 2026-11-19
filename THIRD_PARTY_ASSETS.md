@@ -13,3 +13,10 @@
 - License: Creative Commons Attribution (CC-BY)
 - Path: Assets/ThirdParty/PolyPizza/Missile/
 - Modifications: None
+
+## Low Poly Fighter
+- Author: Stephen Graybill
+- Source: https://poly.pizza/m/1fi8ZIDdFCP
+- License: Creative Commons Attribution (CC-BY)
+- Path: Assets/ThirdParty/PolyPizza/LowPolyFighter/
+- Modifications: None
