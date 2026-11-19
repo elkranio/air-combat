@@ -20,9 +20,8 @@ namespace AirCombat
         [SerializeField, Range(0f, 80f)] private float maxBank = 40f;
         [SerializeField, Min(1f)] private float bankRate = 160f;
 
-        public float CurrentSpeed { get; private set; }
-        private Quaternion visualRestRotation;
-        private float bank;
+        public float CurrentSpeed => motor != null ? motor.CurrentSpeed : cruiseSpeed;
+        private AircraftMotor motor;
 
         private void OnValidate()
         {
@@ -32,9 +31,7 @@ namespace AirCombat
 
         private void Awake()
         {
-            CurrentSpeed = Mathf.Clamp(cruiseSpeed, minSpeed, maxSpeed);
-            if (visual != null)
-                visualRestRotation = visual.localRotation;
+            motor = new AircraftMotor(transform, visual, Mathf.Clamp(cruiseSpeed, minSpeed, maxSpeed));
         }
 
         private void Update()
@@ -51,19 +48,8 @@ namespace AirCombat
             }
 
             var targetSpeed = throttle > 0f ? maxSpeed : throttle < 0f ? minSpeed : cruiseSpeed;
-            var speedRate = targetSpeed > CurrentSpeed ? acceleration : deceleration;
-            var dt = Time.deltaTime;
-            CurrentSpeed = Mathf.MoveTowards(CurrentSpeed, targetSpeed, speedRate * dt);
-
-            // Only yaw the gameplay root: altitude stays fixed and banking is cosmetic.
-            transform.Rotate(0f, steer * turnRate * dt, 0f, Space.World);
-            transform.position += transform.forward * (CurrentSpeed * dt);
-
-            if (visual != null)
-            {
-                bank = Mathf.MoveTowards(bank, -steer * maxBank, bankRate * dt);
-                visual.localRotation = Quaternion.AngleAxis(bank, Vector3.forward) * visualRestRotation;
-            }
+            motor.Tick(targetSpeed, steer, acceleration, deceleration,
+                turnRate, maxBank, bankRate, Time.deltaTime);
         }
     }
 }
