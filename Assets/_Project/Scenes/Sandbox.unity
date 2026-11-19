@@ -14036,6 +14036,7 @@ GameObject:
   - component: {fileID: 1533627359}
   - component: {fileID: 1533627362}
   - component: {fileID: 1533627361}
+  - component: {fileID: 1533627363}
   m_Layer: 0
   m_Name: Enemy
   m_TagString: Untagged
@@ -14122,6 +14123,27 @@ MonoBehaviour:
   capacitySeconds: 2
   rechargeSeconds: 5
   rechargeDelay: 0.4
+--- !u!114 &1533627363
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1533627358}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 05630205686cc45488ffafffd1892728, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::AirCombat.AircraftGroundShadow
+  shadowMaterial: {fileID: 2100000, guid: 4ef5270b2173ae647a16740980a9861f, type: 2}
+  baseWidth: 8
+  baseLength: 11
+  maxAlpha: 0.3
+  minAlpha: 0.09
+  fadeHeight: 28
+  groundY: 0.12
+  lightOffsetPerHeight: {x: -1.5, y: 1.5}
+  scalePerHeight: 0.035
 --- !u!1001 &1538395416
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -17906,6 +17928,7 @@ GameObject:
   - component: {fileID: 1971567201}
   - component: {fileID: 1971567202}
   - component: {fileID: 1971567203}
+  - component: {fileID: 1971567204}
   m_Layer: 0
   m_Name: Player
   m_TagString: Untagged
@@ -17985,6 +18008,27 @@ MonoBehaviour:
   capacitySeconds: 2
   rechargeSeconds: 5
   rechargeDelay: 0.4
+--- !u!114 &1971567204
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1971567199}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 05630205686cc45488ffafffd1892728, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::AirCombat.AircraftGroundShadow
+  shadowMaterial: {fileID: 2100000, guid: 4ef5270b2173ae647a16740980a9861f, type: 2}
+  baseWidth: 8
+  baseLength: 11
+  maxAlpha: 0.3
+  minAlpha: 0.09
+  fadeHeight: 28
+  groundY: 0.12
+  lightOffsetPerHeight: {x: -1.5, y: -1.5}
+  scalePerHeight: 0.02
 --- !u!1 &1989040119
 GameObject:
   m_ObjectHideFlags: 0
