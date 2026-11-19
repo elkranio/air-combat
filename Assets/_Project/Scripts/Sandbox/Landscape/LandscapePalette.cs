@@ -18,7 +18,8 @@ namespace AirCombat
         public const int Leaf = 9;
         public const int LeafLight = 10;
         public const int Bark = 11;
-        public const int Count = 12;
+        public const int Stone = 12;
+        public const int Count = 13;
 
         public static Material[] Create()
         {
@@ -28,18 +29,19 @@ namespace AirCombat
 
             return new[]
             {
-                Make(shader, "Grass", 120, 148, 94),
-                Make(shader, "Light grass", 132, 158, 104),
-                Make(shader, "Dark grass", 106, 134, 86),
-                Make(shader, "Meadow", 163, 158, 102),
-                Make(shader, "Light meadow", 175, 171, 116),
-                Make(shader, "River bank", 179, 173, 130),
-                Make(shader, "Water", 75, 143, 164),
+                Make(shader, "Grass", 112, 142, 101),
+                Make(shader, "Light grass", 119, 148, 107),
+                Make(shader, "Dark grass", 101, 130, 91),
+                Make(shader, "Meadow", 142, 151, 103),
+                Make(shader, "Light meadow", 150, 159, 110),
+                Make(shader, "River bank", 158, 153, 119),
+                Make(shader, "Water", 83, 143, 162),
                 Make(shader, "Pine", 57, 98, 77),
                 Make(shader, "Light pine", 73, 117, 87),
                 Make(shader, "Leaf", 79, 116, 72),
                 Make(shader, "Light leaf", 101, 137, 78),
-                Make(shader, "Bark", 110, 96, 75)
+                Make(shader, "Bark", 110, 96, 75),
+                Make(shader, "Stone", 126, 124, 110)
             };
         }
 

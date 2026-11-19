@@ -20,13 +20,13 @@ RenderSettings:
   m_FogDensity: 0.01
   m_LinearFogStart: 0
   m_LinearFogEnd: 300
-  m_AmbientSkyColor: {r: 0.55, g: 0.55, b: 0.55, a: 1}
+  m_AmbientSkyColor: {r: 0.66, g: 0.71, b: 0.7, a: 1}
   m_AmbientEquatorColor: {r: 0.114, g: 0.125, b: 0.133, a: 1}
   m_AmbientGroundColor: {r: 0.047, g: 0.043, b: 0.035, a: 1}
   m_AmbientIntensity: 1
   m_AmbientMode: 3
   m_SubtractiveShadowColor: {r: 0.42, g: 0.478, b: 0.627, a: 1}
-  m_SkyboxMaterial: {fileID: 10304, guid: 0000000000000000f000000000000000, type: 0}
+  m_SkyboxMaterial: {fileID: 2100000, guid: 08db9b40c4789ac4ba5add071cca9a76, type: 2}
   m_HaloStrength: 0.5
   m_FlareStrength: 1
   m_FlareFadeSpeed: 3
@@ -2344,6 +2344,18 @@ MonoBehaviour:
   seed: 42
   treeDensity: 0.85
   preloadChunks: 1
+  treeModels:
+  - {fileID: 919132149155446097, guid: 75e3fdb2e54b2d14c9ff5852ae172add, type: 3}
+  - {fileID: 919132149155446097, guid: bb4d183a52241f74c8564d4cea47e745, type: 3}
+  - {fileID: 919132149155446097, guid: 37c053ed2741b914fbfd2bf345f3a52d, type: 3}
+  - {fileID: 919132149155446097, guid: 1cfa53cbc3a9e59478afa981827cc562, type: 3}
+  - {fileID: 919132149155446097, guid: b2168fcb66714a8438810f97b3526c6a, type: 3}
+  - {fileID: 919132149155446097, guid: 218d5a660a3600e4da8df6d707642367, type: 3}
+  rockModels:
+  - {fileID: 919132149155446097, guid: 4eb3de9b0c186c545ad984c136e79008, type: 3}
+  - {fileID: 919132149155446097, guid: eca86c51c0cb7064e969d8cb8d1beb6f, type: 3}
+  bushModels:
+  - {fileID: 919132149155446097, guid: e0844567e17284b469e3166587153501, type: 3}
 --- !u!4 &988540125
 Transform:
   m_ObjectHideFlags: 0

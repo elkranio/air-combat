@@ -14,6 +14,9 @@ namespace AirCombat
         [SerializeField] private int seed = 42;
         [SerializeField, Range(0f, 1f)] private float treeDensity = 0.85f;
         [SerializeField, Min(0)] private int preloadChunks = 1;
+        [SerializeField] private GameObject[] treeModels;
+        [SerializeField] private GameObject[] rockModels;
+        [SerializeField] private GameObject[] bushModels;
 
         private readonly Dictionary<Vector2Int, Chunk> chunks = new Dictionary<Vector2Int, Chunk>();
         private readonly List<Vector2Int> expired = new List<Vector2Int>();
@@ -102,11 +105,12 @@ namespace AirCombat
 
         private Chunk CreateChunk(Vector2Int key)
         {
-            var mesh = LandscapeChunkBuilder.Build(key, seed, treeDensity);
-            var owner = new GameObject(mesh.name);
+            var owner = new GameObject("Landscape " + key.x + "," + key.y);
             owner.transform.SetParent(transform, false);
             owner.transform.position = new Vector3(key.x * (float)LandscapeChunkBuilder.Size, 0f,
                 key.y * (float)LandscapeChunkBuilder.Size);
+            var mesh = LandscapeChunkBuilder.Build(key, seed, treeDensity, owner.transform,
+                treeModels, rockModels, bushModels, materials);
             owner.AddComponent<MeshFilter>().sharedMesh = mesh;
             var renderer = owner.AddComponent<MeshRenderer>();
             renderer.sharedMaterials = materials;
