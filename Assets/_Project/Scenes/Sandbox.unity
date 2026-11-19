@@ -2836,7 +2836,7 @@ MonoBehaviour:
   boostSpeed: 80
   acceleration: 35
   deceleration: 45
-  turnRate: 85
+  turnRate: 125
   maxBank: 40
   bankRate: 160
   cruiseSteering: 0.25
@@ -3961,7 +3961,7 @@ MonoBehaviour:
   maxSpeed: 70
   acceleration: 35
   deceleration: 45
-  turnRate: 85
+  turnRate: 125
   maxBank: 40
   bankRate: 160
 --- !u!1 &1996664698

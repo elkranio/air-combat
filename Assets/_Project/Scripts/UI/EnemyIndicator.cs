@@ -72,9 +72,15 @@ namespace AirCombat
                 distanceStyle.normal.textColor = Color.white;
             }
             distanceStyle.fontSize = Mathf.RoundToInt(15f * scale);
-            var offset = enemy.position - player.position;
-            offset.y = 0f;
-            var text = Mathf.RoundToInt(offset.magnitude).ToString();
+            // Distance beyond the actual viewport edge along the bearing ray,
+            // not range to the player or to the inset HUD arrow.
+            var fromCenter = new Vector2(viewport.x - 0.5f, viewport.y - 0.5f);
+            var edgeFactor = 2f * Mathf.Max(Mathf.Abs(fromCenter.x), Mathf.Abs(fromCenter.y));
+            var edge = new Vector3(0.5f + fromCenter.x / edgeFactor,
+                0.5f + fromCenter.y / edgeFactor, viewport.z);
+            var offscreenOffset = enemy.position - viewCamera.ViewportToWorldPoint(edge);
+            offscreenOffset.y = 0f;
+            var text = Mathf.CeilToInt(offscreenOffset.magnitude).ToString();
             var labelCenter = position - direction * (size * 0.95f);
             var labelWidth = 56f * scale;
             var labelHeight = 22f * scale;
