@@ -10,6 +10,8 @@ namespace AirCombat
 
         [SerializeField] private Transform target;
         [SerializeField] private Transform visual;
+        [SerializeField] private Afterburner afterburner;
+        [SerializeField] private LockAfterburnerReaction lockReaction;
 
         [Header("Distance (horizontal units)")]
         [SerializeField, Min(1f)] private float catchUpDistance = 180f;
@@ -97,7 +99,11 @@ namespace AirCombat
                 speed = cruiseSpeed;
             }
 
-            motor.Tick(speed, steer, acceleration, deceleration,
+            bool boost = afterburner != null && afterburner.Tick(
+                lockReaction != null && lockReaction.WantsBoost(dt), dt);
+            if (boost) speed = Mathf.Max(speed, afterburner.BoostSpeed);
+            float accel = boost ? Mathf.Max(acceleration, afterburner.BoostAcceleration) : acceleration;
+            motor.Tick(speed, steer, accel, deceleration,
                 turnRate, maxBank, bankRate, dt);
         }
     }

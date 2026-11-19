@@ -20,7 +20,9 @@ namespace AirCombat
         public bool IsLocked => Progress >= 1f;
         public bool IsAiming { get; private set; }
         public bool IsVisible { get; private set; }
-        public bool CanFire => IsVisible && IsLocked;
+        public bool IsPointerInViewport { get; private set; }
+        public int AttemptId { get; private set; }
+        public bool CanFire => IsVisible && IsLocked && IsPointerInViewport;
         public Vector2 TargetScreen { get; private set; }
         public float RadiusPixels { get; private set; }
         private Camera viewCamera;
@@ -43,6 +45,8 @@ namespace AirCombat
             var mouse = Mouse.current;
             IsVisible = false;
             IsAiming = false;
+            IsPointerInViewport = mouse != null && Application.isFocused &&
+                viewCamera.pixelRect.Contains(mouse.position.ReadValue());
             if (target == null || !target.gameObject.activeInHierarchy)
             {
                 ResetLock();
@@ -53,11 +57,10 @@ namespace AirCombat
             TargetScreen = new Vector2(screen.x, screen.y);
             RadiusPixels = aimRadius * viewCamera.pixelHeight / (2f * viewCamera.orthographicSize);
             IsVisible = screen.z > 0f && viewCamera.pixelRect.Contains(TargetScreen);
-            if (mouse != null && Application.isFocused && IsVisible)
+            if (IsPointerInViewport && IsVisible)
             {
                 var pointer = mouse.position.ReadValue();
-                IsAiming = viewCamera.pixelRect.Contains(pointer) &&
-                    (pointer - TargetScreen).sqrMagnitude <= RadiusPixels * RadiusPixels;
+                IsAiming = (pointer - TargetScreen).sqrMagnitude <= RadiusPixels * RadiusPixels;
             }
 
             var dt = Time.deltaTime;
@@ -65,6 +68,7 @@ namespace AirCombat
             {
                 lostTime = 0f;
                 if (IsLocked) return;
+                if (Progress <= 0f && dt > 0f) AttemptId++;
                 Progress = Mathf.Min(1f, Progress + dt / Mathf.Max(0.01f, lockSeconds));
                 if (IsLocked)
                 {

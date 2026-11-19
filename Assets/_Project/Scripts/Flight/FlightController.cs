@@ -7,6 +7,7 @@ namespace AirCombat
     public sealed class FlightController : MonoBehaviour
     {
         [SerializeField] private Transform visual;
+        [SerializeField] private Afterburner afterburner;
 
         [Header("Speed (units per second)")]
         [SerializeField, Min(0.1f)] private float minSpeed = 25f;
@@ -48,7 +49,11 @@ namespace AirCombat
             }
 
             var targetSpeed = throttle > 0f ? maxSpeed : throttle < 0f ? minSpeed : cruiseSpeed;
-            motor.Tick(targetSpeed, steer, acceleration, deceleration,
+            bool boost = afterburner != null && afterburner.Tick(
+                keyboard != null && Application.isFocused && keyboard.spaceKey.isPressed, Time.deltaTime);
+            if (boost) targetSpeed = Mathf.Max(targetSpeed, afterburner.BoostSpeed);
+            float accel = boost ? Mathf.Max(acceleration, afterburner.BoostAcceleration) : acceleration;
+            motor.Tick(targetSpeed, steer, accel, deceleration,
                 turnRate, maxBank, bankRate, Time.deltaTime);
         }
     }
