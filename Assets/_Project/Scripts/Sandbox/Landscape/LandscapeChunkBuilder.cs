@@ -8,16 +8,17 @@ namespace AirCombat
     internal static class LandscapeChunkBuilder
     {
         public const int Size = 128;
-        private const int Cells = 32;
+        private const int Cells = 48;
         private const float Step = (float)Size / Cells;
         private const float WaterHeight = -0.15f;
         private const int TreeCells = 12;
 
-        public static Mesh Build(Vector2Int tile, int seed, float treeDensity, Transform owner, GameObject[] trees, GameObject[] rocks, GameObject[] bushes, Material[] materials)
+        public static Mesh Build(Vector2Int tile, int seed, float treeDensity, Transform owner, GameObject[] trees, GameObject[] rocks, GameObject[] bushes, Material[] materials, out Texture2D groundTexture)
         {
             var originX = tile.x * (float)Size;
             var originZ = tile.y * (float)Size;
             var data = new MeshData(seed);
+            var paint = new LandscapeGroundPaint(originX, originZ, (x, z) => GroundTint(x, z, seed));
             var heights = new float[Cells + 1, Cells + 1];
             var normals = new Vector3[Cells + 1, Cells + 1];
             for (int z = 0; z <= Cells; z++)
@@ -40,19 +41,17 @@ namespace AirCombat
                     var d = new Vector3((x + 1) * Step, heights[x + 1, z + 1], (z + 1) * Step);
                     var gx = tile.x * Cells + x;
                     var gz = tile.y * Cells + z;
-                    int color = GroundColor(originX + (x + 0.5f) * Step, originZ + (z + 0.5f) * Step,
-                        (a.y + b.y + c.y + d.y) * 0.25f, seed);
                     var na = normals[x, z]; var nb = normals[x + 1, z];
                     var nc = normals[x, z + 1]; var nd = normals[x + 1, z + 1];
                     if (((gx + gz) & 1) == 0)
                     {
-                        data.GroundTriangle(a, c, d, na, nc, nd, color);
-                        data.GroundTriangle(a, d, b, na, nd, nb, color);
+                        data.GroundTriangle(a, c, d, na, nc, nd, LandscapePalette.Grass);
+                        data.GroundTriangle(a, d, b, na, nd, nb, LandscapePalette.Grass);
                     }
                     else
                     {
-                        data.GroundTriangle(a, c, b, na, nc, nb, color);
-                        data.GroundTriangle(b, c, d, nb, nc, nd, color);
+                        data.GroundTriangle(a, c, b, na, nc, nb, LandscapePalette.Grass);
+                        data.GroundTriangle(b, c, d, nb, nc, nd, LandscapePalette.Grass);
                     }
                 }
             }
@@ -67,9 +66,10 @@ namespace AirCombat
             data.Triangle(wb, wc, wd, LandscapePalette.Water);
 
             if (trees != null && trees.Length > 0)
-                AddProps(tile, seed, treeDensity, heights, owner, trees, rocks, bushes, materials);
+                AddProps(tile, seed, treeDensity, heights, owner, trees, rocks, bushes, materials, paint);
             else
                 AddTrees(data, tile, originX, originZ, seed, treeDensity, heights);
+            groundTexture = paint.ToTexture("Ground color " + tile.x + "," + tile.y);
             return data.ToMesh("Landscape " + tile.x + "," + tile.y);
         }
 
@@ -90,36 +90,43 @@ namespace AirCombat
         {
             var hill = Noise(x, z, 0.009f, seed);
             var detail = Noise(x, z, 0.034f, seed + 13);
-            // Keep all hills and tree tops well below the player's altitude of 12.
-            var land = 0.65f + 3.6f * hill * hill + 0.65f * detail;
+            // Taller hills, with smooth normals; props are capped below flight altitude.
+            var land = 0.65f + 6.4f * hill * hill + 1.25f * detail;
             var width = RiverHalfWidth(z, seed);
             var bank = Mathf.SmoothStep(0f, 1f,
                 Mathf.InverseLerp(width - 3f, width + 7f, RiverDistance(x, z, seed)));
             return Mathf.Lerp(-2f, land, bank);
         }
 
-        private static int GroundColor(float x, float z, float y, int seed)
+        private static Color GroundTint(float x, float z, int seed)
         {
-            if (y < 0.85f || RiverDistance(x, z, seed) < RiverHalfWidth(z, seed) + 3f)
-                return LandscapePalette.Bank;
-            if (Noise(x, z, 0.012f, seed + 101) > 0.62f)
-                return LandscapePalette.Meadow;
-            if (Noise(x, z, 0.018f, seed + 43) > 0.56f)
-                return LandscapePalette.DarkGrass;
-            return LandscapePalette.Grass;
+            // Blend broad biome colors continuously, in world space, rather than per cell.
+            var forest = Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(0.43f, 0.69f, Noise(x, z, 0.018f, seed + 43)));
+            var meadow = Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(0.52f, 0.73f, Noise(x, z, 0.012f, seed + 101)));
+            Color color = Color.Lerp(new Color32(124, 154, 101, 255), new Color32(91, 126, 87, 255), forest);
+            color = Color.Lerp(color, new Color32(165, 166, 112, 255), meadow);
+            var bank = 1f - Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(0f, 6f,
+                RiverDistance(x, z, seed) - RiverHalfWidth(z, seed)));
+            color = Color.Lerp(color, new Color32(166, 158, 119, 255), bank);
+            // Gentle height/detail tint keeps the hills readable from an overhead camera.
+            float heightTint = Mathf.Lerp(0.92f, 1.09f, Mathf.Clamp01(Height(x, z, seed) / 6f));
+            float detail = Mathf.Lerp(0.96f, 1.04f, Noise(x, z, 0.052f, seed + 111));
+            return new Color(color.r * heightTint * detail, color.g * heightTint * detail,
+                color.b * heightTint * detail, 1f);
         }
 
         private static void AddProps(Vector2Int tile, int seed, float density, float[,] heights,
-            Transform owner, GameObject[] trees, GameObject[] rocks, GameObject[] bushes, Material[] materials)
+            Transform owner, GameObject[] trees, GameObject[] rocks, GameObject[] bushes, Material[] materials,
+            LandscapeGroundPaint paint)
         {
-            const int cells = 8;
+            const int cells = 12;
             const float spacing = (float)Size / cells;
             for (int z = 0; z < cells; z++)
             for (int x = 0; x < cells; x++)
             {
                 int gx = tile.x * cells + x, gz = tile.y * cells + z;
-                float lx = (x + Mathf.Lerp(0.2f, 0.8f, Hash(gx, gz, seed + 300))) * spacing;
-                float lz = (z + Mathf.Lerp(0.2f, 0.8f, Hash(gx, gz, seed + 301))) * spacing;
+                float lx = (x + Mathf.Lerp(0.32f, 0.68f, Hash(gx, gz, seed + 300))) * spacing;
+                float lz = (z + Mathf.Lerp(0.32f, 0.68f, Hash(gx, gz, seed + 301))) * spacing;
                 float wx = tile.x * (float)Size + lx, wz = tile.y * (float)Size + lz;
                 if (RiverDistance(wx, wz, seed) < RiverHalfWidth(wz, seed) + 9f) continue;
                 float forest = Noise(wx, wz, 0.018f, seed + 43);
@@ -128,23 +135,29 @@ namespace AirCombat
                 GameObject[] options;
                 int kind;
                 float size;
-                if (forest > 0.52f && meadow < 0.62f && roll < 0.60f * density)
+                // High-density groves separated by open meadows.
+                float grove = Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(0.48f, 0.68f, forest));
+                if (meadow < 0.64f && roll < grove * 0.90f * density)
                 {
-                    options = trees; kind = 0; size = Mathf.Lerp(3.4f, 5.4f, Hash(gx, gz, seed + 304));
+                    options = trees; kind = 0; size = Mathf.Lerp(6.0f, 8.3f, Hash(gx, gz, seed + 304));
                 }
-                else if (roll < 0.09f * density)
+                else if (roll < 0.045f * density)
                 {
-                    options = rocks; kind = 1; size = Mathf.Lerp(2.3f, 4.1f, Hash(gx, gz, seed + 304));
+                    options = rocks; kind = 1; size = Mathf.Lerp(3.4f, 5.0f, Hash(gx, gz, seed + 304));
                 }
-                else if (forest > 0.48f && roll < 0.19f * density)
+                else if (forest > 0.48f && roll < 0.12f * density)
                 {
-                    options = bushes; kind = 2; size = Mathf.Lerp(1.5f, 2.5f, Hash(gx, gz, seed + 304));
+                    options = bushes; kind = 2; size = Mathf.Lerp(2.3f, 3.7f, Hash(gx, gz, seed + 304));
                 }
                 else continue;
                 if (options == null || options.Length == 0) continue;
                 var model = options[Mathf.Min(options.Length - 1, (int)(Hash(gx, gz, seed + 305) * options.Length))];
                 var point = new Vector3(lx, SurfaceHeight(tile, lx, lz, heights) - 0.10f, lz);
-                LandscapePropSpawner.Spawn(model, owner, point, Hash(gx, gz, seed + 306) * 360f, size, kind, materials);
+                // The flight plane is at y=12; the largest dimension bounds prop height.
+                size = Mathf.Min(size, 10.8f - point.y);
+                if (size <= 0f) continue;
+                if (LandscapePropSpawner.Spawn(model, owner, point, Hash(gx, gz, seed + 306) * 360f, size, kind, materials))
+                    paint.AddShadow(lx, lz, size, kind == 0);
             }
         }
 
@@ -268,6 +281,7 @@ namespace AirCombat
         {
             private readonly List<Vector3> vertices = new List<Vector3>(8192);
             private readonly List<Vector3> normals = new List<Vector3>(8192);
+            private readonly List<Vector2> uvs = new List<Vector2>(8192);
             private readonly List<int>[] triangles = new List<int>[LandscapePalette.Count];
             public int Seed { get; }
 
@@ -286,6 +300,9 @@ namespace AirCombat
                 vertices.Add(c);
                 var normal = Vector3.Cross(b - a, c - a).normalized;
                 normals.Add(normal); normals.Add(normal); normals.Add(normal);
+                uvs.Add(LandscapeGroundPaint.Uv(a));
+                uvs.Add(LandscapeGroundPaint.Uv(b));
+                uvs.Add(LandscapeGroundPaint.Uv(c));
                 triangles[material].Add(index);
                 triangles[material].Add(index + 1);
                 triangles[material].Add(index + 2);
@@ -309,6 +326,7 @@ namespace AirCombat
                 for (int i = 0; i < triangles.Length; i++)
                     mesh.SetTriangles(triangles[i], i, false);
                 mesh.SetNormals(normals);
+                mesh.SetUVs(0, uvs);
                 mesh.RecalculateBounds();
                 mesh.UploadMeshData(true);
                 return mesh;

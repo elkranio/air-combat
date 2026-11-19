@@ -110,13 +110,19 @@ namespace AirCombat
             owner.transform.position = new Vector3(key.x * (float)LandscapeChunkBuilder.Size, 0f,
                 key.y * (float)LandscapeChunkBuilder.Size);
             var mesh = LandscapeChunkBuilder.Build(key, seed, treeDensity, owner.transform,
-                treeModels, rockModels, bushModels, materials);
+                treeModels, rockModels, bushModels, materials, out var groundTexture);
             owner.AddComponent<MeshFilter>().sharedMesh = mesh;
             var renderer = owner.AddComponent<MeshRenderer>();
             renderer.sharedMaterials = materials;
+            // Only the ground uses the per-chunk color texture. The other submeshes
+            // (river and fallback trees) keep their existing shared materials.
+            var ground = new MaterialPropertyBlock();
+            ground.SetTexture("_BaseMap", groundTexture);
+            ground.SetColor("_BaseColor", Color.white);
+            renderer.SetPropertyBlock(ground, LandscapePalette.Grass);
             // Geometry is purely decorative; no physics and no terrain shadow-map cost.
             renderer.shadowCastingMode = ShadowCastingMode.Off;
-            return new Chunk(owner, mesh);
+            return new Chunk(owner, mesh, groundTexture);
         }
 
         private void OnDisable()
@@ -150,17 +156,20 @@ namespace AirCombat
                 Destroy(chunk.Owner);
             }
             if (chunk.Mesh != null) Destroy(chunk.Mesh);
+            if (chunk.GroundTexture != null) Destroy(chunk.GroundTexture);
         }
 
         private sealed class Chunk
         {
             public readonly GameObject Owner;
             public readonly Mesh Mesh;
+            public readonly Texture2D GroundTexture;
 
-            public Chunk(GameObject owner, Mesh mesh)
+            public Chunk(GameObject owner, Mesh mesh, Texture2D groundTexture)
             {
                 Owner = owner;
                 Mesh = mesh;
+                GroundTexture = groundTexture;
             }
         }
     }
