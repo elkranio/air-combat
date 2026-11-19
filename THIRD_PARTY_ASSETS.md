@@ -20,3 +20,17 @@
 - License: Creative Commons Attribution (CC-BY)
 - Path: Assets/ThirdParty/PolyPizza/LowPolyFighter/
 - Modifications: None
+
+## Kenney Nature Kit (2.1)
+- Author: Kenney
+- Source: https://kenney.nl/assets/nature-kit
+- License: Creative Commons Zero (CC0); original License.txt included
+- Path: Assets/ThirdParty/Kenney/NatureKit/
+- Modifications: Selected original OBJ and MTL files only; no geometry changes
+
+## Kenney Skyboxes (1.0)
+- Author: Kenney
+- Source: https://kenney.nl/assets/skyboxes
+- License: Creative Commons Zero (CC0); original License.txt included
+- Path: Assets/ThirdParty/Kenney/Skyboxes/
+- Modifications: Selected original day skybox only
