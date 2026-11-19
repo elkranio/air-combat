@@ -2830,8 +2830,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::AirCombat.EnemyFlightController
   target: {fileID: 1971567200}
   visual: {fileID: 1099523435}
-  catchUpDistance: 100
-  resumeCruiseDistance: 60
+  catchUpDistance: 180
+  resumeCruiseDistance: 100
   cruiseSpeed: 40
   boostSpeed: 80
   acceleration: 35

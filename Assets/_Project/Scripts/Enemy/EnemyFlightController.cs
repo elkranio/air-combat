@@ -12,8 +12,8 @@ namespace AirCombat
         [SerializeField] private Transform visual;
 
         [Header("Distance (horizontal units)")]
-        [SerializeField, Min(1f)] private float catchUpDistance = 100f;
-        [SerializeField, Min(1f)] private float resumeCruiseDistance = 60f;
+        [SerializeField, Min(1f)] private float catchUpDistance = 180f;
+        [SerializeField, Min(1f)] private float resumeCruiseDistance = 100f;
 
         [Header("Speed (units per second)")]
         [SerializeField, Min(0.1f)] private float cruiseSpeed = 40f;

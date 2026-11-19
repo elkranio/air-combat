@@ -199,6 +199,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::AirCombat.MissileProjectile
   speed: 120
   turnRate: 110
+  maneuverBudget: 150
   lifetime: 5
   hitRadius: 4
   trail: {fileID: 2946735463859309555}

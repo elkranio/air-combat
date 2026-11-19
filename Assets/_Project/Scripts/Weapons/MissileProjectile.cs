@@ -9,6 +9,7 @@ namespace AirCombat
     {
         [SerializeField, Min(0.1f)] private float speed = 120f;
         [SerializeField, Min(1f)] private float turnRate = 110f;
+        [SerializeField, Min(0f)] private float maneuverBudget = 150f;
         [SerializeField, Min(0.1f)] private float lifetime = 5f;
         [SerializeField, Min(0.1f)] private float hitRadius = 4f;
         [SerializeField] private TrailRenderer trail;
@@ -16,10 +17,13 @@ namespace AirCombat
         private Action<Vector3, Transform> onHit;
         private Vector3 lastTargetPosition;
         private float age;
+        public float RemainingManeuverBudget { get; private set; }
         private bool launched;
 
         public void Launch(Transform aimTarget, Action<Vector3, Transform> hitCallback)
         {
+            age = 0f;
+            RemainingManeuverBudget = Mathf.Max(0f, maneuverBudget);
             target = aimTarget;
             onHit = hitCallback;
             if (target != null) lastTargetPosition = target.position;
@@ -33,13 +37,20 @@ namespace AirCombat
             var dt = Mathf.Min(Time.deltaTime, Mathf.Max(0f, lifetime - age));
             var from = transform.position;
             bool hasTarget = target != null && target.gameObject.activeInHierarchy;
-            if (hasTarget)
+            if (hasTarget && RemainingManeuverBudget > 0f)
             {
                 var direction = target.position - from;
                 direction.y = 0f;
                 if (direction.sqrMagnitude > 0.0001f)
-                    transform.rotation = Quaternion.RotateTowards(transform.rotation,
-                        Quaternion.LookRotation(direction, Vector3.up), turnRate * dt);
+                {
+                    // Spend only the actual yaw applied, not the requested angle.
+                    // Reversing turn direction does not refund maneuver budget.
+                    float error = Vector3.SignedAngle(transform.forward, direction, Vector3.up);
+                    float limit = Mathf.Min(turnRate * dt, RemainingManeuverBudget);
+                    float yaw = Mathf.Clamp(error, -limit, limit);
+                    transform.Rotate(0f, yaw, 0f, Space.World);
+                    RemainingManeuverBudget = Mathf.Max(0f, RemainingManeuverBudget - Mathf.Abs(yaw));
+                }
             }
             var to = from + transform.forward * speed * dt;
             if (hasTarget)
