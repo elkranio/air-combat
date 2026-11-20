@@ -34,7 +34,7 @@ The user wants enjoyable art experiments rather than gameplay work today. Focus 
 - `Tools/Unity/ConfigureFrontierHeroKit.cs`: imports maps with correct color space/mips/compression; reusable materials/prefabs under `Assets/_Project/Art/Environment/FrontierHeroKit/`. Copies tested `ScorchedFrontier.unity` to `FrontierHeroShowcase.unity`, replaces refinery only in the copy, adds three rock formations nearby. Start above the refinery approach; fly north to rocks. Existing field, camera and aircraft unchanged; no combat or collisions. B switches base only / AO / normal / both, H toggles legends, controls and real shadows unchanged. Neither Sandbox nor stable Frontier is edited.
 - User test: new refinery geometry is an improvement; AO/normal modes show almost no discernible difference at gameplay distance. Tank surfaces exhibit possible bake/texture stipple; cause unverified. Geometry and composition matter more than additional high-poly baking. Do not rebake or promote any material mode yet. V14A green `cc8b3dd7`.
 
-## Current atom — V14B Surface & Composition (pending visual test)
+## V14B Surface & Composition — tested / green
 
 Copy green `FrontierHeroShowcase.unity` (not V13), keeping new refinery, rocks, camera/flight, bake comparison and dynamic shadows. Improve the previously blurry ground and sterile roads; do not add more small props or change terrain geometry. Create `FrontierSurfacePass.unity` with scene-local output in `Generated/FrontierSurfacePass/`.
 
@@ -44,7 +44,21 @@ Copy green `FrontierHeroShowcase.unity` (not V13), keeping new refinery, rocks, 
 
 `unity command script run --file Tools/Unity/ConfigureFrontierSurfacePass.cs --entry ConfigureFrontierSurfacePass.Configure`
 
-Judge surface detail in motion, natural transition around refinery, road wear and aircraft readability. Inspect generated PNG sizes before pushing. If the pass works, later promote selected surfaces and hero kit to the stable Frontier generator. Keep scope visual only.
+User test: ground and worn roads noticeably improved; refinery now sits on a coherent pad. Palette and detail accepted for continued work. Aircraft still reads well. Concentric height-driven stripes on the smooth hills are the main outstanding problem. V14B green `e22e7022`. Keep scope visual only.
+
+## V15 Badlands terrain — rejected, cleaned locally
+
+Global procedural height replacement caused floating rocks (moved parent groups, not individual objects), a black terrain/rendering artifact of unconfirmed cause, and loss of the V14B ground detail. Native raw color texture also violated the PNG workflow. User cleaned the untracked V15 files; no commit or push. Do not regenerate or use V15 as a source.
+
+## Current atom — V16 Rocky escarpments (pending visual test)
+
+Start from green `FrontierSurfacePass.unity`. Four localized replacements rather than another global heightfield: a broken mesa north of the refinery, an eastern escarpment, a southern split ridge and a western butte. Real closed Blender meshes with broad eroded silhouettes, steep walls, buried footings and subtle shared albedo swatches; no AO/normal/sun bake. Keep the 48-unit flight plane; each cliff top stays below 40.
+
+- `Tools/Blender/generate_frontier_escarpments.py` creates four FBXs, one small palette PNG and editable `Resources/Blender/FrontierEscarpments.blend`. No Cycles run needed; prior bake comparison showed negligible gameplay-distance benefit.
+- `Tools/Unity/ConfigureFrontierEscarpments.cs` makes `FrontierEscarpments.unity`. Clone V14B terrain with exact UVs/indices; flatten only hill cores and protect road and settlement elevations using masks and actual renderer bounds. Validate footprints, roads and infrastructure before copying the scene. Ground texture is V14B 4K PNG with local correction of the old height-periodic slope tint; unchanged outside the replacement masks. Remove conflicting loose props and re-ground retained nature individually; leave buildings and road meshes in place. No gameplay, lighting or camera changes.
+- Generate Blender, then Unity using commands in [Tools/Unity/ARTLAB.md](Tools/Unity/ARTLAB.md). Check cliff silhouettes, transitions, flight clearance, remaining loose nature, roads and surface continuity. Remaining untouched hills may still show old bands; do not assume V16 resolves the whole map. If acceptable, expand geology in another atom.
+
+V16 local generation hit a MissingReferenceException at the second nature-group lookup: the cached hierarchy array included children destroyed while removing rocks in the first group. Hotfix resolves both group owners before deletion and skips invalid child references. Discard the partially generated scene in the editor, reopen V14B, then rerun the Unity generator; Blender output is reusable. V16 remains pending successful generation and flight test.
 
 ## Lessons from the visual search
 

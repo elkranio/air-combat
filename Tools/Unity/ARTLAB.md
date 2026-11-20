@@ -59,3 +59,19 @@ unity command script run --file Tools/Unity/ConfigureFrontierSurfacePass.cs --en
 ```
 
 Opens `FrontierSurfacePass.unity`, a separate scene with new terrain/yard and road color PNGs, preserved V14A hero models and existing B material comparison. No Blender run and no changes to stable Frontier or Sandbox. Dynamic shadows remain on; the generated color textures contain material wear, not lighting.
+
+## V16 — Rocky escarpments
+
+V15 was discarded (global procedural terrain regression). V16 starts from tested V14B. From repo root:
+
+```sh
+blender -b --python-exit-code 1 --python Tools/Blender/generate_frontier_escarpments.py
+```
+
+After import/refresh, stop Play Mode and save scenes:
+
+```sh
+unity command script run --file Tools/Unity/ConfigureFrontierEscarpments.cs --entry ConfigureFrontierEscarpments.Configure
+```
+
+Opens `FrontierEscarpments.unity`. Fly north from the refinery, then inspect east, south and west. The generator protects road and settlement elevations, buries four coherent cliff meshes in localized flattened hill cores, and retouches only the affected V14B ground pixels. Dynamic shadows and flight controls remain unchanged. No Cycles lighting bake or raw texture asset. Stable Frontier, V14B, and Sandbox remain untouched.
