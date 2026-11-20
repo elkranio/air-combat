@@ -14,13 +14,15 @@ namespace AirCombat
         [SerializeField] private Material[] originalGround;
         [SerializeField] private Material[] texturedGround;
         [SerializeField] private bool newGround = true;
+        [SerializeField] private bool antiTilingStudy;
         private bool HasGroundComparison => groundRenderers != null && groundRenderers.Length > 0;
         private bool showLegend = true;
         private GUIStyle label;
 
         public void Configure(Light light) { sun = light; neutral = false; Apply(); }
-        public void ConfigureGroundComparison(MeshRenderer[] renderers, Material[] original, Material[] textured)
+        public void ConfigureGroundComparison(MeshRenderer[] renderers, Material[] original, Material[] textured, bool antiTiling = false)
         {
+            antiTilingStudy = antiTiling;
             groundRenderers = renderers; originalGround = original; texturedGround = textured;
             newGround = true;
             ApplyGround();
@@ -56,9 +58,9 @@ namespace AirCombat
             if (!showLegend || Event.current.type != EventType.Repaint) return;
             if (label == null) label = new GUIStyle(GUI.skin.label) { fontSize = 14, normal = { textColor = Color.white } };
             GUI.Box(new Rect(12, 12, HasGroundComparison ? 335 : 310, HasGroundComparison ? 78 : 55), GUIContent.none);
-            GUI.Label(new Rect(22, 16, 290, 22), HasGroundComparison ? "ArtLab v3 / Ground material study" : "ArtLab v2 / Sunlit Foothills", label);
+            GUI.Label(new Rect(22, 16, 290, 22), antiTilingStudy ? "ArtLab v3.1 / Anti-tiling" : HasGroundComparison ? "ArtLab v3 / Ground material study" : "ArtLab v2 / Sunlit Foothills", label);
             GUI.Label(new Rect(22, 38, 290, 22), (neutral ? "L: Neutral light" : "L: Art light") + "    H: Hide legend", label);
-            if (HasGroundComparison) GUI.Label(new Rect(22, 60, 310, 22), "G: Ground / " + (newGround ? "New textures" : "Original v2"), label);
+            if (HasGroundComparison) GUI.Label(new Rect(22, 60, 310, 22), "G: Ground / " + (antiTilingStudy ? (newGround ? "Anti-tiling" : "Tiled v3") : (newGround ? "New textures" : "Original v2")), label);
         }
     }
 }
