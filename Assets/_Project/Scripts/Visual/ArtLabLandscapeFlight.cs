@@ -16,6 +16,7 @@ namespace AirCombat
         [SerializeField] private FlightController flight;
         [SerializeField] private Afterburner boost;
         [SerializeField] private float halfMap = 600f;
+        [SerializeField] private string studyTitle = "ArtLab v10 / Landscape flight";
         private RenderPipelineAsset previousPipeline;
         private bool ownsOverride;
         private Vector3 startPosition;
@@ -24,10 +25,10 @@ namespace AirCombat
         private GUIStyle label;
 
         public void Configure(UniversalRenderPipelineAsset pipeline, Transform aircraft, Camera camera,
-            FlightController controller, Afterburner afterburner, float halfExtent)
+            FlightController controller, Afterburner afterburner, float halfExtent, string title = "ArtLab v10 / Landscape flight")
         {
             studyPipeline = pipeline; player = aircraft; viewCamera = camera;
-            flight = controller; boost = afterburner; halfMap = halfExtent;
+            flight = controller; boost = afterburner; halfMap = halfExtent; studyTitle = title;
         }
 
         private void OnEnable()
@@ -71,7 +72,7 @@ namespace AirCombat
             if (!showLegend || Event.current.type != EventType.Repaint) return;
             if (label == null) label = new GUIStyle(GUI.skin.label) { fontSize = 14, normal = { textColor = Color.white } };
             GUI.Box(new Rect(12, 12, 415, 106), GUIContent.none);
-            GUI.Label(new Rect(22, 16, 395, 22), "ArtLab v10 / Landscape flight", label);
+            GUI.Label(new Rect(22, 16, 395, 22), string.IsNullOrEmpty(studyTitle) ? "ArtLab v10 / Landscape flight" : studyTitle, label);
             GUI.Label(new Rect(22, 38, 395, 22), "WASD: flight   Space: boost   R: recenter", label);
             GUI.Label(new Rect(22, 60, 395, 22), "1/2/3: camera 90/75/65 deg   H: hide", label);
             GUI.Label(new Rect(22, 82, 395, 22), $"Speed {flight.CurrentSpeed:F0}   Boost {boost.Charge01:P0}   1200 x 1200", label);
