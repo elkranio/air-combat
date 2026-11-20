@@ -22,6 +22,10 @@ namespace AirCombat
         [SerializeField] private Camera viewCamera;
         [SerializeField] private Batch[] batches;
         private readonly Plane[] planes = new Plane[6];
+        private Material studyMaterialOverride;
+
+        // Optional scene-local comparison, never mutates batch materials or source assets.
+        public void SetStudyMaterial(Material material) => studyMaterialOverride = material;
 
         public void Configure(Camera camera, Batch[] data)
         { viewCamera = camera; batches = data; }
@@ -56,7 +60,7 @@ namespace AirCombat
                 var padded = b.bounds;
                 padded.Expand(new Vector3(120f, 80f, 120f));
                 if (!GeometryUtility.TestPlanesAABB(planes, padded)) continue;
-                var rp = new RenderParams(b.material)
+                var rp = new RenderParams(studyMaterialOverride != null ? studyMaterialOverride : b.material)
                 {
                     camera = viewCamera,
                     worldBounds = b.bounds,

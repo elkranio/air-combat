@@ -70,12 +70,13 @@ namespace AirCombat
         private void OnGUI()
         {
             if (!showLegend || Event.current.type != EventType.Repaint) return;
+            var focus = GetComponent<ArtLabFocusStudy>();
             if (label == null) label = new GUIStyle(GUI.skin.label) { fontSize = 14, normal = { textColor = Color.white } };
             GUI.Box(new Rect(12, 12, 415, 106), GUIContent.none);
             GUI.Label(new Rect(22, 16, 395, 22), string.IsNullOrEmpty(studyTitle) ? "ArtLab v10 / Landscape flight" : studyTitle, label);
             GUI.Label(new Rect(22, 38, 395, 22), "WASD: flight   Space: boost   R: recenter", label);
-            GUI.Label(new Rect(22, 60, 395, 22), "1/2/3: camera 90/75/65 deg   H: hide", label);
-            GUI.Label(new Rect(22, 82, 395, 22), $"Speed {flight.CurrentSpeed:F0}   Boost {boost.Charge01:P0}   1200 x 1200", label);
+            GUI.Label(new Rect(22, 60, 395, 22), focus != null ? "1/2/3: camera   B: focus mode   H: hide" : "1/2/3: camera 90/75/65 deg   H: hide", label);
+            GUI.Label(new Rect(22, 82, 395, 22), focus != null ? $"{focus.ModeName}   Speed {flight.CurrentSpeed:F0}   Boost {boost.Charge01:P0}" : $"Speed {flight.CurrentSpeed:F0}   Boost {boost.Charge01:P0}   1200 x 1200", label);
         }
     }
 }

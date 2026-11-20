@@ -30,7 +30,7 @@ Static 1200 x 1200 hills and clustered trees, camera follow and Kestrel from San
 
 V10 generated output was ~627 MiB uncompressed (525 MiB duplicated tree meshes, 96 MiB raw color texture, 6.6 MiB terrain mesh), pushed in `3d8ddf6`. Do not rerun the retired heavy V10 generator. Keep authored models and materials unchanged; avoid baking repeated geometry or uncompressed full-map native texture assets into Git. Keep prior iterations where practical, but retire V10 scene with its generated folder after V11 passes. Do not rewrite Git history.
 
-## Current atom — V11 Readability (pending visual test)
+## V11 Readability — tested
 
 - Separate scene copied from Sandbox, same 1200 x 1200 heightfield and 48-unit flight altitude, size 80 camera, default 65 degrees, same flight/VFX settings and V9 lighting. No combat or buildings; no Sandbox changes.
 - Preserve existing three tree meshes and shadows. Muted scene-local tree palette, small fill to reduce dark crown contrast, lower density with open crests. Deterministic layout seed; placements are not pixel-identical to V10. No blur, no new tree geometry.
@@ -46,4 +46,18 @@ After successful visual test, stop Play Mode and keep V11 open; remove the super
 
 `unity command script run --file Tools/Unity/ConfigureArtLabReadability.cs --entry ConfigureArtLabReadability.RetireV10`
 
-Commit V11 generated assets and V10 deletions after the test. V10 remains recoverable at `3d8ddf6`; removing files from HEAD does not shrink earlier Git history. Next: if aircraft still blends into trees, test a subtle aircraft-only silhouette/outline or stronger value separation before considering selective background softness.
+Commit V11 generated assets and V10 deletions after the test. V10 remains recoverable at `3d8ddf6`; removing files from HEAD does not shrink earlier Git history. V11 runs successfully. The user screenshot confirms the jet still blends with forest crowns even after recoloring. Palette adjustment alone is insufficient.
+
+
+## Current atom — V12 Focus Study (pending visual test)
+
+- Copy the green V11 scene, retain its terrain, forest transforms, compressed textures, instancing, existing flight/camera controls and real shadows. V12 depends on V11 generated assets; do not delete them. No map regeneration or duplicate terrain/tree geometry.
+- B cycles V11 baseline, softened nature (box-filtered ground texture, quieter tree palette and modest tree-only fill), and aircraft focus (soft nature plus 18% visual scale, thin inverted-hull outline, brighter hull materials, more neutral sun/ambient). All changes are scene-local; baseline is the actual V11 look.
+- Ground texture softness is selective but this is not screen-space background blur. The aircraft and future targets remain sharp. If this comparison is insufficient, test actual selective render-layer blur separately.
+- Retain H, R, WASD, Space, and 1/2/3. No gameplay changes. New generated color maps are small PNGs.
+
+Generate after Unity has refreshed and finished compiling runtime scripts:
+
+`unity command script run --file Tools/Unity/ConfigureArtLabFocusStudy.cs --entry ConfigureArtLabFocusStudy.Configure`
+
+Compare B modes over the same woods at the same camera angle; evaluate readability before deciding whether to keep the outline, scale or lighting separately.
