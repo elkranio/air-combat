@@ -1,77 +1,46 @@
 # Scorched Frontier visual playground
 
-V13 was accepted after flight testing. The stable scene is `Assets/_Project/Scenes/ScorchedFrontier.unity`. It is independent of the retired forest scenes. The current gameplay reference remains Sandbox.
+`Sandbox.unity` is the gameplay reference and sole build scene. Current visual baseline: `Assets/_Project/Scenes/FrontierStrata.unity` (V17), with integrated rocky relief, V14A kit, V14B roads and dynamic shadows. `ScorchedFrontier.unity` (V13) remains the accepted fallback. `FrontierBakeTruth.unity` (V18) is the separate working bake diagnostic.
 
-## One-time migration from V13
+## V18 cleanup (one time)
 
-Stop Play Mode and save all open scenes, refresh scripts and wait for compilation. Run a read-only preview first:
-
-```sh
-unity command script run --file Tools/Unity/CleanupArtLabs.cs --entry CleanupArtLabs.Preview
-```
-
-If the dependency check succeeds, apply the migration:
+Stop Play Mode, save scenes, let Unity refresh. Run read-only preview:
 
 ```sh
-unity command script run --file Tools/Unity/CleanupArtLabs.cs --entry CleanupArtLabs.Configure
+unity command script run --file Tools/Unity/CleanupFrontierStudies.cs --entry CleanupFrontierStudies.Preview
 ```
 
-It moves the accepted scene, generated folder, lighting asset and three aircraft materials preserving GUIDs. It deletes only explicitly listed obsolete ArtLab scenes, outputs, scripts and editor generators, not Sandbox or authored models. A dependency conflict stops deletion. If interrupted, rerunning accepts already-completed moves. Do not regenerate Frontier merely to migrate it: this keeps the tested scene intact. Inspect git status, play both scenes and commit changes.
+Then apply:
 
-## Rebuild Frontier when changing the generator
+```sh
+unity command script run --file Tools/Unity/CleanupFrontierStudies.cs --entry CleanupFrontierStudies.Configure
+```
+
+Moves shared V14B road assets and V16 ground into `Generated/FrontierStrata/` preserving GUIDs; retires intermediate V14A/B and V16 scenes and obsolete generators, ground texture/mesh/FBXs after dependency preflight. Does not regenerate or edit any retained scene. Review git status; play V17, V18 and Sandbox before committing. If interrupted, rerun only after checking the worktree (moves accept source or destination). Never force deletion on a dependency conflict.
+
+## V17 — active map
+
+Open `FrontierStrata.unity` and play. WASD, Space boost, 1/2/3 camera pitch (90/75/65), R recenter, H legend. B cycles only the V14A hero kit material modes, not the terrain. Use this scene as the starting point for V19, not the retired scene-generator chain. Keep its existing terrain and roads intact. V17 Blender source and height manifest remain available under `Resources/Blender/FrontierStrata.*`. To recreate its original scene generation, use the pre-cleanup commit in a separate worktree.
+
+## V18 — Bake Truth Test
+
+To rebuild the isolated diagnostic only:
+
+```sh
+blender -b --python-exit-code 1 --python Tools/Blender/generate_bake_truth_test.py -- --device OPTIX
+unity command script run --file Tools/Unity/ConfigureFrontierBakeTruth.cs --entry ConfigureFrontierBakeTruth.Configure
+```
+
+Stop Play Mode and save scenes before the Unity command. Left is base-only; right changes with 1 base, 2 AO, 3 normal, 4 full, 5 stronger AO, 6 normal x4, 7 both stronger, 8 raw AO, 9 raw normal, 0 control, T cycle controls. C toggles close/gameplay size 80; L cycles lighting; H hides labels. Tested: ordinary normal strength 1 produces clearly visible relief even at gameplay distance; AO is subtle. Keep separate maps, dynamic shadows, author large high-only surface details. No need to rerun the diagnostic or rebake the older hero kit just to begin V19.
+
+## V13 — fallback generator
 
 ```sh
 unity command script run --file Tools/Unity/ConfigureArtLabScorchedFrontier.cs --entry ConfigureArtLabScorchedFrontier.Configure
 ```
 
-Run from root with Play Mode stopped and saved scenes. This rebuilds the stable scene from Sandbox's flight setup plus the existing Frontier materials and lighting pipeline, producing the same deterministic landscape and reusable V0 modules. Sandbox is not changed. The existing Frontier scene is a generated destination, so preserve new hand-authored content separately.
-
-Play: WASD, Space boost, 1/2/3 camera pitch, R recenter, H legend. No combat, target objects or destruction mechanics yet.
-
-## V14A — Hero refinery and rock kit (pending visual acceptance)
-
-From the repository root, generate the full kit with Blender (Cycles OptiX GPU):
-
-```sh
-blender -b --python-exit-code 1 --python Tools/Blender/generate_frontier_hero_kit.py -- --device OPTIX
-```
-
-The script prints detected GPU names, generates 20 modules with base color, local AO and high-to-low normal maps, and saves an editable Blender file. Defaults: 1024 textures, four hero units at 2048, 48 samples. For a fast geometry check append `--quick` (512 base only); use `--device CUDA` or `--device CPU` if OptiX is unavailable. A successful run writes `HeroKitManifest.json`. No lights or directional shadows are baked. The bake process has not yet been tested on the local Blender/GPU installation.
-
-Refresh Unity and let runtime scripts compile. Stop Play Mode and save scenes before generating:
-
-```sh
-unity command script run --file Tools/Unity/ConfigureFrontierHeroKit.cs --entry ConfigureFrontierHeroKit.Configure
-```
-
-Open `FrontierHeroShowcase.unity` (the generator opens it). Flight controls as above; B cycles base color only, local AO only, high-poly normal only, and both. H hides both legends. Start near the new refinery; rock formations are immediately north. Real dynamic shadows in every mode. The original Scorched Frontier and Sandbox are unchanged. Compare screenshot/flight results before V14B integration. The Blender FBX/PNG assets and `.blend` source, material/prefab imports and scene are generated locally; commit only complete successful output. Keep the kit modest; inspect file sizes.
+Rebuilds V13 from Sandbox's flight setup plus the existing Frontier materials and lighting pipeline. Do not run casually: V17 shares some assets with V13. Sandbox itself is not modified.
 
 ## Archive
 
-All V1–V13 experiments before cleanup are available in Git at `3aae3d12b84e5276a333060fdd1480828aa17f2c`; the heavy V10 is at `3d8ddf6`. Use a separate worktree or checkout to inspect them. Do not reintroduce their outputs into the active project. Authored tree assets and Blender sources are retained for potential reuse.
-
-## V14B — Surface & Composition
-
-From the tested V14A showcase, after saving scenes and stopping Play Mode:
-
-```
-unity command script run --file Tools/Unity/ConfigureFrontierSurfacePass.cs --entry ConfigureFrontierSurfacePass.Configure
-```
-
-Opens `FrontierSurfacePass.unity`, a separate scene with new terrain/yard and road color PNGs, preserved V14A hero models and existing B material comparison. No Blender run and no changes to stable Frontier or Sandbox. Dynamic shadows remain on; the generated color textures contain material wear, not lighting.
-
-## V16 — Rocky escarpments
-
-V15 was discarded (global procedural terrain regression). V16 starts from tested V14B. From repo root:
-
-```sh
-blender -b --python-exit-code 1 --python Tools/Blender/generate_frontier_escarpments.py
-```
-
-After import/refresh, stop Play Mode and save scenes:
-
-```sh
-unity command script run --file Tools/Unity/ConfigureFrontierEscarpments.cs --entry ConfigureFrontierEscarpments.Configure
-```
-
-Opens `FrontierEscarpments.unity`. Fly north from the refinery, then inspect east, south and west. The generator protects road and settlement elevations, buries four coherent cliff meshes in localized flattened hill cores, and retouches only the affected V14B ground pixels. Dynamic shadows and flight controls remain unchanged. No Cycles lighting bake or raw texture asset. Stable Frontier, V14B, and Sandbox remain untouched.
+All V14–V18 pre-cleanup scenes, scripts and generated output are preserved in Git at `a4ad17979ed9ebc222600625b2517919c10a3bbd` (use a separate worktree). V1–V13 before earlier cleanup: `3aae3d12b84e5276a333060fdd1480828aa17f2c`; heavy V10: `3d8ddf6`. Do not restore obsolete outputs into the active project or rewrite history. Existing authored hero kit, tree assets and source generators remain for reuse, not for in-place regeneration of V17.

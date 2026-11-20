@@ -1,6 +1,6 @@
 # Art pipeline
 
-Sandbox is the gameplay reference. Scorched Frontier is the accepted visual playground; gameplay and environment iteration remain separate until the environments are deliberately integrated.
+Sandbox is the gameplay reference. FrontierStrata (V17) is the active visual playground; Scorched Frontier (V13) is the fallback; gameplay and environment iteration remain separate until the environments are deliberately integrated.
 
 ## Layout
 
@@ -9,9 +9,11 @@ Sandbox is the gameplay reference. Scorched Frontier is the accepted visual play
 - `Tools/Blender/`: reproducible authored asset generators; run from the repo root with `blender -b --python-exit-code 1 --python ...`.
 - `Tools/Unity/`: editor-only import, prefab and scene assembly tools. See [ARTLAB.md](Tools/Unity/ARTLAB.md).
 - `Assets/_Project/Art/`: authored FBX meshes, textures, materials and prefabs, grouped by Aircraft, Buildings, Nature, Terrain, Weapons and VFX. Frontier-specific aircraft materials live in `Aircraft/FrontierMaterials/`; do not alter Sandbox materials implicitly.
-- `Assets/_Project/Art/Environment/FrontierHeroKit/`: V14A reproducible authored FBX modules, base color/local AO/normal PNGs, materials and prefabs. Editable source: `Resources/Blender/FrontierHeroKit.blend`. Keep AO and normal maps separate; world shadows remain dynamic. The showcase scene is isolated from the accepted Frontier baseline.
+- `Assets/_Project/Art/Environment/FrontierHeroKit/`: V14A reproducible authored FBX modules, base color/local AO/normal PNGs, materials and prefabs. Editable source: `Resources/Blender/FrontierHeroKit.blend`. Keep AO and normal maps separate; world shadows remain dynamic. Kit is used by V17; old showcase is historical. Do not rerun the old full kit in place.
 - `Assets/_Project/Generated/Battlefield/`: current gameplay landscape; keep until its replacement is tested.
 - `Assets/_Project/Generated/ScorchedFrontier/`: reproducible terrain, textures and V0 environment modules. Do not edit a generated prefab by hand without changing its generator, or move a useful authored asset into a disposable output folder.
+- `Assets/_Project/Generated/FrontierStrata/`: active V17 terrain, local geology maps, shared ground and road assets consolidated by the V18 cleanup utility. Preserve GUIDs and geometry for V19.
+- `Assets/_Project/Art/Environment/FrontierBakeTruth/` and `Generated/FrontierBakeTruth/`: isolated test assets. V18 proved meaningful high-only normal detail is visible at size 80; optional AO. Source `Resources/Blender/FrontierBakeTruth.blend`. Diagnostic import settings are not production defaults.
 - `Assets/_Project/Scenes/`, `Scripts/`, `Shaders/`: Unity scenes, runtime components and shaders. Use stable names for accepted baselines; version new experimental scenes only when necessary.
 - `Assets/Settings/ScorchedFrontier_URP.asset`: accepted study-local dynamic-shadow settings, temporarily selected in Play Mode. Not the global Sandbox pipeline.
 - `Assets/ThirdParty/`: existing dependencies; see [THIRD_PARTY_ASSETS.md](THIRD_PARTY_ASSETS.md). Do not remove until actual replacements are installed.
