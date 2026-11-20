@@ -50,7 +50,7 @@ User test: ground and worn roads noticeably improved; refinery now sits on a coh
 
 Global procedural height replacement caused floating rocks (moved parent groups, not individual objects), a black terrain/rendering artifact of unconfirmed cause, and loss of the V14B ground detail. Native raw color texture also violated the PNG workflow. User cleaned the untracked V15 files; no commit or push. Do not regenerate or use V15 as a source.
 
-## Current atom — V16 Rocky escarpments (pending visual test)
+## V16 Rocky escarpments — technically green, visual study not accepted
 
 Start from green `FrontierSurfacePass.unity`. Four localized replacements rather than another global heightfield: a broken mesa north of the refinery, an eastern escarpment, a southern split ridge and a western butte. Real closed Blender meshes with broad eroded silhouettes, steep walls, buried footings and subtle shared albedo swatches; no AO/normal/sun bake. Keep the 48-unit flight plane; each cliff top stays below 40.
 
@@ -58,7 +58,24 @@ Start from green `FrontierSurfacePass.unity`. Four localized replacements rather
 - `Tools/Unity/ConfigureFrontierEscarpments.cs` makes `FrontierEscarpments.unity`. Clone V14B terrain with exact UVs/indices; flatten only hill cores and protect road and settlement elevations using masks and actual renderer bounds. Validate footprints, roads and infrastructure before copying the scene. Ground texture is V14B 4K PNG with local correction of the old height-periodic slope tint; unchanged outside the replacement masks. Remove conflicting loose props and re-ground retained nature individually; leave buildings and road meshes in place. No gameplay, lighting or camera changes.
 - Generate Blender, then Unity using commands in [Tools/Unity/ARTLAB.md](Tools/Unity/ARTLAB.md). Check cliff silhouettes, transitions, flight clearance, remaining loose nature, roads and surface continuity. Remaining untouched hills may still show old bands; do not assume V16 resolves the whole map. If acceptable, expand geology in another atom.
 
-V16 local generation hit a MissingReferenceException at the second nature-group lookup: the cached hierarchy array included children destroyed while removing rocks in the first group. Hotfix resolves both group owners before deletion and skips invalid child references. Discard the partially generated scene in the editor, reopen V14B, then rerun the Unity generator; Blender output is reusable. V16 remains pending successful generation and flight test.
+V16 local generation hit a MissingReferenceException at the second nature-group lookup: the cached hierarchy array included children destroyed while removing rocks in the first group. Hotfix resolves both group owners before deletion and skips invalid child references. Discard the partially generated scene in the editor, reopen V14B, then rerun the Unity generator; Blender output is reusable. V16 generated and flew successfully after the hotfix; user pushed green `92acd080`. Visual test: the large bare low-poly rock meshes looked foreign to the textured world, especially radial summit fans, oversized flat facets and abrupt footprints. Small V14A rocks read better. Keep V16 as a technical reference, not an accepted environmental look.
+
+## Current atom — V17 Integrated Rock Strata (pending visual test)
+
+Start from green `92acd080` / `FrontierEscarpments.unity`, preserving its ground, roads, yards, refinery and flight settings. Replace the four isolated FBX landforms with continuous terrain relief. Do not redo the entire map or increase clutter.
+
+- `Tools/Blender/generate_frontier_strata.py`: four asymmetric compound sandstone profiles, local erosion cuts, irregular steep walls and a broad talus apron. A deterministic 1.25-unit height grid per site (zero added relief at boundaries) is saved as `Resources/Blender/FrontierStrata.json`; editable geometry preview `FrontierStrata.blend` uses the same samples. No FBX import or lighting/normal/AO baking needed. Blender backup versions disabled for this file. Plain Python `--data-only` can export the samples without Blender.
+- `Tools/Unity/ConfigureFrontierStrata.cs`: copy V16 to `FrontierStrata.unity`, remove the four detached V16 meshes only in the copy, refine selected original 5-unit terrain cells by 4x per axis and stitch neighboring cells into the same UInt32-indexed mesh. Existing planes outside patches are unchanged. Validate upward winding, projected area, interior edge incidence, infrastructure clearance and maximum height below 40. Existing road meshes and buildings are not moved. Only remove loose nature if its footprint clashes with raised relief.
+- Keep the original V16 4K ground PNG; four small local albedos (512/1024 dimensions) sample the exact underlying ground and blend towards textured sandstone on elevated terrain, with spatially varying mineral deposits, no periodic height rings or baked illumination. One continuous terrain mesh with five material sections and real dynamic shadows. No new entire-map PNG. Keep B material comparison for previously baked hero assets.
+- Generate from repo root (stop Play Mode and save scenes first):
+
+`blender -b --python-exit-code 1 --python Tools/Blender/generate_frontier_strata.py`
+
+`unity command script run --file Tools/Unity/ConfigureFrontierStrata.cs --entry ConfigureFrontierStrata.Configure`
+
+Run a flight at size 80, compare V16 with V17, inspect cliff/talus silhouettes, texture continuity at patch boundaries, shadow readability and aircraft clearance. V17 has not yet been tested in Blender or Unity. Do not promote until visual test. Prior scenes and Sandbox untouched.
+
+V17 local CLI failed on `JsonUtility` manifest validation before modifying the scene. The exported Python JSON contract is valid in offline tests; the exact native deserialization failure is not confirmed. Hotfix reads the same ordered JSON schema with managed .NET parsing and invariant-culture numbers, with explicit field/sample diagnostics and all previous validation intact. Existing Blender output is reusable; no regeneration required. Await successful Unity run.
 
 ## Lessons from the visual search
 
