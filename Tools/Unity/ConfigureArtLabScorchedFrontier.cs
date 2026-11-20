@@ -11,13 +11,13 @@ using UnityEngine.Rendering.Universal;
 using UnityEngine.SceneManagement;
 using Object = UnityEngine.Object;
 
-// Environment study only. Copy the working V11 flight scene; no changes to its assets or Sandbox.
+// Rebuild the visual playground from Sandbox without changing gameplay or shared assets.
 public static class ConfigureArtLabScorchedFrontier
 {
-    private const string Source = "Assets/_Project/Scenes/ArtLabV11Readability.unity";
-    private const string Destination = "Assets/_Project/Scenes/ArtLabV13ScorchedFrontier.unity";
-    private const string Output = "Assets/_Project/Generated/ArtLabV13ScorchedFrontier";
-    private const string Pipeline = "Assets/_Project/Generated/ArtLabV8Lighting/ArtLabLighting_URP.asset";
+    private const string Source = "Assets/_Project/Scenes/Sandbox.unity";
+    private const string Destination = "Assets/_Project/Scenes/ScorchedFrontier.unity";
+    private const string Output = "Assets/_Project/Generated/ScorchedFrontier";
+    private const string Pipeline = "Assets/Settings/ScorchedFrontier_URP.asset";
     private const float Half = 600f, Step = 5f;
     private const int N = 240, TextureSize = 2048;
     // Pads define the actual placement and flattening mask. Keep them well away from major ridges.
@@ -39,30 +39,49 @@ public static class ConfigureArtLabScorchedFrontier
         if(shader==null) throw new InvalidOperationException("URP Lit shader missing.");
         EnsureFolder(Output);
         EnsureFolder(Output+"/Modules");
+        // Load all accepted tuning assets before modifying the destination scene.
+        var aircraftMaterials = new Dictionary<string,Material>();
+        foreach(var slot in new[]{"Hull","Upper","Panels"})
+            aircraftMaterials.Add("Kestrel_"+slot,Require<Material>("Assets/_Project/Art/Aircraft/FrontierMaterials/Kestrel_"+slot+".mat"));
         var scene=EditorSceneManager.OpenScene(Source,OpenSceneMode.Single);
-        var oldRoot=scene.GetRootGameObjects().Single(g=>g.name=="ArtLab V11 Readability");
-        if(oldRoot.GetComponent<ArtLabLandscapeFlight>()==null || oldRoot.GetComponentInChildren<ArtLabForestInstances>(true)==null)
-            throw new InvalidOperationException("Unexpected V11 hierarchy; generate V11 first.");
-        if(!EditorSceneManager.SaveScene(scene,Destination,true)) throw new InvalidOperationException("Cannot copy V11.");
+        if(!EditorSceneManager.SaveScene(scene,Destination,true)) throw new InvalidOperationException("Cannot copy Sandbox.");
         scene=EditorSceneManager.OpenScene(Destination,OpenSceneMode.Single);
-        var root=scene.GetRootGameObjects().Single(g=>g.name=="ArtLab V11 Readability");
-        var player=Root(scene,"Player"); var camera=Root(scene,"Main Camera").GetComponent<Camera>();
-        var sun=Root(scene,"Directional Light").GetComponent<Light>();
-        var flight=player.GetComponent<FlightController>(); var boost=player.GetComponent<Afterburner>();
-        var preview=root.GetComponent<ArtLabLandscapeFlight>();
-        if(camera==null||sun==null||flight==null||boost==null||preview==null)throw new InvalidOperationException("Missing V11 flight setup.");
-        // Remove the old green terrain and instanced forest only in the copy.
-        foreach(var child in root.transform.Cast<Transform>().ToArray()) Object.DestroyImmediate(child.gameObject);
-        root.name="ArtLab V13 Scorched Frontier";
+        var player=Root(scene,"Player");var cameraOwner=Root(scene,"Main Camera");var lightOwner=Root(scene,"Directional Light");
+        var camera=cameraOwner.GetComponent<Camera>();var follow=cameraOwner.GetComponent<TopDownCameraFollow>();
+        var sun=lightOwner.GetComponent<Light>();var flight=player.GetComponent<FlightController>();var boost=player.GetComponent<Afterburner>();
+        var visual=player.transform.Find("JetVisual");
+        if(camera==null||follow==null||sun==null||flight==null||boost==null||visual==null||visual.Find("KestrelModel")==null||visual.GetComponent<AfterburnerVfx>()==null)
+            throw new InvalidOperationException("Missing Sandbox flight setup.");
+        foreach(var b in player.GetComponentsInChildren<MonoBehaviour>(true))
+            if(b!=null&&!(b is FlightController)&&!(b is Afterburner)&&!(b is AfterburnerVfx))Object.DestroyImmediate(b);
+        // Remove target HUD before TargetLock (the HUD requires it).
+        foreach(var b in cameraOwner.GetComponents<MonoBehaviour>().OrderBy(b=>b is TargetLock?1:0))
+            if(b!=null&&!(b is TopDownCameraFollow)&&!(b is UniversalAdditionalCameraData))Object.DestroyImmediate(b);
+        foreach(var go in scene.GetRootGameObjects())
+            if(go!=player&&go!=cameraOwner&&go!=lightOwner)Object.DestroyImmediate(go);
+        player.transform.SetPositionAndRotation(new Vector3(0,48,-100),Quaternion.identity);
+        foreach(var r in visual.GetComponentsInChildren<MeshRenderer>(true))
+        {
+            if(!r.enabled||!r.gameObject.activeInHierarchy)continue;
+            r.shadowCastingMode=ShadowCastingMode.On;r.receiveShadows=true;
+            r.sharedMaterials=r.sharedMaterials.Select(m=>m!=null&&aircraftMaterials.TryGetValue(m.name,out var replacement)?replacement:m).ToArray();
+            PrefabUtility.RecordPrefabInstancePropertyModifications(r);
+        }
+        var settings=new SerializedObject(follow);
+        settings.FindProperty("pitch").floatValue=65f;settings.ApplyModifiedPropertiesWithoutUndo();
+        camera.rect=new Rect(0,0,1,1);camera.orthographic=true;camera.orthographicSize=80f;camera.farClipPlane=300f;
+        camera.clearFlags=CameraClearFlags.SolidColor;camera.backgroundColor=new Color32(160,116,79,255);camera.useOcclusionCulling=false;
+        var rotation=Quaternion.Euler(65f,0,0);
+        camera.transform.SetPositionAndRotation(player.transform.position-rotation*Vector3.forward*(88f/Mathf.Sin(65f*Mathf.Deg2Rad)),rotation);
+        sun.transform.rotation=Quaternion.Euler(38f,-38f,0);
+        sun.color=new Color32(255,239,219,255);sun.intensity=1.38f;sun.shadowStrength=.75f;sun.shadows=LightShadows.Soft;
+        sun.shadowBias=.035f;sun.shadowNormalBias=.18f;sun.lightmapBakeType=LightmapBakeType.Realtime;
+        RenderSettings.ambientMode=AmbientMode.Flat;RenderSettings.ambientLight=new Color32(83,100,122,255);
+        RenderSettings.sun=sun;RenderSettings.fog=false;RenderSettings.skybox=null;
+        var root=new GameObject("ArtLab V13 Scorched Frontier");
+        var preview=root.AddComponent<ArtLabLandscapeFlight>();
         preview.Configure(pipeline,player.transform,camera,flight,boost,Half,"ArtLab v13 / Scorched Frontier");
         EditorUtility.SetDirty(preview);
-        // Retain V11 flight, altitude, follow camera, dynamic shadow settings and aircraft visuals.
-        // Less yellow key light allows the blue aircraft and rusty earth to stay distinct.
-        sun.color=new Color32(255,239,219,255);sun.intensity=1.38f;sun.shadowStrength=.75f;
-        sun.shadows=LightShadows.Soft;
-        RenderSettings.ambientMode=AmbientMode.Flat; RenderSettings.ambientLight=new Color32(83,100,122,255);
-        RenderSettings.sun=sun;RenderSettings.fog=false;
-        camera.backgroundColor=new Color32(160,116,79,255);
 
         var field=new HeightField();
         var terrainMaterial=MaterialAsset(shader,"Ground",Color.white);
@@ -79,7 +98,7 @@ public static class ConfigureArtLabScorchedFrontier
         AssetDatabase.SaveAssets();
         if(!EditorSceneManager.SaveScene(scene))throw new InvalidOperationException("Could not save V13.");
         Selection.activeGameObject=player;
-        return $"V13 ready: 1200 x 1200 scorched frontier, 5 sites, {rocks} rocks/stumps. WASD/Space, 1/2/3 camera, R recenter, H legend. V11/V12 and Sandbox unchanged.";
+        return $"V13 ready: 1200 x 1200 scorched frontier, 5 sites, {rocks} rocks/stumps. WASD/Space, 1/2/3 camera, R recenter, H legend. Sandbox unchanged.";
     }
 
     private static float Smooth(float a,float b,float t)=>Mathf.SmoothStep(0,1,Mathf.InverseLerp(a,b,t));

@@ -1,18 +1,22 @@
 # Art pipeline
 
-The checked-in Sandbox is the playable reference scene. Keep art experiments separate from the flight and combat code.
+Sandbox is the gameplay reference. Scorched Frontier is the accepted visual playground; gameplay and environment iteration remain separate until the environments are deliberately integrated.
+
+## Layout
 
 - `Resources/Blender/`: editable Blender sources (not imported by Unity).
-- `Resources/References/`: optional visual references, not shipped with the game.
-- `Tools/Blender/`: reproducible asset generators; run from the repo root with `blender -b --python-exit-code 1 --python ...`.
-- `Tools/Unity/`: editor-only import, prefab and scene assembly tools.
-- `Assets/_Project/Art/`: authored FBX meshes, textures, materials, prefabs, grouped by Aircraft, Buildings, Nature, Terrain, Weapons and VFX. Keep related assets together.
-- `Assets/_Project/Generated/`: map-build outputs, not source models. Keep the existing Battlefield until its replacement is ready.
-- `Assets/_Project/Scenes/`, `Scripts/`, `Shaders/`: scene and gameplay resources.
-- `Assets/ThirdParty/`: temporary dependencies only; see `THIRD_PARTY_ASSETS.md` for attribution.
+- `Resources/References/`: raw visual references, not shipped with the game.
+- `Tools/Blender/`: reproducible authored asset generators; run from the repo root with `blender -b --python-exit-code 1 --python ...`.
+- `Tools/Unity/`: editor-only import, prefab and scene assembly tools. See [ARTLAB.md](Tools/Unity/ARTLAB.md).
+- `Assets/_Project/Art/`: authored FBX meshes, textures, materials and prefabs, grouped by Aircraft, Buildings, Nature, Terrain, Weapons and VFX. Frontier-specific aircraft materials live in `Aircraft/FrontierMaterials/`; do not alter Sandbox materials implicitly.
+- `Assets/_Project/Generated/Battlefield/`: current gameplay landscape; keep until its replacement is tested.
+- `Assets/_Project/Generated/ScorchedFrontier/`: reproducible terrain, textures and V0 environment modules. Do not edit a generated prefab by hand without changing its generator, or move a useful authored asset into a disposable output folder.
+- `Assets/_Project/Scenes/`, `Scripts/`, `Shaders/`: Unity scenes, runtime components and shaders. Use stable names for accepted baselines; version new experimental scenes only when necessary.
+- `Assets/Settings/ScorchedFrontier_URP.asset`: accepted study-local dynamic-shadow settings, temporarily selected in Play Mode. Not the global Sandbox pipeline.
+- `Assets/ThirdParty/`: existing dependencies; see [THIRD_PARTY_ASSETS.md](THIRD_PARTY_ASSETS.md). Do not remove until actual replacements are installed.
 
-## 09a.1 — migration
+## Asset rules
 
-Run `unity command script run --file Tools/Unity/MigrateArtLayout.cs --entry MigrateArtLayout.Configure` once after applying the patch, with Play Mode stopped and all scenes saved. Unity moves assets together with their `.meta` files and checks dependencies before deleting retired assets. Commit generated scene and asset changes after a successful playtest. Do not regenerate Blender files until migration finishes, to avoid duplicating paths.
+Prefer reusable mesh and material references, GPU instancing for dense vegetation, and PNG textures with mipmaps and GPU compression. Avoid per-instance combined mesh exports and uncompressed full-map native texture assets. Inspect generated folder size before pushing. Move Unity assets via AssetDatabase with their `.meta` GUIDs, and check dependencies before deleting retired output. Keep raw models and Blender generators for later reuse.
 
-The old airplane model setup and template-scene builder are retired. `ConfigureSandboxKestrel` can reinstall a model using its installed predecessor as the size reference. The current Kenney battlefield, skybox, inactive procedural landscape and third-party missile remain until their own replacements are installed. The next art atoms will eliminate these remaining dependencies and introduce a separate ArtLab scene at the same camera settings as Sandbox.
+Commit generated assets and matching scene only after playtest. Retired experiments are recoverable from Git; do not copy huge archived files back into Assets or rewrite Git history.
