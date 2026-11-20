@@ -49,3 +49,13 @@ Open `FrontierHeroShowcase.unity` (the generator opens it). Flight controls as a
 ## Archive
 
 All V1–V13 experiments before cleanup are available in Git at `3aae3d12b84e5276a333060fdd1480828aa17f2c`; the heavy V10 is at `3d8ddf6`. Use a separate worktree or checkout to inspect them. Do not reintroduce their outputs into the active project. Authored tree assets and Blender sources are retained for potential reuse.
+
+## V14B — Surface & Composition
+
+From the tested V14A showcase, after saving scenes and stopping Play Mode:
+
+```
+unity command script run --file Tools/Unity/ConfigureFrontierSurfacePass.cs --entry ConfigureFrontierSurfacePass.Configure
+```
+
+Opens `FrontierSurfacePass.unity`, a separate scene with new terrain/yard and road color PNGs, preserved V14A hero models and existing B material comparison. No Blender run and no changes to stable Frontier or Sandbox. Dynamic shadows remain on; the generated color textures contain material wear, not lighting.
