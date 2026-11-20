@@ -49,7 +49,7 @@ After successful visual test, stop Play Mode and keep V11 open; remove the super
 Commit V11 generated assets and V10 deletions after the test. V10 remains recoverable at `3d8ddf6`; removing files from HEAD does not shrink earlier Git history. V11 runs successfully. The user screenshot confirms the jet still blends with forest crowns even after recoloring. Palette adjustment alone is insufficient.
 
 
-## Current atom — V12 Focus Study (pending visual test)
+## V12 Focus Study — tested
 
 - Copy the green V11 scene, retain its terrain, forest transforms, compressed textures, instancing, existing flight/camera controls and real shadows. V12 depends on V11 generated assets; do not delete them. No map regeneration or duplicate terrain/tree geometry.
 - B cycles V11 baseline, softened nature (box-filtered ground texture, quieter tree palette and modest tree-only fill), and aircraft focus (soft nature plus 18% visual scale, thin inverted-hull outline, brighter hull materials, more neutral sun/ambient). All changes are scene-local; baseline is the actual V11 look.
@@ -60,4 +60,18 @@ Generate after Unity has refreshed and finished compiling runtime scripts:
 
 `unity command script run --file Tools/Unity/ConfigureArtLabFocusStudy.cs --entry ConfigureArtLabFocusStudy.Configure`
 
-Compare B modes over the same woods at the same camera angle; evaluate readability before deciding whether to keep the outline, scale or lighting separately.
+V12 flew successfully in the user test. Aircraft is a little easier to track in motion, but the forest still competes for attention. Do not assume that any of the V12 accents were individually accepted. Pause forest iteration and test a substantially different setting.
+
+
+## Current atom — V13 Scorched Frontier (pending visual test)
+
+The user approved a post-apocalyptic/badlands mockup as a direction: cold blue aircraft on warmer ochre terrain, rocky ridges, abandoned roads, industrial ruins and large empty spaces. The generated mockup is an atmosphere/composition reference, not a literal target for camera, HUD, detail density or assets. Avoid noisy all-over rubble, strong orange oversaturation, forest-style clutter, painted shadows and background blur.
+
+- Copy green V11 (not V12) for the same brightened Kestrel, actual flight/boost/VFX, camera presets, 48-unit altitude, size 80 and temporary dynamic-shadow URP pipeline. No combat, changes to Sandbox, outlines or post-processing. V11/V12 remain intact. Slightly more neutral key/ambient tint; 38-degree sun and shadow strength 0.75 retained.
+- New static 1200 x 1200 terrain, elongated ridges, basins, crater depressions, warm clay/dust/rock color field. Flatten road corridors and actual settlement pads. Unique 2048 PNG color map with mipmaps and GPU compression on import; not a large native color .asset.
+- Five composed sites: abandoned refinery, roadside village, industrial yard, transmission station and checkpoint. Main damaged highway and industrial spur, sparse rocks and burnt trees. Reusable Unity-generated prefab kit: ruined factory, house, steel frame, tank, chimney, pylon, barrier, stump, three faceted rock variants. Shared primitive meshes/materials; no per-instance combined meshes or Blender import step this atom. Modular shapes are a V0 silhouette study; no destruction, targeting or physics.
+- Keep previous workflow; generate from repository root after saving scenes and stopping Play Mode:
+
+`unity command script run --file Tools/Unity/ConfigureArtLabScorchedFrontier.cs --entry ConfigureArtLabScorchedFrontier.Configure`
+
+WASD / Space, 1/2/3 camera, R recenter, H legend. Inspect over open clay, over concrete/roof silhouettes, around ridge edges and over the first refinery/village. Judge aircraft readability, ground saturation, visual identity and frame time before adding detail. Check generated folder size; no new massive meshes or raw texture assets. No gameplay changes. Future if direction works: turn the most successful V0 modules into authored Blender assets and test building damage/targets later, not during this study.
