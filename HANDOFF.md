@@ -60,7 +60,7 @@ Start from green `FrontierSurfacePass.unity`. Four localized replacements rather
 
 V16 local generation hit a MissingReferenceException at the second nature-group lookup: the cached hierarchy array included children destroyed while removing rocks in the first group. Hotfix resolves both group owners before deletion and skips invalid child references. Discard the partially generated scene in the editor, reopen V14B, then rerun the Unity generator; Blender output is reusable. V16 generated and flew successfully after the hotfix; user pushed green `92acd080`. Visual test: the large bare low-poly rock meshes looked foreign to the textured world, especially radial summit fans, oversized flat facets and abrupt footprints. Small V14A rocks read better. Keep V16 as a technical reference, not an accepted environmental look.
 
-## Current atom — V17 Integrated Rock Strata (pending visual test)
+## V17 Integrated Rock Strata — generated / green
 
 Start from green `92acd080` / `FrontierEscarpments.unity`, preserving its ground, roads, yards, refinery and flight settings. Replace the four isolated FBX landforms with continuous terrain relief. Do not redo the entire map or increase clutter.
 
@@ -73,9 +73,35 @@ Start from green `92acd080` / `FrontierEscarpments.unity`, preserving its ground
 
 `unity command script run --file Tools/Unity/ConfigureFrontierStrata.cs --entry ConfigureFrontierStrata.Configure`
 
-Run a flight at size 80, compare V16 with V17, inspect cliff/talus silhouettes, texture continuity at patch boundaries, shadow readability and aircraft clearance. V17 has not yet been tested in Blender or Unity. Do not promote until visual test. Prior scenes and Sandbox untouched.
+Run a flight at size 80, compare V16 with V17, inspect cliff/talus silhouettes, texture continuity at patch boundaries, shadow readability and aircraft clearance. Prior scenes and Sandbox untouched. See the user test result below.
 
-V17 local CLI failed on `JsonUtility` manifest validation before modifying the scene. The exported Python JSON contract is valid in offline tests; the exact native deserialization failure is not confirmed. Hotfix reads the same ordered JSON schema with managed .NET parsing and invariant-culture numbers, with explicit field/sample diagnostics and all previous validation intact. Existing Blender output is reusable; no regeneration required. Await successful Unity run.
+V17 local CLI failed on `JsonUtility` manifest validation before modifying the scene. The exported Python JSON contract is valid in offline tests; the exact native deserialization failure is not confirmed. Hotfix reads the same ordered JSON schema with managed .NET parsing and invariant-culture numbers, with explicit field/sample diagnostics and all previous validation intact. Existing Blender output is reusable; no regeneration required. User completed the Unity run successfully after this fix.
+
+## V17 result — tested / green
+
+User generated V17 after the manifest hotfix and accepted the integrated strata as a working direction. Screenshot shows a better terrain connection than V16, but some smooth surfaces and dark cliff grooves remain. Green `789a48af`; further strata polish is deferred until the material diagnostic below. B on the old showcase only affects V14A kit renderers, not V17 terrain. The user reports no visible difference between modes. Static inspection confirmed serialized renderer/material arrays, AO/normal texture assignments, importer types and runtime keywords; not proof of a correct GPU result. Earlier V14A AO was baked on the low mesh and the high-poly normal source differed mainly by small bevels, so lack of a visible effect is plausible.
+
+## Current atom — V18 Bake Truth Test (pending local execution)
+
+Separate diagnostic scene, not a terrain iteration. Two identical flat 30 × 18 industrial panels with the same neutral base color. Left always base-only; right selects explicit URP Lit material variants. Identical geometry and fixed camera make side-by-side comparison reproducible. Blender high source contains broad physical recessed bays, raised ribs, bolts and vent channels that exist only on the high mesh. Selected-to-active tangent normal and projected local AO bake from this source. No baked sun, lightmaps or environment shadow bake. The editable `.blend`, a low FBX, six diagnostic PNGs and completion/report text are in dedicated paths; no existing kit is modified. Diagnostic textures use uncompressed import intentionally, not a production recommendation.
+
+Run from root:
+
+```sh
+blender -b --python-exit-code 1 --python Tools/Blender/generate_bake_truth_test.py -- --device OPTIX
+```
+
+After Unity refresh/compile, with Play Mode stopped and scenes saved:
+
+```sh
+unity command script run --file Tools/Unity/ConfigureFrontierBakeTruth.cs --entry ConfigureFrontierBakeTruth.Configure
+```
+
+Opens `FrontierBakeTruth.unity`. In Play Mode: 1 base (both should match), 2 AO, 3 normal, 4 full (default), 5 stronger AO via contrast map, 6 normal ×4, 7 both stronger; 8 raw AO, 9 raw normal RGB; 0 synthetic positive-control maps, T cycles combined/AO-only/normal-only; C toggles close/gameplay size 80; L cycles mixed/ambient-only/sun-only; H hides labels. Light is dynamic. The installed Frontier URP pipeline is overridden only during Play Mode and restored on disable. No shared material mutations or changes to maps, gameplay, build scenes or prior studies.
+
+Check Blender printed percentile data, raw map visibility, positive controls (AO under ambient-only and normal under sun-only), then actual baked maps at close and gameplay distance. If controls work but real maps do not, investigate bake output/projection; if controls do not work, investigate Unity shader/import/lighting before judging bake value. If all work close but not at size 80, stop spending production effort on invisible detail. This diagnostic has not been run on Blender or Unity locally; only offline geometry, PNG controls and Git patch validation are possible here.
+
+V18 local Unity CLI reported a missing completed bake. The original marker check required a literal LF after the header; Python text-mode output on Windows can write CRLF. Hotfix reads the header as a line (LF or CRLF), separates missing-marker and invalid-marker diagnostics, and makes future Python marker writes use explicit LF bytes. Existing complete bake outputs should be reusable; the actual local marker contents are not yet confirmed. Do not bypass the completion check or rebake unnecessarily.
 
 ## Lessons from the visual search
 
