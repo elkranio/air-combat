@@ -2,7 +2,7 @@
 
 `Sandbox.unity` is the gameplay reference and sole build scene. Current visual baseline: `Assets/_Project/Scenes/FrontierStrata.unity` (V17), with integrated rocky relief, V14A kit, V14B roads and dynamic shadows. `ScorchedFrontier.unity` (V13) remains the accepted fallback. `FrontierBakeTruth.unity` (V18) is the separate working bake diagnostic.
 
-## V18 cleanup (one time)
+## V18 cleanup (completed; historical one-time procedure)
 
 Stop Play Mode, save scenes, let Unity refresh. Run read-only preview:
 
@@ -32,6 +32,22 @@ unity command script run --file Tools/Unity/ConfigureFrontierBakeTruth.cs --entr
 ```
 
 Stop Play Mode and save scenes before the Unity command. Left is base-only; right changes with 1 base, 2 AO, 3 normal, 4 full, 5 stronger AO, 6 normal x4, 7 both stronger, 8 raw AO, 9 raw normal, 0 control, T cycle controls. C toggles close/gameplay size 80; L cycles lighting; H hides labels. Tested: ordinary normal strength 1 produces clearly visible relief even at gameplay distance; AO is subtle. Keep separate maps, dynamic shadows, author large high-only surface details. No need to rerun the diagnostic or rebake the older hero kit just to begin V19.
+
+## V19 — Practical Bake Test
+
+From cleanup green `b21a5666`, generate the new roof and BrokenMesa detail maps (existing V17 height manifest and V18 bake helper required):
+
+```sh
+blender -b --python-exit-code 1 --python Tools/Blender/generate_frontier_practical_bake.py -- --device OPTIX
+```
+
+Optional `--device CUDA` / `--device CPU`, `--size 1024`, `--samples 48`. Wait for Unity refresh/compile, stop Play Mode and save open scenes:
+
+```sh
+unity command script run --file Tools/Unity/ConfigureFrontierPracticalBake.cs --entry ConfigureFrontierPracticalBake.Configure
+```
+
+Opens `FrontierPracticalBake.unity`, a copy of V17. One new process hall on the refinery main block footprint; BrokenMesa north of the refinery keeps its V17 geometry and albedo with a local baked detail normal/AO layer. B toggles base / AO / normal / both on exactly those two surfaces; H hides labels. Existing flight and dynamic lighting unchanged. Compare both at gameplay size 80; no changes to retained scenes or old kit. V19 is pending local bake and visual test.
 
 ## V13 — fallback generator
 

@@ -21,12 +21,12 @@ Current session: user wants relaxed visual experiments for enjoyment after proje
 - Terrain: elongated ridges, basins, craters, road corridors and settlement pads. 2048 PNG color map, mipmaps and GPU compression. Five sites: refinery, village, industrial yard, transmission station, checkpoint; main highway and spur. V0 reusable prefab modules: ruined factory, house, steel frame, tank, chimney, pylon, barrier, stump, three rocks. Shared meshes/materials. No destruction/collisions/target logic.
 - Read [ART_PIPELINE.md](ART_PIPELINE.md) and [Tools/Unity/ARTLAB.md](Tools/Unity/ARTLAB.md) for exact layout and generator commands.
 
-## Current cleanup atom — after V18 (pending local preview / apply)
+## Cleanup after V18 — tested / green
 
 Green base `a4ad17979ed9ebc222600625b2517919c10a3bbd` contains all tested V14–V18 studies. Preserve it as the recovery point. Keep Sandbox (sole build scene), ScorchedFrontier (V13 fallback), FrontierStrata (V17 active map) and FrontierBakeTruth (V18 bake reference). Do not regenerate any of them during cleanup.
 
 - `Tools/Unity/CleanupFrontierStudies.cs` offers `Preview` and `Configure`; see [ARTLAB.md](Tools/Unity/ARTLAB.md). It moves the eight V14B road assets and two V16 ground assets into `Generated/FrontierStrata/` with preserved GUIDs. After checking dependencies of every retained imported asset, it deletes the three intermediate scenes, obsolete V14B ground texture/material, V16 terrain/rock mesh kit/material, obsolete V16 Blender source/backup and retired scene generators. It refuses any unexpected files in retired folders, build scene conflicts or retained dependencies. No broad orphan sweep, no Git history rewrite, no gameplay or art change. Existing hero assets, reusable Blender sources, V17 height manifest and both bake diagnostic generators stay. V17's full historical Unity generator chain is recoverable at the green base, not a live rebuild path after cleanup.
-- Preview then apply in local Unity with Play Mode stopped and all scenes saved. Confirm V17 and V18 render unchanged, then Sandbox smoke check and push green. Offline patch validation only; actual dependency preflight and application must be run locally. Do not force-delete on a failed preflight.
+- User applied the cleanup and pushed green `b21a56669b42454dd51f1a01c0ffad5941eb5f5d`. The retained V17 and V18 scene blobs are unchanged from pre-cleanup. Do not rerun cleanup casually; never force-delete on a failed dependency preflight.
 
 ## Accepted visual progression (historical)
 
@@ -38,9 +38,16 @@ Separate `FrontierBakeTruth.unity`: two identical flat 30 x 18 industrial panels
 
 Keep normal maps for purposeful surface detail, optional AO, broad shapes designed for gameplay camera. Real silhouette/large volumes and shadows must remain geometry. Never bake directional sunlight into albedo. V18 diagnostic uses uncompressed maps deliberately; production should use mipmaps and compression. Rebuild commands and controls in [ARTLAB.md](Tools/Unity/ARTLAB.md). No changes to V18 needed for now.
 
-## Next atom — V19 Practical Bake Test (not started)
+## Current atom — V19 Practical Bake Test (pending local generation / visual test)
 
-After cleanup green, copy the tested V17 map to a separate experiment. Design one industrial building and one rock formation with meaningful high-only relief (roof/industrial recesses, vents, panels; erosion, fractures, geological structure). Use existing dynamic lighting and actual flight camera. Compare base vs normal vs optional AO under gameplay conditions, not close-up alone. Preserve readability, no gameplay changes or map-wide rebuild. No V19 files yet.
+Base: cleanup green `b21a5666`. Copy `FrontierStrata.unity` to `FrontierPracticalBake.unity`. No changes to V17, V18, Sandbox, V13, existing kit assets, ground/roads, gameplay or lighting. Test two assets at the real flight camera, orthographic size 80.
+
+- Replace only the original 34 x 24 refinery main block at (65,30) with a simple industrial process building on the existing foundation footprint. The 30 x 20 roof has a two-triangle mesh with purposeful high-only recessed bays, vent channels, raised fasteners and a damaged seam. Select-to-active Cycles normals and local AO use the proven V18 bake routine; roof albedo is separate material color/weathering with no directional lighting.
+- For the north BrokenMesa (-125..20 X, 145..225 Z), **keep the integrated V17 terrain geometry and albedo**. Generate local height-guided bedding shelves and fractures on a separate planar high source; bake their tangent-space detail normals and optional AO, using the existing material's world-to-local UV transform. Fade detail to zero at the apron and all patch edges. This is an approximate detail-normal layer over the existing slope normals, not a rebake of the full terrain or a geometry displacement. No additional detached rock mesh. Other three strata materials are unchanged.
+- `Tools/Blender/generate_frontier_practical_bake.py` uses reusable V18 `bake`, `setup_device` and PNG helpers. Two normal/AO sets and roof color at 2048 with 48 Cycles samples default, one roof FBX, editable `Resources/Blender/FrontierPracticalBake.blend`. CRLF-safe ready marker includes per-bake strength reports; refuse weak normal signals. Production texture imports use mips and compressed HQ, not V18's diagnostic uncompressed settings.
+- `Tools/Unity/ConfigureFrontierPracticalBake.cs`: validate marker/maps, roof geometry/UVs, original building bounds and single BrokenMesa terrain slot/UV transform. Clone scene and material variants; never modify the shared terrain mesh or existing materials. New V19-only `FrontierPracticalBakePreview` switches B modes on the roof and BrokenMesa slot only; remove old hero preview in the copy, not from V17. B: base / AO / normal / both (default). Fly north from refinery to BrokenMesa. H hides legends. Real shadows always on.
+
+Commands in [ARTLAB.md](Tools/Unity/ARTLAB.md). Check B from identical positions above roof and mesa; evaluate ordinary strength 1 at size 80, not only close-up. Judge silhouette, material readability, terrain integration and whether texture compression preserves normal detail. The original roof silhouette is intentionally replaced by a simpler closed hall; new art needs visual acceptance. AO optional if marginal. Offline Python syntax, geometry/range, boundary fade and base-color checks passed; Cycles/Unity execution not available here. No V19 local results yet.
 
 ## Lessons from the visual search
 
