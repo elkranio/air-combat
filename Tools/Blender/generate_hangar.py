@@ -14,7 +14,7 @@ from mathutils import Euler
 ROOT = Path(__file__).resolve().parents[2]
 NAME = 'Hangar-04'
 SOURCE = ROOT / 'Resources' / 'Blender' / f'{NAME}.blend'
-OUT = ROOT / 'Assets' / '_Project' / 'Models' / 'Buildings' / NAME
+OUT = ROOT / 'Assets' / '_Project' / 'Art' / 'Buildings' / NAME
 SIZE = 1024
 BAKE_MARGIN = 6
 AO_DISTANCE = 1.8  # local contact shading, not sunlight

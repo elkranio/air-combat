@@ -11,9 +11,9 @@ using UnityEngine.SceneManagement;
 public static class ConfigureSandboxKestrel
 {
     private const string ScenePath = "Assets/_Project/Scenes/Sandbox.unity";
-    private const string ModelPath = "Assets/_Project/Models/Aircraft/XF-01-Kestrel.fbx";
+    private const string ModelPath = "Assets/_Project/Art/Aircraft/XF-01-Kestrel.fbx";
     private const string InstanceName = "KestrelModel";
-    private const string MaterialFolder = "Assets/_Project/Models/Aircraft/EnemyMaterials";
+    private const string MaterialFolder = "Assets/_Project/Art/Aircraft/EnemyMaterials";
 
     public static string Configure()
     {
@@ -71,8 +71,11 @@ public static class ConfigureSandboxKestrel
         var previous = visual.Find(InstanceName);
         var legacy = visual.GetComponentsInChildren<MeshRenderer>(true)
             .Where(r => previous == null || !r.transform.IsChildOf(previous)).ToArray();
-        if (legacy.Length == 0) throw new InvalidOperationException("Missing original meshes on " + visual.name);
-        var old = BoundsIn(legacy, aircraft);
+        // After the art migration, size new revisions against the installed Kestrel.
+        var reference = legacy.Length > 0 ? legacy : previous != null
+            ? previous.GetComponentsInChildren<MeshRenderer>(true) : Array.Empty<MeshRenderer>();
+        if (reference.Length == 0) throw new InvalidOperationException("Missing aircraft reference meshes on " + visual.name);
+        var old = BoundsIn(reference, aircraft);
         float size = Mathf.Max(old.size.x, old.size.z);
         if (size <= 0.01f) throw new InvalidOperationException("Invalid original aircraft bounds.");
 
@@ -164,7 +167,7 @@ public static class ConfigureSandboxKestrel
             default: return source; // retain the glass, exhaust, and dark interior
         }
         if (!AssetDatabase.IsValidFolder(MaterialFolder))
-            AssetDatabase.CreateFolder("Assets/_Project/Models/Aircraft", "EnemyMaterials");
+            AssetDatabase.CreateFolder("Assets/_Project/Art/Aircraft", "EnemyMaterials");
         string path = MaterialFolder + "/Enemy_" + source.name + ".mat";
         var material = AssetDatabase.LoadAssetAtPath<Material>(path);
         if (material == null)

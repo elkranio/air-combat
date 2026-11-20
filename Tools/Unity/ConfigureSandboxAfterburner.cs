@@ -10,7 +10,7 @@ using UnityEngine.UI;
 public static class ConfigureSandboxAfterburner
 {
     private const string ScenePath = "Assets/_Project/Scenes/Sandbox.unity";
-    private const string EffectPath = "Assets/_Project/Materials/MissileEffect.mat";
+    private const string EffectPath = "Assets/_Project/Art/VFX/MissileEffect.mat";
 
     public static string Configure()
     {

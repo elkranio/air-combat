@@ -8,7 +8,7 @@ using UnityEngine.SceneManagement;
 // Builds two reusable comparison prefabs; never changes Sandbox or its camera.
 public static class ConfigureHangarPreview
 {
-    private const string Folder = "Assets/_Project/Models/Buildings/Hangar-04";
+    private const string Folder = "Assets/_Project/Art/Buildings/Hangar-04";
     private const string Name = "Hangar-04";
 
     public static string Configure()

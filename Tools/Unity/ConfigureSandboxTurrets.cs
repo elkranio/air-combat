@@ -11,7 +11,7 @@ using UnityEngine.SceneManagement;
 public static class ConfigureSandboxTurrets
 {
     private const string ScenePath = "Assets/_Project/Scenes/Sandbox.unity";
-    private const string Folder = "Assets/_Project/Models/Buildings/MT-01-Sentinel";
+    private const string Folder = "Assets/_Project/Art/Buildings/MT-01-Sentinel";
     private const string ModelPath = Folder + "/MT-01-Sentinel.fbx";
     private const string PrefabPath = Folder + "/MT-01-Sentinel.prefab";
 

@@ -9,7 +9,7 @@ from mathutils import Euler
 ROOT = Path(__file__).resolve().parents[2]
 NAME = "XF-01-Kestrel"
 SOURCE = ROOT / "Resources" / "Blender" / f"{NAME}.blend"
-EXPORT = ROOT / "Assets" / "_Project" / "Models" / "Aircraft" / f"{NAME}.fbx"
+EXPORT = ROOT / "Assets" / "_Project" / "Art" / "Aircraft" / f"{NAME}.fbx"
 
 # Blender coordinates: X = span, +Y = nose, Z = up. Units are game units.
 # v3: final canopy, wing tone and nozzle polish for the game camera.

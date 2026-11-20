@@ -11,7 +11,7 @@ public static class ConfigureSandboxKenneyLandscape
     private const string ScenePath = "Assets/_Project/Scenes/Sandbox.unity";
     private const string Nature = "Assets/ThirdParty/Kenney/NatureKit/";
     private const string SkyPath = "Assets/ThirdParty/Kenney/Skyboxes/skybox-day.png";
-    private const string MaterialPath = "Assets/_Project/Materials/SkyboxDay.mat";
+    private const string MaterialPath = "Assets/_Project/Art/Terrain/SkyboxDay.mat";
 
     public static string Configure()
     {

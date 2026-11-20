@@ -1,6 +1,8 @@
 # Third-party assets
 
-## Jet
+Retired entries remain here for historical attribution. Active assets are removed only after their replacements are installed.
+
+## Jet (retired in 09a.1)
 - Author: jeremy
 - Source: https://poly.pizza/m/6fyLMORhgGK
 - License: Creative Commons Attribution (CC-BY)
@@ -14,7 +16,7 @@
 - Path: Assets/ThirdParty/PolyPizza/Missile/
 - Modifications: None
 
-## Low Poly Fighter
+## Low Poly Fighter (retired in 09a.1)
 - Author: Stephen Graybill
 - Source: https://poly.pizza/m/1fi8ZIDdFCP
 - License: Creative Commons Attribution (CC-BY)

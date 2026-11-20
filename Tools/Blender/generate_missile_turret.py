@@ -10,7 +10,7 @@ from mathutils import Euler
 ROOT = Path(__file__).resolve().parents[2]
 NAME = 'MT-01-Sentinel'
 SOURCE = ROOT / 'Resources' / 'Blender' / (NAME + '.blend')
-EXPORT = ROOT / 'Assets' / '_Project' / 'Models' / 'Buildings' / NAME / (NAME + '.fbx')
+EXPORT = ROOT / 'Assets' / '_Project' / 'Art' / 'Buildings' / NAME / (NAME + '.fbx')
 PIVOT_Z = 2.9
 
 bpy.ops.wm.read_factory_settings(use_empty=True)

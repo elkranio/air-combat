@@ -11,8 +11,9 @@ public static class ConfigureSandboxMissiles
 {
     private const string ScenePath = "Assets/_Project/Scenes/Sandbox.unity";
     private const string ModelPath = "Assets/ThirdParty/PolyPizza/Missile/Missile.obj";
-    private const string PrefabPath = "Assets/_Project/Prefabs/Weapons/Missile.prefab";
-    private const string MaterialFolder = "Assets/_Project/Materials";
+    private const string PrefabPath = "Assets/_Project/Art/Weapons/Missile.prefab";
+    private const string MaterialFolder = "Assets/_Project/Art/Weapons";
+    private const string EffectFolder = "Assets/_Project/Art/VFX";
 
     public static string Configure()
     {
@@ -39,9 +40,10 @@ public static class ConfigureSandboxMissiles
         if (camera == null || !camera.orthographic || enemy.GetComponent<EnemyFlightController>() == null)
             throw new InvalidOperationException("Configure the sandbox enemy and orthographic camera first.");
 
-        EnsureFolder("Assets/_Project/Prefabs/Weapons");
+        EnsureFolder("Assets/_Project/Art/Weapons");
         EnsureFolder(MaterialFolder);
-        var effect = GetMaterial(MaterialFolder + "/MissileEffect.mat", effectShader);
+        EnsureFolder(EffectFolder);
+        var effect = GetMaterial(EffectFolder + "/MissileEffect.mat", effectShader);
         var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(PrefabPath);
         if (prefab == null)
         {
