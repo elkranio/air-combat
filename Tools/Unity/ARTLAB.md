@@ -28,6 +28,24 @@ Run from root with Play Mode stopped and saved scenes. This rebuilds the stable 
 
 Play: WASD, Space boost, 1/2/3 camera pitch, R recenter, H legend. No combat, target objects or destruction mechanics yet.
 
+## V14A — Hero refinery and rock kit (pending visual acceptance)
+
+From the repository root, generate the full kit with Blender (Cycles OptiX GPU):
+
+```sh
+blender -b --python-exit-code 1 --python Tools/Blender/generate_frontier_hero_kit.py -- --device OPTIX
+```
+
+The script prints detected GPU names, generates 20 modules with base color, local AO and high-to-low normal maps, and saves an editable Blender file. Defaults: 1024 textures, four hero units at 2048, 48 samples. For a fast geometry check append `--quick` (512 base only); use `--device CUDA` or `--device CPU` if OptiX is unavailable. A successful run writes `HeroKitManifest.json`. No lights or directional shadows are baked. The bake process has not yet been tested on the local Blender/GPU installation.
+
+Refresh Unity and let runtime scripts compile. Stop Play Mode and save scenes before generating:
+
+```sh
+unity command script run --file Tools/Unity/ConfigureFrontierHeroKit.cs --entry ConfigureFrontierHeroKit.Configure
+```
+
+Open `FrontierHeroShowcase.unity` (the generator opens it). Flight controls as above; B cycles base color only, local AO only, high-poly normal only, and both. H hides both legends. Start near the new refinery; rock formations are immediately north. Real dynamic shadows in every mode. The original Scorched Frontier and Sandbox are unchanged. Compare screenshot/flight results before V14B integration. The Blender FBX/PNG assets and `.blend` source, material/prefab imports and scene are generated locally; commit only complete successful output. Keep the kit modest; inspect file sizes.
+
 ## Archive
 
 All V1–V13 experiments before cleanup are available in Git at `3aae3d12b84e5276a333060fdd1480828aa17f2c`; the heavy V10 is at `3d8ddf6`. Use a separate worktree or checkout to inspect them. Do not reintroduce their outputs into the active project. Authored tree assets and Blender sources are retained for potential reuse.

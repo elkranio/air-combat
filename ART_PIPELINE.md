@@ -9,6 +9,7 @@ Sandbox is the gameplay reference. Scorched Frontier is the accepted visual play
 - `Tools/Blender/`: reproducible authored asset generators; run from the repo root with `blender -b --python-exit-code 1 --python ...`.
 - `Tools/Unity/`: editor-only import, prefab and scene assembly tools. See [ARTLAB.md](Tools/Unity/ARTLAB.md).
 - `Assets/_Project/Art/`: authored FBX meshes, textures, materials and prefabs, grouped by Aircraft, Buildings, Nature, Terrain, Weapons and VFX. Frontier-specific aircraft materials live in `Aircraft/FrontierMaterials/`; do not alter Sandbox materials implicitly.
+- `Assets/_Project/Art/Environment/FrontierHeroKit/`: V14A reproducible authored FBX modules, base color/local AO/normal PNGs, materials and prefabs. Editable source: `Resources/Blender/FrontierHeroKit.blend`. Keep AO and normal maps separate; world shadows remain dynamic. The showcase scene is isolated from the accepted Frontier baseline.
 - `Assets/_Project/Generated/Battlefield/`: current gameplay landscape; keep until its replacement is tested.
 - `Assets/_Project/Generated/ScorchedFrontier/`: reproducible terrain, textures and V0 environment modules. Do not edit a generated prefab by hand without changing its generator, or move a useful authored asset into a disposable output folder.
 - `Assets/_Project/Scenes/`, `Scripts/`, `Shaders/`: Unity scenes, runtime components and shaders. Use stable names for accepted baselines; version new experimental scenes only when necessary.
