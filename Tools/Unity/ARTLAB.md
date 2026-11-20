@@ -47,7 +47,16 @@ Optional `--device CUDA` / `--device CPU`, `--size 1024`, `--samples 48`. Wait f
 unity command script run --file Tools/Unity/ConfigureFrontierPracticalBake.cs --entry ConfigureFrontierPracticalBake.Configure
 ```
 
-Opens `FrontierPracticalBake.unity`, a copy of V17. One new process hall on the refinery main block footprint; BrokenMesa north of the refinery keeps its V17 geometry and albedo with a local baked detail normal/AO layer. B toggles base / AO / normal / both on exactly those two surfaces; H hides labels. Existing flight and dynamic lighting unchanged. Compare both at gameplay size 80; no changes to retained scenes or old kit. V19 is pending local bake and visual test.
+Opens `FrontierPracticalBake.unity`, a copy of V17. One new process hall on the refinery main block footprint; BrokenMesa north of the refinery keeps its V17 geometry and albedo with a local baked detail normal/AO layer. B toggles base / AO / normal / both on exactly those two surfaces; H hides labels. Existing flight and dynamic lighting unchanged. Compare both at gameplay size 80; no changes to retained scenes or old kit. V19 generated and tested green `a463dc8d`; the normal effect is obvious, but the vein-like rock fissures were artistically disputed.
+
+## V20 — Mesa Polish
+
+```sh
+blender -b --python-exit-code 1 --python Tools/Blender/generate_frontier_mesa_polish.py -- --device OPTIX
+unity command script run --file Tools/Unity/ConfigureFrontierMesaPolish.cs --entry ConfigureFrontierMesaPolish.Configure
+```
+
+After Blender finishes, stop Play Mode, save scenes, allow refresh/compilation before running Unity. Opens `FrontierMesaPolish.unity`, a copy of V19. B: base / V19 1.0 / V19 .4 / V20 .45 (default) / V20 .8. Only BrokenMesa normals change; AO is disabled in all five comparison variants; roof stays in V19 full mode. R returns to the nearby start; H hides legends. New 1024 normal map (optional `--size 2048`), no terrain geometry or albedo changes. V20 pending local test.
 
 ## V13 — fallback generator
 

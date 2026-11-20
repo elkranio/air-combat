@@ -38,7 +38,7 @@ Separate `FrontierBakeTruth.unity`: two identical flat 30 x 18 industrial panels
 
 Keep normal maps for purposeful surface detail, optional AO, broad shapes designed for gameplay camera. Real silhouette/large volumes and shadows must remain geometry. Never bake directional sunlight into albedo. V18 diagnostic uses uncompressed maps deliberately; production should use mipmaps and compression. Rebuild commands and controls in [ARTLAB.md](Tools/Unity/ARTLAB.md). No changes to V18 needed for now.
 
-## Current atom — V19 Practical Bake Test (pending local generation / visual test)
+## V19 Practical Bake Test — tested / green
 
 Base: cleanup green `b21a5666`. Copy `FrontierStrata.unity` to `FrontierPracticalBake.unity`. No changes to V17, V18, Sandbox, V13, existing kit assets, ground/roads, gameplay or lighting. Test two assets at the real flight camera, orthographic size 80.
 
@@ -47,7 +47,13 @@ Base: cleanup green `b21a5666`. Copy `FrontierStrata.unity` to `FrontierPractica
 - `Tools/Blender/generate_frontier_practical_bake.py` uses reusable V18 `bake`, `setup_device` and PNG helpers. Two normal/AO sets and roof color at 2048 with 48 Cycles samples default, one roof FBX, editable `Resources/Blender/FrontierPracticalBake.blend`. CRLF-safe ready marker includes per-bake strength reports; refuse weak normal signals. Production texture imports use mips and compressed HQ, not V18's diagnostic uncompressed settings.
 - `Tools/Unity/ConfigureFrontierPracticalBake.cs`: validate marker/maps, roof geometry/UVs, original building bounds and single BrokenMesa terrain slot/UV transform. Clone scene and material variants; never modify the shared terrain mesh or existing materials. New V19-only `FrontierPracticalBakePreview` switches B modes on the roof and BrokenMesa slot only; remove old hero preview in the copy, not from V17. B: base / AO / normal / both (default). Fly north from refinery to BrokenMesa. H hides legends. Real shadows always on.
 
-Commands in [ARTLAB.md](Tools/Unity/ARTLAB.md). Check B from identical positions above roof and mesa; evaluate ordinary strength 1 at size 80, not only close-up. Judge silhouette, material readability, terrain integration and whether texture compression preserves normal detail. The original roof silhouette is intentionally replaced by a simpler closed hall; new art needs visual acceptance. AO optional if marginal. Offline Python syntax, geometry/range, boundary fade and base-color checks passed; Cycles/Unity execution not available here. No V19 local results yet.
+Commands in [ARTLAB.md](Tools/Unity/ARTLAB.md). Check B from identical positions above roof and mesa; evaluate ordinary strength 1 at size 80, not only close-up. Judge silhouette, material readability, terrain integration and whether texture compression preserves normal detail. The original roof silhouette is intentionally replaced by a simpler closed hall; new art needs visual acceptance. AO optional if marginal. Offline Python syntax, geometry/range, boundary fade and base-color checks passed; Cycles/Unity execution not available here. User generated and flew V19 successfully, green `a463dc8d`. Mesa normals clearly read at gameplay distance, but the broad meandering fissures look vein-like and the smaller relief looks crumpled; more detail is not automatically better. AO-only screenshot remains smoother. Roof visual verdict is not recorded; keep it unchanged for the next test.
+
+## Current atom — V20 Mesa Polish (pending local test)
+
+Copy green `FrontierPracticalBake.unity` to `FrontierMesaPolish.unity`. Test the art direction on only BrokenMesa: replace V19's long sinuous fractures and busy fine ridges with eight short, tapered, aligned asymmetric bedding shelves and four broad chipped patches. Fade into the unchanged V17 talus. Keep existing geometry, albedo, road assets, all other rock meshes, roof, real lighting and gameplay. No AO on any comparison mode; no AO rebake. Normal-only bake via the tested V18 projection helper; 1024 default, mipmaps and compressed HQ, optional 2048. New editable Blender source, single normal PNG, marker, three new local material variants. No prior asset edits.
+
+B compares base, V19 normal 1.0, V19 normal .4, V20 normal .45 (default), V20 normal .8. Distinguish whether less strength alone is enough or the new relief pattern improves the shape. Start/recenter next to BrokenMesa, camera size/pitch and altitude unchanged. H hides labels. See [ARTLAB.md](Tools/Unity/ARTLAB.md). Assess in flight, not just screenshot: prefer readable geology over detail, keep aircraft primary. Do not propagate to all four formations until this result is accepted. Blender/Unity execution pending.
 
 ## Lessons from the visual search
 
