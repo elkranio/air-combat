@@ -83,7 +83,7 @@ namespace AirCombat
             {
                 default:
                 case LightingTime.Day:
-                    elevation = 38f;
+                    elevation = 60f;
                     sun.intensity = 1.38f;
                     sun.color = new Color(1f, .937f, .859f);
                     ambient = new Color(.55f, .52f, .47f);
