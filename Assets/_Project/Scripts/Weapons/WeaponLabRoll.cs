@@ -3,17 +3,19 @@ using UnityEngine.InputSystem;
 
 namespace AirCombat
 {
-    // Weapon Lab only: a genuine lateral displacement, not invulnerability frames.
+    // Weapon Lab only: a genuine lateral dodge with a sharp bank, not invulnerability frames.
     // Both pilots spend the entire shared Afterburner tank, with no extra cooldown.
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(12)] // after both aircraft motors, before homing missiles
     public sealed class WeaponLabRoll : MonoBehaviour
     {
-        [SerializeField, Min(.05f)] private float duration = .32f;
-        [SerializeField, Min(.1f)] private float sidewaysDistance = 18f;
+        [SerializeField, Min(.05f)] private float duration = .42f;
+        [SerializeField, Min(.1f)] private float sidewaysDistance = 27f;
+        [SerializeField, Range(0f, 85f)] private float dodgeBankAngle = 65f;
 
         private Afterburner boost;
         private Transform visual;
+        private Quaternion visualRestRotation;
         private WeaponLabEnemy owner;
         private bool playerControlled;
         private bool rolling;
@@ -29,6 +31,7 @@ namespace AirCombat
         {
             boost = tank;
             visual = aircraftVisual;
+            visualRestRotation = visual != null ? visual.localRotation : Quaternion.identity;
             playerControlled = playerInput;
             owner = enemy;
             CancelRoll();
@@ -75,13 +78,19 @@ namespace AirCombat
 
         private void LateUpdate()
         {
-            // AircraftMotor rewrites the baseline visual bank each Update.
-            // Add the roll here so the existing steering and banking remain intact.
+            // AircraftMotor writes the regular steering bank every Update.
+            // Blend it toward a steep, non-inverting bank and back, without spinning the model.
             if (rolling && visual != null)
             {
                 float t = Mathf.Clamp01(elapsed / Mathf.Max(.05f, duration));
-                visual.localRotation = visual.localRotation *
-                    Quaternion.AngleAxis(direction * 360f * t, Vector3.forward);
+                const float snapFraction = .28f;
+                float weight = t < snapFraction
+                    ? Mathf.SmoothStep(0f, 1f, t / snapFraction)
+                    : Mathf.SmoothStep(1f, 0f, (t - snapFraction) / (1f - snapFraction));
+                // Ordinary steering uses negative bank for right turns; match that convention.
+                var dodgeBank = Quaternion.AngleAxis(-direction * dodgeBankAngle, Vector3.forward)
+                    * visualRestRotation;
+                visual.localRotation = Quaternion.Slerp(visual.localRotation, dodgeBank, weight);
             }
             if (rolling && elapsed >= duration) CancelRoll();
         }
