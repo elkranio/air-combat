@@ -107,3 +107,14 @@ Test whether an approaching enemy sometimes remains easy, sometimes breaks away 
 Test result: V5 remains too easy to shoot down. This is an intentionally tiny V6 code-only change: when the enemy elects to break out of the sector, it **always requests afterburner** during the original first 70% of the break instead of rolling the former 40% chance. Existing fuel limits, charge/recharge, turning/banking, 72% evasion decision, reaction/cooldown, five HP and player free aim ±12° are unchanged. `B` still compares reactive AI ON/OFF. The HUD's `BOOST` means a boost *request*, not guaranteed thrust when the fuel tank is empty.
 
 **No scene generator, audio installer or asset rebuild.** Apply patch, let scripts compile, Play the existing `WeaponLab.unity`. Do not run the V0/V4/V5 upgraders for this code-only test. If even the boosted enemy is easy to kill, the next separate variable to test is turn rate/escape direction; do not mix that into this A/B.
+
+## v7 — player autocannon continuous/burst A/B
+
+V6 playtest: the unarmed enemy stays easy to shoot down despite guaranteed boost requests. Before adding enemy weapons or extra AI states, test whether **short player firing windows** change the feel of the existing pursuit.
+
+- **M** toggles `CONTINUOUS` (default, original hold-to-fire at 14 rounds/s) and `BURST 4` in Play Mode. The Weapon Lab HUD displays the selected mode.
+- `BURST 4`: a single LMB click commits four shots spaced at the existing 14 rounds/s cadence; holding LMB automatically starts another burst after a **0.45 s gap after the last shot**. Releasing/re-pressing LMB cannot skip that gap. A fresh burst always begins immediately after the cooldown; no accumulated catch-up shots.
+- Settings in `WeaponLabCannon`: `burstSize` (2–8, default 4) and `burstCooldown` (seconds, default 0.45). `roundsPerSecond` is shared by both modes. If heat limiting is enabled, overheated shots wait rather than consuming burst ammo.
+- Aim guide stays active long enough to complete a committed burst after a short click. Existing projectile movement/hit logic, twin muzzles, sounds, heat toggle, enemy, flight and aim angle remain unchanged. Only Weapon Lab scripts and docs change.
+
+**No Unity scene configuration command.** Let C# compile, Play `WeaponLab.unity`, then compare M CONTINUOUS versus BURST while chasing the same enemy. Try short taps, holding LMB, releasing mid-burst, and clicking repeatedly during the cooldown. This is a feel test, not an accepted balance target.

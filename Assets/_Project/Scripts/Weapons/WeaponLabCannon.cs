@@ -13,6 +13,9 @@ namespace AirCombat
         [SerializeField] private AudioClip[] soundVariants;
         [SerializeField, Range(0, 4)] private int soundMode = 1;
         [SerializeField, Min(1f)] private float roundsPerSecond = 14f;
+        [SerializeField] private bool burstMode; // Continuous by default, A/B via M.
+        [SerializeField, Range(2, 8)] private int burstSize = 4;
+        [SerializeField, Min(.05f)] private float burstCooldown = .45f;
         [SerializeField, Min(1f)] private float muzzleVelocity = 420f;
         [SerializeField, Min(1f)] private float maxRange = 430f;
         [SerializeField, Min(.1f)] private float tracerLength = 8f;
@@ -30,6 +33,7 @@ namespace AirCombat
         private Renderer[] flashes;
         private float[] flashUntil;
         private float nextShot;
+        private int burstShotsRemaining;
         private float heat;
         private bool overheated;
         private int nextBarrel;
@@ -39,6 +43,7 @@ namespace AirCombat
         public bool IsOverheated => overheated;
         public int FiredCount { get; private set; }
         public int HitCount { get; private set; }
+        public string FireModeLabel => burstMode ? "BURST " + Mathf.Max(2, burstSize) : "CONTINUOUS";
         public string AimModeLabel => freeAim != null ? freeAim.ModeLabel : "FIXED";
         public string SoundModeLabel => soundVariants != null && soundVariants.Length == 4 && soundMode > 0
             ? "MG " + soundMode.ToString("00") : "SYNTH";
@@ -110,16 +115,40 @@ namespace AirCombat
                 }
                 if (keyboard.gKey.wasPressedThisFrame && soundVariants != null && soundVariants.Length == 4)
                     soundMode = (soundMode + 1) % 5; // Synth / MG 01..04; no reload required.
+                if (keyboard.mKey.wasPressedThisFrame)
+                {
+                    burstMode = !burstMode;
+                    burstShotsRemaining = 0;
+                    nextShot = Time.time;
+                }
             }
             heat = Mathf.Max(0f, heat - coolingPerSecond * Time.deltaTime);
             if (overheated && heat <= restartHeat) overheated = false;
 
             var mouse = Mouse.current;
             bool held = Application.isFocused && mouse != null && mouse.leftButton.isPressed;
-            if (freeAim != null) freeAim.Sample(held);
-            if (!held || tracerMaterial == null)
+            // A click commits all four shots, even if the trigger is released early.
+            bool burstActive = burstMode && burstShotsRemaining > 0;
+            if (freeAim != null) freeAim.Sample(held || burstActive);
+            if (tracerMaterial == null)
             {
+                burstShotsRemaining = 0;
                 nextShot = Time.time;
+                return;
+            }
+            if (burstMode)
+            {
+                // Releasing/re-pressing cannot bypass the interval between bursts.
+                if (burstShotsRemaining == 0 && held && Time.time >= nextShot)
+                {
+                    burstShotsRemaining = Mathf.Max(2, burstSize);
+                    nextShot = Time.time; // No backlog of instant shots after a long pause.
+                }
+                if (burstShotsRemaining == 0) return;
+            }
+            else if (!held)
+            {
+                nextShot = Time.time; // Preserve existing continuous-fire behavior.
                 return;
             }
 
@@ -132,6 +161,8 @@ namespace AirCombat
                 emitted++;
                 if (heatLimiterEnabled && overheated) continue;
                 Fire();
+                if (burstMode && --burstShotsRemaining == 0)
+                    nextShot = Time.time + Mathf.Max(.05f, burstCooldown);
                 if (heatLimiterEnabled)
                 {
                     heat = Mathf.Min(1f, heat + heatPerShot);

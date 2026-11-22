@@ -140,18 +140,19 @@ namespace AirCombat
             if (!showUI || Event.current.type != EventType.Repaint) return;
             if (text == null)
                 text = new GUIStyle(GUI.skin.label) { fontSize = 14, normal = { textColor = Color.white } };
-            GUI.Box(new Rect(12, 12, 500, 129), GUIContent.none);
+            GUI.Box(new Rect(12, 12, 500, 152), GUIContent.none);
             string enemyStatus = fighter != null
                 ? $"FIGHTER {fighter.Hp}/{fighter.MaxHp} HP   Kills {fighter.Kills}" : "NO ENEMY";
             GUI.Label(new Rect(22, 17, 475, 22), "WEAPON LAB / " + enemyStatus +
                 " / B EVADE: " + (fighter != null ? fighter.EvasionLabel : "OFF"), text);
             GUI.Label(new Rect(22, 40, 475, 22), "WASD fly   Space boost   LMB fire   V aim: " + cannon.AimModeLabel, text);
-            GUI.Label(new Rect(22, 63, 450, 22), "G gun SFX: " + cannon.SoundModeLabel + "   T heat   R reset", text);
+            GUI.Label(new Rect(22, 63, 450, 22), "M fire: " + cannon.FireModeLabel, text);
+            GUI.Label(new Rect(22, 86, 450, 22), "G gun SFX: " + cannon.SoundModeLabel + "   T heat   R reset", text);
             string cameraMode = cameraLead != null && cameraLead.LookAheadEnabled ? "LOOK-AHEAD" : "CENTER";
-            GUI.Label(new Rect(22, 86, 450, 22), "1/2/3 pitch   C: " + cameraMode + "   H hide HUD", text);
+            GUI.Label(new Rect(22, 109, 450, 22), "1/2/3 pitch   C: " + cameraMode + "   H hide HUD", text);
             string heat = cannon.HeatLimiterEnabled
                 ? $"Heat {cannon.Heat01:P0}" + (cannon.IsOverheated ? " [COOLING]" : "") : "Heat OFF";
-            GUI.Label(new Rect(22, 109, 450, 22),
+            GUI.Label(new Rect(22, 132, 450, 22),
                 $"Speed {flight.CurrentSpeed:F0}  Boost {boost.Charge01:P0}  {heat}  Shots {cannon.FiredCount}  Hits {cannon.HitCount}", text);
         }
     }
