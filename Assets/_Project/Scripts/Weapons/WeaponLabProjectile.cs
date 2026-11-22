@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 
 namespace AirCombat
@@ -12,13 +13,13 @@ namespace AirCombat
         private float trailLength;
         private LineRenderer tracer;
         private LineRenderer glow;
-        private WeaponLabCannon owner;
+        private Action onHit;
         private int damage = 1;
         private float distanceTravelled;
         private static readonly RaycastHit[] HitBuffer = new RaycastHit[16];
 
         public void Configure(Vector3 forward, float velocity, float range, float length,
-            LineRenderer line, LineRenderer halo, WeaponLabCannon source, int hitDamage = 1)
+            LineRenderer line, LineRenderer halo, Action hitCallback, int hitDamage = 1)
         {
             direction = forward.normalized;
             speed = velocity;
@@ -26,7 +27,7 @@ namespace AirCombat
             trailLength = length;
             tracer = line;
             glow = halo;
-            owner = source;
+            onHit = hitCallback;
             damage = Mathf.Max(1, hitDamage);
             Draw();
         }
@@ -52,7 +53,7 @@ namespace AirCombat
             if (nearest != null)
             {
                 transform.position = hitPoint;
-                if (nearest.Hit(hitPoint, damage) && owner != null) owner.RegisterHit();
+                if (nearest.Hit(hitPoint, damage)) onHit?.Invoke();
                 Destroy(gameObject);
                 return;
             }

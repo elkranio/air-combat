@@ -4,7 +4,7 @@ using UnityEngine;
 namespace AirCombat
 {
     // Independent GAUSS single-click trigger and cooldown; renderer/projectile adapter
-    // remains in the legacy WeaponLabCannon until the next extraction slice.
+    // is supplied by a standalone GaussEmitter component.
     public sealed class GaussCannon
     {
         private readonly float cooldown;
