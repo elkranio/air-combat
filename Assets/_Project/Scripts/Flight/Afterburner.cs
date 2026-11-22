@@ -30,6 +30,19 @@ namespace AirCombat
 
         private void OnDisable() { IsActive = false; }
 
+        // Optional instant full-tank maneuver, used only by Weapon Lab rolls.
+        // No separate cooldown: recharge and the normal boost meter are the price.
+        public bool TryConsumeFullCharge()
+        {
+            float capacity = Mathf.Max(0.01f, capacitySeconds);
+            if (!isActiveAndEnabled || IsActive || charge < capacity - 0.0001f) return false;
+            charge = 0f;
+            delayRemaining = rechargeDelay;
+            wasHeld = false;
+            IsActive = false;
+            return true;
+        }
+
         public bool Tick(bool held, float deltaTime)
         {
             if (!isActiveAndEnabled) return false;

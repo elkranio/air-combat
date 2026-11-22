@@ -22,6 +22,7 @@ namespace AirCombat
         [SerializeField, Min(1f)] private float bankRate = 160f;
 
         public float CurrentSpeed => motor != null ? motor.CurrentSpeed : cruiseSpeed;
+        public Transform Visual => visual; // Used by isolated Weapon Lab roll presentation.
         private AircraftMotor motor;
 
         private void OnValidate()

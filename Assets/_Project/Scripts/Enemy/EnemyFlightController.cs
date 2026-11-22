@@ -35,6 +35,7 @@ namespace AirCombat
 
         public FlightState State { get; private set; }
         public float CurrentSpeed => motor != null ? motor.CurrentSpeed : cruiseSpeed;
+        public Transform Visual => visual; // Used by isolated Weapon Lab roll presentation.
 
         private AircraftMotor motor;
         private float cruiseTime;
