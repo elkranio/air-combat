@@ -38,7 +38,7 @@ Approved gun/camera/maneuver numbers and the live dependency map are in [GAMEPLA
 
 G1 adds an independently composed `GroundAttackLab` scene from `PlayerJet` and `CombatCameraRig`, without `WeaponLabSession`. Scene authoring is under **Air Combat > Scenes > Create GroundAttackLab G1**, with a flat 12 km test plane, a directional light, and runtime `GroundAttackLabSession` binder. No enemy/ground target/ordnance; BURST/GAUSS shoot into empty space and MISSILE has no target. Authoring leaves WeaponLab and Sandbox untouched. [G1 notes](GAMEPLAY_CORE_G1.md).
 
-**Next after G1 green:** design one ground target and one air-to-ground weapon as separate atoms; do not invent a radar or loadout architecture. A chassis-level ScriptableObject can wait until a second airframe makes it worthwhile.
+**G2 (pending Blender/Unity verification):** modeled MilitaryDepot in `Tools/Blender/military_depot_geometry.py`. `generate_military_depot.py` projects roof normal + local AO using existing V18 Cycles selected-to-active helper; importer `Assets/_Project/Editor/ImportMilitaryDepot.cs` creates a target prefab and 4 scene instances. No damage/ordnance yet. Source and verification: [GAMEPLAY_CORE_G2.md](GAMEPLAY_CORE_G2.md). **After G2 green:** G3 first gravity bomb, impact prediction and ground damage; then G4 NURS. Do not invent radar or loadouts yet. A chassis ScriptableObject waits for a second airframe.
 
 ## Workflow
 

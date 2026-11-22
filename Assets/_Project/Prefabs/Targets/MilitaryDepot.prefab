@@ -1,0 +1,150 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1 &6732781851433395133
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 8990203064353140006}
+  - component: {fileID: 3242922835884203189}
+  m_Layer: 0
+  m_Name: MilitaryDepot
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &8990203064353140006
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6732781851433395133}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children:
+  - {fileID: 585122318883845748}
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!65 &3242922835884203189
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6732781851433395133}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 76, y: 10.4, z: 54}
+  m_Center: {x: 0, y: 5.2, z: 0}
+--- !u!1001 &1122659488797823391
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 8990203064353140006}
+    m_Modifications:
+    - target: {fileID: -8954906959774049091, guid: c9e39dfd8ae289943b900751ec03898f, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value: 
+      objectReference: {fileID: 2100000, guid: 4c4c52891941f8a46b6c877fc855a792, type: 2}
+    - target: {fileID: -8679921383154817045, guid: c9e39dfd8ae289943b900751ec03898f, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: c9e39dfd8ae289943b900751ec03898f, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: c9e39dfd8ae289943b900751ec03898f, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: c9e39dfd8ae289943b900751ec03898f, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: c9e39dfd8ae289943b900751ec03898f, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: c9e39dfd8ae289943b900751ec03898f, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: c9e39dfd8ae289943b900751ec03898f, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: c9e39dfd8ae289943b900751ec03898f, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: c9e39dfd8ae289943b900751ec03898f, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: c9e39dfd8ae289943b900751ec03898f, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8232796088251340360, guid: c9e39dfd8ae289943b900751ec03898f, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value: 
+      objectReference: {fileID: 2100000, guid: a571fd8bb4c67b049b6c6ae91b221d65, type: 2}
+    - target: {fileID: -2621866384099402813, guid: c9e39dfd8ae289943b900751ec03898f, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value: 
+      objectReference: {fileID: 2100000, guid: e0d0cbdbbf4ae5741903199e1124398d, type: 2}
+    - target: {fileID: -839882994483062437, guid: c9e39dfd8ae289943b900751ec03898f, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value: 
+      objectReference: {fileID: 2100000, guid: 888a0fc7eefde3343a444740b2a2dedd, type: 2}
+    - target: {fileID: -480885547354568350, guid: c9e39dfd8ae289943b900751ec03898f, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value: 
+      objectReference: {fileID: 2100000, guid: 4a370873ce930ff4a86f941bf703c56a, type: 2}
+    - target: {fileID: 919132149155446097, guid: c9e39dfd8ae289943b900751ec03898f, type: 3}
+      propertyPath: m_Name
+      value: Depot Mesh
+      objectReference: {fileID: 0}
+    - target: {fileID: 2995418576803346764, guid: c9e39dfd8ae289943b900751ec03898f, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value: 
+      objectReference: {fileID: 2100000, guid: 702b115dcc661e1479574216789e80a6, type: 2}
+    - target: {fileID: 4332811769676001801, guid: c9e39dfd8ae289943b900751ec03898f, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value: 
+      objectReference: {fileID: 2100000, guid: bddddd1c3b787254a9f5be7d8937776b, type: 2}
+    - target: {fileID: 6324470703949590890, guid: c9e39dfd8ae289943b900751ec03898f, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value: 
+      objectReference: {fileID: 2100000, guid: 855e73b05ac9af646988045fcdf90188, type: 2}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: c9e39dfd8ae289943b900751ec03898f, type: 3}
+--- !u!4 &585122318883845748 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: c9e39dfd8ae289943b900751ec03898f, type: 3}
+  m_PrefabInstance: {fileID: 1122659488797823391}
+  m_PrefabAsset: {fileID: 0}

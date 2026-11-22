@@ -187,6 +187,254 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 18963f9f886843e0a94c3cf73b7be846, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::AirCombat.JetAssembly
+--- !u!1001 &225578844
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 2076095026}
+    m_Modifications:
+    - target: {fileID: 6732781851433395133, guid: 51f6a5cc935a2364aa9172ee4bdb8471, type: 3}
+      propertyPath: m_Name
+      value: Military Depot 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 8990203064353140006, guid: 51f6a5cc935a2364aa9172ee4bdb8471, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 430
+      objectReference: {fileID: 0}
+    - target: {fileID: 8990203064353140006, guid: 51f6a5cc935a2364aa9172ee4bdb8471, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8990203064353140006, guid: 51f6a5cc935a2364aa9172ee4bdb8471, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 950
+      objectReference: {fileID: 0}
+    - target: {fileID: 8990203064353140006, guid: 51f6a5cc935a2364aa9172ee4bdb8471, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 0.9702957
+      objectReference: {fileID: 0}
+    - target: {fileID: 8990203064353140006, guid: 51f6a5cc935a2364aa9172ee4bdb8471, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8990203064353140006, guid: 51f6a5cc935a2364aa9172ee4bdb8471, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: -0.2419219
+      objectReference: {fileID: 0}
+    - target: {fileID: 8990203064353140006, guid: 51f6a5cc935a2364aa9172ee4bdb8471, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8990203064353140006, guid: 51f6a5cc935a2364aa9172ee4bdb8471, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8990203064353140006, guid: 51f6a5cc935a2364aa9172ee4bdb8471, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8990203064353140006, guid: 51f6a5cc935a2364aa9172ee4bdb8471, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 51f6a5cc935a2364aa9172ee4bdb8471, type: 3}
+--- !u!4 &225578845 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 8990203064353140006, guid: 51f6a5cc935a2364aa9172ee4bdb8471, type: 3}
+  m_PrefabInstance: {fileID: 225578844}
+  m_PrefabAsset: {fileID: 0}
+--- !u!1001 &603028571
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 2076095026}
+    m_Modifications:
+    - target: {fileID: 6732781851433395133, guid: 51f6a5cc935a2364aa9172ee4bdb8471, type: 3}
+      propertyPath: m_Name
+      value: Military Depot 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 8990203064353140006, guid: 51f6a5cc935a2364aa9172ee4bdb8471, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: -310
+      objectReference: {fileID: 0}
+    - target: {fileID: 8990203064353140006, guid: 51f6a5cc935a2364aa9172ee4bdb8471, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8990203064353140006, guid: 51f6a5cc935a2364aa9172ee4bdb8471, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 625
+      objectReference: {fileID: 0}
+    - target: {fileID: 8990203064353140006, guid: 51f6a5cc935a2364aa9172ee4bdb8471, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 0.94551855
+      objectReference: {fileID: 0}
+    - target: {fileID: 8990203064353140006, guid: 51f6a5cc935a2364aa9172ee4bdb8471, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8990203064353140006, guid: 51f6a5cc935a2364aa9172ee4bdb8471, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0.32556814
+      objectReference: {fileID: 0}
+    - target: {fileID: 8990203064353140006, guid: 51f6a5cc935a2364aa9172ee4bdb8471, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8990203064353140006, guid: 51f6a5cc935a2364aa9172ee4bdb8471, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8990203064353140006, guid: 51f6a5cc935a2364aa9172ee4bdb8471, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8990203064353140006, guid: 51f6a5cc935a2364aa9172ee4bdb8471, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 51f6a5cc935a2364aa9172ee4bdb8471, type: 3}
+--- !u!4 &603028572 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 8990203064353140006, guid: 51f6a5cc935a2364aa9172ee4bdb8471, type: 3}
+  m_PrefabInstance: {fileID: 603028571}
+  m_PrefabAsset: {fileID: 0}
+--- !u!1001 &679254477
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 2076095026}
+    m_Modifications:
+    - target: {fileID: 6732781851433395133, guid: 51f6a5cc935a2364aa9172ee4bdb8471, type: 3}
+      propertyPath: m_Name
+      value: Military Depot 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 8990203064353140006, guid: 51f6a5cc935a2364aa9172ee4bdb8471, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8990203064353140006, guid: 51f6a5cc935a2364aa9172ee4bdb8471, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8990203064353140006, guid: 51f6a5cc935a2364aa9172ee4bdb8471, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 250
+      objectReference: {fileID: 0}
+    - target: {fileID: 8990203064353140006, guid: 51f6a5cc935a2364aa9172ee4bdb8471, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 8990203064353140006, guid: 51f6a5cc935a2364aa9172ee4bdb8471, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8990203064353140006, guid: 51f6a5cc935a2364aa9172ee4bdb8471, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8990203064353140006, guid: 51f6a5cc935a2364aa9172ee4bdb8471, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8990203064353140006, guid: 51f6a5cc935a2364aa9172ee4bdb8471, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8990203064353140006, guid: 51f6a5cc935a2364aa9172ee4bdb8471, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8990203064353140006, guid: 51f6a5cc935a2364aa9172ee4bdb8471, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 51f6a5cc935a2364aa9172ee4bdb8471, type: 3}
+--- !u!4 &679254478 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 8990203064353140006, guid: 51f6a5cc935a2364aa9172ee4bdb8471, type: 3}
+  m_PrefabInstance: {fileID: 679254477}
+  m_PrefabAsset: {fileID: 0}
+--- !u!1001 &703553484
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 2076095026}
+    m_Modifications:
+    - target: {fileID: 6732781851433395133, guid: 51f6a5cc935a2364aa9172ee4bdb8471, type: 3}
+      propertyPath: m_Name
+      value: Military Depot 4
+      objectReference: {fileID: 0}
+    - target: {fileID: 8990203064353140006, guid: 51f6a5cc935a2364aa9172ee4bdb8471, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: -220
+      objectReference: {fileID: 0}
+    - target: {fileID: 8990203064353140006, guid: 51f6a5cc935a2364aa9172ee4bdb8471, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8990203064353140006, guid: 51f6a5cc935a2364aa9172ee4bdb8471, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 1300
+      objectReference: {fileID: 0}
+    - target: {fileID: 8990203064353140006, guid: 51f6a5cc935a2364aa9172ee4bdb8471, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 0.83388585
+      objectReference: {fileID: 0}
+    - target: {fileID: 8990203064353140006, guid: 51f6a5cc935a2364aa9172ee4bdb8471, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8990203064353140006, guid: 51f6a5cc935a2364aa9172ee4bdb8471, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0.551937
+      objectReference: {fileID: 0}
+    - target: {fileID: 8990203064353140006, guid: 51f6a5cc935a2364aa9172ee4bdb8471, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8990203064353140006, guid: 51f6a5cc935a2364aa9172ee4bdb8471, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8990203064353140006, guid: 51f6a5cc935a2364aa9172ee4bdb8471, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8990203064353140006, guid: 51f6a5cc935a2364aa9172ee4bdb8471, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 51f6a5cc935a2364aa9172ee4bdb8471, type: 3}
+--- !u!4 &703553485 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 8990203064353140006, guid: 51f6a5cc935a2364aa9172ee4bdb8471, type: 3}
+  m_PrefabInstance: {fileID: 703553484}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &1507333504
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -424,6 +672,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1962496097}
   - component: {fileID: 1962496096}
+  - component: {fileID: 1962496098}
   m_Layer: 0
   m_Name: Sun
   m_TagString: Untagged
@@ -511,6 +760,70 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1962496098
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1962496095}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 474bcb49853aa07438625e644c072ee6, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Unity.RenderPipelines.Universal.Runtime::UnityEngine.Rendering.Universal.UniversalAdditionalLightData
+  m_UsePipelineSettings: 1
+  m_AdditionalLightsShadowResolutionTier: 2
+  m_CustomShadowLayers: 0
+  m_LightCookieSize: {x: 1, y: 1}
+  m_LightCookieOffset: {x: 0, y: 0}
+  m_SoftShadowQuality: 0
+  m_RenderingLayersMask:
+    serializedVersion: 0
+    m_Bits: 1
+  m_ShadowRenderingLayersMask:
+    serializedVersion: 0
+    m_Bits: 1
+  m_Version: 4
+  m_LightLayerMask: 1
+  m_ShadowLayerMask: 1
+  m_RenderingLayers: 1
+  m_ShadowRenderingLayers: 1
+--- !u!1 &2076095025
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 2076095026}
+  m_Layer: 0
+  m_Name: Military Depots - G2
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &2076095026
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2076095025}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children:
+  - {fileID: 679254478}
+  - {fileID: 603028572}
+  - {fileID: 225578845}
+  - {fileID: 703553485}
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0
@@ -520,3 +833,4 @@ SceneRoots:
   - {fileID: 161383143}
   - {fileID: 1507333504}
   - {fileID: 1921309799}
+  - {fileID: 2076095026}

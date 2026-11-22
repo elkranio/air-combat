@@ -36,9 +36,10 @@ Assets/_Project/
 - [ART_PIPELINE.md](ART_PIPELINE.md), [ART_AUTHORING.md](ART_AUTHORING.md) — active art pipeline.
 - [Tools/Unity/ARTLAB.md](Tools/Unity/ARTLAB.md) — retained visual experiments and commands.
 - [THIRD_PARTY_ASSETS.md](THIRD_PARTY_ASSETS.md) — asset licenses.
-- [GAMEPLAY_CORE_G1.md](GAMEPLAY_CORE_G1.md) — create and verify the independent GroundAttackLab flight scene.
+- [GAMEPLAY_CORE_G1.md](GAMEPLAY_CORE_G1.md) — independent GroundAttackLab flight scene.
+- [GAMEPLAY_CORE_G2.md](GAMEPLAY_CORE_G2.md) — modeled depot, Cycles roof normal/AO bake, and four scene prefab placements.
 - [Docs/Archive](Docs/Archive) — previous handoff, per-atom migration records, old Weapon Lab guide. Historical content may mention deleted scripts and scene names.
 
 ## Next
 
-G1: verify the independent prefab-based GroundAttackLab with basic flight and camera. After green, design one ground target + the first air-to-ground weapon in a separate atom. Radar remains undesigned. Before any change, check `HANDOFF.md` and run WeaponLab + Sandbox regressions.
+G2: generate the MilitaryDepot model and Cycles roof normal/AO bake, import it with the Unity menu, and test four targets in GroundAttackLab. After green, G3 adds bombs and ground damage. Radar remains undesigned. Before any change, check `HANDOFF.md` and run WeaponLab + Sandbox regressions.
