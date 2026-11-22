@@ -2,7 +2,7 @@ using UnityEngine;
 
 namespace AirCombat
 {
-    // One non-guided trajectory shared by the live rocket and future G4c preview.
+    // Physical trajectory for unguided NURS rockets. No impact predictor.
     // The launcher supplies aircraft velocity plus an initial upward muzzle kick;
     // no thrust, steering, homing or random corrections happen after release.
     public static class NursBallistics

@@ -17,18 +17,16 @@ namespace AirCombat
         private Transform aircraft;
         private WeaponSelection selection;
         private CabrageManeuver cabrage;
-        private NursImpactAreaMarker area;
         private Vector3 currentOffset;
         private Vector3 offsetVelocity;
 
         public void Configure(Camera camera, Transform player, WeaponSelection weapons,
-            CabrageManeuver maneuver, NursImpactAreaMarker marker)
+            CabrageManeuver maneuver)
         {
             viewCamera = camera;
             aircraft = player;
             selection = weapons;
             cabrage = maneuver;
-            area = marker;
             currentOffset = offsetVelocity = Vector3.zero;
         }
 
@@ -36,7 +34,7 @@ namespace AirCombat
         {
             if (viewCamera == null || aircraft == null || selection == null) return;
             Vector3 desired = Vector3.zero;
-            if (selection.Selected == WeaponMode.Nurs && area != null && area.HasArea)
+            if (selection.Selected == WeaponMode.Nurs)
             {
                 Vector3 forward = Vector3.ProjectOnPlane(aircraft.forward, Vector3.up).normalized;
                 if (forward.sqrMagnitude > .001f)

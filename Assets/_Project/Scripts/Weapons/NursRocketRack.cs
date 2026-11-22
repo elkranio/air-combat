@@ -33,11 +33,7 @@ namespace AirCombat
         public int ImpactCount { get; private set; }
         public int DamagedPartHits { get; private set; }
         public int FiredThisClimb => firedThisClimb;
-        // Share one source of truth with the G4c approximate impact predictor.
-        public int RocketCount => rocketCount;
-        public float MuzzleSpeed => muzzleSpeed;
-        public float YawSpreadDegrees => yawSpreadDegrees;
-        public float PitchSpreadDegrees => pitchSpreadDegrees;
+        // These timings and pylon offsets are used by the live launches.
         public float ReleaseAt(int index) => firstReleaseSeconds + index * releaseInterval;
         public Vector3 PylonAt(int index) => (index & 1) == 0 ? leftPylon : rightPylon;
 

@@ -1,17 +1,20 @@
-# G4c — NURS camera and approximate impact area
+# G4c — NURS camera cue (marker removed after playtest)
 
-GroundAttackLab-only runtime presentation. **No changes to NURS rocket physics (muzzle 170), 6-shot salvo, G4a maneuver, Q/E, bombs or shared prefab assets.**
+GroundAttackLab-only runtime presentation. No scene or prefab changes.
 
-- **Select 5:** camera adds modest look-ahead while retaining the jet within the Game viewport; the physically correct far-off salvo footprint remains four thin unfilled brackets in pale cyan/gray, with no crosshair or individual predicted impacts.
-- **Click:** the existing 2.5s cabrage launches six real rockets. During commitment the camera moves slightly farther ahead **but never loses the aircraft**. The impact-area marker stays in world space; rockets use true G4b collision and damage, not the marker for targeting.
-- **Other slots:** marker disappears and the camera returns smoothly to the normal flight framing. The ordinary follow and look-ahead run unchanged; no camera zoom, rotation or prefab edits.
-- **Prediction:** uses the live `NursBallistics.LaunchVelocity` and `Integrate` equations and the rack's actual speed, spread and release schedule. Samples nominal trajectories for all six rockets and extreme spread for the first/middle/last, then pads the footprint for their small blast radius. Swept physics collisions check terrain and buildings, ignoring the player's own collider and air targets. This predicts a *rough envelope*, not deterministic hits: future velocity changes, the six random errors, hits on uneven roofs, and frame timing can alter actual impacts.
+## Current behavior
 
-## Visual test
+- **Select 5:** the camera adds a modest, smoothly blended look-ahead (24 units) on top of the existing flight follow/lead.
+- **Start cabrage:** during the committed maneuver, extra lead increases to 70 units. Camera offset is constrained in viewport space to retain the aircraft inside a 20% screen margin. Includes sudden Q/E turns and descent.
+- **Change weapon:** the extra NURS lead smoothly returns to zero; normal camera behavior remains intact. **R** resets the lead immediately.
+- **No NURS ground impact-area marker, four-corner bracket, per-rocket target dots, or predicted landing area.** The earlier G4c bracket proved invisible until after launch at ~600-unit NURS range; removed along with its prediction code after green camera test.
+- Slot **4** still displays the independent bomb nadir line and ring. The existing NURS salvo, real ballistic impacts, damage, maneuver, cooldowns, and Q/E emergency recovery are unchanged.
 
-1. In GroundAttackLab choose **5** and let the camera settle. The jet must stay visible with at least a 20% viewport margin from the extra G4c pan; turning and Q/E must not push it offscreen. At ~600m range, the actual four-corner ground marker will usually be **outside** this unzoomed camera view.
-2. Start a cabrage and verify a little more lead while the jet remains visible. For strike accuracy, inspect the actual area and hits in Scene view: rockets still hit at real distances; the marker never shifts closer just to fit on screen.
-3. Try Q/E early during the salvo: launched rockets still fly, no new rockets launch, and the stored bracket stays put throughout emergency return. After completion the preview recomputes for the next attack.
-4. Switch to **4** and then **1/2/3**: the brackets vanish, bomb nadir marker only appears on 4, camera returns. Test R and repeat. WeaponLab and Sandbox are unchanged.
+## Verification
 
-**Known UX gap:** the player cannot simultaneously see their aircraft and a ~600m impact bracket at the current orthographic scale. The safe follow-camera hotfix prioritizes flying; a later dedicated tactical preview, temporary zoom, or split view must address long-range aiming. Do not falsify the projected impact location.
+1. In GroundAttackLab choose **5**, fly straight, turn around, then launch one cabrage. The aircraft must remain in frame during selection, climb, recovery and emergency Q/E.
+2. No NURS bracket should appear at any phase or after firing. Rockets still impact at their previous range; monitor **Fired / Impacts / PartHits** in the diagnostic HUD.
+3. Switch to **4** and **1/2/3**: normal framing returns and bomb nadir stays restricted to slot 4. Test **R** while the camera is transitioning.
+4. WeaponLab/Sandbox behavior and shared camera prefab remain untouched.
+
+**Future design idea, not implemented:** a proper radar could supply distant target information without moving a ground reticle into the flight view. No radar or new targeting aid is part of this change.

@@ -97,13 +97,10 @@ namespace AirCombat
             nurs = jet.GetComponent<NursRocketRack>();
             if (nurs == null) nurs = jet.AddComponent<NursRocketRack>();
             nurs.Configure(cabrage, flight);
-            // G4c tactical preview remains lab-only. No shared prefab/scene edits.
-            var nursArea = jet.GetComponent<NursImpactAreaMarker>();
-            if (nursArea == null) nursArea = jet.AddComponent<NursImpactAreaMarker>();
-            nursArea.Configure(selection, cabrage, flight, nurs);
+            // G4c keeps aircraft-safe camera lead, without an impact predictor.
             nursCamera = cameraRig.GetComponent<NursCameraCue>();
             if (nursCamera == null) nursCamera = cameraRig.gameObject.AddComponent<NursCameraCue>();
-            nursCamera.Configure(cameraRig.ViewCamera, jet.transform, selection, cabrage, nursArea);
+            nursCamera.Configure(cameraRig.ViewCamera, jet.transform, selection, cabrage);
             // Height reference only while bombs are equipped: no lead/prediction.
             var nadir = jet.GetComponent<BombNadirMarker>();
             if (nadir == null) nadir = jet.AddComponent<BombNadirMarker>();
