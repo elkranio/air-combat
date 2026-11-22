@@ -30,15 +30,16 @@ namespace AirCombat
         private float cooldownRemaining;
         private float turnSign;
         private bool useBoost;
-        private WeaponLabRoll roll;
+        private WeaponLabBreakTurn breakTurn;
         private MissileProjectile incomingMissile;
-        private bool missileRollPending;
-        private bool missileRollOnDistance;
-        private float missileRollAt;
-        private float missileRollDistance;
+        private bool missileBreakPending;
+        private bool missileBreakOnDistance;
+        private float missileBreakAt;
+        private float missileBreakDistance;
 
         public bool EvasionEnabled { get; private set; } = true;
-        public string ModeLabel => !EvasionEnabled ? "OFF" : state == State.Breaking
+        public string ModeLabel => !EvasionEnabled ? "OFF" : breakTurn != null && breakTurn.IsBreaking
+            ? "BREAK TURN" : state == State.Breaking
             ? (useBoost && breakRemaining > breakDuration * .3f ? "BOOST" : "BREAK")
             : state == State.Cooldown ? "RECOVER" : "WATCH";
 
@@ -47,16 +48,16 @@ namespace AirCombat
             player = target;
         }
 
-        public void ConfigureRoll(WeaponLabRoll maneuver) { roll = maneuver; }
+        public void ConfigureBreakTurn(WeaponLabBreakTurn maneuver) { breakTurn = maneuver; }
 
         public void NotifyIncomingMissile(MissileProjectile missile)
         {
             incomingMissile = missile;
             // Randomize pilot judgment, never missile collision or invulnerability.
-            missileRollPending = Random.value < .8f;
-            missileRollOnDistance = Random.value < .55f;
-            missileRollAt = Time.time + Random.Range(.16f, .65f);
-            missileRollDistance = Random.Range(30f, 80f);
+            missileBreakPending = Random.value < .8f;
+            missileBreakOnDistance = Random.value < .55f;
+            missileBreakAt = Time.time + Random.Range(.16f, .65f);
+            missileBreakDistance = Random.Range(30f, 80f);
         }
 
         private void Start()
@@ -71,7 +72,7 @@ namespace AirCombat
             if (Application.isFocused && keyboard != null && keyboard.bKey.wasPressedThisFrame)
             {
                 EvasionEnabled = !EvasionEnabled;
-                ResetForEncounter(); // Also cancels any ongoing roll when B disables evasion.
+                ResetForEncounter(); // Also cancels any ongoing break turn when B disables evasion.
             }
         }
 
@@ -84,22 +85,22 @@ namespace AirCombat
             if (!EvasionEnabled || player == null || dt <= 0f) return false;
 
             // React to an actual incoming missile. A late response or an empty
-            // afterburner tank means no evasive roll; there are no free misses.
-            if (missileRollPending)
+            // afterburner tank means no evasive break turn; there are no free misses.
+            if (missileBreakPending)
             {
-                if (incomingMissile == null) missileRollPending = false;
+                if (incomingMissile == null) missileBreakPending = false;
                 else
                 {
                     Vector3 separation = incomingMissile.transform.position - transform.position;
                     separation.y = 0f;
-                    bool timeToRoll = missileRollOnDistance
-                        ? separation.sqrMagnitude <= missileRollDistance * missileRollDistance
-                        : Time.time >= missileRollAt;
-                    if (timeToRoll)
+                    bool timeToBreak = missileBreakOnDistance
+                        ? separation.sqrMagnitude <= missileBreakDistance * missileBreakDistance
+                        : Time.time >= missileBreakAt;
+                    if (timeToBreak)
                     {
-                        missileRollPending = false;
+                        missileBreakPending = false;
                         int side = Random.value < .5f ? -1 : 1;
-                        if (roll != null && roll.TryRoll(side))
+                        if (breakTurn != null && breakTurn.TryBegin(side))
                         {
                             BeginCooldown(); // Ignore the ordinary gun-threat break this frame.
                             return false;
@@ -157,24 +158,28 @@ namespace AirCombat
                 ? (Random.value < .5f ? -1f : 1f) : Mathf.Sign(signedAngle);
             breakDuration = Random.Range(minBreakDuration, Mathf.Max(minBreakDuration, maxBreakDuration));
             breakRemaining = breakDuration;
-            // The full-tank roll takes priority; an ordinary sector break is the fallback.
-            // Either gun can trigger this via the existing forward-cone threat reaction.
-            bool rolled = roll != null && roll.TryRoll(turnSign > 0f ? 1 : -1);
-            useBoost = !rolled;
+            // A successful turn owns the heading for one second; do not stack the
+            // ordinary steering break on top. If the tank is empty, retain the old AI.
+            if (breakTurn != null && breakTurn.TryBegin(turnSign > 0f ? 1 : -1))
+            {
+                BeginCooldown();
+                return false;
+            }
+            useBoost = true;
             state = State.Breaking;
             steer = turnSign * .95f;
-            boost = useBoost;
+            boost = true;
             return true;
         }
 
         public void ResetForEncounter()
         {
-            if (roll != null) roll.CancelRoll();
+            if (breakTurn != null) breakTurn.CancelBreak();
             state = State.Watching;
             exposedFor = breakRemaining = breakDuration = cooldownRemaining = 0f;
             useBoost = false;
             incomingMissile = null;
-            missileRollPending = false;
+            missileBreakPending = false;
             reactAfter = Random.Range(minReaction, Mathf.Max(minReaction, maxReaction));
         }
 

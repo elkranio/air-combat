@@ -33,10 +33,10 @@ namespace AirCombat
         private TargetLock missileLock;
         private TargetLockHud missileHud;
         private WeaponLabMissileLauncher labMissileLauncher;
-        private WeaponLabRoll playerRoll;
-        private WeaponLabRoll enemyRoll;
-        private bool ownsPlayerRoll;
-        private bool ownsEnemyRoll;
+        private WeaponLabBreakTurn playerBreakTurn;
+        private WeaponLabBreakTurn enemyBreakTurn;
+        private bool ownsPlayerBreakTurn;
+        private bool ownsEnemyBreakTurn;
         private bool ownsMissileLauncher;
         private bool ownsMissileLock;
         private bool ownsMissileHud;
@@ -82,26 +82,28 @@ namespace AirCombat
             aim.Configure(viewCamera, player);
             aim.enabled = true;
             cannon.ConfigureAim(aim);
-            playerRoll = player.GetComponent<WeaponLabRoll>();
-            if (playerRoll == null)
+            playerBreakTurn = player.GetComponent<WeaponLabBreakTurn>();
+            if (playerBreakTurn == null)
             {
-                playerRoll = player.gameObject.AddComponent<WeaponLabRoll>();
-                ownsPlayerRoll = true;
+                playerBreakTurn = player.gameObject.AddComponent<WeaponLabBreakTurn>();
+                ownsPlayerBreakTurn = true;
             }
-            playerRoll.Configure(boost, flight.Visual, true);
+            playerBreakTurn.Configure(boost, flight.Visual, true);
+            flight.ConfigureBreakTurn(playerBreakTurn);
             if (fighter != null)
             {
                 var enemyFlight = fighter.GetComponent<EnemyFlightController>();
                 var enemyBoost = fighter.GetComponent<Afterburner>();
-                enemyRoll = fighter.GetComponent<WeaponLabRoll>();
-                if (enemyRoll == null)
+                enemyBreakTurn = fighter.GetComponent<WeaponLabBreakTurn>();
+                if (enemyBreakTurn == null)
                 {
-                    enemyRoll = fighter.gameObject.AddComponent<WeaponLabRoll>();
-                    ownsEnemyRoll = true;
+                    enemyBreakTurn = fighter.gameObject.AddComponent<WeaponLabBreakTurn>();
+                    ownsEnemyBreakTurn = true;
                 }
-                enemyRoll.Configure(enemyBoost, enemyFlight != null ? enemyFlight.Visual : null, false, fighter);
+                enemyBreakTurn.Configure(enemyBoost, enemyFlight != null ? enemyFlight.Visual : null, false, fighter);
+                if (enemyFlight != null) enemyFlight.ConfigureBreakTurn(enemyBreakTurn);
                 var enemyEvasion = fighter.GetComponent<WeaponLabEvasion>();
-                if (enemyEvasion != null) enemyEvasion.ConfigureRoll(enemyRoll);
+                if (enemyEvasion != null) enemyEvasion.ConfigureBreakTurn(enemyBreakTurn);
                 ResolveMissileAssetsForEditor();
                 // Reuse Sandbox lock UI and geometry, but attach only at runtime in Weapon Lab.
                 missileLock = viewCamera.GetComponent<TargetLock>();
@@ -162,15 +164,21 @@ namespace AirCombat
             if (cameraLead != null) cameraLead.enabled = false;
             if (aim != null) aim.enabled = false;
             cannon?.ConfigureMissileLock(null);
+            flight?.ConfigureBreakTurn(null);
+            if (fighter != null)
+            {
+                var enemyFlight = fighter.GetComponent<EnemyFlightController>();
+                if (enemyFlight != null) enemyFlight.ConfigureBreakTurn(null);
+            }
             if (fighter != null)
             {
                 var evasion = fighter.GetComponent<WeaponLabEvasion>();
-                if (evasion != null) evasion.ConfigureRoll(null);
+                if (evasion != null) evasion.ConfigureBreakTurn(null);
             }
-            if (ownsPlayerRoll && playerRoll != null) Destroy(playerRoll);
-            if (ownsEnemyRoll && enemyRoll != null) Destroy(enemyRoll);
-            playerRoll = enemyRoll = null;
-            ownsPlayerRoll = ownsEnemyRoll = false;
+            if (ownsPlayerBreakTurn && playerBreakTurn != null) Destroy(playerBreakTurn);
+            if (ownsEnemyBreakTurn && enemyBreakTurn != null) Destroy(enemyBreakTurn);
+            playerBreakTurn = enemyBreakTurn = null;
+            ownsPlayerBreakTurn = ownsEnemyBreakTurn = false;
             if (ownsMissileLauncher && labMissileLauncher != null) Destroy(labMissileLauncher);
             labMissileLauncher = null;
             ownsMissileLauncher = false;
@@ -212,8 +220,8 @@ namespace AirCombat
 
         private void ResetToStart()
         {
-            if (playerRoll != null) playerRoll.CancelRoll();
-            if (enemyRoll != null) enemyRoll.CancelRoll();
+            if (playerBreakTurn != null) playerBreakTurn.CancelBreak();
+            if (enemyBreakTurn != null) enemyBreakTurn.CancelBreak();
             if (missileLock != null) missileLock.ResetLock();
             player.SetPositionAndRotation(spawnPosition, spawnRotation);
             if (fighter != null) fighter.ResetEncounter();
@@ -246,7 +254,7 @@ namespace AirCombat
                 ? $"FIGHTER {fighter.Hp}/{fighter.MaxHp} HP   Kills {fighter.Kills}" : "NO ENEMY";
             GUI.Label(new Rect(22, 17, 475, 22), "WEAPON LAB / " + enemyStatus +
                 " / B EVADE: " + (fighter != null ? fighter.EvasionLabel : "OFF"), text);
-            GUI.Label(new Rect(22, 40, 475, 22), "WASD fly   Space boost   Q/E roll   LMB fire   1/2/3 guns", text);
+            GUI.Label(new Rect(22, 40, 475, 22), "WASD fly   Space boost   Q/E break turn   LMB fire   1/2/3 guns", text);
             GUI.Label(new Rect(22, 63, 450, 22), "Gun " + cannon.FireModeLabel + "   Aim " + cannon.AimModeLabel +
                 "   SFX " + cannon.SoundModeLabel, text);
             GUI.Label(new Rect(22, 86, 450, 22), "Look-ahead ON   R reset   H hide HUD   B enemy evasion", text);

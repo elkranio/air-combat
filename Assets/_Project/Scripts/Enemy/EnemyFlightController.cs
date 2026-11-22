@@ -35,9 +35,13 @@ namespace AirCombat
 
         public FlightState State { get; private set; }
         public float CurrentSpeed => motor != null ? motor.CurrentSpeed : cruiseSpeed;
-        public Transform Visual => visual; // Used by isolated Weapon Lab roll presentation.
+        public Transform Visual => visual; // Used by isolated Weapon Lab break-turn presentation.
 
         private AircraftMotor motor;
+        private WeaponLabBreakTurn breakTurn;
+
+        // Runtime-only Lab injection; null in Sandbox.
+        public void ConfigureBreakTurn(WeaponLabBreakTurn maneuver) { breakTurn = maneuver; }
         private float cruiseTime;
         private Quaternion visualRestRotation;
 
@@ -124,12 +128,18 @@ namespace AirCombat
                 steer = evadeSteer;
                 speed = cruiseSpeed;
             }
+            float actualTurnRate = turnRate;
+            float breakSteer = 0f, breakTurnRate = 0f;
+            bool breaking = breakTurn != null && breakTurn.TryGetFlightCommand(
+                dt, out breakSteer, out breakTurnRate);
+            if (breaking) { steer = breakSteer; actualTurnRate = breakTurnRate; }
             bool boost = afterburner != null && afterburner.Tick(
-                (lockReaction != null && lockReaction.WantsBoost(dt)) || evadeBoost, dt);
-            if (boost) speed = Mathf.Max(speed, afterburner.BoostSpeed);
-            float accel = boost ? Mathf.Max(acceleration, afterburner.BoostAcceleration) : acceleration;
+                !breaking && ((lockReaction != null && lockReaction.WantsBoost(dt)) || evadeBoost), dt);
+            if (boost || breaking) speed = Mathf.Max(speed, afterburner.BoostSpeed);
+            float accel = boost || breaking
+                ? Mathf.Max(acceleration, afterburner.BoostAcceleration) : acceleration;
             motor.Tick(speed, steer, accel, deceleration,
-                turnRate, maxBank, bankRate, dt);
+                actualTurnRate, maxBank, bankRate, dt);
         }
     }
 }

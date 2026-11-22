@@ -22,8 +22,12 @@ namespace AirCombat
         [SerializeField, Min(1f)] private float bankRate = 160f;
 
         public float CurrentSpeed => motor != null ? motor.CurrentSpeed : cruiseSpeed;
-        public Transform Visual => visual; // Used by isolated Weapon Lab roll presentation.
+        public Transform Visual => visual; // Used by isolated Weapon Lab break-turn presentation.
         private AircraftMotor motor;
+        private WeaponLabBreakTurn breakTurn;
+
+        // Runtime-only Lab injection; null in Sandbox.
+        public void ConfigureBreakTurn(WeaponLabBreakTurn maneuver) { breakTurn = maneuver; }
 
         private void OnValidate()
         {
@@ -50,12 +54,22 @@ namespace AirCombat
             }
 
             var targetSpeed = throttle > 0f ? maxSpeed : throttle < 0f ? minSpeed : cruiseSpeed;
+            float actualTurnRate = turnRate;
+            float breakSteer = 0f, breakTurnRate = 0f;
+            bool breaking = breakTurn != null && breakTurn.TryGetFlightCommand(
+                Time.deltaTime, out breakSteer, out breakTurnRate);
+            if (breaking) { steer = breakSteer; actualTurnRate = breakTurnRate; }
+
+            // Break turn already paid the entire tank. No extra charge drain or
+            // Space boost during the maneuver; grant the motor a short powered burst.
             bool boost = afterburner != null && afterburner.Tick(
-                keyboard != null && Application.isFocused && keyboard.spaceKey.isPressed, Time.deltaTime);
-            if (boost) targetSpeed = Mathf.Max(targetSpeed, afterburner.BoostSpeed);
-            float accel = boost ? Mathf.Max(acceleration, afterburner.BoostAcceleration) : acceleration;
+                !breaking && keyboard != null && Application.isFocused && keyboard.spaceKey.isPressed,
+                Time.deltaTime);
+            if (boost || breaking) targetSpeed = Mathf.Max(targetSpeed, afterburner.BoostSpeed);
+            float accel = boost || breaking
+                ? Mathf.Max(acceleration, afterburner.BoostAcceleration) : acceleration;
             motor.Tick(targetSpeed, steer, accel, deceleration,
-                turnRate, maxBank, bankRate, Time.deltaTime);
+                actualTurnRate, maxBank, bankRate, Time.deltaTime);
         }
     }
 }

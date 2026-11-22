@@ -19,6 +19,10 @@ namespace AirCombat
         private AudioSource source;
         private AudioClip ignition;
         private bool wasActive;
+        private bool maneuverFlames;
+
+        // Optional Lab-only visual override; never changes boost fuel or thrust.
+        public void SetManeuverFlames(bool active) { maneuverFlames = active; }
 
         private void Awake()
         {
@@ -50,7 +54,7 @@ namespace AirCombat
         private void LateUpdate()
         {
             if (plumes == null) return;
-            bool active = afterburner != null && afterburner.IsActive;
+            bool active = maneuverFlames || (afterburner != null && afterburner.IsActive);
             if (active && !wasActive && source != null) source.PlayOneShot(ignition, ignitionVolume);
             for (int i = 0; i < plumes.Length; i++)
             {
@@ -66,6 +70,7 @@ namespace AirCombat
 
         private void OnDisable()
         {
+            maneuverFlames = false;
             wasActive = false;
             if (source != null) source.Stop();
             if (plumes != null)

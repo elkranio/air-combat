@@ -1,0 +1,114 @@
+using UnityEngine;
+using UnityEngine.InputSystem;
+
+namespace AirCombat
+{
+    // Weapon Lab only: real 90-degree heading change and a short powered escape.
+    // No teleport, sideways translation, invulnerability or separate cooldown.
+    [DisallowMultipleComponent]
+    [DefaultExecutionOrder(-10)] // Player Q/E input before flight; enemy starts in evasion Tick.
+    public sealed class WeaponLabBreakTurn : MonoBehaviour
+    {
+        [SerializeField, Min(.05f)] private float turnDuration = .55f;
+        [SerializeField, Min(.05f)] private float burstDuration = 1f;
+        [SerializeField, Range(0f, 85f)] private float breakBankAngle = 70f;
+        [SerializeField, Range(1f, 180f)] private float turnAngle = 90f;
+
+        private Afterburner boost;
+        private AfterburnerVfx flames;
+        private Transform visual;
+        private Quaternion visualRestRotation;
+        private WeaponLabEnemy owner;
+        private bool playerControlled;
+        private bool breaking;
+        private int direction;
+        private float elapsed;
+
+        public bool IsBreaking => breaking;
+
+        public void Configure(Afterburner tank, Transform aircraftVisual, bool playerInput,
+            WeaponLabEnemy enemy = null)
+        {
+            boost = tank;
+            flames = GetComponentInChildren<AfterburnerVfx>(true);
+            visual = aircraftVisual;
+            visualRestRotation = visual != null ? visual.localRotation : Quaternion.identity;
+            playerControlled = playerInput;
+            owner = enemy;
+            CancelBreak();
+        }
+
+        public bool TryBegin(int side)
+        {
+            if (!isActiveAndEnabled || breaking || side == 0 || boost == null ||
+                (owner != null && owner.IsDown) || !boost.TryConsumeFullCharge()) return false;
+            direction = side < 0 ? -1 : 1;
+            elapsed = 0f;
+            breaking = true;
+            if (flames != null) flames.SetManeuverFlames(true);
+            return true;
+        }
+
+        public void CancelBreak()
+        {
+            breaking = false;
+            elapsed = 0f;
+            if (flames != null) flames.SetManeuverFlames(false);
+        }
+
+        private void Update()
+        {
+            if (!playerControlled || !Application.isFocused) return;
+            var keyboard = Keyboard.current;
+            if (keyboard == null) return;
+            if (keyboard.qKey.wasPressedThisFrame) TryBegin(-1);
+            else if (keyboard.eKey.wasPressedThisFrame) TryBegin(1);
+        }
+
+        // Called by the owning flight controller exactly once per frame, before its motor Tick.
+        // Supply a variable yaw rate so the *real* plane reaches 90 degrees smoothly.
+        // Normal WASD/AI steering is suppressed for the full one-second burst.
+        public bool TryGetFlightCommand(float dt, out float steer, out float yawRate)
+        {
+            steer = 0f;
+            yawRate = 0f;
+            if (!breaking) return false;
+            if (owner != null && owner.IsDown) { CancelBreak(); return false; }
+            if (dt <= 0f) return true;
+
+            float turnTime = Mathf.Max(.05f, turnDuration);
+            float endTime = Mathf.Max(turnTime, burstDuration);
+            float next = Mathf.Min(endTime, elapsed + dt);
+            float from = Mathf.SmoothStep(0f, 1f, Mathf.Clamp01(elapsed / turnTime));
+            float to = Mathf.SmoothStep(0f, 1f, Mathf.Clamp01(next / turnTime));
+            float yawDelta = turnAngle * (to - from);
+            steer = yawDelta > 0.00001f ? direction : 0f;
+            yawRate = Mathf.Abs(yawDelta) / dt;
+            elapsed = next;
+            return true;
+        }
+
+        private void LateUpdate()
+        {
+            if (!breaking) return;
+            // AircraftMotor wrote the ordinary bank during its Update. Override it for
+            // the break, then restore normal banking without any axial spin.
+            if (visual != null)
+            {
+                float turnTime = Mathf.Max(.05f, turnDuration);
+                float endTime = Mathf.Max(turnTime, burstDuration);
+                float bankIn = Mathf.Min(.16f, turnTime * .5f);
+                float weight = elapsed < bankIn
+                    ? Mathf.SmoothStep(0f, 1f, elapsed / bankIn)
+                    : elapsed < turnTime ? 1f
+                    : Mathf.SmoothStep(1f, 0f, (elapsed - turnTime) / (endTime - turnTime + .0001f));
+                Quaternion breakBank = Quaternion.AngleAxis(-direction * breakBankAngle, Vector3.forward)
+                    * visualRestRotation;
+                visual.localRotation = Quaternion.Slerp(visual.localRotation, breakBank, weight);
+            }
+            if (elapsed >= Mathf.Max(turnDuration, burstDuration)) CancelBreak();
+        }
+
+        private void OnDisable() { CancelBreak(); }
+    }
+}
