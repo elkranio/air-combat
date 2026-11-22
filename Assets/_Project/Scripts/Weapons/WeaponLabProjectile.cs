@@ -2,7 +2,7 @@ using UnityEngine;
 
 namespace AirCombat
 {
-    // Moving projectile, not instant hitscan. The only collidable targets in Weapon Lab are dummies.
+    // Moving projectile, not instant hitscan. Dogfight rounds hit the 5-HP enemy aircraft.
     [DisallowMultipleComponent]
     public sealed class WeaponLabProjectile : MonoBehaviour
     {
@@ -34,14 +34,14 @@ namespace AirCombat
             if (remaining <= 0f) { Destroy(gameObject); return; }
             float travel = Mathf.Min(remaining, speed * Time.deltaTime);
             Vector3 start = transform.position;
-            // Only passive targets count. Ignore the aircraft's own colliders and scenery.
+            // Only the unarmed lab enemy takes damage; ignore player, ground and scenery.
             int count = Physics.RaycastNonAlloc(start, direction, HitBuffer, travel, ~0, QueryTriggerInteraction.Ignore);
-            WeaponLabTarget nearest = null;
+            WeaponLabEnemy nearest = null;
             Vector3 hitPoint = default;
             float best = float.PositiveInfinity;
             for (int i = 0; i < count; i++)
             {
-                var candidate = HitBuffer[i].collider.GetComponentInParent<WeaponLabTarget>();
+                var candidate = HitBuffer[i].collider.GetComponentInParent<WeaponLabEnemy>();
                 if (candidate == null || HitBuffer[i].distance >= best) continue;
                 nearest = candidate;
                 hitPoint = HitBuffer[i].point;
@@ -50,8 +50,7 @@ namespace AirCombat
             if (nearest != null)
             {
                 transform.position = hitPoint;
-                nearest.Hit(hitPoint);
-                if (owner != null) owner.RegisterHit();
+                if (nearest.Hit(hitPoint) && owner != null) owner.RegisterHit();
                 Destroy(gameObject);
                 return;
             }

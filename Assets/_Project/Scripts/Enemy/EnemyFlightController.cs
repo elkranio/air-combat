@@ -51,6 +51,15 @@ namespace AirCombat
             ResetFlight();
         }
 
+        // Only used by the Weapon Lab scene builder; existing Sandbox wiring is untouched.
+        public void Configure(Transform chaseTarget, Transform aircraftVisual)
+        {
+            target = chaseTarget;
+            visual = aircraftVisual;
+            afterburner = null;
+            lockReaction = null;
+        }
+
         public void Respawn(Vector3 position, Quaternion rotation)
         {
             transform.SetPositionAndRotation(position, rotation);

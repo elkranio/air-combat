@@ -15,7 +15,8 @@ namespace AirCombat
         [SerializeField] private FlightController flight;
         [SerializeField] private Afterburner boost;
         [SerializeField] private WeaponLabCannon cannon;
-        [SerializeField] private Transform[] passiveTargets;
+        [SerializeField] private Transform[] passiveTargets; // V0 generator compatibility only
+        [SerializeField] private WeaponLabEnemy fighter;
         [SerializeField, Min(1000f)] private float mapHalfExtent = 6000f;
 
         private RenderPipelineAsset originalPipeline;
@@ -39,6 +40,13 @@ namespace AirCombat
             cannon = weapon;
             passiveTargets = targets;
             mapHalfExtent = halfExtent;
+        }
+
+        // Upgrade existing range without recreating it or discarding imported audio.
+        public void ConfigureFighter(WeaponLabEnemy opponent)
+        {
+            fighter = opponent;
+            passiveTargets = System.Array.Empty<Transform>();
         }
 
         private void OnEnable()
@@ -65,7 +73,7 @@ namespace AirCombat
             originalPipeline = QualitySettings.renderPipeline;
             QualitySettings.renderPipeline = studyPipeline;
             ownsOverride = true;
-            PlaceAllTargets();
+            if (fighter == null) PlaceAllTargets();
         }
 
         private void OnDisable()
@@ -93,7 +101,7 @@ namespace AirCombat
 
         private void LateUpdate()
         {
-            if (player == null || passiveTargets == null) return;
+            if (fighter != null || player == null || passiveTargets == null) return;
             for (int i = 0; i < passiveTargets.Length; i++)
             {
                 var target = passiveTargets[i];
@@ -107,7 +115,8 @@ namespace AirCombat
         private void ResetToStart()
         {
             player.SetPositionAndRotation(spawnPosition, spawnRotation);
-            PlaceAllTargets();
+            if (fighter != null) fighter.ResetEncounter();
+            else PlaceAllTargets();
         }
 
         private void PlaceAllTargets()
@@ -131,9 +140,11 @@ namespace AirCombat
             if (!showUI || Event.current.type != EventType.Repaint) return;
             if (text == null)
                 text = new GUIStyle(GUI.skin.label) { fontSize = 14, normal = { textColor = Color.white } };
-            GUI.Box(new Rect(12, 12, 480, 129), GUIContent.none);
-            GUI.Label(new Rect(22, 17, 450, 22), "WEAPON LAB / 12 km training range / no enemy AI", text);
-            GUI.Label(new Rect(22, 40, 450, 22), "WASD fly   Space boost   LMB fire   V aim: " + cannon.AimModeLabel, text);
+            GUI.Box(new Rect(12, 12, 500, 129), GUIContent.none);
+            string enemyStatus = fighter != null
+                ? $"FIGHTER {fighter.Hp}/{fighter.MaxHp} HP   Kills {fighter.Kills}" : "NO ENEMY";
+            GUI.Label(new Rect(22, 17, 475, 22), "WEAPON LAB / " + enemyStatus + " / unarmed", text);
+            GUI.Label(new Rect(22, 40, 475, 22), "WASD fly   Space boost   LMB fire   V aim: " + cannon.AimModeLabel, text);
             GUI.Label(new Rect(22, 63, 450, 22), "G gun SFX: " + cannon.SoundModeLabel + "   T heat   R reset", text);
             string cameraMode = cameraLead != null && cameraLead.LookAheadEnabled ? "LOOK-AHEAD" : "CENTER";
             GUI.Label(new Rect(22, 86, 450, 22), "1/2/3 pitch   C: " + cameraMode + "   H hide HUD", text);

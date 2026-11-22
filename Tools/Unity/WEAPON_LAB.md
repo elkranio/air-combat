@@ -67,3 +67,17 @@ A single click was reported to produce one projectile but two successive audible
 After applying v3, open the existing `WeaponLab.unity` and Play. Nothing to reconfigure in Unity or reimport in Blender. `WeaponLabSession` attaches `WeaponLabFreeAim` at runtime and binds the actual smart-camera position. Firing now happens in `WeaponLabCannon.LateUpdate` after camera follow + camera lead to avoid a discrepancy between the visible ring and shot direction. The reticle is a **direction indicator** on the horizontal flight plane, not a prediction marker or a guaranteed hit; moving targets still require lead. Physical gun barrels are **not** visually rotated yet (two original hardpoints remain).
 
 Try `V` while holding LMB and while released; try pointer straight ahead, off-axis past the ±30° boundary, directly behind the aircraft, crossing the side/rear line, and far from the aircraft. Test `C` look-ahead and `1/2/3` pitch presets. Look for sudden jumps, guide clutter or tracer/marker disagreement. The FREE mode, limit angle and smoothing are unapproved until flight-tested.
+
+## v4 — one unarmed fighter (5 HP), replaces passive targets
+
+The player accepted the bounded mouse-aim experiment and locally narrowed `WeaponLabFreeAim.halfAngle` to **12 degrees per side** (±12°, 24° total). Keep that tuning; no other aim/flight/camera/audio changes in this atom.
+
+After applying the patch, **do not rerun** the original `ConfigureWeaponLab.Configure`: it is the older V0 arena builder that recreates seven dummies and can discard audio setup. Instead, stop Play Mode, save open scenes, let Unity import/compile, then upgrade the **existing** scene in place:
+
+```sh
+unity command script run --file Tools/Unity/ConfigureWeaponLabDogfight.cs --entry ConfigureWeaponLabDogfight.Configure
+```
+
+The idempotent updater deletes `Floating static shooting dummies`, retains the 12 km field, player, look-ahead, gun and installed audio clips, and clones the player's `JetVisual` into one `Dogfight Opponent`. It strips the cloned player-bound `AfterburnerVfx`, uses the existing amber enemy aircraft materials, adds a single sphere hitbox and uses the existing Sandbox `EnemyFlightController` **Cruise / CatchUp** behavior (no player-aim-sector awareness or special dodges). Enemy does **not** fire. `WeaponLabEnemy`: 5 hits to down it, immediate pale hit flash, disappears after final hit, respawns in front after 2 seconds. R resets the fighter as well as the player. HUD displays enemy HP and kills. Moving tracers still use a swept raycast; only this enemy registers cannon damage.
+
+This is an intentionally asymmetric shooting/chasing test, **not yet a real dogfight**. Check that the enemy stays visible often enough, target hitbox is fair, and 5 hits feel right. Next, if this is fun, trial AI reacting to the aiming sector as a separate atom. The original V0 generator and `WeaponLabTarget.cs` are retained as archival sources only; they do not run in the updated scene. No changes to Sandbox gameplay or global settings.
