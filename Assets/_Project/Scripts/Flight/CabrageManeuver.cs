@@ -3,8 +3,8 @@ using UnityEngine.InputSystem;
 
 namespace AirCombat
 {
-    // GroundAttackLab-only prototype: commit to a real climb and descent before
-    // G4b adds rockets. Player flight remains horizontally steered outside the maneuver.
+    // GroundAttackLab-only cabrage with a real climb and descent. The G4b
+    // NURS rack observes the climb phase and fires while the plane is committed.
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-5)] // Input before FlightController; height before camera LateUpdate.
     public sealed class CabrageManeuver : MonoBehaviour
@@ -38,9 +38,14 @@ namespace AirCombat
         public float CooldownLeft => Mathf.Max(0f, readyAt - Time.time);
         public float NominalAltitude => nominalAltitude;
         public string PhaseLabel => phase.ToString().ToUpperInvariant();
-        // Reserved for G4b: rockets will be emitted across the climb, not on button press.
         public float ClimbProgress01 => phase == ManeuverPhase.Climb
             ? Mathf.Clamp01(phaseTime / Mathf.Max(.1f, climbSeconds)) : 0f;
+        // Release timing and pitch are shared with G4b rockets and future G4c preview.
+        public float ClimbElapsedSeconds => phase == ManeuverPhase.Climb ? phaseTime : 0f;
+        public float ClimbDuration => climbSeconds;
+        public float ClimbHeight => climbHeight;
+        public float PitchAtClimbTime(float seconds) => noseUpDegrees * Mathf.Sin(
+            Mathf.PI * Mathf.Clamp01(seconds / Mathf.Max(.1f, climbSeconds)));
 
         public void Configure(WeaponSelection weaponSelection, BreakTurn escape, Transform aircraftVisual)
         {

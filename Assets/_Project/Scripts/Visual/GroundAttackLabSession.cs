@@ -4,7 +4,7 @@ using UnityEngine.InputSystem;
 namespace AirCombat
 {
     // Scene-only composition test. WeaponLabSession is deliberately not involved.
-    // Equips the G3 bomb prototype and depot hit zones without mutating prefab assets.
+    // Equips G3 bombs, G4b NURS, and depot hit zones without mutating prefab assets.
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-80)]
     public sealed class GroundAttackLabSession : MonoBehaviour
@@ -19,6 +19,7 @@ namespace AirCombat
         private BoundedAim aim;
         private BombRack bombs;
         private CabrageManeuver cabrage;
+        private NursRocketRack nurs;
         private GroundDepotTarget[] depots;
         private Vector3 startPosition;
         private Quaternion startRotation;
@@ -92,6 +93,9 @@ namespace AirCombat
             if (cabrage == null) cabrage = jet.AddComponent<CabrageManeuver>();
             cabrage.Configure(selection, breakTurn, flight.Visual);
             flight.ConfigureCabrage(cabrage);
+            nurs = jet.GetComponent<NursRocketRack>();
+            if (nurs == null) nurs = jet.AddComponent<NursRocketRack>();
+            nurs.Configure(cabrage, flight);
             // Height reference only while bombs are equipped: no lead/prediction.
             var nadir = jet.GetComponent<BombNadirMarker>();
             if (nadir == null) nadir = jet.AddComponent<BombNadirMarker>();
@@ -130,12 +134,12 @@ namespace AirCombat
             if (label == null)
                 label = new GUIStyle(GUI.skin.label) { fontSize = 14, normal = { textColor = Color.white } };
             GUI.Box(new Rect(12, 12, 650, 140), GUIContent.none);
-            GUI.Label(new Rect(22, 17, 620, 22), "GROUND ATTACK LAB G4a / BOMBS + CABRAGE", label);
+            GUI.Label(new Rect(22, 17, 620, 22), "GROUND ATTACK LAB G4b / BOMBS + CABRAGE NURS", label);
             GUI.Label(new Rect(22, 40, 620, 22), "A/D turn  W boost  Q/E break/abort  1/2/3/4/5 weapons  R reset  H HUD", label);
             GUI.Label(new Rect(22, 63, 620, 22),
                 $"Speed {flight.CurrentSpeed:F0}   Fuel {afterburner.Charge01:P0}   Bombs {bombs.FiredCount}   Pending {bombs.PendingCount}   CD {bombs.CooldownLeft:F1}s", label);
             GUI.Label(new Rect(22, 86, 620, 22),
-                $"NURS G4a: {cabrage.PhaseLabel}   Alt {playerJet.transform.position.y:F1}   CD {cabrage.CooldownLeft:F1}s   (rockets in G4b)", label);
+                $"NURS: {cabrage.PhaseLabel}   Alt {playerJet.transform.position.y:F1}   CD {cabrage.CooldownLeft:F1}s   Fired {nurs.FiredCount}   Impacts {nurs.ImpactCount}   PartHits {nurs.DamagedPartHits}", label);
             int destroyed = 0;
             if (depots != null) foreach (var depot in depots) destroyed += depot.DestroyedParts;
             GUI.Label(new Rect(22, 109, 620, 22),
