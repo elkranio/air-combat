@@ -12,6 +12,8 @@ namespace AirCombat
         [SerializeField] private EnemyFlightController flight;
         [SerializeField] private Collider hitbox;
         [SerializeField] private Renderer[] visibleParts;
+        [SerializeField] private WeaponLabEvasion evasion;
+        [SerializeField] private Afterburner evadeBoost;
 
         private MaterialPropertyBlock hitTint;
         private float flashUntil;
@@ -24,6 +26,7 @@ namespace AirCombat
         public int MaxHp => maxHp;
         public int Kills { get; private set; }
         public bool IsDown => down;
+        public string EvasionLabel => evasion != null ? evasion.ModeLabel : "OFF";
 
         public void Configure(Transform chaseTarget, EnemyFlightController controller,
             Collider collider, Renderer[] renderers)
@@ -34,12 +37,19 @@ namespace AirCombat
             visibleParts = renderers;
         }
 
+        public void ConfigureEvasion(WeaponLabEvasion brain, Afterburner boost)
+        {
+            evasion = brain;
+            evadeBoost = boost;
+        }
+
         private void Start() { ResetEncounter(); }
 
         public void ResetEncounter()
         {
             if (player == null || flight == null || hitbox == null) return;
             Hp = maxHp;
+            if (evasion != null) evasion.ResetForEncounter();
             down = hidden = false;
             flashUntil = hideAt = respawnAt = 0f;
             SetVisible(true);
@@ -72,6 +82,8 @@ namespace AirCombat
                 Kills++;
                 down = true;
                 flight.enabled = false;
+                if (evasion != null) evasion.ResetForEncounter();
+                if (evadeBoost != null) evadeBoost.Tick(false, 0f); // extinguish enemy flame on kill
                 hitbox.enabled = false;
                 hideAt = Time.time + 0.12f; // let the final hit flash register
                 respawnAt = Time.time + respawnDelay;

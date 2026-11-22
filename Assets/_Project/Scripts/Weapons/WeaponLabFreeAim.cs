@@ -25,6 +25,7 @@ namespace AirCombat
         private bool wasAiming;
 
         public bool FreeAimEnabled { get; private set; } = true;
+        public float HalfAngle => halfAngle; // Enemy can react to aircraft sector, never mouse position.
         public Vector3 FireDirection { get; private set; }
         public string ModeLabel => FreeAimEnabled ? "FREE +/-" + halfAngle.ToString("F0") : "FIXED";
 

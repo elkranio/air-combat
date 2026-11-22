@@ -2450,6 +2450,8 @@ GameObject:
   - component: {fileID: 1823924897}
   - component: {fileID: 1823924898}
   - component: {fileID: 1823924895}
+  - component: {fileID: 1823924899}
+  - component: {fileID: 1823924900}
   m_Layer: 0
   m_Name: Dogfight Opponent
   m_TagString: Untagged
@@ -2496,6 +2498,8 @@ MonoBehaviour:
   - {fileID: 1233671786}
   - {fileID: 1459603497}
   - {fileID: 955052120}
+  evasion: {fileID: 1823924900}
+  evadeBoost: {fileID: 1823924899}
 --- !u!4 &1823924896
 Transform:
   m_ObjectHideFlags: 0
@@ -2547,8 +2551,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::AirCombat.EnemyFlightController
   target: {fileID: 1971567200}
   visual: {fileID: 1905188120}
-  afterburner: {fileID: 0}
+  afterburner: {fileID: 1823924899}
   lockReaction: {fileID: 0}
+  labEvasion: {fileID: 1823924900}
   catchUpDistance: 180
   resumeCruiseDistance: 100
   cruiseSpeed: 40
@@ -2561,6 +2566,46 @@ MonoBehaviour:
   cruiseSteering: 0.25
   maneuverPeriod: 12
   fullSteerAngle: 30
+--- !u!114 &1823924899
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1823924894}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8c8e7b7546c6f3c4bb9b3992c922f1bc, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::AirCombat.Afterburner
+  boostSpeed: 110
+  boostAcceleration: 180
+  capacitySeconds: 2
+  rechargeSeconds: 5
+  rechargeDelay: 0.4
+--- !u!114 &1823924900
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1823924894}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4b1b4ad6b8f344928892f564edb40a90, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::AirCombat.WeaponLabEvasion
+  player: {fileID: 1971567200}
+  noticeRange: 135
+  sectorPadding: 2
+  evadeChance: 0.72
+  afterburnerChance: 0.4
+  minReaction: 0.32
+  maxReaction: 0.52
+  minBreakDuration: 0.85
+  maxBreakDuration: 1.35
+  minCooldown: 1.6
+  maxCooldown: 2.7
 --- !u!1 &1867524638
 GameObject:
   m_ObjectHideFlags: 0
@@ -2661,6 +2706,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1905188120}
+  - component: {fileID: 1905188121}
   m_Layer: 0
   m_Name: JetVisual
   m_TagString: Untagged
@@ -2684,6 +2730,27 @@ Transform:
   - {fileID: 313519435}
   m_Father: {fileID: 1823924896}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1905188121
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1905188119}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9dc1780d2b381354a846049dceaef6df, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::AirCombat.AfterburnerVfx
+  afterburner: {fileID: 1823924899}
+  effectMaterial: {fileID: 2100000, guid: 5930cc9d78e3a764ebb9c9b0fa80227d, type: 2}
+  nozzlePositions:
+  - {x: -1.3394725, y: -0.24384642, z: -4.9366693}
+  - {x: 1.3394802, y: -0.24384642, z: -4.9366693}
+  flameRadius: 0.65122306
+  flameLength: 7
+  playIgnitionSound: 0
+  ignitionVolume: 0.18
 --- !u!1 &1954734749
 GameObject:
   m_ObjectHideFlags: 0

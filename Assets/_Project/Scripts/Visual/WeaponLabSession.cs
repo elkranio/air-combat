@@ -143,7 +143,8 @@ namespace AirCombat
             GUI.Box(new Rect(12, 12, 500, 129), GUIContent.none);
             string enemyStatus = fighter != null
                 ? $"FIGHTER {fighter.Hp}/{fighter.MaxHp} HP   Kills {fighter.Kills}" : "NO ENEMY";
-            GUI.Label(new Rect(22, 17, 475, 22), "WEAPON LAB / " + enemyStatus + " / unarmed", text);
+            GUI.Label(new Rect(22, 17, 475, 22), "WEAPON LAB / " + enemyStatus +
+                " / B EVADE: " + (fighter != null ? fighter.EvasionLabel : "OFF"), text);
             GUI.Label(new Rect(22, 40, 475, 22), "WASD fly   Space boost   LMB fire   V aim: " + cannon.AimModeLabel, text);
             GUI.Label(new Rect(22, 63, 450, 22), "G gun SFX: " + cannon.SoundModeLabel + "   T heat   R reset", text);
             string cameraMode = cameraLead != null && cameraLead.LookAheadEnabled ? "LOOK-AHEAD" : "CENTER";

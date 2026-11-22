@@ -81,3 +81,23 @@ unity command script run --file Tools/Unity/ConfigureWeaponLabDogfight.cs --entr
 The idempotent updater deletes `Floating static shooting dummies`, retains the 12 km field, player, look-ahead, gun and installed audio clips, and clones the player's `JetVisual` into one `Dogfight Opponent`. It strips the cloned player-bound `AfterburnerVfx`, uses the existing amber enemy aircraft materials, adds a single sphere hitbox and uses the existing Sandbox `EnemyFlightController` **Cruise / CatchUp** behavior (no player-aim-sector awareness or special dodges). Enemy does **not** fire. `WeaponLabEnemy`: 5 hits to down it, immediate pale hit flash, disappears after final hit, respawns in front after 2 seconds. R resets the fighter as well as the player. HUD displays enemy HP and kills. Moving tracers still use a swept raycast; only this enemy registers cannon damage.
 
 This is an intentionally asymmetric shooting/chasing test, **not yet a real dogfight**. Check that the enemy stays visible often enough, target hitbox is fair, and 5 hits feel right. Next, if this is fun, trial AI reacting to the aiming sector as a separate atom. The original V0 generator and `WeaponLabTarget.cs` are retained as archival sources only; they do not run in the updated scene. No changes to Sandbox gameplay or global settings.
+
+## v5 — intermittent sector evasion and afterburner
+
+**Tested V4 result:** user can shoot down the 5-HP, non-evasive fighter easily. This is expected and supports the viability of ±12° free aim. Difficulty should come from enemy behavior, not unresponsive aim controls. The user accepted the 150 ms audio trim and current tracer feel. **V5 needs a new flight test.**
+
+Apply V5 patch, let Unity compile, stop Play and save open scenes. Do **not** rebuild the V0 dummy range or rerun the V4 dogfight builder. Run this one-time, idempotent **upgrade to the existing** `WeaponLab.unity`:
+
+```sh
+unity command script run --file Tools/Unity/ConfigureWeaponLabEvasion.cs --entry ConfigureWeaponLabEvasion.Configure
+```
+
+This adds `WeaponLabEvasion` and an ordinary `Afterburner` to the V4 opponent, reuses the original player-authored afterburner flame VFX **bound to the enemy's own fuel**, and keeps the player's sound, camera, free-aim ±12°, tracer, five-hit target and scene layout unchanged. The enemy remains **unarmed**.
+
+- **B** in Play Mode toggles AI reactions ON/OFF. HUD shows `WATCH`, `BREAK`, `BOOST`, `RECOVER` or `OFF`. `B OFF` = original V4 Cruise/CatchUp flight, a controlled A/B.
+- AI notices its position inside the **aircraft-forward ±12° sector** with a small tolerance at distances about 12–135 units. It does **not** read cursor position, exact reticle or incoming projectile positions. A reaction takes ~0.32–0.52 s of continuous exposure.
+- About 72% of eligible encounters produce a committed turn to the nearer edge; 28% go to cooldown without reacting. About 40% of turns request afterburner for part of the escape; both the speed and visible twin exhaust flames are limited by the existing Afterburner fuel resource. Ordinary EnemyFlightController `turnRate` and banking still govern the actual maneuver.
+- Each break lasts roughly 0.85–1.35 s, followed by a 1.6–2.7 s cooldown, preventing instant zigzag reactions. `R`, death and respawn reset the current reaction. The `B` preference stays unchanged across respawns.
+- Tweaks are serialized in `WeaponLabEvasion.cs`: notice range, probabilities, reaction window, escape duration and cooldown. All numbers are provisional. Shared `EnemyFlightController` checks an optional lab-only component; Sandbox opponents have none and retain their existing behavior.
+
+Test whether an approaching enemy sometimes remains easy, sometimes breaks away and sometimes lights its engines, without reading as a perfect dodge-bot. Compare `B ON`/`B OFF` under otherwise similar conditions; do not tune enemy gunfire or player HP yet.

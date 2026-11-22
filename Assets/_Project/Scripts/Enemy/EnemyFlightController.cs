@@ -12,6 +12,8 @@ namespace AirCombat
         [SerializeField] private Transform visual;
         [SerializeField] private Afterburner afterburner;
         [SerializeField] private LockAfterburnerReaction lockReaction;
+        // Null in Sandbox: the existing pursuit algorithm remains unchanged there.
+        [SerializeField] private WeaponLabEvasion labEvasion;
 
         [Header("Distance (horizontal units)")]
         [SerializeField, Min(1f)] private float catchUpDistance = 180f;
@@ -58,6 +60,12 @@ namespace AirCombat
             visual = aircraftVisual;
             afterburner = null;
             lockReaction = null;
+        }
+
+        public void ConfigureLabEvasion(WeaponLabEvasion brain, Afterburner boost)
+        {
+            labEvasion = brain;
+            afterburner = boost;
         }
 
         public void Respawn(Vector3 position, Quaternion rotation)
@@ -108,8 +116,15 @@ namespace AirCombat
                 speed = cruiseSpeed;
             }
 
+            bool evadeBoost = false;
+            if (labEvasion != null && labEvasion.Tick(dt, out float evadeSteer, out evadeBoost))
+            {
+                // Preserve the motor, turning limit and bank. Only override pilot intent.
+                steer = evadeSteer;
+                speed = cruiseSpeed;
+            }
             bool boost = afterburner != null && afterburner.Tick(
-                lockReaction != null && lockReaction.WantsBoost(dt), dt);
+                (lockReaction != null && lockReaction.WantsBoost(dt)) || evadeBoost, dt);
             if (boost) speed = Mathf.Max(speed, afterburner.BoostSpeed);
             float accel = boost ? Mathf.Max(acceleration, afterburner.BoostAcceleration) : acceleration;
             motor.Tick(speed, steer, accel, deceleration,
