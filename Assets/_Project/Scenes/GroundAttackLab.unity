@@ -435,6 +435,74 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 8990203064353140006, guid: 51f6a5cc935a2364aa9172ee4bdb8471, type: 3}
   m_PrefabInstance: {fileID: 703553484}
   m_PrefabAsset: {fileID: 0}
+--- !u!1001 &973228081
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 0}
+    m_Modifications:
+    - target: {fileID: 461090623876320695, guid: b355b25c62e3bfd489177399480dd465, type: 3}
+      propertyPath: m_Name
+      value: AA1Autocannon
+      objectReference: {fileID: 0}
+    - target: {fileID: 5014694610982739730, guid: b355b25c62e3bfd489177399480dd465, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 85
+      objectReference: {fileID: 0}
+    - target: {fileID: 5014694610982739730, guid: b355b25c62e3bfd489177399480dd465, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5014694610982739730, guid: b355b25c62e3bfd489177399480dd465, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 300
+      objectReference: {fileID: 0}
+    - target: {fileID: 5014694610982739730, guid: b355b25c62e3bfd489177399480dd465, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5014694610982739730, guid: b355b25c62e3bfd489177399480dd465, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5014694610982739730, guid: b355b25c62e3bfd489177399480dd465, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5014694610982739730, guid: b355b25c62e3bfd489177399480dd465, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5014694610982739730, guid: b355b25c62e3bfd489177399480dd465, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5014694610982739730, guid: b355b25c62e3bfd489177399480dd465, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5014694610982739730, guid: b355b25c62e3bfd489177399480dd465, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: b355b25c62e3bfd489177399480dd465, type: 3}
+--- !u!114 &973228082 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 4230202306021651294, guid: b355b25c62e3bfd489177399480dd465, type: 3}
+  m_PrefabInstance: {fileID: 973228081}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 33faabc6120b40608d6d4811fcebd334, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::AirCombat.AntiAircraftTurret
 --- !u!1001 &1456385082
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -490,7 +558,10 @@ PrefabInstance:
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 3077770575158956884, guid: d5110f3e56ef9894c825455424d41a82, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1660991762}
   m_SourcePrefab: {fileID: 100100000, guid: d5110f3e56ef9894c825455424d41a82, type: 3}
 --- !u!108 &1456385083 stripped
 Light:
@@ -565,6 +636,40 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 003863439b0342cb9907ff6fbec70471, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::AirCombat.CombatCameraRig
+--- !u!1 &1660991761 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 3077770575158956884, guid: d5110f3e56ef9894c825455424d41a82, type: 3}
+  m_PrefabInstance: {fileID: 1456385082}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &1660991762
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1660991761}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 474bcb49853aa07438625e644c072ee6, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Unity.RenderPipelines.Universal.Runtime::UnityEngine.Rendering.Universal.UniversalAdditionalLightData
+  m_UsePipelineSettings: 1
+  m_AdditionalLightsShadowResolutionTier: 2
+  m_CustomShadowLayers: 0
+  m_LightCookieSize: {x: 1, y: 1}
+  m_LightCookieOffset: {x: 0, y: 0}
+  m_SoftShadowQuality: 0
+  m_RenderingLayersMask:
+    serializedVersion: 0
+    m_Bits: 1
+  m_ShadowRenderingLayersMask:
+    serializedVersion: 0
+    m_Bits: 1
+  m_Version: 4
+  m_LightLayerMask: 1
+  m_ShadowLayerMask: 1
+  m_RenderingLayers: 1
+  m_ShadowRenderingLayers: 1
 --- !u!1 &1774015051
 GameObject:
   m_ObjectHideFlags: 0
@@ -822,6 +927,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::AirCombat.GroundAttackLabSession
   playerJet: {fileID: 161383144}
   cameraRig: {fileID: 1507333505}
+  antiAircraft: {fileID: 973228082}
 --- !u!4 &1921309799
 Transform:
   m_ObjectHideFlags: 0
@@ -883,3 +989,4 @@ SceneRoots:
   - {fileID: 2076095026}
   - {fileID: 1456385082}
   - {fileID: 1774015055}
+  - {fileID: 973228081}

@@ -11,6 +11,7 @@ namespace AirCombat
     {
         [SerializeField] private JetAssembly playerJet;
         [SerializeField] private CombatCameraRig cameraRig;
+        [SerializeField] private AntiAircraftTurret antiAircraft; // Optional scene instance (AA1).
 
         private FlightController flight;
         private Afterburner afterburner;
@@ -22,6 +23,7 @@ namespace AirCombat
         private NursRocketRack nurs;
         private NursCameraCue nursCamera;
         private GroundDepotTarget[] depots;
+        private PlayerHitPoints playerHealth;
         private Vector3 startPosition;
         private Quaternion startRotation;
         private bool showDiagnostics = true;
@@ -32,6 +34,13 @@ namespace AirCombat
         {
             playerJet = jet;
             cameraRig = rig;
+        }
+
+        // Called only by the one-time AA1 scene installer. The turret prefab
+        // never serializes a link back to a scene-specific aircraft.
+        public void ConfigureAntiAircraft(AntiAircraftTurret turret)
+        {
+            antiAircraft = turret;
         }
 
         private void Awake()
@@ -108,6 +117,16 @@ namespace AirCombat
 
             startPosition = jet.transform.position;
             startRotation = jet.transform.rotation;
+
+            // GroundAttackLab-only incoming damage. Shared PlayerJet prefab,
+            // WeaponLab and Sandbox receive no AA hitbox or health component.
+            if (antiAircraft != null)
+            {
+                playerHealth = jet.GetComponent<PlayerHitPoints>();
+                if (playerHealth == null) playerHealth = jet.AddComponent<PlayerHitPoints>();
+                playerHealth.InstallHitbox();
+                antiAircraft.BindTarget(jet.transform, playerHealth);
+            }
         }
 
         private void Update()
@@ -132,6 +151,8 @@ namespace AirCombat
             cameraRig.BindPlayer(playerJet.transform, afterburner, false);
             aim?.Configure(cameraRig.ViewCamera, playerJet.transform);
             cameraRig.Lock.ResetLock();
+            playerHealth?.ResetHealth();
+            antiAircraft?.ResetEncounter();
         }
 
         private void OnGUI()
@@ -139,7 +160,7 @@ namespace AirCombat
             if (!showDiagnostics || !enabled || Event.current.type != EventType.Repaint) return;
             if (label == null)
                 label = new GUIStyle(GUI.skin.label) { fontSize = 14, normal = { textColor = Color.white } };
-            GUI.Box(new Rect(12, 12, 650, 140), GUIContent.none);
+            GUI.Box(new Rect(12, 12, 650, antiAircraft != null ? 164 : 140), GUIContent.none);
             GUI.Label(new Rect(22, 17, 620, 22), "GROUND ATTACK LAB G4b / BOMBS + CABRAGE NURS", label);
             GUI.Label(new Rect(22, 40, 620, 22), "A/D turn  W boost  Q/E break/abort  1/2/3/4/5 weapons  R reset  H HUD", label);
             GUI.Label(new Rect(22, 63, 620, 22),
@@ -150,6 +171,9 @@ namespace AirCombat
             if (depots != null) foreach (var depot in depots) destroyed += depot.DestroyedParts;
             GUI.Label(new Rect(22, 109, 620, 22),
                 $"Destroyed depot parts {destroyed}/16   |   Hold course for precision; W adds scatter", label);
+            if (antiAircraft != null && playerHealth != null)
+                GUI.Label(new Rect(22, 132, 620, 22),
+                    $"AA1: Player {playerHealth.Hp}/{playerHealth.MaxHp} HP   Turret {antiAircraft.Hp}/{antiAircraft.MaxHp} HP   Shots {antiAircraft.FiredCount}   Hits {antiAircraft.HitCount}", label);
         }
     }
 }

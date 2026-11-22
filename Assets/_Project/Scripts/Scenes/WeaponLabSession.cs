@@ -68,7 +68,7 @@ namespace AirCombat
             if (player == null || flight == null || boost == null || cannon == null)
             { Debug.LogError("Weapon Lab missing flight/weapon references.", this); enabled = false; return; }
             // Runtime-only input remapping; other scenes keep their existing pitch hotkeys.
-            cameraFollow = FindFirstObjectByType<TopDownCameraFollow>();
+            cameraFollow = FindAnyObjectByType<TopDownCameraFollow>();
             var viewCamera = cameraFollow != null ? cameraFollow.GetComponent<Camera>() : null;
             if (viewCamera == null)
             { Debug.LogError("Weapon Lab needs a TopDownCameraFollow camera.", this); enabled = false; return; }
