@@ -15,9 +15,9 @@ Open `Assets/_Project/Scenes/GroundAttackLab.unity` and enter Play Mode. **No ed
 
 ## Aiming/flight rules
 
-`BombTrajectory` integrates a 24-unit/s² downward acceleration and 0.045/s horizontal drag. From 46-ish units of release altitude a bomb lands in roughly 1.9 seconds on open terrain. Predict and live travel use the *same integration step* and swept Physics raycasts, so buildings intercept bombs before the terrain. The bomb visual has **no collider**; its physical collision is a ray sweep, not Rigidbody tunneling.
+`BombTrajectory` integrates an **80-unit/s²** downward acceleration and 0.045/s horizontal drag (**G3a**, changed from 24). From 46-ish units of release altitude a bomb lands in roughly **1.1 seconds** on open terrain. The faster fall reduces lead distance at cruise and on W boost; do not offset the visual cue independently of ballistics. Predict and live travel use the *same integration step* and swept Physics raycasts, so buildings intercept bombs before the terrain. The bomb visual has **no collider**; its physical collision is a ray sweep, not Rigidbody tunneling.
 
-While bombs are selected, four ring markers show predicted impact points for straight, constant-speed flight over the full burst. The first one is emphasized. The outline encompasses first-to-last expected impact and a margin for dispersion. W/afterburner widens this corridor and higher speed lengthens it. Prediction **does not assume future turns, future acceleration or hidden random errors**, intentionally; that is the skill element. The marker is an approximate area, not a guaranteed hitbox.
+While bombs are selected, **one ground-aligned four-corner HUD bracket** bounds all four predicted impact points for straight, constant-speed flight. Each of its four corners has only two short legs (no filled area, connected rectangle or individual rings). It uses the same cool, pale HUD color and SandboxEffect shader as the existing gun guides. The rectangle is oriented to the aircraft heading; projections from impacts on roofs and terrain share one flat horizontal plane instead of skewing the shape. W/afterburner widens this footprint from release error and higher speed lengthens it. Prediction **does not assume future turns, future acceleration or hidden random errors**, intentionally; that is the skill element. The marker is an approximate area, not a guaranteed hitbox.
 
 ## Individual ground damage
 
@@ -28,9 +28,13 @@ G2's FBX is combined by material, not destructible part. To avoid a re-bake, `Gr
 ## Tunables and verification
 
 - `BombRack`: burst size 4, release interval 0.25, cooldown 3, release offset (0, -2, 1.5), afterburner random error 9.
-- `BombTrajectory`: gravity 24, horizontal drag .045, integration step .04.
+- `BombTrajectory`: gravity **80** (G3a; originally 24), horizontal drag .045, integration step .04.
 - `BombProjectile`: radius 13, zone damage 1.
 - Test straight approach vs A/D sweep; cruise vs W footprint and observed spread; Q/E partial cancellation; switching blocked *only during pending shots*; R during burst; damage to each of 4 zones; multiple depots and 3s cooldown.
 - Regression: run WeaponLab (old 1–3 selections, air weapons and enemy) and Sandbox (legacy flight/input), and verify no scene/prefab/FBX changes.
 
 **Limits:** bomb visuals, marker, effects and zones are prototype geometry/materials created in Play Mode; not yet a reusable authored bomb mesh/VFX prefab or persistent target damage system. No NURS, anti-aircraft fire or radar in G3. Do not interpret the prediction as physics-based accuracy under future turns or acceleration. Aim afterburner speed still **110**, not the exploratory 140.
+
+## G3a — bomb cue geometry and range (after initial G3 green)
+
+G3a keeps the four-bomb burst, actual prediction, per-bomb independent gravity trajectories, 0.25s cadence, afterburner error, switch lock, damage and all other weapon tuning unchanged. The marker is **not screen-space clamped** and is never artificially shifted closer: increased gravity shortens the real flight/lead distance as well as the predicted one. The single bracket is the expected burst envelope, not four guaranteed hit circles. Roof impacts may raise the entire flat marker plane to the highest impact surface; its corners never follow different collider heights. Check cruise / W, heading changes and releases over bunker roofs. With a very narrow viewport or certain headings, the full high-speed burst envelope may still exceed the frame; revisit camera framing separately rather than lying about ballistics.

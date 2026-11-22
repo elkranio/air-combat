@@ -3,91 +3,109 @@ using UnityEngine.Rendering;
 
 namespace AirCombat
 {
-    // Four projected landings plus a forecast footprint. The first ring is white,
-    // the remaining rings amber. The footprint widens under active afterburner.
-    // All projected points assume the pilot holds heading/speed for the full burst.
+    // One military-HUD four-corner footprint, derived from all four predicted landings.
+    // The bounds are a level XZ rectangle aligned to the jet's horizontal heading;
+    // impacts on roofs must not tilt or skew the outline.
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(155)]
     public sealed class BombAimIndicator : MonoBehaviour
     {
-        private const int RingSides = 16;
+        private const float SurfaceOffset = .4f;
+        private static readonly Color GuideColor = new Color(.87f, .91f, .94f, .80f);
+
         private BombRack rack;
         private Material material;
-        private LineRenderer outline;
-        private LineRenderer[] rings;
+        private LineRenderer[] corners;
+        private Vector3[] predicted;
 
         public void Configure(BombRack owner)
         {
             rack = owner;
-            var shader = Shader.Find("Sprites/Default");
-            if (shader == null) shader = Shader.Find("Universal Render Pipeline/Unlit");
-            material = new Material(shader) { name = "G3 predicted landing (runtime)" };
-            outline = MakeLine("Predicted burst footprint", 5, .55f, new Color(1f,.71f,.26f,.70f));
-            rings = new LineRenderer[rack.BurstSize];
-            for (int i = 0; i < rings.Length; i++)
-                rings[i] = MakeLine(i == 0 ? "First bomb / impact" : "Bomb " + (i+1) + " / impact",
-                    RingSides + 1, i == 0 ? .9f : .55f,
-                    i == 0 ? new Color(1f, 1f, .86f, .95f) : new Color(1f, .7f, .2f, .80f));
-        }
-
-        private LineRenderer MakeLine(string title, int count, float width, Color color)
-        {
-            var go = new GameObject(title);
-            go.transform.SetParent(transform, false);
-            var line = go.AddComponent<LineRenderer>();
-            line.sharedMaterial = material;
-            line.useWorldSpace = true;
-            line.positionCount = count;
-            line.widthMultiplier = width;
-            line.startColor = line.endColor = color;
-            line.shadowCastingMode = ShadowCastingMode.Off;
-            line.receiveShadows = false;
-            line.numCapVertices = 0;
-            return line;
+            var shader = Shader.Find("AirCombat/SandboxEffect");
+            if (shader == null) shader = Shader.Find("Sprites/Default");
+            material = new Material(shader) { name = "G3a bomb impact HUD (runtime)" };
+            predicted = new Vector3[rack.BurstSize];
+            corners = new LineRenderer[4];
+            for (int i = 0; i < corners.Length; i++)
+            {
+                var go = new GameObject("Bomb impact / corner " + (i + 1));
+                go.transform.SetParent(transform, false);
+                var line = go.AddComponent<LineRenderer>();
+                line.sharedMaterial = material;
+                line.useWorldSpace = true;
+                line.positionCount = 3;
+                line.widthMultiplier = .32f; // Match the autocannon's actual-aim ring.
+                line.startColor = line.endColor = GuideColor;
+                line.shadowCastingMode = ShadowCastingMode.Off;
+                line.receiveShadows = false;
+                line.numCapVertices = 0;
+                corners[i] = line;
+            }
+            Show(false);
         }
 
         private void LateUpdate()
         {
-            if (rack == null || rings == null) return;
-            bool selected = rack.IsSelected;
-            if (outline != null) outline.enabled = selected;
-            foreach (var ring in rings) ring.enabled = selected;
-            if (!selected) return;
+            if (rack == null || corners == null) return;
+            if (!rack.IsSelected) { Show(false); return; }
 
-            Vector3 first = default, last = default;
-            float maxRadius = 2.5f;
-            bool allFound = true;
-            for (int i = 0; i < rings.Length; i++)
+            Vector3 forward = Vector3.ProjectOnPlane(transform.forward, Vector3.up);
+            if (forward.sqrMagnitude < .0001f) { Show(false); return; }
+            forward.Normalize();
+            Vector3 right = Vector3.Cross(Vector3.up, forward);
+
+            float minForward = float.PositiveInfinity, maxForward = float.NegativeInfinity;
+            float minRight = float.PositiveInfinity, maxRight = float.NegativeInfinity;
+            float highestSurface = float.NegativeInfinity;
+            float margin = 2.5f;
+            Vector3 anchor = default;
+            for (int i = 0; i < predicted.Length; i++)
             {
-                if (!rack.Predict(i, out Vector3 point, out float flightTime))
-                { allFound = false; break; }
-                point.y += .3f;
-                if (i == 0) first = point;
-                last = point;
-                maxRadius = Mathf.Max(maxRadius, rack.ForecastErrorRadius(flightTime));
-                float dotRadius = i == 0 ? 2.4f : 1.65f;
-                for (int j = 0; j <= RingSides; j++)
-                {
-                    float a = 2f * Mathf.PI * j / RingSides;
-                    rings[i].SetPosition(j, point + new Vector3(
-                        Mathf.Cos(a) * dotRadius, 0, Mathf.Sin(a) * dotRadius));
-                }
+                if (!rack.Predict(i, out Vector3 impact, out float flightTime))
+                { Show(false); return; }
+                predicted[i] = impact;
+                if (i == 0) anchor = impact;
+                Vector3 relative = impact - anchor;
+                float along = Vector3.Dot(relative, forward);
+                float across = Vector3.Dot(relative, right);
+                minForward = Mathf.Min(minForward, along);
+                maxForward = Mathf.Max(maxForward, along);
+                minRight = Mathf.Min(minRight, across);
+                maxRight = Mathf.Max(maxRight, across);
+                highestSurface = Mathf.Max(highestSurface, impact.y);
+                margin = Mathf.Max(margin, rack.ForecastErrorRadius(flightTime));
             }
-            if (!allFound) { outline.enabled = false; foreach (var ring in rings) ring.enabled = false; return; }
 
-            Vector3 axis = last - first;
-            axis.y = 0f;
-            axis = axis.sqrMagnitude > .0001f ? axis.normalized : transform.forward;
-            Vector3 sideways = Vector3.Cross(Vector3.up, axis).normalized;
-            Vector3 front = first - axis * maxRadius;
-            Vector3 back = last + axis * maxRadius;
-            outline.SetPosition(0, front + sideways * maxRadius);
-            outline.SetPosition(1, back + sideways * maxRadius);
-            outline.SetPosition(2, back - sideways * maxRadius);
-            outline.SetPosition(3, front - sideways * maxRadius);
-            outline.SetPosition(4, front + sideways * maxRadius);
+            // Project every prediction into the same ground-aligned basis. Unlike
+            // connecting individual impact points, roof hits cannot distort corners.
+            float halfLength = (maxForward - minForward) * .5f + margin;
+            float halfWidth = (maxRight - minRight) * .5f + margin;
+            Vector3 center = anchor + forward * ((minForward + maxForward) * .5f)
+                + right * ((minRight + maxRight) * .5f);
+            center.y = highestSurface + SurfaceOffset;
+            float longitudinalLeg = Mathf.Min(6.5f, halfLength * .35f);
+            float lateralLeg = Mathf.Min(6f, halfWidth * .80f);
+
+            for (int i = 0; i < corners.Length; i++)
+            {
+                float alongSign = i < 2 ? -1f : 1f;
+                float sideSign = (i & 1) == 0 ? -1f : 1f;
+                Vector3 outer = center + forward * (alongSign * halfLength)
+                    + right * (sideSign * halfWidth);
+                corners[i].SetPosition(0, outer - forward * (alongSign * longitudinalLeg));
+                corners[i].SetPosition(1, outer);
+                corners[i].SetPosition(2, outer - right * (sideSign * lateralLeg));
+            }
+            Show(true);
         }
 
+        private void Show(bool visible)
+        {
+            if (corners == null) return;
+            foreach (var line in corners) if (line != null) line.enabled = visible;
+        }
+
+        private void OnDisable() { Show(false); }
         private void OnDestroy() { if (material != null) Destroy(material); }
     }
 }

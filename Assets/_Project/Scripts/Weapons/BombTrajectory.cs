@@ -3,10 +3,10 @@ using UnityEngine;
 namespace AirCombat
 {
     // Shared integration for the live bomb and its predicted impact. Gameplay units
-    // deliberately fall in ~2 seconds from the GroundAttackLab's 48m flight level.
+    // deliberately fall in ~1.1 seconds from the GroundAttackLab's 48m flight level.
     public static class BombTrajectory
     {
-        public const float Gravity = 24f;
+        public const float Gravity = 80f;
         public const float HorizontalDrag = .045f;
         public const float IntegrationStep = .04f;
 
