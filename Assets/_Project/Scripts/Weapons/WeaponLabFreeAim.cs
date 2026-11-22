@@ -9,7 +9,7 @@ namespace AirCombat
     [DisallowMultipleComponent]
     public sealed class WeaponLabFreeAim : MonoBehaviour
     {
-        [SerializeField, Range(5f, 65f)] private float halfAngle = 30f;
+        [SerializeField, Range(5f, 65f)] private float halfAngle = 12f;
         [SerializeField, Min(15f)] private float guideReach = 165f;
         [SerializeField, Min(1f)] private float minimumReticleDistance = 12f;
         [SerializeField, Range(.01f, .25f)] private float aimSmoothing = .065f;
