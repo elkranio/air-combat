@@ -49,27 +49,30 @@ namespace AirCombat
             }
             guideMaterial = new Material(shader) { name = "Weapon Lab aim guide (runtime)" };
             leftEdge = MakeLine("Free aim / left limit", 2, .18f,
-                new Color(.58f, .84f, 1f, .28f));
+                new Color(.87f, .91f, .94f, .44f));
             rightEdge = MakeLine("Free aim / right limit", 2, .18f,
-                new Color(.58f, .84f, 1f, .28f));
+                new Color(.87f, .91f, .94f, .44f));
             ring = MakeLine("Free aim / actual firing point", 33, .32f,
-                new Color(.97f, .95f, .77f, .78f));
+                new Color(.91f, .94f, .96f, .80f));
             ring.loop = true;
             Hide();
         }
 
         // Called by WeaponLabCannon after the smart camera has settled in LateUpdate.
         // The resulting FireDirection is used by BOTH the reticle and the projectile.
-        public void Sample(bool triggerHeld)
+        public void Sample(bool sectorSelected, bool triggerHeld)
         {
-            bool active = isActiveAndEnabled && triggerHeld &&
-                viewCamera != null && aircraft != null && Mouse.current != null;
+            bool visible = isActiveAndEnabled && sectorSelected && aircraft != null;
             FireDirection = aircraft != null ? aircraft.forward : Vector3.forward;
+            if (visible) DrawSector();
+            else HideSector();
+
+            bool active = visible && triggerHeld && viewCamera != null && Mouse.current != null;
             if (!active)
             {
                 wasAiming = false;
                 angularVelocity = 0f;
-                Hide();
+                if (ring != null) ring.enabled = false;
                 return;
             }
 
@@ -103,12 +106,13 @@ namespace AirCombat
                 ref angularVelocity, aimSmoothing, Mathf.Infinity, Time.deltaTime);
             wasAiming = true;
             FireDirection = Quaternion.AngleAxis(angle, Vector3.up) * forward;
-            Draw(forward, radius);
+            DrawRing(radius);
         }
 
-        private void Draw(Vector3 forward, float radius)
+        private void DrawSector()
         {
-            if (leftEdge == null || rightEdge == null || ring == null) return;
+            if (leftEdge == null || rightEdge == null) return;
+            Vector3 forward = Vector3.ProjectOnPlane(aircraft.forward, Vector3.up).normalized;
             Vector3 origin = aircraft.position;
             Vector3 left = Quaternion.AngleAxis(-halfAngle, Vector3.up) * forward;
             Vector3 right = Quaternion.AngleAxis(halfAngle, Vector3.up) * forward;
@@ -118,14 +122,20 @@ namespace AirCombat
             leftEdge.SetPosition(1, origin + left * guideReach);
             rightEdge.SetPosition(0, origin + right * 7f);
             rightEdge.SetPosition(1, origin + right * guideReach);
-            Vector3 center = origin + FireDirection * radius;
+            leftEdge.enabled = rightEdge.enabled = true;
+        }
+
+        private void DrawRing(float radius)
+        {
+            if (ring == null) return;
+            Vector3 center = aircraft.position + FireDirection * radius;
             const float ringRadius = 2.25f;
             for (int i = 0; i < 33; i++)
             {
                 float theta = i * (Mathf.PI * 2f / 32f);
                 ring.SetPosition(i, center + new Vector3(Mathf.Cos(theta), 0f, Mathf.Sin(theta)) * ringRadius);
             }
-            leftEdge.enabled = rightEdge.enabled = ring.enabled = true;
+            ring.enabled = true;
         }
 
         private LineRenderer MakeLine(string name, int vertices, float width, Color tint)
@@ -146,9 +156,14 @@ namespace AirCombat
 
         private void Hide()
         {
+            HideSector();
+            if (ring != null) ring.enabled = false;
+        }
+
+        private void HideSector()
+        {
             if (leftEdge != null) leftEdge.enabled = false;
             if (rightEdge != null) rightEdge.enabled = false;
-            if (ring != null) ring.enabled = false;
         }
 
         private void OnDisable() { Hide(); }

@@ -122,7 +122,7 @@ namespace AirCombat
             gaussFlash.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
             gaussFlash.enabled = false;
 
-            // Short red forward sight, attached to the aircraft (not the mouse or the enemy).
+            // Short pale forward sight, attached to the aircraft (not the mouse or the enemy).
             var sightObject = new GameObject("Gauss Forward Sight");
             sightObject.transform.SetParent(transform, false);
             gaussSight = sightObject.AddComponent<LineRenderer>();
@@ -132,8 +132,8 @@ namespace AirCombat
             gaussSight.SetPosition(0, new Vector3(0f, -.55f, 6.2f));
             gaussSight.widthMultiplier = .16f;
             gaussSight.numCapVertices = 0;
-            gaussSight.startColor = new Color(1f, .35f, .27f, .78f);
-            gaussSight.endColor = new Color(1f, .3f, .23f, .05f);
+            gaussSight.startColor = new Color(.87f, .91f, .94f, .86f);
+            gaussSight.endColor = new Color(.87f, .91f, .94f, .15f);
             gaussSight.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
             gaussSight.receiveShadows = false;
             gaussSight.enabled = false;
@@ -174,7 +174,7 @@ namespace AirCombat
             var mouse = Mouse.current;
             bool held = Application.isFocused && mouse != null && mouse.leftButton.isPressed;
             bool burstActive = !gaussSelected && burstShotsRemaining > 0;
-            if (freeAim != null) freeAim.Sample(!gaussSelected && (held || burstActive));
+            if (freeAim != null) freeAim.Sample(!gaussSelected, held || burstActive);
             if (gaussSelected)
             {
                 // One shot per new click. Holding/reselecting never repeats or skips cooldown.
