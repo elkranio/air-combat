@@ -65,10 +65,10 @@ namespace AirCombat
         }
 
         // Returns false when a round reaches the aircraft after it has been downed.
-        public bool Hit(Vector3 point)
+        public bool Hit(Vector3 point, int damage = 1)
         {
             if (down || Hp <= 0) return false;
-            Hp--;
+            Hp = Mathf.Max(0, Hp - Mathf.Max(1, damage));
             flashUntil = Time.time + 0.12f;
             if (hitTint == null) hitTint = new MaterialPropertyBlock();
             hitTint.Clear();

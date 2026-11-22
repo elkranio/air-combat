@@ -13,9 +13,12 @@ namespace AirCombat
         [SerializeField] private AudioClip[] soundVariants;
         [SerializeField, Range(0, 4)] private int soundMode = 1;
         [SerializeField, Min(1f)] private float roundsPerSecond = 14f;
-        [SerializeField] private bool burstMode; // Continuous by default, A/B via M.
+        [SerializeField] private bool burstMode; // BURST starts selected; M retains the continuous A/B.
         [SerializeField, Range(2, 8)] private int burstSize = 4;
         [SerializeField, Min(.05f)] private float burstCooldown = .45f;
+        [SerializeField, Min(.1f)] private float gaussCooldown = 1.5f;
+        [SerializeField, Min(1f)] private float gaussVelocity = 300f;
+        [SerializeField, Min(1f)] private float gaussRange = 250f;
         [SerializeField, Min(1f)] private float muzzleVelocity = 420f;
         [SerializeField, Min(1f)] private float maxRange = 430f;
         [SerializeField, Min(.1f)] private float tracerLength = 8f;
@@ -29,10 +32,17 @@ namespace AirCombat
         private AudioSource[] voices;
         private int nextVoice;
         private Material haloMaterial;
+        private Material gaussMaterial;
+        private AudioSource gaussVoice;
+        private AudioClip gaussClip;
+        private LineRenderer gaussFlash;
+        private float gaussFlashUntil;
         private WeaponLabFreeAim freeAim;
         private Renderer[] flashes;
         private float[] flashUntil;
         private float nextShot;
+        private float nextGaussReadyAt;
+        private bool gaussSelected;
         private int burstShotsRemaining;
         private float heat;
         private bool overheated;
@@ -43,8 +53,10 @@ namespace AirCombat
         public bool IsOverheated => overheated;
         public int FiredCount { get; private set; }
         public int HitCount { get; private set; }
-        public string FireModeLabel => burstMode ? "BURST " + Mathf.Max(2, burstSize) : "CONTINUOUS";
-        public string AimModeLabel => freeAim != null ? freeAim.ModeLabel : "FIXED";
+        public string FireModeLabel => gaussSelected
+            ? (Time.time >= nextGaussReadyAt ? "GAUSS READY" : "GAUSS " + (nextGaussReadyAt - Time.time).ToString("F1") + "s")
+            : burstMode ? "BURST " + Mathf.Max(2, burstSize) : "CONTINUOUS";
+        public string AimModeLabel => gaussSelected ? "FIXED" : freeAim != null ? freeAim.ModeLabel : "FIXED";
         public string SoundModeLabel => soundVariants != null && soundVariants.Length == 4 && soundMode > 0
             ? "MG " + soundMode.ToString("00") : "SYNTH";
 
@@ -67,6 +79,7 @@ namespace AirCombat
 
         private void Awake()
         {
+            burstMode = true; // Approved primary weapon; CONTINUOUS remains available via M.
             // A bounded voice pool prevents long overlapping tails from becoming a wall of noise.
             voices = new AudioSource[VoiceCount];
             for (int i = 0; i < voices.Length; i++)
@@ -77,9 +90,18 @@ namespace AirCombat
                 source.dopplerLevel = 0f;
                 voices[i] = source;
             }
+            gaussVoice = gameObject.AddComponent<AudioSource>();
+            gaussVoice.playOnAwake = false;
+            gaussVoice.spatialBlend = 0f;
+            gaussVoice.dopplerLevel = 0f;
+            gaussClip = MakeGaussClip();
             var effectShader = Shader.Find("AirCombat/SandboxEffect");
-            if (effectShader != null) haloMaterial = new Material(effectShader) { name = "Weapon Lab tracer halo (runtime)" };
-            else Debug.LogWarning("Weapon Lab halo shader missing; using core tracers only.", this);
+            if (effectShader != null)
+            {
+                haloMaterial = new Material(effectShader) { name = "Weapon Lab tracer halo (runtime)" };
+                gaussMaterial = new Material(effectShader) { name = "Weapon Lab Gauss cyan (runtime)" };
+            }
+            else Debug.LogWarning("Weapon Lab effect shader missing; Gauss uses fallback tracer material.", this);
             flashes = new Renderer[2];
             flashUntil = new float[2];
             for (int i = 0; i < flashes.Length; i++)
@@ -96,6 +118,19 @@ namespace AirCombat
                 flashes[i].shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
                 flashes[i].enabled = false;
             }
+            var muzzleFlash = new GameObject("Gauss Muzzle Flash");
+            muzzleFlash.transform.SetParent(transform, false);
+            gaussFlash = muzzleFlash.AddComponent<LineRenderer>();
+            gaussFlash.sharedMaterial = gaussMaterial != null ? gaussMaterial : tracerMaterial;
+            gaussFlash.useWorldSpace = false;
+            gaussFlash.positionCount = 2;
+            gaussFlash.SetPosition(0, new Vector3(0f, -.55f, 5.2f));
+            gaussFlash.SetPosition(1, new Vector3(0f, -.55f, 10.5f));
+            gaussFlash.widthMultiplier = 1.5f;
+            gaussFlash.numCapVertices = 2;
+            gaussFlash.startColor = gaussFlash.endColor = new Color(.4f, .95f, 1f, .85f);
+            gaussFlash.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+            gaussFlash.enabled = false;
         }
 
         private void LateUpdate()
@@ -103,6 +138,7 @@ namespace AirCombat
             if (flashes != null)
                 for (int i = 0; i < flashes.Length; i++)
                     if (flashes[i] != null) flashes[i].enabled = Time.time < flashUntil[i];
+            if (gaussFlash != null) gaussFlash.enabled = Time.time < gaussFlashUntil;
 
             var keyboard = Keyboard.current;
             if (Application.isFocused && keyboard != null)
@@ -115,11 +151,28 @@ namespace AirCombat
                 }
                 if (keyboard.gKey.wasPressedThisFrame && soundVariants != null && soundVariants.Length == 4)
                     soundMode = (soundMode + 1) % 5; // Synth / MG 01..04; no reload required.
-                if (keyboard.mKey.wasPressedThisFrame)
+                if (keyboard.mKey.wasPressedThisFrame && !gaussSelected)
                 {
-                    burstMode = !burstMode;
+                    burstMode = !burstMode; // Keep the old autocannon A/B available.
                     burstShotsRemaining = 0;
                     nextShot = Time.time;
+                }
+                bool cameraModifier = keyboard.leftShiftKey.isPressed || keyboard.rightShiftKey.isPressed;
+                if (!cameraModifier && keyboard.digit1Key.wasPressedThisFrame)
+                {
+                    // Changing weapons must not reset an in-progress burst's cooldown.
+                    if (burstShotsRemaining > 0)
+                        nextShot = Mathf.Max(nextShot, Time.time + Mathf.Max(.05f, burstCooldown));
+                    gaussSelected = false;
+                    burstMode = true;
+                    burstShotsRemaining = 0;
+                }
+                if (!cameraModifier && keyboard.digit2Key.wasPressedThisFrame)
+                {
+                    if (burstShotsRemaining > 0)
+                        nextShot = Mathf.Max(nextShot, Time.time + Mathf.Max(.05f, burstCooldown));
+                    gaussSelected = true;
+                    burstShotsRemaining = 0; // Switching weapons cancels the unfinished burst.
                 }
             }
             heat = Mathf.Max(0f, heat - coolingPerSecond * Time.deltaTime);
@@ -127,9 +180,19 @@ namespace AirCombat
 
             var mouse = Mouse.current;
             bool held = Application.isFocused && mouse != null && mouse.leftButton.isPressed;
-            // A click commits all four shots, even if the trigger is released early.
-            bool burstActive = burstMode && burstShotsRemaining > 0;
-            if (freeAim != null) freeAim.Sample(held || burstActive);
+            bool burstActive = !gaussSelected && burstMode && burstShotsRemaining > 0;
+            if (freeAim != null) freeAim.Sample(!gaussSelected && (held || burstActive));
+            if (gaussSelected)
+            {
+                // One shot per new click. Holding/reselecting never repeats or skips cooldown.
+                if (mouse != null && Application.isFocused && mouse.leftButton.wasPressedThisFrame &&
+                    Time.time >= nextGaussReadyAt)
+                {
+                    FireGauss();
+                    nextGaussReadyAt = Time.time + Mathf.Max(.1f, gaussCooldown);
+                }
+                return;
+            }
             if (tracerMaterial == null)
             {
                 burstShotsRemaining = 0;
@@ -226,11 +289,78 @@ namespace AirCombat
             FiredCount++;
         }
 
+        // Heavy fixed-forward cannon. A real moving projectile, not hitscan and not free aim.
+        private void FireGauss()
+        {
+            Vector3 direction = transform.forward.normalized;
+            Vector3 muzzle = transform.TransformPoint(new Vector3(0f, -.55f, 5.6f));
+            var round = new GameObject("Gauss Slug");
+            round.transform.SetPositionAndRotation(muzzle, Quaternion.LookRotation(direction, Vector3.up));
+            var core = round.AddComponent<LineRenderer>();
+            core.sharedMaterial = gaussMaterial != null ? gaussMaterial : tracerMaterial;
+            core.useWorldSpace = true;
+            core.positionCount = 2;
+            core.widthMultiplier = .75f;
+            core.numCapVertices = 2;
+            core.startColor = new Color(.25f, .85f, 1f, 1f);
+            core.endColor = new Color(.86f, 1f, 1f, 1f);
+            core.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+            core.receiveShadows = false;
+            var glowObject = new GameObject("Gauss Halo");
+            glowObject.transform.SetParent(round.transform, false);
+            var glow = glowObject.AddComponent<LineRenderer>();
+            glow.sharedMaterial = gaussMaterial != null ? gaussMaterial : tracerMaterial;
+            glow.useWorldSpace = true;
+            glow.positionCount = 2;
+            glow.widthMultiplier = 2.6f;
+            glow.numCapVertices = 2;
+            glow.startColor = new Color(.12f, .67f, 1f, .13f);
+            glow.endColor = new Color(.55f, .95f, 1f, .27f);
+            glow.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+            glow.receiveShadows = false;
+            var projectile = round.AddComponent<WeaponLabProjectile>();
+            projectile.Configure(direction, Mathf.Max(1f, gaussVelocity), Mathf.Max(1f, gaussRange),
+                16f, core, glow, this, 5);
+            gaussFlashUntil = Time.time + .11f;
+            if (gaussFlash != null) gaussFlash.enabled = true;
+            if (gaussVoice != null && gaussClip != null)
+            {
+                gaussVoice.Stop();
+                gaussVoice.clip = gaussClip;
+                gaussVoice.volume = Mathf.Clamp01(soundVolume * 1.5f);
+                gaussVoice.pitch = 1f;
+                gaussVoice.Play();
+            }
+            FiredCount++;
+        }
+
+        // Temporary distinct magnetic crack/thump; generated once, no imported assets or scene edits.
+        private static AudioClip MakeGaussClip()
+        {
+            const int sampleRate = 24000;
+            int frames = Mathf.RoundToInt(.36f * sampleRate);
+            var samples = new float[frames];
+            for (int i = 0; i < frames; i++)
+            {
+                float t = i / (float)sampleRate;
+                float envelope = Mathf.Min(1f, t * 160f) * Mathf.Exp(-11f * t);
+                float bass = Mathf.Sin(2f * Mathf.PI * (180f * t - 72f * t * t));
+                float zap = Mathf.Sin(2f * Mathf.PI * (1900f * t - 1450f * t * t));
+                float crack = Mathf.Sin(i * 2.399f) * Mathf.Exp(-48f * t);
+                samples[i] = Mathf.Clamp(envelope * (.72f * bass + .24f * zap + .3f * crack), -1f, 1f);
+            }
+            var clip = AudioClip.Create("Weapon Lab Gauss (runtime)", frames, 1, sampleRate, false);
+            clip.SetData(samples, 0);
+            return clip;
+        }
+
         public void RegisterHit() { HitCount++; }
 
         private void OnDestroy()
         {
             if (haloMaterial != null) Destroy(haloMaterial);
+            if (gaussMaterial != null) Destroy(gaussMaterial);
+            if (gaussClip != null) Destroy(gaussClip);
         }
 
         private static Vector3 MuzzleOffset(int barrel)

@@ -26,6 +26,7 @@ namespace AirCombat
         private Quaternion spawnRotation;
         private GUIStyle text;
         private WeaponLabCameraLead cameraLead;
+        private TopDownCameraFollow cameraFollow;
         private WeaponLabFreeAim aim;
         private static readonly float[] SideLanes = { 0f, -16f, 19f, -30f, 29f, -8f, 9f };
 
@@ -54,11 +55,12 @@ namespace AirCombat
             if (!Application.isPlaying) return;
             if (studyPipeline == null || player == null || flight == null || boost == null || cannon == null)
             { Debug.LogError("Weapon Lab missing flight/weapon references.", this); enabled = false; return; }
-            // Runtime-only attachment: no scene regeneration and no global camera edit.
-            var follow = FindFirstObjectByType<TopDownCameraFollow>();
-            var viewCamera = follow != null ? follow.GetComponent<Camera>() : null;
+            // Runtime-only input remapping; other scenes keep their existing pitch hotkeys.
+            cameraFollow = FindFirstObjectByType<TopDownCameraFollow>();
+            var viewCamera = cameraFollow != null ? cameraFollow.GetComponent<Camera>() : null;
             if (viewCamera == null)
             { Debug.LogError("Weapon Lab needs a TopDownCameraFollow camera.", this); enabled = false; return; }
+            cameraFollow.UseWeaponLabPitchKeys(true);
             cameraLead = GetComponent<WeaponLabCameraLead>();
             if (cameraLead == null) cameraLead = gameObject.AddComponent<WeaponLabCameraLead>();
             cameraLead.Configure(viewCamera, player, boost);
@@ -78,6 +80,7 @@ namespace AirCombat
 
         private void OnDisable()
         {
+            if (cameraFollow != null) cameraFollow.UseWeaponLabPitchKeys(false);
             if (cameraLead != null) cameraLead.enabled = false;
             if (aim != null) aim.enabled = false;
             if (ownsOverride && QualitySettings.renderPipeline == studyPipeline)
@@ -146,10 +149,10 @@ namespace AirCombat
             GUI.Label(new Rect(22, 17, 475, 22), "WEAPON LAB / " + enemyStatus +
                 " / B EVADE: " + (fighter != null ? fighter.EvasionLabel : "OFF"), text);
             GUI.Label(new Rect(22, 40, 475, 22), "WASD fly   Space boost   LMB fire   V aim: " + cannon.AimModeLabel, text);
-            GUI.Label(new Rect(22, 63, 450, 22), "M fire: " + cannon.FireModeLabel, text);
+            GUI.Label(new Rect(22, 63, 450, 22), "1 BURST / 2 GAUSS   M auto A/B: " + cannon.FireModeLabel, text);
             GUI.Label(new Rect(22, 86, 450, 22), "G gun SFX: " + cannon.SoundModeLabel + "   T heat   R reset", text);
             string cameraMode = cameraLead != null && cameraLead.LookAheadEnabled ? "LOOK-AHEAD" : "CENTER";
-            GUI.Label(new Rect(22, 109, 450, 22), "1/2/3 pitch   C: " + cameraMode + "   H hide HUD", text);
+            GUI.Label(new Rect(22, 109, 450, 22), "Shift+1/2/3 pitch   C: " + cameraMode + "   H hide HUD", text);
             string heat = cannon.HeatLimiterEnabled
                 ? $"Heat {cannon.Heat01:P0}" + (cannon.IsOverheated ? " [COOLING]" : "") : "Heat OFF";
             GUI.Label(new Rect(22, 132, 450, 22),

@@ -13,11 +13,12 @@ namespace AirCombat
         private LineRenderer tracer;
         private LineRenderer glow;
         private WeaponLabCannon owner;
+        private int damage = 1;
         private float distanceTravelled;
         private static readonly RaycastHit[] HitBuffer = new RaycastHit[16];
 
         public void Configure(Vector3 forward, float velocity, float range, float length,
-            LineRenderer line, LineRenderer halo, WeaponLabCannon source)
+            LineRenderer line, LineRenderer halo, WeaponLabCannon source, int hitDamage = 1)
         {
             direction = forward.normalized;
             speed = velocity;
@@ -26,6 +27,7 @@ namespace AirCombat
             tracer = line;
             glow = halo;
             owner = source;
+            damage = Mathf.Max(1, hitDamage);
             Draw();
         }
 
@@ -50,7 +52,7 @@ namespace AirCombat
             if (nearest != null)
             {
                 transform.position = hitPoint;
-                if (nearest.Hit(hitPoint) && owner != null) owner.RegisterHit();
+                if (nearest.Hit(hitPoint, damage) && owner != null) owner.RegisterHit();
                 Destroy(gameObject);
                 return;
             }

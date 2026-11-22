@@ -118,3 +118,14 @@ V6 playtest: the unarmed enemy stays easy to shoot down despite guaranteed boost
 - Aim guide stays active long enough to complete a committed burst after a short click. Existing projectile movement/hit logic, twin muzzles, sounds, heat toggle, enemy, flight and aim angle remain unchanged. Only Weapon Lab scripts and docs change.
 
 **No Unity scene configuration command.** Let C# compile, Play `WeaponLab.unity`, then compare M CONTINUOUS versus BURST while chasing the same enemy. Try short taps, holding LMB, releasing mid-burst, and clicking repeatedly during the cooldown. This is a feel test, not an accepted balance target.
+
+## v8 — fixed-forward single-shot Gauss versus BURST
+
+V7 playtest: user decisively preferred **BURST** over CONTINUOUS because limited firing windows made piloting and timing matter. V8 adds one distinct weapon without touching the opponent, its evasion, camera framing, player controls, terrain, or scene assets.
+
+- **1** selects **BURST 4** (14 rounds/s, 0.45 s post-burst gap, existing ±12° free aim); this is the default in Play Mode. **2** selects **GAUSS**, fixed to the nose of the aircraft (no sector, reticle or mouse steering). Weapon switch cancels any pending autocannon burst; Gauss cooldown never resets on switching. **M** still toggles CONTINUOUS/BURST when autocannon is selected for optional A/B.
+- Gauss fires **one slug per fresh LMB press** (no held-fire repeat, no queued shots during cooldown). **5 damage** kills the existing 5-HP enemy in one hit. Configurable in `WeaponLabCannon`: `gaussCooldown` = 1.5 s, `gaussVelocity` = 300 units/s (autocannon 420), `gaussRange` = 250 units (autocannon 430). No spread, no charge-up, no target assist.
+- Distinct cyan-white physical tracer and halo, center muzzle flash, short synthesized magnetic sound (runtime clip, provisional). Reuses the existing swept projectile raycast with a `damage` field; normal autocannon rounds remain 1 damage. HUD shows GAUSS readiness/time remaining, and aim as FIXED.
+- **Shift+1/2/3** changes camera pitch in Weapon Lab (90/75/65 degrees); `1/2/3` still changes pitch normally in Sandbox. `V` keeps the autocannon free-aim preference while Gauss ignores it.
+
+**No scene upgrader and no audio importer.** Apply, compile, Play existing `WeaponLab.unity`. Compare precision, cooldown and satisfaction of landing one forward-aligned hit versus chasing with BURST. Note whether 300-unit projectile travel feels fair or merely sluggish. Unity playback and audio feel require local verification.

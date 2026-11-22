@@ -14,6 +14,9 @@ namespace AirCombat
 
         [SerializeField, Range(60f, 90f)] private float pitch = 75f;
 
+        private bool weaponLabPitchKeys;
+        public void UseWeaponLabPitchKeys(bool enabled) { weaponLabPitchKeys = enabled; }
+
         private float height;
         private Vector3 velocity;
         private Vector3 unshakenFocus;
@@ -32,9 +35,10 @@ namespace AirCombat
             if (target == null)
                 return;
 
-            // Temporary sandbox presets for direct A/B comparison during flight.
+            // Sandbox keeps 1/2/3. Weapon Lab reserves them for weapons and uses Shift+1/2/3.
             var keyboard = Keyboard.current;
-            if (keyboard != null && Application.isFocused)
+            if (keyboard != null && Application.isFocused &&
+                (!weaponLabPitchKeys || keyboard.leftShiftKey.isPressed || keyboard.rightShiftKey.isPressed))
             {
                 if (keyboard.digit1Key.wasPressedThisFrame) pitch = 90f;
                 if (keyboard.digit2Key.wasPressedThisFrame) pitch = 75f;
