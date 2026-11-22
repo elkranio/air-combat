@@ -24,16 +24,14 @@ namespace AirCombat
         private float angularVelocity;
         private bool wasAiming;
 
-        public bool FreeAimEnabled { get; private set; } = true;
         public float HalfAngle => halfAngle; // Enemy can react to aircraft sector, never mouse position.
         public Vector3 FireDirection { get; private set; }
-        public string ModeLabel => FreeAimEnabled ? "FREE +/-" + halfAngle.ToString("F0") : "FIXED";
+        public string ModeLabel => "FREE +/-" + halfAngle.ToString("F0");
 
         public void Configure(Camera camera, Transform player)
         {
             viewCamera = camera;
             aircraft = player;
-            FreeAimEnabled = true;
             FireDirection = player.forward;
             angle = angularVelocity = 0f;
             wasAiming = false;
@@ -64,11 +62,7 @@ namespace AirCombat
         // The resulting FireDirection is used by BOTH the reticle and the projectile.
         public void Sample(bool triggerHeld)
         {
-            var keyboard = Keyboard.current;
-            if (keyboard != null && Application.isFocused && keyboard.vKey.wasPressedThisFrame)
-                FreeAimEnabled = !FreeAimEnabled;
-
-            bool active = isActiveAndEnabled && FreeAimEnabled && triggerHeld &&
+            bool active = isActiveAndEnabled && triggerHeld &&
                 viewCamera != null && aircraft != null && Mouse.current != null;
             FireDirection = aircraft != null ? aircraft.forward : Vector3.forward;
             if (!active)

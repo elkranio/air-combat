@@ -18,35 +18,26 @@ namespace AirCombat
         private Vector3 currentOffset;
         private Vector3 offsetVelocity;
 
-        public bool LookAheadEnabled { get; private set; } = true;
-
         public void Configure(Camera camera, Transform target, Afterburner boost)
         {
             viewCamera = camera;
             aircraft = target;
             afterburner = boost;
-            LookAheadEnabled = true;
             currentOffset = Vector3.zero;
             offsetVelocity = Vector3.zero;
         }
-
-        public void Toggle() => LookAheadEnabled = !LookAheadEnabled;
 
         private void LateUpdate()
         {
             if (viewCamera == null || aircraft == null) return;
 
-            // Use heading, not the mouse pointer. Keep the offset on the XZ flight plane
-            // so changing camera pitch never changes altitude or its framing rules.
+            // Approved permanent look-ahead: follow aircraft heading on the flight plane.
             Vector3 desiredOffset = Vector3.zero;
-            if (LookAheadEnabled)
+            Vector3 heading = Vector3.ProjectOnPlane(aircraft.forward, Vector3.up);
+            if (heading.sqrMagnitude > 0.0001f)
             {
-                Vector3 heading = Vector3.ProjectOnPlane(aircraft.forward, Vector3.up);
-                if (heading.sqrMagnitude > 0.0001f)
-                {
-                    float boostFactor = afterburner != null && afterburner.IsActive ? boostLeadMultiplier : 1f;
-                    desiredOffset = heading.normalized * (viewCamera.orthographicSize * leadFractionOfHalfView * boostFactor);
-                }
+                float boostFactor = afterburner != null && afterburner.IsActive ? boostLeadMultiplier : 1f;
+                desiredOffset = heading.normalized * (viewCamera.orthographicSize * leadFractionOfHalfView * boostFactor);
             }
 
             currentOffset = Vector3.SmoothDamp(currentOffset, desiredOffset, ref offsetVelocity,

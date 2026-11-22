@@ -35,10 +35,9 @@ namespace AirCombat
             if (target == null)
                 return;
 
-            // Sandbox keeps 1/2/3. Weapon Lab reserves them for weapons and uses Shift+1/2/3.
+            // Weapon Lab keeps its scene-authored 65-degree pitch; Sandbox retains 1/2/3 presets.
             var keyboard = Keyboard.current;
-            if (keyboard != null && Application.isFocused &&
-                (!weaponLabPitchKeys || keyboard.leftShiftKey.isPressed || keyboard.rightShiftKey.isPressed))
+            if (keyboard != null && Application.isFocused && !weaponLabPitchKeys)
             {
                 if (keyboard.digit1Key.wasPressedThisFrame) pitch = 90f;
                 if (keyboard.digit2Key.wasPressedThisFrame) pitch = 75f;

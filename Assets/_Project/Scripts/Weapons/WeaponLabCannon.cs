@@ -9,11 +9,9 @@ namespace AirCombat
     public sealed class WeaponLabCannon : MonoBehaviour
     {
         [SerializeField] private Material tracerMaterial;
-        [SerializeField] private AudioClip shotClip; // original synthetic fallback for A/B
-        [SerializeField] private AudioClip[] soundVariants;
-        [SerializeField, Range(0, 4)] private int soundMode = 1;
+        [SerializeField] private AudioClip shotClip; // synthetic fallback if imported MG02 is missing
+        [SerializeField] private AudioClip[] soundVariants; // imported variants kept; only MG02 is used
         [SerializeField, Min(1f)] private float roundsPerSecond = 14f;
-        [SerializeField] private bool burstMode; // BURST starts selected; M retains the continuous A/B.
         [SerializeField, Range(2, 8)] private int burstSize = 4;
         [SerializeField, Min(.05f)] private float burstCooldown = .45f;
         [SerializeField, Min(.1f)] private float gaussCooldown = 1.5f;
@@ -24,10 +22,6 @@ namespace AirCombat
         [SerializeField, Min(1f)] private float maxRange = 430f;
         [SerializeField, Min(.1f)] private float tracerLength = 8f;
         [SerializeField, Range(.01f, 1f)] private float soundVolume = .30f;
-        [SerializeField] private bool heatLimiterEnabled;
-        [SerializeField, Range(.001f, 1f)] private float heatPerShot = .044f;
-        [SerializeField, Range(.001f, 2f)] private float coolingPerSecond = .2f;
-        [SerializeField, Range(.01f, .95f)] private float restartHeat = .33f;
 
         private const int VoiceCount = 5;
         private AudioSource[] voices;
@@ -46,21 +40,16 @@ namespace AirCombat
         private float nextGaussReadyAt;
         private bool gaussSelected;
         private int burstShotsRemaining;
-        private float heat;
-        private bool overheated;
         private int nextBarrel;
 
-        public bool HeatLimiterEnabled => heatLimiterEnabled;
-        public float Heat01 => Mathf.Clamp01(heat);
-        public bool IsOverheated => overheated;
         public int FiredCount { get; private set; }
         public int HitCount { get; private set; }
         public string FireModeLabel => gaussSelected
             ? (Time.time >= nextGaussReadyAt ? "GAUSS READY" : "GAUSS " + (nextGaussReadyAt - Time.time).ToString("F1") + "s")
-            : burstMode ? "BURST " + Mathf.Max(2, burstSize) : "CONTINUOUS";
+            : "BURST " + Mathf.Max(2, burstSize);
         public string AimModeLabel => gaussSelected ? "FIXED" : freeAim != null ? freeAim.ModeLabel : "FIXED";
-        public string SoundModeLabel => soundVariants != null && soundVariants.Length == 4 && soundMode > 0
-            ? "MG " + soundMode.ToString("00") : "SYNTH";
+        public string SoundModeLabel => soundVariants != null && soundVariants.Length == 4 && soundVariants[1] != null
+            ? "MG 02" : "SYNTH FALLBACK";
 
         public void Configure(Material tracer, AudioClip shot)
         {
@@ -74,14 +63,12 @@ namespace AirCombat
             if (clips == null || clips.Length != 4 || System.Array.Exists(clips, c => c == null))
                 throw new System.ArgumentException("Expected four imported machine gun clips.");
             soundVariants = (AudioClip[])clips.Clone();
-            soundMode = 1;
         }
 
         public void ConfigureAim(WeaponLabFreeAim component) { freeAim = component; }
 
         private void Awake()
         {
-            burstMode = true; // Approved primary weapon; CONTINUOUS remains available via M.
             // A bounded voice pool prevents long overlapping tails from becoming a wall of noise.
             voices = new AudioSource[VoiceCount];
             for (int i = 0; i < voices.Length; i++)
@@ -162,31 +149,15 @@ namespace AirCombat
             var keyboard = Keyboard.current;
             if (Application.isFocused && keyboard != null)
             {
-                if (keyboard.tKey.wasPressedThisFrame)
-                {
-                    heatLimiterEnabled = !heatLimiterEnabled;
-                    heat = 0f;
-                    overheated = false;
-                }
-                if (keyboard.gKey.wasPressedThisFrame && soundVariants != null && soundVariants.Length == 4)
-                    soundMode = (soundMode + 1) % 5; // Synth / MG 01..04; no reload required.
-                if (keyboard.mKey.wasPressedThisFrame && !gaussSelected)
-                {
-                    burstMode = !burstMode; // Keep the old autocannon A/B available.
-                    burstShotsRemaining = 0;
-                    nextShot = Time.time;
-                }
-                bool cameraModifier = keyboard.leftShiftKey.isPressed || keyboard.rightShiftKey.isPressed;
-                if (!cameraModifier && keyboard.digit1Key.wasPressedThisFrame)
+                if (keyboard.digit1Key.wasPressedThisFrame)
                 {
                     // Changing weapons must not reset an in-progress burst's cooldown.
                     if (burstShotsRemaining > 0)
                         nextShot = Mathf.Max(nextShot, Time.time + Mathf.Max(.05f, burstCooldown));
                     gaussSelected = false;
-                    burstMode = true;
                     burstShotsRemaining = 0;
                 }
-                if (!cameraModifier && keyboard.digit2Key.wasPressedThisFrame)
+                if (keyboard.digit2Key.wasPressedThisFrame)
                 {
                     if (burstShotsRemaining > 0)
                         nextShot = Mathf.Max(nextShot, Time.time + Mathf.Max(.05f, burstCooldown));
@@ -199,12 +170,10 @@ namespace AirCombat
                 gaussSight.SetPosition(1, new Vector3(0f, -.55f, 6.2f + gaussSightLength));
                 gaussSight.enabled = gaussSelected;
             }
-            heat = Mathf.Max(0f, heat - coolingPerSecond * Time.deltaTime);
-            if (overheated && heat <= restartHeat) overheated = false;
 
             var mouse = Mouse.current;
             bool held = Application.isFocused && mouse != null && mouse.leftButton.isPressed;
-            bool burstActive = !gaussSelected && burstMode && burstShotsRemaining > 0;
+            bool burstActive = !gaussSelected && burstShotsRemaining > 0;
             if (freeAim != null) freeAim.Sample(!gaussSelected && (held || burstActive));
             if (gaussSelected)
             {
@@ -223,21 +192,13 @@ namespace AirCombat
                 nextShot = Time.time;
                 return;
             }
-            if (burstMode)
+            // Releasing/re-pressing cannot bypass the interval between bursts.
+            if (burstShotsRemaining == 0 && held && Time.time >= nextShot)
             {
-                // Releasing/re-pressing cannot bypass the interval between bursts.
-                if (burstShotsRemaining == 0 && held && Time.time >= nextShot)
-                {
-                    burstShotsRemaining = Mathf.Max(2, burstSize);
-                    nextShot = Time.time; // No backlog of instant shots after a long pause.
-                }
-                if (burstShotsRemaining == 0) return;
+                burstShotsRemaining = Mathf.Max(2, burstSize);
+                nextShot = Time.time; // No backlog of instant shots after a long pause.
             }
-            else if (!held)
-            {
-                nextShot = Time.time; // Preserve existing continuous-fire behavior.
-                return;
-            }
+            if (burstShotsRemaining == 0) return;
 
             float interval = 1f / Mathf.Max(1f, roundsPerSecond);
             // Limit catch-up after a frame hitch; never dump dozens of rounds at once.
@@ -246,14 +207,11 @@ namespace AirCombat
             {
                 nextShot += interval;
                 emitted++;
-                if (heatLimiterEnabled && overheated) continue;
                 Fire();
-                if (burstMode && --burstShotsRemaining == 0)
-                    nextShot = Time.time + Mathf.Max(.05f, burstCooldown);
-                if (heatLimiterEnabled)
+                if (--burstShotsRemaining == 0)
                 {
-                    heat = Mathf.Min(1f, heat + heatPerShot);
-                    if (heat >= 1f) overheated = true;
+                    nextShot = Time.time + Mathf.Max(.05f, burstCooldown);
+                    break;
                 }
             }
             if (emitted >= 3 && nextShot < Time.time) nextShot = Time.time + interval;
@@ -299,8 +257,8 @@ namespace AirCombat
             projectile.Configure(direction, muzzleVelocity, maxRange, tracerLength, line, halo, this);
             flashUntil[barrel] = Time.time + .052f;
             flashes[barrel].enabled = true;
-            var clip = soundVariants != null && soundVariants.Length == 4 && soundMode > 0
-                ? soundVariants[soundMode - 1] : shotClip;
+            var clip = soundVariants != null && soundVariants.Length == 4 && soundVariants[1] != null
+                ? soundVariants[1] : shotClip; // MG02 approved; no G-mode cycling.
             if (clip != null && voices != null)
             {
                 var source = voices[nextVoice++ % voices.Length];
