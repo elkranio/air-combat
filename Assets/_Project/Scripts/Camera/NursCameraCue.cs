@@ -2,13 +2,15 @@ using UnityEngine;
 
 namespace AirCombat
 {
-    // GroundAttackLab-only tactical pan. Runs after ordinary follow/look-ahead;
-    // the global camera prefab and its fixed orthographic size remain untouched.
+    // GroundAttackLab-only, aircraft-safe NURS camera lead. Runs after ordinary
+    // follow/look-ahead and never pushes the aircraft off the Game viewport.
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(110)]
     public sealed class NursCameraCue : MonoBehaviour
     {
-        [SerializeField, Min(0f)] private float previewTargetOffset = 45f;
+        [SerializeField, Min(0f)] private float selectedExtraLead = 24f;
+        [SerializeField, Min(0f)] private float committedExtraLead = 70f;
+        [SerializeField, Range(.05f, .4f)] private float aircraftViewportMargin = .2f;
         [SerializeField, Min(0.01f)] private float transitionSeconds = .65f;
 
         private Camera viewCamera;
@@ -38,23 +40,41 @@ namespace AirCombat
             {
                 Vector3 forward = Vector3.ProjectOnPlane(aircraft.forward, Vector3.up).normalized;
                 if (forward.sqrMagnitude > .001f)
-                {
-                    // CameraLookAhead already shifted the camera earlier this frame.
-                    // Find its current horizontal focus on the aircraft-altitude plane
-                    // rather than adding a hard-coded second copy of its lead.
-                    Vector3 camPosition = viewCamera.transform.position;
-                    Vector3 camForward = viewCamera.transform.forward;
-                    float alongRay = Mathf.Abs(camForward.y) > .001f
-                        ? (aircraft.position.y - camPosition.y) / camForward.y : 0f;
-                    Vector3 focus = camPosition + camForward * alongRay;
-                    float remaining = Vector3.Dot(area.AreaCenter - focus, forward);
-                    float margin = cabrage != null && cabrage.IsCommitted ? 0f : previewTargetOffset;
-                    desired = forward * Mathf.Max(0f, remaining - margin);
-                }
+                    desired = forward * (cabrage != null && cabrage.IsCommitted
+                        ? committedExtraLead : selectedExtraLead);
             }
-            currentOffset = Vector3.SmoothDamp(currentOffset, desired, ref offsetVelocity,
+
+            // The 600m impact area cannot fit in the existing 80m ortho half-view
+            // alongside the jet. Favor usable flight framing over target centering.
+            Vector3 smoothed = Vector3.SmoothDamp(currentOffset, desired, ref offsetVelocity,
                 transitionSeconds, Mathf.Infinity, Time.deltaTime);
+            float allowedFraction = AircraftSafeFraction(smoothed);
+            currentOffset = smoothed * allowedFraction;
+            if (allowedFraction < 1f) offsetVelocity *= allowedFraction;
             viewCamera.transform.position += currentOffset;
+        }
+
+        private float AircraftSafeFraction(Vector3 extraCameraOffset)
+        {
+            // The camera is orthographic; translating it by +offset is exactly
+            // equivalent to projecting the aircraft at worldPosition - offset.
+            // Clamp the *smoothed* offset, not just the target, so a sudden Q/E
+            // turn cannot carry the aircraft offscreen during the transition.
+            Vector3 before = viewCamera.WorldToViewportPoint(aircraft.position);
+            Vector3 after = viewCamera.WorldToViewportPoint(aircraft.position - extraCameraOffset);
+            float fraction = 1f;
+            fraction = ClampAxis(before.x, after.x - before.x, fraction);
+            fraction = ClampAxis(before.y, after.y - before.y, fraction);
+            return Mathf.Clamp01(fraction);
+        }
+
+        private float ClampAxis(float start, float delta, float limit)
+        {
+            if (delta > .00001f)
+                return Mathf.Min(limit, Mathf.Max(0f, (1f - aircraftViewportMargin - start) / delta));
+            if (delta < -.00001f)
+                return Mathf.Min(limit, Mathf.Max(0f, (start - aircraftViewportMargin) / -delta));
+            return limit;
         }
 
         public void ResetCue()
