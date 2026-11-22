@@ -3,8 +3,8 @@ using UnityEngine.InputSystem;
 
 namespace AirCombat
 {
-    // Fixed four-bomb burst. Owns cadence and release; trajectory, cue and impact
-    // are independent components. GroundAttackLab equips this on PlayerJet at runtime.
+    // Fixed four-bomb burst. Owns cadence and release; physical flight and impact
+    // are independent components. No predictive HUD: aiming is learned by flying.
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(145)]
     public sealed class BombRack : MonoBehaviour
@@ -21,7 +21,7 @@ namespace AirCombat
         private FlightController flight;
         private Afterburner boost;
         private BreakTurn breakTurn;
-        private BombAimIndicator indicator;
+        private Material groundShadowMaterial;
         private Material shellMaterial;
         private Material flashMaterial;
         private Material scorchMaterial;
@@ -38,7 +38,7 @@ namespace AirCombat
         public bool IsSelected => selection != null && selection.Selected == WeaponMode.Bomb;
 
         public void Configure(WeaponSelection weaponSelection, FlightController controller,
-            Afterburner afterburner, BreakTurn maneuver)
+            Afterburner afterburner, BreakTurn maneuver, Material shadowMaterial = null)
         {
             if (configured) return;
             configured = true;
@@ -46,12 +46,11 @@ namespace AirCombat
             flight = controller;
             boost = afterburner;
             breakTurn = maneuver;
+            groundShadowMaterial = shadowMaterial;
             var shader = Shader.Find("Universal Render Pipeline/Lit");
             shellMaterial = MakeMaterial(shader, "G3 Bomb shell", new Color(.22f,.28f,.27f));
             flashMaterial = MakeMaterial(shader, "G3 Explosion", new Color(1f,.57f,.16f));
             scorchMaterial = MakeMaterial(shader, "G3 Scorch", new Color(.13f,.11f,.09f));
-            indicator = gameObject.AddComponent<BombAimIndicator>();
-            indicator.Configure(this);
         }
 
         private static Material MakeMaterial(Shader shader, string name, Color color)
@@ -60,27 +59,6 @@ namespace AirCombat
             result.SetColor("_BaseColor", color);
             result.SetFloat("_Smoothness", .08f);
             return result;
-        }
-
-        public bool Predict(int index, out Vector3 point, out float flightTime)
-        {
-            if (!configured || flight == null)
-            { point = default; flightTime = 0f; return false; }
-            float futureTime = Mathf.Max(0, index) * releaseInterval;
-            Vector3 heading = transform.forward;
-            // The forecast assumes straight, constant-speed flight. Turning,
-            // acceleration and randomly perturbed boost releases change reality.
-            Vector3 origin = transform.TransformPoint(releaseOffset) +
-                heading * (flight.CurrentSpeed * futureTime);
-            Vector3 velocity = heading * flight.CurrentSpeed;
-            return BombTrajectory.Predict(origin, velocity, out point, out flightTime);
-        }
-
-        public float ForecastErrorRadius(float fallSeconds)
-        {
-            return boost != null && boost.IsActive
-                ? 2.5f + boostErrorSpeed * fallSeconds
-                : 2.5f;
         }
 
         private void LateUpdate()
@@ -125,7 +103,8 @@ namespace AirCombat
             var go = new GameObject("Gravity bomb " + (FiredCount + 1));
             go.transform.position = transform.TransformPoint(releaseOffset);
             go.transform.rotation = transform.rotation;
-            go.AddComponent<BombProjectile>().Launch(velocity, shellMaterial, flashMaterial, scorchMaterial);
+            go.AddComponent<BombProjectile>().Launch(velocity, shellMaterial, flashMaterial,
+                scorchMaterial, groundShadowMaterial);
             FiredCount++;
         }
 

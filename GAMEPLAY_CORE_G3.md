@@ -1,5 +1,7 @@
 # G3 — Gravity Bombs (GroundAttackLab prototype)
 
+**Current G3b presentation:** No predicted impact HUD. An altitude-offset soft aircraft shadow and moving bomb shadows make release and height readable directly in the world. Details at the end of this document; prior HUD sections are retained as historical G3/G3a notes.
+
 Base: green `master` `6ff85069` (G2 and F1 tested). G3 changes no bake source, imported FBX, depot materials, prefab, WeaponLab scene, Sandbox or enemy AI.
 
 ## Try in Unity
@@ -38,3 +40,12 @@ G2's FBX is combined by material, not destructible part. To avoid a re-bake, `Gr
 ## G3a — bomb cue geometry and range (after initial G3 green)
 
 G3a keeps the four-bomb burst, actual prediction, per-bomb independent gravity trajectories, 0.25s cadence, afterburner error, switch lock, damage and all other weapon tuning unchanged. The marker is **not screen-space clamped** and is never artificially shifted closer: increased gravity shortens the real flight/lead distance as well as the predicted one. The single bracket is the expected burst envelope, not four guaranteed hit circles. Roof impacts may raise the entire flat marker plane to the highest impact surface; its corners never follow different collider heights. Check cruise / W, heading changes and releases over bunker roofs. With a very narrow viewport or certain headings, the full high-speed burst envelope may still exceed the frame; revisit camera framing separately rather than lying about ballistics.
+
+## G3b — learnable no-HUD bombing; physical-height shadows
+
+- Removed `BombAimIndicator` (source and .meta) and unused `BombTrajectory.Predict`/`BombRack.Predict`. Bomb drop, gravity (80), drag, release interval, W scatter, cooldown, Q/E cancellation and all target damage remain unchanged. Bombs remain equipped on **4**.
+- Reuses the existing `AircraftGroundShadow` ring mesh and `AirCombat/SandboxEffect` vertex-alpha shader; the component now supports `Configure(...)` for Play Mode composition **after** `AddComponent`. Existing inspector-configured Sandbox shadows still initialize at Awake and keep their values.
+- GroundAttackLab installs only a runtime aircraft shadow; the shared `PlayerJet` prefab and other scenes are not modified. Shared shadow material is created/owned by `GroundAttackLabSession`, passed into `BombRack` and attached to each `BombProjectile`. No persistent scene/prefab or texture assets.
+- Sun-aligned `lightOffsetPerHeight=(-.48, +.69)` makes a plane at Y≈48 cast its soft shadow roughly **40 metres away along the ground**, not directly below, with height-dependent broadening/fading. Aircraft base `(width=8, length=11)`, alpha near/far `.25/.14`, fade height `72`, growth `.028`/metre; bomb base `(1.35, 2.25)`, alpha `.32/.10`, fade height `55`, growth `.055`/metre. Ground elevation `.12` for aircraft and `.14` for bombs to avoid z-fighting. Tunable numerically in `GroundAttackLabSession` and `BombProjectile`.
+- Shadows track current world positions (not the predicted impact). Bomb shadow separation reduces naturally during descent; both shadow meshes have no collider and never cast a second shadow. On detonation the projectile and its shadow disappear. Existing dark temporary **scorch marks after impact are separate**, unchanged for now.
+- Verify: no HUD brackets when selecting 4; distinct displaced soft aircraft shadow at height 48 and while turning; four separate bomb shadows moving along the ground and converging during descent; explosions/scorch still happen; Q/E, afterburner, cooldown, target HP unchanged; **Sandbox shadow regression**.

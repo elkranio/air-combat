@@ -27,15 +27,45 @@ namespace AirCombat
         private byte lastAlpha;
         private bool alphaInitialized;
 
+        // Runtime-only tuning for GroundAttackLab. Serialized shadows in Sandbox
+        // still use their existing material and inspector values unchanged.
+        public void Configure(Material material, float width, float length,
+            float nearAlpha, float farAlpha, float alphaFadeHeight, float surfaceY,
+            Vector2 offsetPerHeight, float growthPerHeight)
+        {
+            if (material == null) throw new System.ArgumentNullException(nameof(material));
+            shadowMaterial = material;
+            baseWidth = Mathf.Max(.1f, width);
+            baseLength = Mathf.Max(.1f, length);
+            maxAlpha = Mathf.Clamp01(nearAlpha);
+            minAlpha = Mathf.Clamp01(farAlpha);
+            fadeHeight = Mathf.Max(.1f, alphaFadeHeight);
+            groundY = surfaceY;
+            lightOffsetPerHeight = offsetPerHeight;
+            scalePerHeight = Mathf.Max(0f, growthPerHeight);
+            if (shadow == null) CreateShadow();
+            shadowRenderer.sharedMaterial = material;
+            alphaInitialized = false;
+            UpdateShadow();
+            shadowRenderer.enabled = isActiveAndEnabled;
+        }
+
         private void Awake()
         {
-            if (shadowMaterial == null)
-            {
-                Debug.LogWarning("AircraftGroundShadow needs the Battlefield shadow material.", this);
-                enabled = false;
-                return;
-            }
+            // Inspector-assigned legacy shadows initialize here; runtime-created
+            // components receive their material via Configure after AddComponent.
+            if (shadowMaterial != null) CreateShadow();
+        }
 
+        private void Start()
+        {
+            if (shadowRenderer != null) return;
+            Debug.LogWarning("AircraftGroundShadow needs a shadow material.", this);
+            enabled = false;
+        }
+
+        private void CreateShadow()
+        {
             var owner = new GameObject("GroundShadow");
             shadow = owner.transform;
             shadow.SetParent(transform, false);

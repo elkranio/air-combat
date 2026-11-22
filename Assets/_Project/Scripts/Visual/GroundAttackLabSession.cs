@@ -18,6 +18,7 @@ namespace AirCombat
         private WeaponController weapons;
         private BoundedAim aim;
         private BombRack bombs;
+        private Material groundShadowMaterial;
         private GroundDepotTarget[] depots;
         private Vector3 startPosition;
         private Quaternion startRotation;
@@ -82,10 +83,25 @@ namespace AirCombat
                 rig.Install();
                 depots[i] = rig;
             }
+            // Reuse the already-proven Sandbox soft-shadow mesh and shader.
+            // G3b creates it only on this scene's player; no prefab mutations.
+            var shadowShader = Shader.Find("AirCombat/SandboxEffect");
+            if (shadowShader != null)
+            {
+                groundShadowMaterial = new Material(shadowShader) { name = "G3b soft ground shadow (runtime)" };
+                var aircraftShadow = jet.GetComponent<AircraftGroundShadow>();
+                if (aircraftShadow == null) aircraftShadow = jet.AddComponent<AircraftGroundShadow>();
+                // GroundAttackLab sun is at (50, -35, 0). Offset by real altitude
+                // along the light direction, then broaden/fade the high shadow.
+                aircraftShadow.Configure(groundShadowMaterial, 8f, 11f,
+                    .25f, .14f, 72f, .12f, new Vector2(-.48f, .69f), .028f);
+            }
+            else Debug.LogWarning("G3b: missing SandboxEffect shadow shader.", this);
+
             selection.EquipBombs();
             bombs = jet.GetComponent<BombRack>();
             if (bombs == null) bombs = jet.AddComponent<BombRack>();
-            bombs.Configure(selection, flight, afterburner, breakTurn);
+            bombs.Configure(selection, flight, afterburner, breakTurn, groundShadowMaterial);
 
             startPosition = jet.transform.position;
             startRotation = jet.transform.rotation;
@@ -111,6 +127,11 @@ namespace AirCombat
             cameraRig.BindPlayer(playerJet.transform, afterburner, false);
             aim?.Configure(cameraRig.ViewCamera, playerJet.transform);
             cameraRig.Lock.ResetLock();
+        }
+
+        private void OnDestroy()
+        {
+            if (groundShadowMaterial != null) Destroy(groundShadowMaterial);
         }
 
         private void OnGUI()
