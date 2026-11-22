@@ -37,13 +37,16 @@ namespace AirCombat
         private bool gaussSelected;
         private bool missileSelected;
         private bool bombSelected;
+        private bool nursSelected;
 
         public int FiredCount { get; private set; }
         public int HitCount { get; private set; }
-        public string FireModeLabel => bombSelected ? "BOMB" : missileSelected ? "MISSILE" : gaussSelected
+        public string FireModeLabel => nursSelected ? "NURS / CABRAGE G4a" :
+            bombSelected ? "BOMB" : missileSelected ? "MISSILE" : gaussSelected
             ? (gaussCannon == null || gaussCannon.IsReady(Time.time) ? "GAUSS READY" : "GAUSS " + gaussCannon.RemainingCooldown(Time.time).ToString("F1") + "s")
             : "BURST " + (autocannon != null ? autocannon.BurstSize : Mathf.Max(2, burstSize));
-        public string AimModeLabel => bombSelected ? "IMPACT AREA" : missileSelected ? "CURSOR" :
+        public string AimModeLabel => nursSelected ? "MANEUVER" :
+            bombSelected ? "IMPACT AREA" : missileSelected ? "CURSOR" :
             gaussSelected ? "FIXED" : freeAim != null ? freeAim.ModeLabel : "FIXED";
         public string SoundModeLabel => soundVariants != null && soundVariants.Length == 4 && soundVariants[1] != null
             ? "MG 02" : "SYNTH FALLBACK";
@@ -76,6 +79,7 @@ namespace AirCombat
                 gaussSelected = component.Selected == WeaponMode.Gauss;
                 missileSelected = component.Selected == WeaponMode.Missile;
                 bombSelected = component.Selected == WeaponMode.Bomb;
+                nursSelected = component.Selected == WeaponMode.Nurs;
                 autocannon?.ClearPending();
             }
         }
@@ -117,6 +121,7 @@ namespace AirCombat
                 gaussSelected = selection.Selected == WeaponMode.Gauss;
                 missileSelected = selection.Selected == WeaponMode.Missile;
                 bombSelected = selection.Selected == WeaponMode.Bomb;
+                nursSelected = selection.Selected == WeaponMode.Nurs;
             }
             // TargetLock runs later in LateUpdate (order 200), so mode changes are immediate.
             if (missileLock != null) missileLock.SetLockingEnabled(missileSelected);
@@ -124,10 +129,10 @@ namespace AirCombat
 
             var mouse = Mouse.current;
             bool held = Application.isFocused && mouse != null && mouse.leftButton.isPressed;
-            bool cannonSelected = !gaussSelected && !missileSelected && !bombSelected;
+            bool cannonSelected = !gaussSelected && !missileSelected && !bombSelected && !nursSelected;
             bool burstActive = cannonSelected && autocannon != null && autocannon.HasPendingShots;
             if (freeAim != null) freeAim.Sample(cannonSelected, held || burstActive);
-            if (missileSelected || bombSelected) return; // Separate launchers own these slots.
+            if (missileSelected || bombSelected || nursSelected) return; // Separate launchers own these slots.
             if (gaussSelected)
             {
                 gaussCannon?.Tick(mouse != null && Application.isFocused &&

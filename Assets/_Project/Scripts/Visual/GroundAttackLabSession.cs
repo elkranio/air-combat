@@ -18,6 +18,7 @@ namespace AirCombat
         private WeaponController weapons;
         private BoundedAim aim;
         private BombRack bombs;
+        private CabrageManeuver cabrage;
         private GroundDepotTarget[] depots;
         private Vector3 startPosition;
         private Quaternion startRotation;
@@ -83,9 +84,14 @@ namespace AirCombat
                 depots[i] = rig;
             }
             selection.EquipBombs();
+            selection.EquipNurs();
             bombs = jet.GetComponent<BombRack>();
             if (bombs == null) bombs = jet.AddComponent<BombRack>();
             bombs.Configure(selection, flight, afterburner, breakTurn);
+            cabrage = jet.GetComponent<CabrageManeuver>();
+            if (cabrage == null) cabrage = jet.AddComponent<CabrageManeuver>();
+            cabrage.Configure(selection, breakTurn, flight.Visual);
+            flight.ConfigureCabrage(cabrage);
             // Height reference only while bombs are equipped: no lead/prediction.
             var nadir = jet.GetComponent<BombNadirMarker>();
             if (nadir == null) nadir = jet.AddComponent<BombNadirMarker>();
@@ -110,6 +116,7 @@ namespace AirCombat
         private void ResetFlight()
         {
             bombs?.CancelBurst();
+            cabrage?.ResetManeuver();
             breakTurn?.CancelBreak();
             playerJet.transform.SetPositionAndRotation(startPosition, startRotation);
             cameraRig.BindPlayer(playerJet.transform, afterburner, false);
@@ -122,14 +129,16 @@ namespace AirCombat
             if (!showDiagnostics || !enabled || Event.current.type != EventType.Repaint) return;
             if (label == null)
                 label = new GUIStyle(GUI.skin.label) { fontSize = 14, normal = { textColor = Color.white } };
-            GUI.Box(new Rect(12, 12, 560, 112), GUIContent.none);
-            GUI.Label(new Rect(22, 17, 530, 22), "GROUND ATTACK LAB G3 / GRAVITY BOMBS", label);
-            GUI.Label(new Rect(22, 40, 530, 22), "A/D turn  W boost  Q/E break  1/2/3/4 weapons  R reset  H HUD", label);
-            GUI.Label(new Rect(22, 63, 530, 22),
+            GUI.Box(new Rect(12, 12, 650, 140), GUIContent.none);
+            GUI.Label(new Rect(22, 17, 620, 22), "GROUND ATTACK LAB G4a / BOMBS + CABRAGE", label);
+            GUI.Label(new Rect(22, 40, 620, 22), "A/D turn  W boost  Q/E break/abort  1/2/3/4/5 weapons  R reset  H HUD", label);
+            GUI.Label(new Rect(22, 63, 620, 22),
                 $"Speed {flight.CurrentSpeed:F0}   Fuel {afterburner.Charge01:P0}   Bombs {bombs.FiredCount}   Pending {bombs.PendingCount}   CD {bombs.CooldownLeft:F1}s", label);
+            GUI.Label(new Rect(22, 86, 620, 22),
+                $"NURS G4a: {cabrage.PhaseLabel}   Alt {playerJet.transform.position.y:F1}   CD {cabrage.CooldownLeft:F1}s   (rockets in G4b)", label);
             int destroyed = 0;
             if (depots != null) foreach (var depot in depots) destroyed += depot.DestroyedParts;
-            GUI.Label(new Rect(22, 86, 530, 22),
+            GUI.Label(new Rect(22, 109, 620, 22),
                 $"Destroyed depot parts {destroyed}/16   |   Hold course for precision; W adds scatter", label);
         }
     }

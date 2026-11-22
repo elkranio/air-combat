@@ -28,9 +28,11 @@ namespace AirCombat
         public Transform Visual => visual; // Shared with optional flight maneuvers.
         private AircraftMotor motor;
         private BreakTurn breakTurn;
+        private CabrageManeuver cabrage;
 
-        // Optional maneuver; null when a scene does not equip it.
+        // Optional maneuvers; null when a scene does not equip them.
         public void ConfigureBreakTurn(BreakTurn maneuver) { breakTurn = maneuver; }
+        public void ConfigureCabrage(CabrageManeuver maneuver) { cabrage = maneuver; }
 
         private void OnValidate()
         {
@@ -57,12 +59,20 @@ namespace AirCombat
                     - (keyboard.aKey.isPressed ? 1f : 0f);
             }
 
-            // Input belongs to the pilot controller; BreakTurn also works with AI callers.
+            // During cabrage the same Q/E Break Turn is an emergency abort. It
+            // turns for real while the cabrage component returns us to cruise Y.
             if (breakTurn != null && keyboard != null && Application.isFocused)
             {
-                if (keyboard.qKey.wasPressedThisFrame) breakTurn.TryBegin(-1);
-                else if (keyboard.eKey.wasPressedThisFrame) breakTurn.TryBegin(1);
+                int side = keyboard.qKey.wasPressedThisFrame ? -1
+                    : keyboard.eKey.wasPressedThisFrame ? 1 : 0;
+                if (side != 0)
+                {
+                    if (cabrage != null && cabrage.IsCommitted) cabrage.TryEmergencyBreak(side);
+                    else breakTurn.TryBegin(side);
+                }
             }
+            bool committed = cabrage != null && cabrage.IsCommitted;
+            if (committed) { steer = 0f; throttle = 0f; }
 
             var targetSpeed = useFixedCruiseWBoost ? cruiseSpeed
                 : throttle > 0f ? maxSpeed : throttle < 0f ? minSpeed : cruiseSpeed;
@@ -76,7 +86,8 @@ namespace AirCombat
             // held boost during the maneuver; grant the motor a short powered burst.
             bool boostHeld = keyboard != null && Application.isFocused &&
                 (useFixedCruiseWBoost ? keyboard.wKey.isPressed : keyboard.spaceKey.isPressed);
-            bool boost = afterburner != null && afterburner.Tick(!breaking && boostHeld, Time.deltaTime);
+            bool boost = afterburner != null && afterburner.Tick(
+                !breaking && !committed && boostHeld, Time.deltaTime);
             if (boost || breaking) targetSpeed = Mathf.Max(targetSpeed, afterburner.BoostSpeed);
             float accel = boost || breaking
                 ? Mathf.Max(acceleration, afterburner.BoostAcceleration) : acceleration;

@@ -3,7 +3,7 @@ using UnityEngine.InputSystem;
 
 namespace AirCombat
 {
-    public enum WeaponMode { Burst, Gauss, Missile, Bomb }
+    public enum WeaponMode { Burst, Gauss, Missile, Bomb, Nurs }
 
     // Owns weapon selection. Firing and aiming stay in their respective components.
     // SelectionRevision advances even when reselecting the current slot: a reselect
@@ -18,18 +18,21 @@ namespace AirCombat
         public uint SelectionRevision { get; private set; }
         public bool SelectionLocked { get; private set; }
         public bool BombsEquipped { get; private set; }
+        public bool NursEquipped { get; private set; }
 
-        // GroundAttackLab enables slot 4; WeaponLab/Sandbox keep their old slots.
+        // GroundAttackLab enables slots 4/5; WeaponLab/Sandbox keep their old slots.
         public void EquipBombs() { BombsEquipped = true; }
+        public void EquipNurs() { NursEquipped = true; }
         public void SetSelectionLocked(bool locked) { SelectionLocked = locked; }
 
         private void Awake() { Selected = initialMode; }
 
         public void Select(WeaponMode next)
         {
-            if (next < WeaponMode.Burst || next > WeaponMode.Bomb)
+            if (next < WeaponMode.Burst || next > WeaponMode.Nurs)
                 throw new System.ArgumentOutOfRangeException(nameof(next));
-            if (SelectionLocked || (next == WeaponMode.Bomb && !BombsEquipped)) return;
+            if (SelectionLocked || (next == WeaponMode.Bomb && !BombsEquipped) ||
+                (next == WeaponMode.Nurs && !NursEquipped)) return;
             Selected = next;
             unchecked { SelectionRevision++; }
         }
@@ -44,6 +47,7 @@ namespace AirCombat
             if (keyboard.digit2Key.wasPressedThisFrame) Select(WeaponMode.Gauss);
             if (keyboard.digit3Key.wasPressedThisFrame) Select(WeaponMode.Missile);
             if (keyboard.digit4Key.wasPressedThisFrame && BombsEquipped) Select(WeaponMode.Bomb);
+            if (keyboard.digit5Key.wasPressedThisFrame && NursEquipped) Select(WeaponMode.Nurs);
         }
     }
 }
