@@ -3377,6 +3377,12 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::AirCombat.WeaponLabCannon
   tracerMaterial: {fileID: 2100000, guid: 925da85cab297e040b35d238acf3fbd4, type: 2}
   shotClip: {fileID: 8300000, guid: d8c85a4fb6a14f1f9a2fe74286dc49d6, type: 3}
+  soundVariants:
+  - {fileID: 8300000, guid: 265cf78389497894e88d74c7b1d17e7c, type: 3}
+  - {fileID: 8300000, guid: 1477b8989b57255438e22ded9bece768, type: 3}
+  - {fileID: 8300000, guid: 578907bc28860d0428f613a08053077d, type: 3}
+  - {fileID: 8300000, guid: 98c9c3d1370f0cb489a5c685195045ca, type: 3}
+  soundMode: 1
   roundsPerSecond: 14
   muzzleVelocity: 420
   maxRange: 430

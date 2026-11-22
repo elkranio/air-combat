@@ -11,18 +11,20 @@ namespace AirCombat
         private float remaining;
         private float trailLength;
         private LineRenderer tracer;
+        private LineRenderer glow;
         private WeaponLabCannon owner;
         private float distanceTravelled;
         private static readonly RaycastHit[] HitBuffer = new RaycastHit[16];
 
         public void Configure(Vector3 forward, float velocity, float range, float length,
-            LineRenderer line, WeaponLabCannon source)
+            LineRenderer line, LineRenderer halo, WeaponLabCannon source)
         {
             direction = forward.normalized;
             speed = velocity;
             remaining = range;
             trailLength = length;
             tracer = line;
+            glow = halo;
             owner = source;
             Draw();
         }
@@ -63,8 +65,14 @@ namespace AirCombat
         {
             if (tracer == null) return;
             Vector3 front = transform.position;
-            tracer.SetPosition(0, front - direction * Mathf.Min(trailLength, distanceTravelled));
+            Vector3 tail = front - direction * Mathf.Min(trailLength, distanceTravelled);
+            tracer.SetPosition(0, tail);
             tracer.SetPosition(1, front);
+            if (glow != null)
+            {
+                glow.SetPosition(0, tail);
+                glow.SetPosition(1, front);
+            }
         }
     }
 }

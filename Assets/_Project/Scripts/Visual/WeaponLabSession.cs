@@ -127,9 +127,9 @@ namespace AirCombat
             GUI.Box(new Rect(12, 12, 480, 129), GUIContent.none);
             GUI.Label(new Rect(22, 17, 450, 22), "WEAPON LAB / 12 km training range / no enemy AI", text);
             GUI.Label(new Rect(22, 40, 450, 22), "WASD fly   Space boost   HOLD LMB autocannon", text);
-            GUI.Label(new Rect(22, 63, 450, 22), "T toggle overheating   R reset   H hide HUD", text);
+            GUI.Label(new Rect(22, 63, 450, 22), "G gun SFX: " + cannon.SoundModeLabel + "   T heat   R reset", text);
             string cameraMode = cameraLead != null && cameraLead.LookAheadEnabled ? "LOOK-AHEAD" : "CENTER";
-            GUI.Label(new Rect(22, 86, 450, 22), "1/2/3 pitch   C camera: " + cameraMode + "   H hide HUD", text);
+            GUI.Label(new Rect(22, 86, 450, 22), "1/2/3 pitch   C: " + cameraMode + "   H hide HUD", text);
             string heat = cannon.HeatLimiterEnabled
                 ? $"Heat {cannon.Heat01:P0}" + (cannon.IsOverheated ? " [COOLING]" : "") : "Heat OFF";
             GUI.Label(new Rect(22, 109, 450, 22),
