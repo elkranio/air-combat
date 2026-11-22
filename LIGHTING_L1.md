@@ -5,7 +5,7 @@ Source: green master `9af37985`. This atom is an infrastructure migration, not a
 ## Install once in Unity (Edit Mode)
 
 1. Apply patch and let scripts compile. Save any scene edits; exit Play Mode.
-2. Menu: **Air Combat > Lighting > Install Unified Lighting L1**.
+2. Menu: **Air Combat > Lighting > Install Unified Lighting L1**. The installer now locates only the known legacy light roots (`Directional Light` in WeaponLab, `Sun` in GroundAttackLab). It does not probe the `Player` or other scene objects for `Light` components; if a named root is missing it reports a controlled validation error without deleting scene content.
 3. The one-shot importer creates `Assets/_Project/Prefabs/Environment/CombatLightingRig.prefab`, replaces each scene's old directional light with an **instance of that same prefab** in `WeaponLab.unity` and `GroundAttackLab.unity`, and creates a disposable sloped receiver at `(170,0,420)` in GroundAttackLab. Nothing modifies the shared aircraft, bomb or depot prefab.
 4. The script refuses to overwrite existing LightingRig/slope output and checks for unexpected directional light roots. Save/commit the generated prefab, slope mesh, updated scene files and all generated `.meta` files after testing. **Do not re-run the old GroundAttackLab/WeaponLab creation generators.**
 

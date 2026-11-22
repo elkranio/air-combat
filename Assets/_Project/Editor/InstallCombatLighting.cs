@@ -50,12 +50,12 @@ namespace AirCombat.EditorTools
             foreach (string path in new[] { WeaponLab, GroundLab })
             {
                 var scene = EditorSceneManager.OpenScene(path, OpenSceneMode.Single);
-                var lights = scene.GetRootGameObjects()
-                    .Where(go => go.GetComponent<Light>() is Light l && l.type == LightType.Directional)
-                    .ToArray();
-                if (lights.Length != 1 || scene.GetRootGameObjects().Any(go => go.GetComponent<CombatLightingRig>() != null))
+                // Never probe arbitrary scene roots (Player/Enemy/etc.) for a Light.
+                // Only the explicitly known legacy sun is eligible for replacement.
+                if (!TryFindLegacySun(scene, path, out _)) return;
+                if (scene.GetRootGameObjects().Any(go => go.name == "Combat Lighting"))
                 {
-                    Debug.LogError("L1: Expected exactly one old directional light and no LightingRig in " + path);
+                    Debug.LogError("L1: LightingRig already exists in " + path);
                     return;
                 }
                 if (path == GroundLab && scene.GetRootGameObjects().Any(go => go.name == "Shadow Slope - test only"))
@@ -89,8 +89,8 @@ namespace AirCombat.EditorTools
             foreach (string path in new[] { WeaponLab, GroundLab })
             {
                 var scene = EditorSceneManager.OpenScene(path, OpenSceneMode.Single);
-                var oldSun = scene.GetRootGameObjects().Single(go =>
-                    go.GetComponent<Light>() is Light l && l.type == LightType.Directional);
+                if (!TryFindLegacySun(scene, path, out var oldSun))
+                    throw new InvalidOperationException("L1: Legacy sun changed during installation: " + path);
                 var instance = PrefabUtility.InstantiatePrefab(prefab, scene) as GameObject;
                 if (instance == null) throw new InvalidOperationException("Cannot instantiate lighting prefab in " + path);
                 // The old light must not coexist, otherwise we get double lighting/shadows.
@@ -106,6 +106,29 @@ namespace AirCombat.EditorTools
             Debug.Log("L1: Unified lighting installed in WeaponLab and GroundAttackLab. " +
                 "Play GroundAttackLab: test player/bomb shadows and the test slope. " +
                 "Commit generated prefab, mesh and Unity .meta files after green. Sandbox unchanged.");
+        }
+
+        private static bool TryFindLegacySun(Scene scene, string path, out GameObject oldSun)
+        {
+            oldSun = null;
+            string expectedName = path == WeaponLab ? "Directional Light" : "Sun";
+            var matches = scene.GetRootGameObjects().Where(go => go.name == expectedName).ToArray();
+            if (matches.Length != 1)
+            {
+                Debug.LogError("L1: Expected exactly one root named '" + expectedName +
+                    "' in " + path + ", found " + matches.Length + ". No scene objects changed.");
+                return false;
+            }
+            // Unity's null semantics for Components differ from C# 'is' patterns;
+            // verify the known light object explicitly, not Player or other roots.
+            var light = matches[0].GetComponent<Light>();
+            if (light == null || light.type != LightType.Directional)
+            {
+                Debug.LogError("L1: '" + expectedName + "' has no valid directional Light in " + path);
+                return false;
+            }
+            oldSun = matches[0];
+            return true;
         }
 
         private static void CreateTestSlope(Scene scene, Material material)
