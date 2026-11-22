@@ -4,7 +4,7 @@ using UnityEngine.InputSystem;
 namespace AirCombat
 {
     // Scene-only composition test. WeaponLabSession is deliberately not involved.
-    // Does not implement targets, ground ordnance, AI, loadouts or new flight rules.
+    // Equips the G3 bomb prototype and depot hit zones without mutating prefab assets.
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-80)]
     public sealed class GroundAttackLabSession : MonoBehaviour
@@ -17,6 +17,8 @@ namespace AirCombat
         private BreakTurn breakTurn;
         private WeaponController weapons;
         private BoundedAim aim;
+        private BombRack bombs;
+        private GroundDepotTarget[] depots;
         private Vector3 startPosition;
         private Quaternion startRotation;
         private bool showDiagnostics = true;
@@ -62,6 +64,29 @@ namespace AirCombat
             breakTurn.Configure(afterburner, flight.Visual);
             flight.ConfigureBreakTurn(breakTurn);
 
+            // G3 is an isolated GroundAttackLab experiment. Keep the approved
+            // shared PlayerJet prefab and other labs' input/loadouts untouched.
+            var depotGroup = GameObject.Find("Military Depots - G2");
+            if (depotGroup == null || depotGroup.transform.childCount != 4)
+            {
+                Debug.LogError("G3 requires the four G2 Military Depot scene instances.", this);
+                enabled = false;
+                return;
+            }
+            depots = new GroundDepotTarget[depotGroup.transform.childCount];
+            for (int i = 0; i < depots.Length; i++)
+            {
+                var depot = depotGroup.transform.GetChild(i).gameObject;
+                var rig = depot.GetComponent<GroundDepotTarget>();
+                if (rig == null) rig = depot.AddComponent<GroundDepotTarget>();
+                rig.Install();
+                depots[i] = rig;
+            }
+            selection.EquipBombs();
+            bombs = jet.GetComponent<BombRack>();
+            if (bombs == null) bombs = jet.AddComponent<BombRack>();
+            bombs.Configure(selection, flight, afterburner, breakTurn);
+
             startPosition = jet.transform.position;
             startRotation = jet.transform.rotation;
         }
@@ -80,6 +105,7 @@ namespace AirCombat
 
         private void ResetFlight()
         {
+            bombs?.CancelBurst();
             breakTurn?.CancelBreak();
             playerJet.transform.SetPositionAndRotation(startPosition, startRotation);
             cameraRig.BindPlayer(playerJet.transform, afterburner, false);
@@ -92,11 +118,15 @@ namespace AirCombat
             if (!showDiagnostics || !enabled || Event.current.type != EventType.Repaint) return;
             if (label == null)
                 label = new GUIStyle(GUI.skin.label) { fontSize = 14, normal = { textColor = Color.white } };
-            GUI.Box(new Rect(12, 12, 510, 88), GUIContent.none);
-            GUI.Label(new Rect(22, 17, 480, 22), "GROUND ATTACK LAB / CRUISE FEEL TEST F1", label);
-            GUI.Label(new Rect(22, 40, 480, 22), "A/D turn   W boost   Q/E break   1/2 guns   R reset   H HUD", label);
-            GUI.Label(new Rect(22, 63, 480, 22),
-                $"Speed {flight.CurrentSpeed:F0}   Fuel {afterburner.Charge01:P0}   Shots {weapons.FiredCount}   No targets / missiles yet", label);
+            GUI.Box(new Rect(12, 12, 560, 112), GUIContent.none);
+            GUI.Label(new Rect(22, 17, 530, 22), "GROUND ATTACK LAB G3 / GRAVITY BOMBS", label);
+            GUI.Label(new Rect(22, 40, 530, 22), "A/D turn  W boost  Q/E break  1/2/3/4 weapons  R reset  H HUD", label);
+            GUI.Label(new Rect(22, 63, 530, 22),
+                $"Speed {flight.CurrentSpeed:F0}   Fuel {afterburner.Charge01:P0}   Bombs {bombs.FiredCount}   Pending {bombs.PendingCount}   CD {bombs.CooldownLeft:F1}s", label);
+            int destroyed = 0;
+            if (depots != null) foreach (var depot in depots) destroyed += depot.DestroyedParts;
+            GUI.Label(new Rect(22, 86, 530, 22),
+                $"Destroyed depot parts {destroyed}/16   |   Hold course for precision; W adds scatter", label);
         }
     }
 }

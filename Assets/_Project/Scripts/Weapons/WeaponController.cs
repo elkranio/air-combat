@@ -36,13 +36,14 @@ namespace AirCombat
         private System.Action registerHitCallback;
         private bool gaussSelected;
         private bool missileSelected;
+        private bool bombSelected;
 
         public int FiredCount { get; private set; }
         public int HitCount { get; private set; }
-        public string FireModeLabel => missileSelected ? "MISSILE" : gaussSelected
+        public string FireModeLabel => bombSelected ? "BOMB" : missileSelected ? "MISSILE" : gaussSelected
             ? (gaussCannon == null || gaussCannon.IsReady(Time.time) ? "GAUSS READY" : "GAUSS " + gaussCannon.RemainingCooldown(Time.time).ToString("F1") + "s")
             : "BURST " + (autocannon != null ? autocannon.BurstSize : Mathf.Max(2, burstSize));
-        public string AimModeLabel => missileSelected ? "CURSOR" :
+        public string AimModeLabel => bombSelected ? "IMPACT AREA" : missileSelected ? "CURSOR" :
             gaussSelected ? "FIXED" : freeAim != null ? freeAim.ModeLabel : "FIXED";
         public string SoundModeLabel => soundVariants != null && soundVariants.Length == 4 && soundVariants[1] != null
             ? "MG 02" : "SYNTH FALLBACK";
@@ -74,6 +75,7 @@ namespace AirCombat
             {
                 gaussSelected = component.Selected == WeaponMode.Gauss;
                 missileSelected = component.Selected == WeaponMode.Missile;
+                bombSelected = component.Selected == WeaponMode.Bomb;
                 autocannon?.ClearPending();
             }
         }
@@ -114,6 +116,7 @@ namespace AirCombat
                 autocannon?.CancelBurst(Time.time);
                 gaussSelected = selection.Selected == WeaponMode.Gauss;
                 missileSelected = selection.Selected == WeaponMode.Missile;
+                bombSelected = selection.Selected == WeaponMode.Bomb;
             }
             // TargetLock runs later in LateUpdate (order 200), so mode changes are immediate.
             if (missileLock != null) missileLock.SetLockingEnabled(missileSelected);
@@ -121,9 +124,10 @@ namespace AirCombat
 
             var mouse = Mouse.current;
             bool held = Application.isFocused && mouse != null && mouse.leftButton.isPressed;
-            bool burstActive = !gaussSelected && !missileSelected && autocannon != null && autocannon.HasPendingShots;
-            if (freeAim != null) freeAim.Sample(!gaussSelected && !missileSelected, held || burstActive);
-            if (missileSelected) return; // Lock evaluation only; launcher is a later atom.
+            bool cannonSelected = !gaussSelected && !missileSelected && !bombSelected;
+            bool burstActive = cannonSelected && autocannon != null && autocannon.HasPendingShots;
+            if (freeAim != null) freeAim.Sample(cannonSelected, held || burstActive);
+            if (missileSelected || bombSelected) return; // Separate launchers own these slots.
             if (gaussSelected)
             {
                 gaussCannon?.Tick(mouse != null && Application.isFocused &&

@@ -3,7 +3,7 @@ using UnityEngine.InputSystem;
 
 namespace AirCombat
 {
-    public enum WeaponMode { Burst, Gauss, Missile }
+    public enum WeaponMode { Burst, Gauss, Missile, Bomb }
 
     // Owns weapon selection. Firing and aiming stay in their respective components.
     // SelectionRevision advances even when reselecting the current slot: a reselect
@@ -16,13 +16,20 @@ namespace AirCombat
 
         public WeaponMode Selected { get; private set; } = WeaponMode.Burst;
         public uint SelectionRevision { get; private set; }
+        public bool SelectionLocked { get; private set; }
+        public bool BombsEquipped { get; private set; }
+
+        // GroundAttackLab enables slot 4; WeaponLab/Sandbox keep their old slots.
+        public void EquipBombs() { BombsEquipped = true; }
+        public void SetSelectionLocked(bool locked) { SelectionLocked = locked; }
 
         private void Awake() { Selected = initialMode; }
 
         public void Select(WeaponMode next)
         {
-            if (next < WeaponMode.Burst || next > WeaponMode.Missile)
+            if (next < WeaponMode.Burst || next > WeaponMode.Bomb)
                 throw new System.ArgumentOutOfRangeException(nameof(next));
+            if (SelectionLocked || (next == WeaponMode.Bomb && !BombsEquipped)) return;
             Selected = next;
             unchecked { SelectionRevision++; }
         }
@@ -36,6 +43,7 @@ namespace AirCombat
             if (keyboard.digit1Key.wasPressedThisFrame) Select(WeaponMode.Burst);
             if (keyboard.digit2Key.wasPressedThisFrame) Select(WeaponMode.Gauss);
             if (keyboard.digit3Key.wasPressedThisFrame) Select(WeaponMode.Missile);
+            if (keyboard.digit4Key.wasPressedThisFrame && BombsEquipped) Select(WeaponMode.Bomb);
         }
     }
 }
