@@ -1,8 +1,50 @@
 # Weapon Lab — isolated weapon feel-test range
 
+## Current Weapon Lab (v11): open and play, **do not rebuild**
+
+**This section supersedes the V0–V10 instructions later in this file.** The active scene is `Assets/_Project/Scenes/WeaponLab.unity`: 12 x 12 km arena with one flying, unarmed 5-HP fighter, hit flash, kills, respawn and sector-triggered evasion (B on/off). **Do not run** the original `ConfigureWeaponLab.Configure` scene generator: it recreates the seven V0 static dummies and can overwrite current gun/audio/dogfight setup. Do not rerun V4/V5 upgrade generators on the current green scene. No generator is required to play it. Sandbox remains the only build scene.
+
+### Approved current controls
+
+| Key | Action |
+| --- | --- |
+| `W/S`, `A/D` | Throttle / turn; banking and movement unchanged |
+| `Space` | Afterburner |
+| `LMB` | Fire selected weapon |
+| `1` | BURST autocannon (default) |
+| `2` | GAUSS, fixed forward |
+| `B` | Enemy evasion ON/OFF for controlled AI tests |
+| `R` / `H` | Reset encounter / hide or show diagnostic HUD |
+
+Camera: scene-authored **65-degree** pitch, **look-ahead always ON**. Lab does **not** support the old pitch/center toggles. Sandbox still has its own 1/2/3 pitch presets.
+
+### Accepted weapon and sight behavior
+
+| | BURST autocannon | GAUSS |
+| --- | --- | --- |
+| Input | One click commits 4 shots; hold repeats after cooldown | One shot per fresh click, no hold repeat |
+| Rate/cooldown | 14 shots/s inside burst; 0.45 s **after last shot** | 1.5 s after shot |
+| Projectile | Moving tracer, velocity 420, 1 damage | Moving slug, velocity 300, 5 damage (one-hit kill on current fighter) |
+| Aim | +/-12-degree free aim with mouse pointer, clamped to sector | Fixed to aircraft nose, zero mouse steering |
+| Selected-weapon guide | Pale gray-white sector borders **always visible** | Pale gray-white short forward sight, 36 world units **always visible** |
+| Firing indicator | Ring follows actual aim only while LMB/remaining committed shots | No ring or wedge; fixed sight stays |
+| Sound | **MG02** imported CC0 short shot (synth fallback), no runtime selection | Temporary dry mechanical synthesized shot, punch not final |
+
+BURST deliberately replaces continuous hold-to-delete fire. No heat gating, no gun-mode or sound A/B at runtime. Projectiles use swept raycasts and the existing 5-HP opponent. Gauss cooldown and BURST pause must not be reset by weapon switching. Visuals, audio and one-hit Gauss balance can be retuned later; accepted gameplay direction is **different weapons requiring different piloting**. The system mouse cursor is not yet hidden/replaced by custom GUI.
+
+### Pending ideas (not implemented)
+
+- **Weapon-ready sight pulse:** at the instant a **selected** gun becomes fire-ready after cooldown, briefly brighten its visible guide to white then return to gray **once**. BURST: pulse both sector edges after the post-burst pause; GAUSS: pulse forward line after its 1.5-s cooldown. Avoid continuous blinking and do not alter aim/collision. Durations, brightness and readiness when switching weapons are deliberately undecided.
+- **Next distinct atoms:** return to Sandbox lock-on missiles and flares/countermeasures, evaluate those in Weapon Lab if useful; then arm the enemy (limited range, visible projectiles) and introduce player damage. Later experiment with attack-pass behavior and multiple opponents to avoid endless mutual turning. None is current Weapon Lab gameplay.
+- Custom in-game cursor / GUI feedback later. Keep OS cursor unchanged for now.
+
+### Retired experiments and history
+
+The remaining V0–V10 sections below are archival and may mention removed controls, static targets, old colors or scene builders. **Do not treat them as the current setup.** Removed from Weapon Lab: `M` continuous, `G` sound variants, `T` heat, `V` fixed/free A/B, `C` center/look-ahead A/B, `Shift+1/2/3` pitch presets. The only current camera is look-ahead at scene-authored 65 degrees. Audio clips are preserved; only MG02 is used. Current aim guides were finalized in v11.
+
 **Goal:** Test the feel of airborne weapons, VFX and audio before deciding on loadouts, survival rules, ammunition, missile targeting or enemy density. Sandbox remains the only build scene and still owns the existing lock-on missiles.
 
-## Build
+## Archived V0 build procedure — **do not run on the current green scene**
 
 From the repository root, after applying the patch, wait for Unity to import/compile. **Stop Play Mode and save any dirty scene** before running:
 
@@ -12,7 +54,7 @@ unity command script run --file Tools/Unity/ConfigureWeaponLab.cs --entry Config
 
 Open `Assets/_Project/Scenes/WeaponLab.unity` and enter Play. The generator copies V20's aircraft/camera/sun/study-local URP presentation into a separate scene, removes that copy's terrain/settlements/preview, generates a light 12 km × 12 km ground and seven passive targets. No Blender step or new external package. Does not edit `Sandbox`, `FrontierMesaPolish`, `FrontierStrata`, shared aircraft materials, or any build settings. Regeneration overwrites only WeaponLab scene and assets under `Generated/WeaponLab/`; stop Play/save scenes first.
 
-## Inputs
+## Archived V0 controls (superseded by current controls above)
 
 - **W/S** throttle, **A/D** turn, **Space** afterburner; **1/2/3** camera pitch 90/75/65 degrees (existing controllers).
 - **Hold LMB**: autocannon, 14 shots/s, infinite ammunition. With default free aim, two faint sector edges and the actual firing-direction ring appear while held. Projectiles originate from alternating existing muzzle points; no actual turret mesh has been rigged yet.
@@ -22,7 +64,7 @@ Open `Assets/_Project/Scenes/WeaponLab.unity` and enter Play. The generator copi
 - **C**: switch camera **LOOK-AHEAD / CENTER** while flying (defaults to look-ahead). Lead follows the aircraft's forward heading, smoothly moves toward ~22% of the visible height ahead at ortho size 80, and grows slightly during afterburner. Turning and switching back never snap the camera. `1/2/3` pitch still works. This is WeaponLab-only; no mouse-aim or gun change.
 - **R**: reset aircraft to start and place the passive targets ahead. **H**: hide/show lab HUD. The map only resets automatically when approaching the distant outer edge.
 
-## Files and boundaries
+## Archived V0 component overview (later versions supersede old settings)
 
 - `Assets/_Project/Scripts/Weapons/WeaponLabFreeAim.cs`: WeaponLab-only bounded mouse aim, world-space guide lines and circle; creates one LineRenderer per child object, no changes to the actual mouse position. Set `halfAngle=30`, `guideReach=165`, and `aimSmoothing=.065` for current test.
 - `Assets/_Project/Scripts/Weapons/WeaponLabCannon.cs`: cadence, alternating barrel offsets, heat A/B, muzzle flash, four processed CC0 audio variants and one synthesized fallback, bounded five-voice pool (prevents piling up long audio tails). Tracer core is now 0.50 world units instead of 0.27, with a separate faint 1.10-unit halo using the existing `AirCombat/SandboxEffect` shader. This is a cheap alpha-blended glow **approximation**, not URP postprocessing bloom; test at size 80.
@@ -33,7 +75,7 @@ Open `Assets/_Project/Scenes/WeaponLab.unity` and enter Play. The generator copi
 - `Assets/_Project/Art/Weapons/Audio/AutocannonShot.wav`: original synthesized reference (kept for A/B). Four `Autocannon_MG_01..04.wav` files are generated by the audio installer. Do not edit/commit the staging WAV.
 - `Tools/Unity/ConfigureWeaponLab.cs`: reproducible scene/mesh/material/texture assembly. Generated output: `Assets/_Project/Generated/WeaponLab/` (small shared mesh, material and repeat texture) plus `Assets/_Project/Scenes/WeaponLab.unity`.
 
-## First pass questions
+## Archived V0 test questions
 
 1. Does holding LMB feel satisfying at ordinary and boosted speeds, or do tracers become visually disconnected from the aircraft?
 2. Are 14 shots/s and 420 world units/s projectile velocity readable at ortho size 80? Check the actual model-relative muzzle offsets; they're placeholders.

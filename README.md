@@ -4,13 +4,15 @@ Top-down arcade air combat prototype. Unity 6.6 / URP.
 
 ## Start here
 
-- `Assets/_Project/Scenes/WeaponLab.unity` — **generated scene**, isolated 12 × 12 km cannon/weapon feel-test range, no enemies. Build with `Tools/Unity/ConfigureWeaponLab.cs` (see guide); not a build scene.
+- `Assets/_Project/Scenes/WeaponLab.unity` — **current combat prototype**: 12 × 12 km range, one flying 5-HP opponent (respawns), BURST autocannon and fixed-forward Gauss. **Open the existing scene; do not rerun the old V0 generator** (`ConfigureWeaponLab.cs`), which recreates passive dummies and may overwrite the current setup. Not a build scene.
 - `Assets/_Project/Scenes/Sandbox.unity` — gameplay reference: aircraft controls, banking, afterburner, enemy pursuit, target lock, missiles and respawn. The build scene remains Sandbox.
 - `Assets/_Project/Scenes/FrontierStrata.unity` — active visual playground (V17): 1200 × 1200 badlands, integrated rocky relief, industrial ruins, dynamic shadows, free flight. No combat yet.
 - `Assets/_Project/Scenes/FrontierBakeTruth.unity` — V18 material bake diagnostic; C switches close/gameplay camera.
 - `Assets/_Project/Scenes/ScorchedFrontier.unity` — V13 visual fallback.
 
-Play Mode: WASD to fly, Space to boost, 1/2/3 camera pitch (90/75/65 degrees). Frontier additionally has R recenter and H legend toggle.
+**Weapon Lab (current):** WASD fly, Space boost, LMB fire, **1 BURST / 2 GAUSS**, B enemy evasion A/B, R reset, H HUD. Camera pitch fixed at 65 degrees with look-ahead always on. BURST has a persistent +/-12-degree aim wedge; Gauss has a short fixed-forward sight. Both sights are pale gray-white. See the [current Weapon Lab guide](Tools/Unity/WEAPON_LAB.md) for approved tuning and pending ideas.
+
+**Sandbox/visual playgrounds:** WASD fly, Space boost; Sandbox retains the shared 1/2/3 camera pitch presets (90/75/65 degrees). Frontier has its separate R/H controls. The only build scene is Sandbox.
 
 ## Documentation
 

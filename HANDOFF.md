@@ -1,5 +1,26 @@
 # Air Combat — handoff
 
+## Latest verified working direction — Weapon Lab v11 (2026-11-22)
+
+**Read this before older V0–V10 notes below.** Green `master` at documentation refresh: `458b8bb59799cda6d75c14e625a6586b5c2cd738`. Current Weapon Lab contains **one flying unarmed Kestrel opponent** (5 HP, hit feedback, death and respawn), not the seven V0 stationary dummies. Enemy evades the player's forward sector with reaction/cooldown and always *requests* afterburner during committed breaks (limited by fuel); **B** toggles that response for tests. The fighter can still be killed quite easily, partly because it cannot threaten the player. Enemy fire, player HP/damage, multiple enemies and attack-pass AI are **not implemented** in Weapon Lab.
+
+**Accepted / keep:**
+
+- Camera: scene-authored **65-degree pitch**, forward **look-ahead always ON**, WASD flying and Space afterburner. Keep the art scene and shared Sandbox camera behavior intact.
+- **1 BURST** is the primary autocannon: 4 rounds at **14 rounds/s**, **0.45 s pause after the final round**, 420-unit/s projectile, moving tracer/hit detection, alternating muzzle flashes, **MG02** imported CC0 sound (synth fallback). One LMB click commits the whole burst; holding repeats; tapping does not bypass cooldown. No heat limiter. Hits are 1 HP each.
+- BURST aim: **+/-12-degree free-aim wedge**, always visible in pale gray-white while selected. The moving ring indicates actual mouse-clamped firing direction **only while LMB held or a committed burst finishes**; it disappears at rest. Mouse cursor is still the OS cursor; no custom GUI cursor has been implemented.
+- **2 GAUSS**: strictly forward, no aim sector/mouse steering. Single press = one moving slug (speed **300**, range **250**), **5 damage** (currently one-shots the 5-HP enemy), **1.5 s cooldown**; no hold-repeat. Short **36-unit** pale gray-white forward sight stays visible whenever selected. Thin 22-unit kinetic tracer, short warm muzzle flash and provisional synthesized mechanical shot. Gauss is promising, but its impact/audio punch and one-shot balance remain **provisional**.
+- Runtime lab controls: `1/2` weapons, `B` enemy evasion A/B, `R` restart encounter, `H` HUD. Diagnostic shot/hit counters stay.
+
+**Retired lab experiments (not current controls):** `M` continuous-fire, `G` sound cycling, `T` heat, `V` fixed autocannon aim, `C` centered camera, `Shift+1/2/3` pitch switching. No automatic continuous gun in current lab. Other imported MG variants are retained as assets but not selectable. **Do not rerun `Tools/Unity/ConfigureWeaponLab.cs`, the old V0 dummy arena generator, or old V4/V5 upgraders**; open the green scene directly. Historical sections below document experiments, not instructions for current Play Mode.
+
+**Idea backlog — not implemented / not approved:**
+
+- **One-shot weapon-ready cue:** when a selected gun's cooldown completes, briefly pulse its always-visible aim guide toward bright white and fade back **once**. For BURST, pulse sector borders after the last shot + pause; for GAUSS, pulse the forward sight after its cooldown. No permanent flashing, no need to watch a small HUD label. Exact duration/intensity and interaction during weapon switching are still to be tested. Do not add until a separate atom.
+- Later: custom in-game cursor/UI (remove system pointer only once designed); revisit lock-on missiles and countermeasure flares from Sandbox; prototype **enemy gunfire + player vulnerability**, then evaluate attack runs versus endless turning and eventually multiple enemies. Keep each as a separate small test.
+
+See [Tools/Unity/WEAPON_LAB.md](Tools/Unity/WEAPON_LAB.md) for the concise active controls, technical boundaries and archived iteration notes.
+
 ## Current direction (accepted)
 
 **FrontierStrata (V17)** is the current visual baseline, evolved from accepted Scorched Frontier (V13). V13 is retained as fallback; V18 is the bake diagnostic. User flight test: dramatically better than the forest variants; aircraft reads well in motion, including over ruins. Foundation works; future art polish is optional and incremental. Keep cold blue aircraft over warmer ochre clay/dust, large open spaces, ridges and localized abandoned infrastructure. Avoid dense all-over detail, unnecessary blur/outline and excessive orange saturation.
