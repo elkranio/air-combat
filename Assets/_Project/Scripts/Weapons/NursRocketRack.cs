@@ -33,6 +33,13 @@ namespace AirCombat
         public int ImpactCount { get; private set; }
         public int DamagedPartHits { get; private set; }
         public int FiredThisClimb => firedThisClimb;
+        // Share one source of truth with the G4c approximate impact predictor.
+        public int RocketCount => rocketCount;
+        public float MuzzleSpeed => muzzleSpeed;
+        public float YawSpreadDegrees => yawSpreadDegrees;
+        public float PitchSpreadDegrees => pitchSpreadDegrees;
+        public float ReleaseAt(int index) => firstReleaseSeconds + index * releaseInterval;
+        public Vector3 PylonAt(int index) => (index & 1) == 0 ? leftPylon : rightPylon;
 
         public void Configure(CabrageManeuver maneuver, FlightController controller)
         {
@@ -86,7 +93,7 @@ namespace AirCombat
             // Catch up if a frame skips a scheduled release; never fire rockets
             // after Q/E changed the phase to EmergencyReturn or Recovery.
             while (firedThisClimb < rocketCount &&
-                elapsed >= firstReleaseSeconds + firedThisClimb * releaseInterval)
+                elapsed >= ReleaseAt(firedThisClimb))
             {
                 Fire(firedThisClimb);
                 firedThisClimb++;
@@ -102,7 +109,7 @@ namespace AirCombat
                 flight.CurrentSpeed, muzzleSpeed, pitch, yawError, pitchError);
             // Alternate between the two pylons; each launch uses the *current*
             // aircraft position and heading, not a cached pre-maneuver frame.
-            Vector3 pylon = (index & 1) == 0 ? leftPylon : rightPylon;
+            Vector3 pylon = PylonAt(index);
             var rocket = new GameObject("NURS " + (FiredCount + 1));
             rocket.transform.position = transform.TransformPoint(pylon);
             rocket.transform.rotation = Quaternion.LookRotation(transform.forward, Vector3.up);

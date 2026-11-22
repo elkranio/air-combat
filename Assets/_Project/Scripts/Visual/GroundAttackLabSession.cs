@@ -20,6 +20,7 @@ namespace AirCombat
         private BombRack bombs;
         private CabrageManeuver cabrage;
         private NursRocketRack nurs;
+        private NursCameraCue nursCamera;
         private GroundDepotTarget[] depots;
         private Vector3 startPosition;
         private Quaternion startRotation;
@@ -96,6 +97,13 @@ namespace AirCombat
             nurs = jet.GetComponent<NursRocketRack>();
             if (nurs == null) nurs = jet.AddComponent<NursRocketRack>();
             nurs.Configure(cabrage, flight);
+            // G4c tactical preview remains lab-only. No shared prefab/scene edits.
+            var nursArea = jet.GetComponent<NursImpactAreaMarker>();
+            if (nursArea == null) nursArea = jet.AddComponent<NursImpactAreaMarker>();
+            nursArea.Configure(selection, cabrage, flight, nurs);
+            nursCamera = cameraRig.GetComponent<NursCameraCue>();
+            if (nursCamera == null) nursCamera = cameraRig.gameObject.AddComponent<NursCameraCue>();
+            nursCamera.Configure(cameraRig.ViewCamera, jet.transform, selection, cabrage, nursArea);
             // Height reference only while bombs are equipped: no lead/prediction.
             var nadir = jet.GetComponent<BombNadirMarker>();
             if (nadir == null) nadir = jet.AddComponent<BombNadirMarker>();
@@ -122,6 +130,7 @@ namespace AirCombat
             bombs?.CancelBurst();
             cabrage?.ResetManeuver();
             breakTurn?.CancelBreak();
+            nursCamera?.ResetCue();
             playerJet.transform.SetPositionAndRotation(startPosition, startRotation);
             cameraRig.BindPlayer(playerJet.transform, afterburner, false);
             aim?.Configure(cameraRig.ViewCamera, playerJet.transform);
