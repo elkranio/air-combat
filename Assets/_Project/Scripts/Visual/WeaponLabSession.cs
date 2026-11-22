@@ -74,11 +74,25 @@ namespace AirCombat
             var viewCamera = cameraFollow != null ? cameraFollow.GetComponent<Camera>() : null;
             if (viewCamera == null)
             { Debug.LogError("Weapon Lab needs a TopDownCameraFollow camera.", this); enabled = false; return; }
-            cameraFollow.SetPitchHotkeysEnabled(false);
-            cameraLead = GetComponent<CameraLookAhead>();
-            if (cameraLead == null) cameraLead = gameObject.AddComponent<CameraLookAhead>();
-            cameraLead.Configure(viewCamera, player, boost);
-            cameraLead.enabled = true;
+            // A4c prefab scene keeps look-ahead on the reusable camera rig.
+            // Legacy WeaponLab has no rig and keeps its original session-owned lead.
+            var prefabRig = viewCamera.GetComponent<CombatCameraRig>();
+            if (prefabRig != null)
+            {
+                prefabRig.BindPlayer(player, boost, false);
+                cameraLead = viewCamera.GetComponent<CameraLookAhead>();
+            }
+            else
+            {
+                cameraFollow.SetPitchHotkeysEnabled(false);
+                cameraLead = GetComponent<CameraLookAhead>();
+                if (cameraLead == null) cameraLead = gameObject.AddComponent<CameraLookAhead>();
+            }
+            if (cameraLead != null)
+            {
+                cameraLead.Configure(viewCamera, player, boost);
+                cameraLead.enabled = true;
+            }
             aim = player.GetComponent<BoundedAim>();
             if (aim == null) aim = player.gameObject.AddComponent<BoundedAim>();
             aim.Configure(viewCamera, player);
