@@ -413,6 +413,8 @@ MonoBehaviour:
   cannon: {fileID: 1971567204}
   passiveTargets: []
   fighter: {fileID: 1823924895}
+  missilePrefab: {fileID: 1166229602950883390, guid: 22d60401b2f22264a94c1483e5f97a30, type: 3}
+  missileImpactMaterial: {fileID: 2100000, guid: 5930cc9d78e3a764ebb9c9b0fa80227d, type: 2}
   mapHalfExtent: 6000
 --- !u!4 &142644116
 Transform:

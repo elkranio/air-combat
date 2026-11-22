@@ -28,6 +28,8 @@ namespace AirCombat
         public bool IsPointerInViewport { get; private set; }
         public int AttemptId { get; private set; }
         public bool IsTooClose { get; private set; }
+        public float MinimumLockDistance => minimumLockDistance;
+        public bool LockingEnabled => lockingEnabled;
         public bool CanFire => lockingEnabled && !IsTooClose && IsVisible && IsLocked && IsPointerInViewport;
         public Vector2 TargetScreen { get; private set; }
         public float RadiusPixels { get; private set; }

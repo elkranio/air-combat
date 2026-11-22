@@ -46,7 +46,7 @@ namespace AirCombat
 
         public int FiredCount { get; private set; }
         public int HitCount { get; private set; }
-        public string FireModeLabel => missileSelected ? "MISSILE LOCK ONLY" : gaussSelected
+        public string FireModeLabel => missileSelected ? "MISSILE" : gaussSelected
             ? (Time.time >= nextGaussReadyAt ? "GAUSS READY" : "GAUSS " + (nextGaussReadyAt - Time.time).ToString("F1") + "s")
             : "BURST " + Mathf.Max(2, burstSize);
         public string AimModeLabel => missileSelected ? "CURSOR" :

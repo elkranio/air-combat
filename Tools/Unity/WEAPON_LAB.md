@@ -204,3 +204,17 @@ This is the next incremental combat test after the approved BURST/Gauss visual p
 - Both values are configured at runtime by `WeaponLabSession` via the existing shared TargetLock component, *not* through a scene rewrite. Sandbox keeps its preexisting 1.5 s lock, 1.0 s grace and no minimum-distance restriction. The Weapon Lab camera receives a temporary TargetLock + TargetLockHud in Play Mode. Switching off weapon 3 clears the lock and removes its marker. R also resets acquisition.
 
 Test how often an opponent escapes the zone while you are tracking it, whether the faster lock with shorter grace is readable, and whether the 40-unit cutoff feels fair. **No rocket launching or flares in this atom.** No new scene generator, no imported assets.
+
+## Weapon Lab v13 — missile safety circle and real launch
+
+V12 proved the 1.0 s / 0.5 s cursor lock but intentionally shipped no missile launch and did not visualize the 40-unit threshold. The user expects the complete missile interaction, so V13 closes that gap without changing the approved guns or Sandbox.
+
+- Select **3 MISSILE**: a thin pale-gray **world-space 40-unit radius circle** follows the player, marking the minimum valid horizontal lock distance. It does not tilt with aircraft bank. BURST and Gauss hide the circle; their existing guides work as before.
+- Cursor over the visible enemy beyond 40 units acquires in **1.0 s**, and can tolerate **0.5 s** off-target (existing grace behavior). A target *inside* 40 units immediately loses acquisition and shows `TOO CLOSE` when pointed at. Range always uses distance between aircraft, not cursor pixels.
+- Once `LOCKED`, click **LMB** to launch the **existing Sandbox Missile prefab**. Its flight profile, visible model, trail, limited turning budget and collision are unchanged. Only one missile may be active at a time, and launching resets the lock (a new acquisition is required). On hit, call `WeaponLabEnemy.Hit` for a one-shot kill using the Lab enemy's normal death/respawn flow; spawn the existing impact ring.
+- Scene change is *only* two serialized references on the existing `WeaponLabSession`: Sandbox's `Missile.prefab` and `MissileEffect.mat`. The runtime-only `WeaponLabMissileLauncher` is attached to the player; **never rerun old scene generators**. Shared `TargetLock` adds read-only accessors for the radius and selection state; Sandbox lock timings and its launcher are untouched.
+- Test after Play Mode compiles: switch 1/2/3; see circle only on 3; fly inside and outside 40; wait for lock, click once, watch actual missile and enemy kill/respawn. Next separate work: re-evaluate missile balance and prototype flares/countermeasures. Unity playtest pending.
+
+## Weapon Lab v13a — editor prefab-reference hotfix
+
+If V13 was applied while `WeaponLab.unity` was open in Unity, the editor may keep the previous in-memory scene state and the newly serialized `missilePrefab` field can appear null. V13a resolves the existing `Assets/_Project/Art/Weapons/Missile.prefab` and `Assets/_Project/Art/VFX/MissileEffect.mat` through editor-only `AssetDatabase` when those runtime references are missing. No prefab duplicate, no scene generator or gameplay changes. The original serialized scene references remain preferred when present. This fallback is deliberately editor-only; WeaponLab is not a build scene. Return to Play Mode to verify the radius ring and launch; if refs remain missing, reopen the scene and inspect them.
