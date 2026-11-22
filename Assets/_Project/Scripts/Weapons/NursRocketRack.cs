@@ -13,7 +13,7 @@ namespace AirCombat
         [SerializeField, Range(1, 12)] private int rocketCount = 6;
         [SerializeField, Min(0f)] private float firstReleaseSeconds = .55f;
         [SerializeField, Min(.02f)] private float releaseInterval = .15f;
-        [SerializeField, Min(1f)] private float muzzleSpeed = 80f;
+        [SerializeField, Min(1f)] private float muzzleSpeed = 170f;
         [SerializeField, Range(0f, 15f)] private float yawSpreadDegrees = 5f;
         [SerializeField, Range(0f, 10f)] private float pitchSpreadDegrees = 3f;
         [SerializeField] private Vector3 leftPylon = new Vector3(-3.2f, -1.2f, 1.9f);
