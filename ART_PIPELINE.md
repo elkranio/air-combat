@@ -1,6 +1,6 @@
 # Art pipeline
 
-Sandbox is the gameplay reference. FrontierStrata (V17) is the active visual playground; Scorched Frontier (V13) is the fallback; gameplay and environment iteration remain separate until the environments are deliberately integrated.
+WeaponLab and GroundAttackLab are the gameplay references; Sandbox is a legacy comparison and the only Build Settings scene. FrontierStrata (V17) is the active visual playground; Scorched Frontier (V13) is the fallback. Gameplay and environment iteration stay separate until deliberately integrated.
 
 ## Practical authoring and bake guide
 

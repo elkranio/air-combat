@@ -116,13 +116,7 @@ namespace AirCombat
         private void Detonate(Vector3 point)
         {
             const float blastRadius = 6f;
-            int damagedParts = 0;
-            var hits = Physics.OverlapSphere(point, blastRadius, ~0, QueryTriggerInteraction.Ignore);
-            foreach (var hit in hits)
-            {
-                var part = hit.GetComponent<GroundDepotPart>();
-                if (part != null && part.ApplyDamage(point, 1)) damagedParts++;
-            }
+            int damagedParts = GroundBlastDamage.Apply(point, blastRadius, 1);
             BombImpactFx.Spawn(point, flashMaterial, scorchMaterial, blastRadius);
             onImpact?.Invoke(damagedParts);
             Finish();

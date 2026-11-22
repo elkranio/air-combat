@@ -1,5 +1,7 @@
 # G1 — independent GroundAttackLab composition proof
 
+**Already installed and tested.** Historical one-time authoring checklist, **not** a command to rerun on the accepted scene. For current mechanics see [HANDOFF.md](HANDOFF.md).
+
 **Base:** post-C1. This atom creates a NEW, intentionally minimal flight scene. It does **not** change WeaponLab/Sandbox/Frontier or any approved prefab.
 
 1. Apply G1 patch **after completing C1**. Open `Assets/_Project/Scenes/WeaponLab.unity` in Edit Mode, no dirty scene. Run **Air Combat > Scenes > Create GroundAttackLab G1**. The command refuses to overwrite outputs.

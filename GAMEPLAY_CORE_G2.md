@@ -1,6 +1,6 @@
 # G2 — Military Depot (model, Cycles bake, 4 prefab instances)
 
-Status: **authoring patch; pending local Blender generation and Unity visual test**. Base: green `master` `8d3800ac` (G1). G1 flight, WeaponLab, Sandbox and Frontier scenes are not regenerated or rebalanced.
+**Status: green, imported and placed.** The G2 generation/import instructions below are historical provenance. Do not rerun the importer on accepted GroundAttackLab; G3 and G4 have since added damage and weapons. Current state: [HANDOFF.md](HANDOFF.md).
 
 ## Actual 3D asset
 

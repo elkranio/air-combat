@@ -70,13 +70,8 @@ namespace AirCombat
         private void Detonate(Vector3 point)
         {
             const float radius = 13f;
-            // Each structural zone has one collider; a blast can hit several zones.
-            Collider[] hits = Physics.OverlapSphere(point, radius, ~0, QueryTriggerInteraction.Ignore);
-            foreach (var hit in hits)
-            {
-                var part = hit.GetComponent<GroundDepotPart>();
-                if (part != null) part.ApplyDamage(point, 1);
-            }
+            // Shared ground-domain blast handling; no air-to-ground gun damage.
+            GroundBlastDamage.Apply(point, radius, 1);
             BombImpactFx.Spawn(point, flashMaterial, scorchMaterial, radius);
             Destroy(gameObject);
         }

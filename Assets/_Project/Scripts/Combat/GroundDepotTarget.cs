@@ -10,7 +10,8 @@ namespace AirCombat
     public sealed class GroundDepotTarget : MonoBehaviour
     {
         private readonly List<GroundDepotPart> parts = new List<GroundDepotPart>(4);
-        private readonly List<Mesh> runtimeMeshes = new List<Mesh>();
+        // Only the latest runtime clone per renderer is needed.
+        private Mesh[] runtimeMeshes;
         private MeshFilter[] filters;
         private Mesh[] sourceMeshes;
         private bool installed;
@@ -24,6 +25,7 @@ namespace AirCombat
             installed = true;
             filters = GetComponentsInChildren<MeshFilter>(true);
             sourceMeshes = new Mesh[filters.Length];
+            runtimeMeshes = new Mesh[filters.Length];
             for (int i = 0; i < filters.Length; i++) sourceMeshes[i] = filters[i].sharedMesh;
 
             // The old G2 all-encompassing box would make bombs explode on an
@@ -93,7 +95,8 @@ namespace AirCombat
                 {
                     clone.RecalculateBounds();
                     filters[i].sharedMesh = clone;
-                    runtimeMeshes.Add(clone);
+                    if (runtimeMeshes[i] != null) Destroy(runtimeMeshes[i]);
+                    runtimeMeshes[i] = clone;
                 }
                 else Destroy(clone);
             }
@@ -101,6 +104,7 @@ namespace AirCombat
 
         private void OnDestroy()
         {
+            if (runtimeMeshes == null) return;
             foreach (var mesh in runtimeMeshes)
                 if (mesh != null) Destroy(mesh);
         }

@@ -21,7 +21,11 @@ namespace AirCombat
 
         private Light sun;
         private RenderPipelineAsset previousPipeline;
+        private Light previousSun;
+        private AmbientMode previousAmbientMode;
+        private Color previousAmbientLight;
         private bool ownsPipeline;
+        private bool ownsEnvironment;
         private LightingTime lastTime;
         private float lastAzimuth, lastElevationOffset, lastAmbientMultiplier;
         private bool applied;
@@ -57,6 +61,10 @@ namespace AirCombat
                 return;
             }
             previousPipeline = QualitySettings.renderPipeline;
+            previousSun = RenderSettings.sun;
+            previousAmbientMode = RenderSettings.ambientMode;
+            previousAmbientLight = RenderSettings.ambientLight;
+            ownsEnvironment = true;
             QualitySettings.renderPipeline = pipeline;
             ownsPipeline = true;
             sun = GetComponent<Light>();
@@ -119,6 +127,15 @@ namespace AirCombat
 
         private void OnDisable()
         {
+            // Do not leave editor/next-scene ambient state behind after a lab test.
+            // Only restore values while this rig still owns the scene sun.
+            if (ownsEnvironment && RenderSettings.sun == sun)
+            {
+                RenderSettings.sun = previousSun;
+                RenderSettings.ambientMode = previousAmbientMode;
+                RenderSettings.ambientLight = previousAmbientLight;
+            }
+            ownsEnvironment = false;
             if (ownsPipeline && QualitySettings.renderPipeline == pipeline)
                 QualitySettings.renderPipeline = previousPipeline;
             ownsPipeline = false;

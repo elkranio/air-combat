@@ -1,29 +1,26 @@
-# L1 — Unified combat lighting and physical URP shadows
+# L1 — shared combat lighting and real URP shadows (current)
 
-Source: green master `9af37985`. This atom is an infrastructure migration, not a weapon/flight change.
+**Already installed. Do not run the one-time L1 installer again.** The authoritative asset is `Assets/_Project/Prefabs/Environment/CombatLightingRig.prefab`, used by both `WeaponLab.unity` and `GroundAttackLab.unity`.
 
-## Install once in Unity (Edit Mode)
+## Reuse in new combat scenes
 
-1. Apply patch and let scripts compile. Save any scene edits; exit Play Mode.
-2. Menu: **Air Combat > Lighting > Install Unified Lighting L1**. The installer now locates only the known legacy light roots (`Directional Light` in WeaponLab, `Sun` in GroundAttackLab). It does not probe the `Player` or other scene objects for `Light` components; if a named root is missing it reports a controlled validation error without deleting scene content.
-3. The one-shot importer creates `Assets/_Project/Prefabs/Environment/CombatLightingRig.prefab`, replaces each scene's old directional light with an **instance of that same prefab** in `WeaponLab.unity` and `GroundAttackLab.unity`, and creates a disposable sloped receiver at `(170,0,420)` in GroundAttackLab. Nothing modifies the shared aircraft, bomb or depot prefab.
-4. The script refuses to overwrite existing LightingRig/slope output and checks for unexpected directional light roots. Save/commit the generated prefab, slope mesh, updated scene files and all generated `.meta` files after testing. **Do not re-run the old GroundAttackLab/WeaponLab creation generators.**
+- Instance the **same prefab**. Its `CombatLightingRig` component owns the sun and runtime URP profile (`Assets/Settings/ScorchedFrontier_URP.asset`), not a separate script or scene-specific sun.
+- The accepted URP profile provides a 4096 main-light shadowmap and a 230-unit shadow distance. Do not change the global URP profile as part of a camera or weapon cleanup.
+- The rig supplies Day, Sunset and NearNight time-of-day presets, azimuth and elevation adjustment, and ambient multiplier. All are Inspector-editable in Play Mode. `SuggestedEmissionMultiplier` is only a hint for future emissive props; it does not modify materials.
+- The rig restores the previously active pipeline and scene ambient/sun settings on disable, provided it still owns those settings. Do not instantiate multiple combat lighting authorities in the same scene.
+- Renderers on aircraft, bombs, NURS and depot geometry cast **real 3D shadows** on terrain, roofs and the sloped test receiver. Their positions follow geometry and the common sun angle.
 
-## One lighting authority for future levels
+## Do not reuse
 
-- `CombatLightingRig` owns `QualitySettings.renderPipeline = ScorchedFrontier_URP.asset` while its scene is running. **Both scenes use the same pre-existing 4096 main-light shadowmap and 230-unit shadow distance** already accepted in WeaponLab; these are URP asset settings, not per-bomb numbers.
-- The **prefab** is the single source of truth for the directional sun: shadow casting, soft shadows, bias, azimuth/time-of-day control, and ambient response. Add the prefab to any new scene; don't create a scene-specific shadow renderer or URP override.
-- Inspector (Play Mode): change `Time Of Day` between **Day**, **Sunset**, and **Near Night** to inspect sun elevation/tint/intensity and ambient lighting. `Azimuth`, `Elevation Offset` and `Ambient Multiplier` are numeric knobs; no automatic clock. Day approximates WeaponLab's existing light (38° elevation, -38° azimuth, 1.38 intensity). Sunset 14°, Near Night 5°; sun remains above horizon to avoid inverted light.
-- `SuggestedEmissionMultiplier` is an API hint for later emissive signs/lamps: **it does not yet increase actual material emission** or spawn point lights. A near-night state is an illumination preview, not a finished night art pass.
-- No procedural `AircraftGroundShadow` in GroundAttackLab. The approved `Kestrel` renderers already cast real URP shadows; the bomb capsule now does the same. Any terrain, slope and building with shadow-receiving URP Lit material receives shadows according to actual 3D height.
-- `AircraftGroundShadow` is intentionally kept for the legacy Sandbox (and any earlier visual experiments) until that separate scene is migrated. No global deletion.
+- `Scripts/Visual/AircraftGroundShadow.cs` is an older ground-projected translucent mesh for the legacy Sandbox and art experiments, not a terrain-aware physical shadow.
+- No replacement projected-shadow component or additional material glow is needed for the accepted combat baseline.
+- Do not rebake directional light into albedo/normal/AO maps. Environment art assets follow [ART_AUTHORING.md](ART_AUTHORING.md).
 
-## Visual verification
+## Verify
 
-- **WeaponLab**: same Kestrel silhouette shadow as baseline, no extra sun/double illumination, 1/2/3 weapons, camera, enemy, Q/E still green.
-- **GroundAttackLab**: at altitude 48 the jet casts one shape-accurate shadow, with separation determined by sun elevation (not a manually moved disk). Bomb shells cast real shadows that move on ground and bunker roofs as they descend; check four sequential drops without marker. At the offset **test slope**, shadows must bend over the inclined mesh rather than sticking to y=0; test crossing near its raised end.
-- Change sun `Time Of Day` and `Azimuth` while playing; **both** aircraft and bomb shadows must react to the same changes. Test bright Day and Sunset first; Near Night may need actual emissive fixture visuals in a later art atom.
-- If the small bomb shadow is too weak at ortho size 80, inspect URP shadow cascade/filtering or an optional **shadow-only proxy mesh** attached to the bomb: do not restore manual ground spots, fake raycast positioning or geometry-free decals.
-- **Sandbox** remains unchanged and is not part of this migration; Build Settings still include only Sandbox.
+1. WeaponLab and GroundAttackLab each have a single `CombatLightingRig` prefab instance, with no extra directional sun or Missing Script after script moves.
+2. Compare Day / Sunset / NearNight; look for a single physically plausible aircraft shadow and moving bomb/rocket shadows on ground and roofs. Check the temporary slope in GroundAttackLab.
+3. Exit Play Mode and change scenes. Lighting state/URP profile must not leak into Sandbox or unrelated art scenes.
+4. Confirm Bombs, NURS, camera cue and aircraft flight are unchanged, and Sandbox retains its legacy decorative shadow.
 
-No NURS, explosions rebalance, terrain collision redesign or global sunlight animation in L1. The test slope is temporary scene geometry that can be removed in a later cleanup atom.
+Original one-time import procedure and installation notes: [Docs/Archive/LIGHTING_L1_INSTALL_HISTORY.md](Docs/Archive/LIGHTING_L1_INSTALL_HISTORY.md).

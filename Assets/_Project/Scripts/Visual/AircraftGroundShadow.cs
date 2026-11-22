@@ -27,8 +27,8 @@ namespace AirCombat
         private byte lastAlpha;
         private bool alphaInitialized;
 
-        // Runtime-only tuning for GroundAttackLab. Serialized shadows in Sandbox
-        // still use their existing material and inspector values unchanged.
+        // Legacy runtime tuning for art experiments; Sandbox uses inspector values.
+        // Combat scenes use the shared lighting prefab and real URP shadows.
         public void Configure(Material material, float width, float length,
             float nearAlpha, float farAlpha, float alphaFadeHeight, float surfaceY,
             Vector2 offsetPerHeight, float growthPerHeight)
