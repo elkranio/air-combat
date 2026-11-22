@@ -1,75 +1,70 @@
-# Gameplay architecture — active migration map
+# Gameplay architecture — live composition (post-C1)
 
-**Status:** A1/A2/A3a/A3b/A3c tested green (`c993e04`, `072b53e`, `c354c28`, `9e1b09e`, `0eeeab5`); A3d damage/controller/launcher extraction pending Unity test. Incremental extraction from the tested WeaponLab prototype. No behavior redesign. The accepted combat scene is still `Assets/_Project/Scenes/WeaponLab.unity`, and `Sandbox.unity` remains the only build scene. Keep both intact while migrating. Source base: `master` `03e1781`.
+**Status:** A1–A4c tested green through `e60a5c3` (2026-11-22). `WeaponLab.unity` is the prefab-composed air combat reference formerly called `WeaponLabPrefabs.unity`. `Sandbox.unity` is still the sole Build Settings entry. C1 changes file organization only, not combat behavior.
 
-## Ownership and dependencies
+## Composition
 
-| Area | Reusable runtime owner | Remaining Lab-specific wiring / work |
+```text
+WeaponLab scene
+  WeaponLabSession (scene-only orchestration and diagnostic UI)
+    PlayerJet prefab instance                     EnemyJet prefab instance
+      FlightController                              EnemyFlightController
+      Afterburner / BreakTurn                        Afterburner / BreakTurn
+      WeaponSelection / WeaponController             WeaponLabEvasion
+      BoundedAim / GuidedMissileLauncher             WeaponLabEnemy (5 HP, respawn)
+      JetAssembly                                    JetAssembly
+        JetVisual / AfterburnerVfx                     JetVisual / AfterburnerVfx
+          Kestrel prefab (JetChassis + hardpoints)        Kestrel prefab (same model)
+    CombatCameraRig prefab instance
+      Camera / TopDownCameraFollow / CameraLookAhead
+      TargetLock / TargetLockHud / CombatCameraRig
+```
+
+**Scene-only links:** `WeaponLabSession` configures player/burst/boost, enemy AI target and missile lock, connects incoming missile notifications to the enemy evasion component, and configures Break Turn. `CombatCameraRig.BindPlayer/BindLockTarget` wire the scene targets. The prefab assets must not serialize references to scene objects.
+
+**Chassis contract:** `JetChassis` is visual/geometry data: mesh, animation root, Autocannon_L / Autocannon_R, Gauss, Missile, Engine_L / Engine_R sockets. `JetAssembly` links role root to the nested visual. Flight, AI, weapon timing and damage do **not** belong inside the chassis. New chassis must supply equivalent sockets; avoid copying muzzle/nozzle offsets to gameplay code. Legacy numeric fallbacks remain for Sandbox/old non-composed objects.
+
+## Runtime ownership
+
+| Capability | Owner | Notes |
 | --- | --- | --- |
-| Flight | `FlightController`, `EnemyFlightController`, `AircraftMotor`, `Afterburner`, `AfterburnerVfx`, **`BreakTurn`** | `WeaponLabSession` temporarily installs player/enemy `BreakTurn` and links controllers; `WeaponLabEvasion` is still test AI |
-| Camera | `TopDownCameraFollow`, **`CameraLookAhead`** | Session enables look-ahead and disables pitch hotkeys (Lab uses authored 65-degree pitch); Sandbox retains pitch keys |
-| Guns | `WeaponSelection`, `WeaponController`, `Autocannon`, `GaussCannon`, `AutocannonEmitter`, `GaussEmitter`, `BallisticProjectile` | `WeaponLabCannon` is an inert subclass only for serialized WeaponLab Inspector compatibility; prefabs will use `WeaponController` directly |
-| Aim and lock | `BoundedAim`, `TargetLock`, `ITargetLockEligibility`, `TargetLockHud` | Aim and lock are scene-neutral; WeaponLabSession supplies target eligibility and timings; lock still supports one target |
-| Missiles | `MissileProjectile`, `MissileLauncher` (Sandbox), `GuidedMissileLauncher` | The Lab launcher now uses generic damage and forwards launch events to scene AI |
-| HUD | `FlightHud` (Sandbox), `TargetLockHud`, `EnemyIndicator` (Sandbox), Lab diagnostic `OnGUI` | Status bar and bearing arrow are not yet general scene prefabs; Radar is **not** specified |
-| Scene orchestration | `WeaponLabSession` | Owns test-only respawn, stats, range and runtime scene setup; will shrink as prefab wiring replaces dynamic setup |
+| Pilot flight | `FlightController` / `AircraftMotor` | Keyboard input and bank; separate AI flight controller |
+| Enemy pursuit | `EnemyFlightController` | Enemy's current sparring-flight logic; scene target injected |
+| Boost and maneuver | `Afterburner`, `BreakTurn`, `AfterburnerVfx` | Shared tank, 90-degree turn; visual sockets from chassis |
+| Weapon mode | `WeaponSelection`, `WeaponController` | 1/2/3 selection, aim and trigger routing, counters |
+| Gun cadence | `Autocannon`, `GaussCannon` | Independent burst/cooldown schedulers |
+| Gun emission | `AutocannonEmitter`, `GaussEmitter`, `BallisticProjectile` | Physical rounds, audio and effects; air targets only |
+| Homing missiles | `GuidedMissileLauncher`, `MissileProjectile`, `MissileImpact` | Launch event consumed by scene AI; one active missile |
+| Lock and reticle | `BoundedAim`, `TargetLock`, `ITargetLockEligibility`, `TargetLockHud` | Targeting is camera/scene neutral |
+| Damage | `DamageableTarget`, `CombatTargetDomain` | Air/Ground classification; current guns/missiles air-only |
+| Lab fighter life cycle | `WeaponLabEnemy` | Still Lab-specific: damage tint, 5 HP, death, respawn |
+| Lab AI evasion | `WeaponLabEvasion` | Still Lab-specific and tuned for single opponent |
+| Camera | `TopDownCameraFollow`, `CameraLookAhead`, `CombatCameraRig` | 65-degree Lab pitch, smoothing and look-ahead |
+| Lab orchestration | `WeaponLabSession` | Temporary scene-specific composition, reset and diagnostics |
+| Sandbox | `MissileLauncher`, `FlightHud`, `EnemyIndicator`, etc. | Legacy comparison still actively used; no replacement yet |
 
-**Call direction:** Scene composition → gameplay components (Flight/Camera/Targeting/Weapons/UI) → Unity and shared data. Weapon-specific code must not depend on `WeaponLabSession`; scene-only opponent HP/respawn logic must not leak into generic targeting or flight.
+No new loadout framework, chassis ScriptableObject, scene router or modular HUD has been approved. Add such systems only when a second chassis or GroundAttackLab genuinely needs them.
 
-## Gameplay Core A1 — included in this patch
+## Approved WeaponLab gameplay baseline
 
-- Preserve exact running behavior; move Break Turn from `Weapons/WeaponLabBreakTurn.cs` to `Flight/BreakTurn.cs`, remove direct `WeaponLabEnemy` and keyboard dependencies. Player input now belongs to `FlightController`, enemy decision remains in `WeaponLabEvasion`. Death/respawn continues to cancel the maneuver through the Lab encounter controller.
-- Move `Visual/WeaponLabCameraLead.cs` to `Camera/CameraLookAhead.cs`. Its smoothing, boost modifier, execution order and the authored scene camera remain the same.
-- Make `TopDownCameraFollow` pitch-hotkey toggle neutral (`SetPitchHotkeysEnabled`), without changing the Sandbox default or Lab value. Keep `.meta` GUIDs on moved scripts.
-- **Not in this atom:** new prefabs, independent weapon scripts, broad folder rearrangement, HUD redesign, radar, bombs, NURS, loadouts, enemy AI balance, scene edits.
+- BURST: 4 rounds at 14/s, 0.45-second inter-burst pause, bounded +/-12-degree aim, MG02 sound; mode switch or reselect cancels remaining burst rounds without resetting cooldown.
+- GAUSS: forward only, 5 damage, speed 300, max range 250, click to fire, 1.5-second cooldown.
+- MISSILE: 1.0-second cursor lock, 0.5-second off-target grace, one active rocket, reacquisition after launch, lethal to the 5-HP Lab fighter. Existing physical flight and AI notification.
+- Break Turn: Q/E for player, enemy reaction to sector/missile, 90-degree yaw over 0.55 seconds, 1.0-second powered phase, 70-degree bank, consumes a **full** afterburner tank. No invulnerability or teleport.
+- Enemy: 5 HP and respawn after 2 seconds in the Lab; weapon shot/hit stats and enemy kill counter shown in diagnostics.
+- Camera: pitch fixed at 65 degrees, automatic look-ahead, no Lab camera pitch-hotkeys. Sandbox retains 1/2/3 camera presets and its own missile path.
 
-## Locked feel-test baseline
+## Invariants and migration rules
 
-- Camera: WeaponLab pitch 65°, always-on look-ahead, unchanged position smoothing and orthographic framing.
-- BURST: 4 shots at 14/s, 0.45 s pause after final round, ±12° bounded aim, MG02.
-- GAUSS: forward-only, 5 damage, 300 speed, 250 range, 1.5 s cooldown, no hold-repeat.
-- MISSILE: 1.0 s cursor lock, 0.5 s grace, no minimum range, one active rocket; existing physical pursuit and hit behavior.
-- Break Turn: Q/E player, shared enemy ability, real 90° yaw in 0.55 s, 1.0 s powered phase, 70° bank and full Afterburner charge; enemy missile and sector decision probabilities unchanged.
-- Sandbox is a behavior reference; do not regenerate WeaponLab from old V0/V4/V5 editor tools or overwrite scene-authored values.
+1. **Never regenerate** the current combat scene from retired `ConfigureWeaponLab*` or `Author*` tooling. Those scripts were removed by C1 after the assets were committed.
+2. Change gameplay in small patches; preserve feel and inspector values unless a mechanic is explicitly approved. Validate WeaponLab and Sandbox before a green push.
+3. Keep scene-level targets/references in scene composition. Keep chassis-unique visuals and sockets in `JetChassis`, not in the controller.
+4. Ground-target damage, bombs and NURS are separate future atoms. Do not enable current anti-air guns against ground objects accidentally.
+5. `WeaponLabSession`, `WeaponLabEnemy`, `WeaponLabEvasion`, and Sandbox-specific components are **live**. Do not remove them as part of historical cleanup.
+6. `FrontierStrata` and the bake experiments are visual assets/diagnostics, not dead gameplay. Clean them separately with dependency checks.
 
-## Remaining migration gates
+## Next architectural gate
 
-1. **Weapons A3d:** verify the common `WeaponController`, air-only `DamageableTarget`/`BallisticProjectile`, and `GuidedMissileLauncher` with unchanged tuning; A3b/A3c already split schedules and emitters.
-2. **Scene prefabs:** after core components are verified, create player/enemy aircraft, combat camera rig and HUD prefabs; prefab references live in the prefab, scene references are injected by small composition code. No hard-coded scene paths for runtime gameplay.
-3. **HUD:** reuse Sandbox afterburner bar in WeaponLab, retain diagnostic overlay separately, verify camera viewport/pixelRect aim alignment. No radar until designed.
-4. **Blank scene proof:** assemble `GroundAttackLab` with shared prefabs and no duplicated gameplay scripts; only then prototype ground attacks.
+Construct an independent `GroundAttackLab.unity` that instantiates the role and camera prefabs with explicit scene wiring. Start with a minimal playable flight loop before ground targets, payloads, HUD changes or any additional chassis. Decide a future replacement for Lab-only enemy/mission components only after that proof.
 
-**Test discipline:** one migration slice per patch → compile and both scenes in Play Mode → user green → next slice. `git apply --check --verbose` before applying. Current green does not imply the extracted code has been Unity-tested.
-
-## Gameplay Core A2 — targeting extraction (pending local Unity test)
-
-- Move `WeaponLabFreeAim` → `Scripts/Targeting/BoundedAim.cs` and `TargetLock` → `Scripts/Targeting/TargetLock.cs`, each with its original `.meta` GUID. `BoundedAim` keeps the exact 12-degree default sector, smoothing, world-space reticle and mouse projection. The current `WeaponLabCannon` simply changes the type it calls; **gun code and selection logic are not split in this atom**.
-- Remove the `WeaponLabEnemy` type dependency from shared `TargetLock`: the scene now calls `ConfigureTarget(target, 1.0f, 0.5f, fighter)` and the target supplies `ITargetLockEligibility.CanBeLocked` based on its down state. Sandbox continues to use its serialized target and original 1.5 s/1.0 s values without configuring the optional status contract.
-- Keep lab lock sound, pointer viewport requirements, cursor radius, visibility, 1-active-missile rule and respawn semantics unchanged. No changes to missiles, damage, AI, flight, camera, UI, prefab contents or scenes. This is a compile + functional gate, not a balancing pass.
-- Test WeaponLab 1/2/3 switching, aiming wedge while holding LMB, BURST/Gauss hits, MISSILE acquisition with 0.5 s grace, target down/respawn resetting lock; test Sandbox 1/2/3 camera and its original missile target lock. Run no scene generators.
-
-## Gameplay Core A3a — weapon selection, first weapon slice (pending Unity test)
-
-- New `Scripts/Weapons/WeaponSelection.cs` is the authoritative 1/2/3 selector. It is configurable via `Select(WeaponMode)` and emits a revision even for reselecting the same mode, preserving the old *cancel unfinished BURST but never reset cooldown* behavior. `LateUpdate` order 120 remains ahead of `WeaponLabCannon` at 130 and `TargetLock` at 200.
-- The current `WeaponLabCannon` remains the authoritative BURST/GAUSS shooter for now. It reads the selected mode/revision, retains its shot cadence, sound, tracers, damage, aim, and switches the missile lock as before. The scene temporarily installs/wires selection at Play Mode entry. No change to Sandbox or serialized weapon references.
-- **Next A3b:** separate `Autocannon` and `GaussCannon` from the legacy combined component and define the missile launch/impact boundary. That step should only follow a local green for A3a, because it will touch projectile callbacks and firing order.
-- Test WeaponLab 1/2/3 switching and same-slot reselect during BURST, GAUSS holding/reclick, missile lock/launch and the two scenes' controls. No new prefabs, HUD or ground weapons in A3a.
-
-## Gameplay Core A3b — cadence modules (pending Unity test)
-
-- `Autocannon` owns burst scheduling and cancellation, `GaussCannon` owns single-click readiness. They take explicit frame time and an emission callback; no scene dependency or input polling.
-- Legacy `WeaponLabCannon` retains all serialized tuning, audio/VFX and projectile spawning until A3c, and delegates scheduling to the two new modules. The old scene GUID, launcher, aim, lock and Sandbox remain untouched.
-- Full migration and reusable prefab components are **not yet complete**. See [GAMEPLAY_CORE_A3B.md](GAMEPLAY_CORE_A3B.md) for exact regression steps.
-
-## Gameplay Core A3c — independent gun emitters (pending Unity test)
-
-- Extract physical burst/gauss projectile creation, tracer materials, muzzle effects, audio playback, and the Gauss guide to `AutocannonEmitter` and `GaussEmitter` MonoBehaviours. Both are runtime components added by `WeaponLabCannon`, preserving original Inspector fields and Unity scene serialization. The existing pure `Autocannon`/`GaussCannon` cadence objects and `WeaponSelection` remain unchanged.
-- `WeaponLabCannon` temporarily retains scene configuration, mode routing, aim samples, lock enabling, shot/hit stats. `WeaponLabProjectile` takes an `Action` hit notification instead of a concrete `WeaponLabCannon` type. It **still** hits only `WeaponLabEnemy`: generic damage targeting and launcher/mission wiring are separate migrations.
-- No changes to weapon positions/velocities, 4-shot cadence, sounds/pitch, cooldowns, hit count, target lock, AI, camera, Sandbox or YAML. Unity Play Mode regression required before prefab work.
-
-## Gameplay Core A3d — common weapon and combat target (pending local Unity test)
-
-- Preserve `WeaponLabCannon`'s existing GUID as a compatibility subclass; the real logic moves to `WeaponController`, so new gameplay scenes do not take dependencies on the Lab class.
-- Preserve the projectile and missile launcher GUIDs while renaming to `BallisticProjectile` and `GuidedMissileLauncher`. `DamageableTarget` carries the shared air/ground damage contract, and `WeaponLabEnemy` implements it via its tested HP/respawn logic.
-- Projectile sweeps and missiles damage only air targets; potential ground targets require separate ordnance. Lab missile one-hit damage is supplied as `fighter.MaxHp` by its scene; incoming-missile AI notification is subscribed in scene composition rather than inside the launcher.
-- **Gate:** compile, original WeaponLab firearms/lock/AI/respawn; Sandbox unchanged, no generators, no scene reauthoring. See [GAMEPLAY_CORE_A3D.md](GAMEPLAY_CORE_A3D.md).
+For the detailed history and old setup commands see [Docs/Archive](Docs/Archive); historical guides are **not** current operating instructions.
