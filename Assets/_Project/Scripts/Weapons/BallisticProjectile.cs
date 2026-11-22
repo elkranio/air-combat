@@ -3,9 +3,9 @@ using UnityEngine;
 
 namespace AirCombat
 {
-    // Moving projectile, not instant hitscan. Dogfight rounds hit the 5-HP enemy aircraft.
+    // Swept ballistic projectile for air targets; ground stays immune to air guns.
     [DisallowMultipleComponent]
-    public sealed class WeaponLabProjectile : MonoBehaviour
+    public sealed class BallisticProjectile : MonoBehaviour
     {
         private Vector3 direction;
         private float speed;
@@ -37,15 +37,16 @@ namespace AirCombat
             if (remaining <= 0f) { Destroy(gameObject); return; }
             float travel = Mathf.Min(remaining, speed * Time.deltaTime);
             Vector3 start = transform.position;
-            // Only the unarmed lab enemy takes damage; ignore player, ground and scenery.
+            // Preserve original swept collision and nearest eligible target.
             int count = Physics.RaycastNonAlloc(start, direction, HitBuffer, travel, ~0, QueryTriggerInteraction.Ignore);
-            WeaponLabEnemy nearest = null;
+            DamageableTarget nearest = null;
             Vector3 hitPoint = default;
             float best = float.PositiveInfinity;
             for (int i = 0; i < count; i++)
             {
-                var candidate = HitBuffer[i].collider.GetComponentInParent<WeaponLabEnemy>();
-                if (candidate == null || HitBuffer[i].distance >= best) continue;
+                var candidate = HitBuffer[i].collider.GetComponentInParent<DamageableTarget>();
+                if (candidate == null || candidate.Domain != CombatTargetDomain.Air ||
+                    HitBuffer[i].distance >= best) continue;
                 nearest = candidate;
                 hitPoint = HitBuffer[i].point;
                 best = HitBuffer[i].distance;
@@ -53,7 +54,7 @@ namespace AirCombat
             if (nearest != null)
             {
                 transform.position = hitPoint;
-                if (nearest.Hit(hitPoint, damage)) onHit?.Invoke();
+                if (nearest.ApplyDamage(hitPoint, damage)) onHit?.Invoke();
                 Destroy(gameObject);
                 return;
             }

@@ -73,7 +73,7 @@ namespace AirCombat
 
         public void SetSoundVariants(AudioClip[] clips) { soundVariants = clips; }
 
-        // Called at the same point in WeaponLabCannon.LateUpdate as before.
+        // Called at the same point in WeaponController.LateUpdate as before.
         public void TickVisuals()
         {
             if (flashes == null) return;
@@ -115,7 +115,7 @@ namespace AirCombat
                 halo.shadowCastingMode = ShadowCastingMode.Off;
                 halo.receiveShadows = false;
             }
-            var projectile = round.AddComponent<WeaponLabProjectile>();
+            var projectile = round.AddComponent<BallisticProjectile>();
             projectile.Configure(direction, muzzleVelocity, maxRange, tracerLength, line, halo, onHit);
             flashUntil[barrel] = Time.time + .052f;
             flashes[barrel].enabled = true;

@@ -18,6 +18,7 @@ Top-down arcade air combat prototype. Unity 6.6 / URP.
 
 - [HANDOFF.md](HANDOFF.md) — active decisions and next steps; read first when switching chats.
 - [GAMEPLAY_ARCHITECTURE.md](GAMEPLAY_ARCHITECTURE.md) — active dependency map, reusable gameplay boundaries and migration sequence.
+- [GAMEPLAY_CORE_A3D.md](GAMEPLAY_CORE_A3D.md) — common weapon controller, projectile damage/air-ground contract and guided missile launcher migration.
 - [GAMEPLAY_CORE_A3C.md](GAMEPLAY_CORE_A3C.md) — extracted BURST/GAUSS emitters, migration notes and regression checks.
 - [GAMEPLAY_CORE_A3B.md](GAMEPLAY_CORE_A3B.md) — BURST/GAUSS cadence extraction, temporary legacy adapter and test checklist.
 - [ART_PIPELINE.md](ART_PIPELINE.md) — asset layout, generated outputs and cleanup rules.

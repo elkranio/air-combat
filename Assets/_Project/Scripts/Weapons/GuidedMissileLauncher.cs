@@ -1,32 +1,33 @@
+using System;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
 namespace AirCombat
 {
-    // Weapon Lab only. Reuses Sandbox missile flight/prefab, but damages the Lab HP target.
+    // Locked anti-air missile launcher. Scene/AI notifications are event consumers.
+    // MissileProjectile and MissileImpact are the unchanged shared implementations.
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(210)] // TargetLock evaluates on the camera at order 200.
-    public sealed class WeaponLabMissileLauncher : MonoBehaviour
+    public sealed class GuidedMissileLauncher : MonoBehaviour
     {
         [SerializeField, Min(0f)] private float launchOffset = 6f;
+        [SerializeField, Min(1)] private int hitDamage = 5;
 
         private TargetLock targetLock;
         private MissileProjectile missilePrefab;
         private Material impactMaterial;
-        private WeaponLabEnemy fighter;
         private MissileProjectile activeMissile;
-        private WeaponLabEvasion enemyEvasion;
 
         public int FiredCount { get; private set; }
+        public event Action<MissileProjectile> MissileLaunched;
 
         public void Configure(TargetLock lockComponent, MissileProjectile prefab,
-            Material hitEffect, WeaponLabEnemy opponent)
+            Material hitEffect, int damage)
         {
             targetLock = lockComponent;
             missilePrefab = prefab;
             impactMaterial = hitEffect;
-            fighter = opponent;
-            enemyEvasion = fighter != null ? fighter.GetComponent<WeaponLabEvasion>() : null;
+            hitDamage = Mathf.Max(1, damage);
         }
 
         private void LateUpdate()
@@ -39,23 +40,26 @@ namespace AirCombat
             if (mouse == null || !Application.isFocused || !mouse.leftButton.wasPressedThisFrame)
                 return;
             var target = targetLock.Target;
-            if (target == null || !target.gameObject.activeInHierarchy ||
-                (fighter != null && fighter.IsDown)) return;
+            if (target == null || !target.gameObject.activeInHierarchy) return;
 
-            // Same prefab, speed, turn limits and swept collision as the Sandbox rocket.
+            // Same prefab, speed, turn budget and collision as the current Lab rocket.
             activeMissile = Instantiate(missilePrefab,
                 transform.position + transform.forward * launchOffset, transform.rotation);
             activeMissile.Launch(target, OnMissileHit);
-            if (enemyEvasion != null) enemyEvasion.NotifyIncomingMissile(activeMissile);
+            MissileLaunched?.Invoke(activeMissile);
             FiredCount++;
-            targetLock.ResetLock(); // Each missile requires a new acquisition.
+            targetLock.ResetLock(); // Every shot requires a fresh acquisition.
         }
 
         private void OnMissileHit(Vector3 point, Transform target)
         {
             MissileImpact.Spawn(point, impactMaterial);
-            if (fighter != null && target == fighter.transform && !fighter.IsDown)
-                fighter.Hit(point, fighter.MaxHp); // Same one-hit kill as Sandbox, via Lab death/respawn.
+            if (target != null)
+            {
+                var damageable = target.GetComponentInParent<DamageableTarget>();
+                if (damageable != null && damageable.Domain == CombatTargetDomain.Air)
+                    damageable.ApplyDamage(point, hitDamage);
+            }
             if (targetLock != null) targetLock.ResetLock();
         }
     }

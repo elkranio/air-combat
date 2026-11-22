@@ -14,7 +14,7 @@ namespace AirCombat
         [SerializeField] private Transform player;
         [SerializeField] private FlightController flight;
         [SerializeField] private Afterburner boost;
-        [SerializeField] private WeaponLabCannon cannon;
+        [SerializeField] private WeaponController cannon;
         [SerializeField] private Transform[] passiveTargets; // V0 generator compatibility only
         [SerializeField] private WeaponLabEnemy fighter;
         [SerializeField] private MissileProjectile missilePrefab; // Same asset as Sandbox, linked in WeaponLab scene.
@@ -32,7 +32,7 @@ namespace AirCombat
         private BoundedAim aim;
         private TargetLock missileLock;
         private TargetLockHud missileHud;
-        private WeaponLabMissileLauncher labMissileLauncher;
+        private GuidedMissileLauncher labMissileLauncher;
         private WeaponSelection weaponSelection;
         private bool ownsWeaponSelection;
         private BreakTurn playerBreakTurn;
@@ -46,7 +46,7 @@ namespace AirCombat
 
         public void Configure(UniversalRenderPipelineAsset pipeline, Transform aircraft,
             FlightController controller, Afterburner afterburner,
-            WeaponLabCannon weapon, Transform[] targets, float halfExtent)
+            WeaponController weapon, Transform[] targets, float halfExtent)
         {
             studyPipeline = pipeline;
             player = aircraft;
@@ -131,13 +131,17 @@ namespace AirCombat
                 cannon.ConfigureMissileLock(missileLock);
                 if (missilePrefab != null)
                 {
-                    labMissileLauncher = player.GetComponent<WeaponLabMissileLauncher>();
+                    labMissileLauncher = player.GetComponent<GuidedMissileLauncher>();
                     if (labMissileLauncher == null)
                     {
-                        labMissileLauncher = player.gameObject.AddComponent<WeaponLabMissileLauncher>();
+                        labMissileLauncher = player.gameObject.AddComponent<GuidedMissileLauncher>();
                         ownsMissileLauncher = true;
                     }
-                    labMissileLauncher.Configure(missileLock, missilePrefab, missileImpactMaterial, fighter);
+                    // The old Lab missile killed this opponent in one hit, irrespective
+                    // of Inspector maxHp. The reusable launcher receives that damage
+                    // through configuration, not through a Lab-only target type.
+                    labMissileLauncher.Configure(missileLock, missilePrefab, missileImpactMaterial, fighter.MaxHp);
+                    labMissileLauncher.MissileLaunched += NotifyIncomingMissile;
                 }
                 else Debug.LogError("Weapon Lab missile prefab missing. Reopen WeaponLab.unity and check the Missile Prefab reference.", this);
             }
@@ -147,6 +151,14 @@ namespace AirCombat
             QualitySettings.renderPipeline = studyPipeline;
             ownsOverride = true;
             if (fighter == null) PlaceAllTargets();
+        }
+
+        private void NotifyIncomingMissile(MissileProjectile missile)
+        {
+            // Only the Lab AI consumes this event. Weapon code stays scene-neutral.
+            if (fighter == null) return;
+            var evasion = fighter.GetComponent<WeaponLabEvasion>();
+            if (evasion != null) evasion.NotifyIncomingMissile(missile);
         }
 
         // git apply can update the .unity YAML while Unity still holds the old scene in memory.
@@ -192,6 +204,7 @@ namespace AirCombat
             if (ownsEnemyBreakTurn && enemyBreakTurn != null) Destroy(enemyBreakTurn);
             playerBreakTurn = enemyBreakTurn = null;
             ownsPlayerBreakTurn = ownsEnemyBreakTurn = false;
+            if (labMissileLauncher != null) labMissileLauncher.MissileLaunched -= NotifyIncomingMissile;
             if (ownsMissileLauncher && labMissileLauncher != null) Destroy(labMissileLauncher);
             labMissileLauncher = null;
             ownsMissileLauncher = false;

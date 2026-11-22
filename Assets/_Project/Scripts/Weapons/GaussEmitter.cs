@@ -97,7 +97,7 @@ namespace AirCombat
             core.endColor = new Color(1f, .98f, .87f, 1f);
             core.shadowCastingMode = ShadowCastingMode.Off;
             core.receiveShadows = false;
-            var projectile = round.AddComponent<WeaponLabProjectile>();
+            var projectile = round.AddComponent<BallisticProjectile>();
             projectile.Configure(direction, Mathf.Max(1f, velocity), Mathf.Max(1f, range),
                 22f, core, null, onHit, 5);
             flashUntil = Time.time + .045f;
