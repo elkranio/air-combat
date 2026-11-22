@@ -14,7 +14,8 @@ Play Mode: WASD to fly, Space to boost, 1/2/3 camera pitch (90/75/65 degrees). F
 ## Documentation
 
 - [HANDOFF.md](HANDOFF.md) — active decisions and next steps; read first when switching chats.
-- [ART_PIPELINE.md](ART_PIPELINE.md) — asset layout and workflow.
+- [ART_PIPELINE.md](ART_PIPELINE.md) — asset layout, generated outputs and cleanup rules.
+- [ART_AUTHORING.md](ART_AUTHORING.md) — **how to model, bake, import and evaluate art** (V18–V20 validated playbook).
 - [Tools/Unity/ARTLAB.md](Tools/Unity/ARTLAB.md) — current visual scenes, bake test, cleanup and archived studies.
 - [THIRD_PARTY_ASSETS.md](THIRD_PARTY_ASSETS.md) — asset attribution.
 

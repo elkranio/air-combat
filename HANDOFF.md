@@ -19,7 +19,7 @@ Current session: user wants relaxed visual experiments for enjoyment after proje
 - `ScorchedFrontier.unity`: visual flight playground, formerly ArtLab V13. Static 1200 × 1200 badlands, size 80 ortho camera (default 65 degrees), test-only fixed altitude 48, existing Kestrel and flight tuning. WASD/Space, 1/2/3 camera, R recenter (also automatic near edge), H legend. No combat.
 - Real directional shadows (38-degree sun, strength .75, lighter neutral tint), study-local URP asset. Preserve these settings; no baked/blob shadows for Frontier.
 - Terrain: elongated ridges, basins, craters, road corridors and settlement pads. 2048 PNG color map, mipmaps and GPU compression. Five sites: refinery, village, industrial yard, transmission station, checkpoint; main highway and spur. V0 reusable prefab modules: ruined factory, house, steel frame, tank, chimney, pylon, barrier, stump, three rocks. Shared meshes/materials. No destruction/collisions/target logic.
-- Read [ART_PIPELINE.md](ART_PIPELINE.md) and [Tools/Unity/ARTLAB.md](Tools/Unity/ARTLAB.md) for exact layout and generator commands.
+- **Art production reference:** [ART_AUTHORING.md](ART_AUTHORING.md) is the working recipe for low/high-poly, Cycles selected-to-active normal/AO, Unity URP import, correct UV transform, visual A/B and failure diagnosis. [ART_PIPELINE.md](ART_PIPELINE.md) owns folder layout; [Tools/Unity/ARTLAB.md](Tools/Unity/ARTLAB.md) owns scene commands.
 
 ## Cleanup after V18 — tested / green
 
@@ -54,6 +54,12 @@ Commands in [ARTLAB.md](Tools/Unity/ARTLAB.md). Check B from identical positions
 Copy green `FrontierPracticalBake.unity` to `FrontierMesaPolish.unity`. Test the art direction on only BrokenMesa: replace V19's long sinuous fractures and busy fine ridges with eight short, tapered, aligned asymmetric bedding shelves and four broad chipped patches. Fade into the unchanged V17 talus. Keep existing geometry, albedo, road assets, all other rock meshes, roof, real lighting and gameplay. No AO on any comparison mode; no AO rebake. Normal-only bake via the tested V18 projection helper; 1024 default, mipmaps and compressed HQ, optional 2048. New editable Blender source, single normal PNG, marker, three new local material variants. No prior asset edits.
 
 B compares base, V19 normal 1.0, V19 normal .4, V20 normal .45 (default), V20 normal .8. Distinguish whether less strength alone is enough or the new relief pattern improves the shape. Start/recenter next to BrokenMesa, camera size/pitch and altitude unchanged. H hides labels. See [ARTLAB.md](Tools/Unity/ARTLAB.md). Assess in flight, not just screenshot: prefer readable geology over detail, keep aircraft primary. Do not propagate to all four formations until this result is accepted. Blender/Unity execution pending.
+
+## Art authoring guide — documented after V20 (no asset change)
+
+`ART_AUTHORING.md` consolidates the tested V18–V20 workflow so future assets do not repeat V14A's invisible micro-bevels or V19's excessive detail. It distinguishes silhouettes (real geometry), impactful high-only surface normal detail, independent albedo and optional local AO; covers Blender selected-to-active bake, explicit device/UV/cage validation, CRLF-safe completion markers, sRGB/normal-map imports, mips/compression, URP shader keywords and V17 BrokenMesa material UV scale/offset. Actual game-size comparison is mandatory. Docs-only atom; no scenes, scripts or textures modified.
+
+**V20 flight test (user screenshots):** modes 3 (V19 normal at 0.40) and 4 (V20 directional beds at 0.45) were the favorites; mode 4 currently preferred, mode 3 is the restrained fallback. Normal at 1.0 made long vein-like fissures overly prominent. This is **accepted for the single BrokenMesa comparison**, not a global rock material standard; no propagation to the other three landforms yet. A separate user screenshot showed reduced shadow definition toward the left screen edge; possible cascade/distance/resolution issue, **cause unconfirmed**. Preserve stable sunlight and test shadow profiles separately before changing the pipeline. Recent Steam capsule fan art is unrelated to in-engine production art decisions.
 
 ## Lessons from the visual search
 

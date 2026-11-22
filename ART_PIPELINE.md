@@ -2,6 +2,10 @@
 
 Sandbox is the gameplay reference. FrontierStrata (V17) is the active visual playground; Scorched Frontier (V13) is the fallback; gameplay and environment iteration remain separate until the environments are deliberately integrated.
 
+## Practical authoring and bake guide
+
+**Before making a new model or baking a map, read [ART_AUTHORING.md](ART_AUTHORING.md).** It contains the V18–V20 tested low/high-poly recipe, Cycles selected-to-active settings, URP import contract, gameplay-distance A/B checklist and unresolved issues. This file remains the reference for folder ownership and asset lifecycle.
+
 ## Layout
 
 - `Resources/Blender/`: editable Blender sources (not imported by Unity).
