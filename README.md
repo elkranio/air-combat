@@ -10,7 +10,7 @@ Arcade air combat prototype in Unity 6.6 / URP.
 - **`Assets/_Project/Scenes/FrontierStrata.unity`** — environment baseline (V17); not yet a combat scene.
 - `FrontierBakeTruth`, `FrontierPracticalBake`, `FrontierMesaPolish`, and `ScorchedFrontier` — visual experiments/reference scenes, deliberately retained pending separate art cleanup.
 
-In **WeaponLab**: WASD steer/throttle, Space afterburner, Q/E Break Turn, left-click fire, 1 BURST / 2 GAUSS / 3 MISSILE, B enemy evasion toggle, R reset, H diagnostic overlay. Camera pitch: 65 degrees; look-ahead active.
+In **WeaponLab** and **GroundAttackLab** (F1 feel test): constant 70-unit/s cruise; A/D steer, hold **W** for afterburner (to 110), Q/E Break Turn. S and Space do nothing. WeaponLab: left-click fire, 1 BURST / 2 GAUSS / 3 MISSILE, B enemy evasion toggle, R reset, H diagnostic overlay. Camera pitch: 65 degrees; look-ahead active. **Sandbox retains its original W/S throttle + Space afterburner** for comparison.
 
 **Never run the old `ConfigureWeaponLab*` or scene-export generators.** They were retired in C1. The approved prefabs/scenes are committed Unity assets; edit them directly. New aircraft chassis replace the nested visual prefab; gameplay lives on the role root.
 

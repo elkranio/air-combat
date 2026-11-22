@@ -93,8 +93,8 @@ namespace AirCombat
             if (label == null)
                 label = new GUIStyle(GUI.skin.label) { fontSize = 14, normal = { textColor = Color.white } };
             GUI.Box(new Rect(12, 12, 510, 88), GUIContent.none);
-            GUI.Label(new Rect(22, 17, 480, 22), "GROUND ATTACK LAB G1 / PREFAB FLIGHT ONLY", label);
-            GUI.Label(new Rect(22, 40, 480, 22), "WASD fly  Space boost  Q/E break  1/2 guns  R reset  H HUD", label);
+            GUI.Label(new Rect(22, 17, 480, 22), "GROUND ATTACK LAB / CRUISE FEEL TEST F1", label);
+            GUI.Label(new Rect(22, 40, 480, 22), "A/D turn   W boost   Q/E break   1/2 guns   R reset   H HUD", label);
             GUI.Label(new Rect(22, 63, 480, 22),
                 $"Speed {flight.CurrentSpeed:F0}   Fuel {afterburner.Charge01:P0}   Shots {weapons.FiredCount}   No targets / missiles yet", label);
         }

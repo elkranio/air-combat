@@ -54,8 +54,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::AirCombat.FlightController
   visual: {fileID: 7132811968191042332}
   afterburner: {fileID: 296407285340714469}
+  useFixedCruiseWBoost: 1
   minSpeed: 25
-  cruiseSpeed: 45
+  cruiseSpeed: 70
   maxSpeed: 70
   acceleration: 35
   deceleration: 45

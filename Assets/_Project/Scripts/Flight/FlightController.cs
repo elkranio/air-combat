@@ -9,6 +9,9 @@ namespace AirCombat
         [SerializeField] private Transform visual;
         [SerializeField] private Afterburner afterburner;
 
+        // PlayerJet only. Sandbox and other legacy scene controllers keep W/S throttle + Space boost.
+        [SerializeField] private bool useFixedCruiseWBoost;
+
         [Header("Speed (units per second)")]
         [SerializeField, Min(0.1f)] private float minSpeed = 25f;
         [SerializeField, Min(0.1f)] private float cruiseSpeed = 45f;
@@ -47,8 +50,9 @@ namespace AirCombat
             float steer = 0f;
             if (keyboard != null)
             {
-                throttle = (keyboard.wKey.isPressed ? 1f : 0f)
-                    - (keyboard.sKey.isPressed ? 1f : 0f);
+                if (!useFixedCruiseWBoost)
+                    throttle = (keyboard.wKey.isPressed ? 1f : 0f)
+                        - (keyboard.sKey.isPressed ? 1f : 0f);
                 steer = (keyboard.dKey.isPressed ? 1f : 0f)
                     - (keyboard.aKey.isPressed ? 1f : 0f);
             }
@@ -60,7 +64,8 @@ namespace AirCombat
                 else if (keyboard.eKey.wasPressedThisFrame) breakTurn.TryBegin(1);
             }
 
-            var targetSpeed = throttle > 0f ? maxSpeed : throttle < 0f ? minSpeed : cruiseSpeed;
+            var targetSpeed = useFixedCruiseWBoost ? cruiseSpeed
+                : throttle > 0f ? maxSpeed : throttle < 0f ? minSpeed : cruiseSpeed;
             float actualTurnRate = turnRate;
             float breakSteer = 0f, breakTurnRate = 0f;
             bool breaking = breakTurn != null && breakTurn.TryGetFlightCommand(
@@ -68,10 +73,10 @@ namespace AirCombat
             if (breaking) { steer = breakSteer; actualTurnRate = breakTurnRate; }
 
             // Break turn already paid the entire tank. No extra charge drain or
-            // Space boost during the maneuver; grant the motor a short powered burst.
-            bool boost = afterburner != null && afterburner.Tick(
-                !breaking && keyboard != null && Application.isFocused && keyboard.spaceKey.isPressed,
-                Time.deltaTime);
+            // held boost during the maneuver; grant the motor a short powered burst.
+            bool boostHeld = keyboard != null && Application.isFocused &&
+                (useFixedCruiseWBoost ? keyboard.wKey.isPressed : keyboard.spaceKey.isPressed);
+            bool boost = afterburner != null && afterburner.Tick(!breaking && boostHeld, Time.deltaTime);
             if (boost || breaking) targetSpeed = Mathf.Max(targetSpeed, afterburner.BoostSpeed);
             float accel = boost || breaking
                 ? Mathf.Max(acceleration, afterburner.BoostAcceleration) : acceleration;

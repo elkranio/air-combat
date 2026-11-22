@@ -294,7 +294,7 @@ namespace AirCombat
                 ? $"FIGHTER {fighter.Hp}/{fighter.MaxHp} HP   Kills {fighter.Kills}" : "NO ENEMY";
             GUI.Label(new Rect(22, 17, 475, 22), "WEAPON LAB / " + enemyStatus +
                 " / B EVADE: " + (fighter != null ? fighter.EvasionLabel : "OFF"), text);
-            GUI.Label(new Rect(22, 40, 475, 22), "WASD fly   Space boost   Q/E break turn   LMB fire   1/2/3 guns", text);
+            GUI.Label(new Rect(22, 40, 475, 22), "A/D turn   W boost   Q/E break   LMB fire   1/2/3 guns", text);
             GUI.Label(new Rect(22, 63, 450, 22), "Gun " + cannon.FireModeLabel + "   Aim " + cannon.AimModeLabel +
                 "   SFX " + cannon.SoundModeLabel, text);
             GUI.Label(new Rect(22, 86, 450, 22), "Look-ahead ON   R reset   H hide HUD   B enemy evasion", text);

@@ -1,5 +1,9 @@
 # Air Combat — current handoff (post-C1)
 
+## F1 — constant cruise / W boost (pending Unity feel test)
+
+PlayerJet prefab: `FlightController.useFixedCruiseWBoost=true`, `cruiseSpeed=70` (the former W-held speed). A/D steer, W-held Afterburner to 110, Q/E Break Turn; S/Space unused. Normal flight remains at 70 (including with no keyboard input); fuel, turn rate, bank and boost acceleration unchanged. The setting is **false by default** in the shared FlightController, so Sandbox and visual playgrounds retain original W/S throttle and Space boost. Both WeaponLab and GroundAttackLab use PlayerJet. The F1 test is purely for flight feel; no bombs or weapon changes. Verify cruise 70, W acceleration/recovery, Q/E full-tank cost, enemy unchanged, Sandbox old inputs. Do not call this green until tested.
+
 ## Current green baseline
 
 The latest verified gameplay state is A4c, pushed at **`e60a5c3` on 2026-11-22**. Cleanup C1 is an asset/documentation-only migration. Its renamed canonical `Assets/_Project/Scenes/WeaponLab.unity` contains the same prefab-composed scene previously named `WeaponLabPrefabs.unity`. This requires a fresh local Unity compile and Play Mode smoke test before committing C1 as green.
