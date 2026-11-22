@@ -12,9 +12,6 @@ namespace AirCombat
         [SerializeField, Min(0.01f)] private float lockSeconds = 1.5f;
         [SerializeField, Min(0f)] private float graceSeconds = 1f;
         [SerializeField, Min(0.1f)] private float aimRadius = 8.5f;
-        // Optional Weapon Lab rule. Zero by default, so Sandbox behaves as before.
-        [SerializeField, Min(0f)] private float minimumLockDistance;
-        private Transform rangeOrigin;
         private WeaponLabEnemy labEnemy;
         private bool lockingEnabled = true;
         [SerializeField] private bool soundEnabled = true;
@@ -27,10 +24,8 @@ namespace AirCombat
         public bool IsVisible { get; private set; }
         public bool IsPointerInViewport { get; private set; }
         public int AttemptId { get; private set; }
-        public bool IsTooClose { get; private set; }
-        public float MinimumLockDistance => minimumLockDistance;
         public bool LockingEnabled => lockingEnabled;
-        public bool CanFire => lockingEnabled && !IsTooClose && IsVisible && IsLocked && IsPointerInViewport;
+        public bool CanFire => lockingEnabled && IsVisible && IsLocked && IsPointerInViewport;
         public Vector2 TargetScreen { get; private set; }
         public float RadiusPixels { get; private set; }
         private Camera viewCamera;
@@ -39,12 +34,10 @@ namespace AirCombat
         private AudioClip acquireClip, lockedClip;
 
         // Configured at runtime by WeaponLabSession; never changes Sandbox scene values.
-        public void ConfigureWeaponLab(Transform lockTarget, Transform player)
+        public void ConfigureWeaponLab(Transform lockTarget)
         {
             target = lockTarget;
-            rangeOrigin = player;
             labEnemy = lockTarget != null ? lockTarget.GetComponent<WeaponLabEnemy>() : null;
-            minimumLockDistance = 40f;
             lockSeconds = 1f;
             graceSeconds = .5f;
             SetLockingEnabled(false);
@@ -54,7 +47,7 @@ namespace AirCombat
         {
             if (lockingEnabled == enabled) return;
             lockingEnabled = enabled;
-            IsVisible = IsAiming = IsTooClose = false;
+            IsVisible = IsAiming = false;
             ResetLock();
         }
 
@@ -73,7 +66,6 @@ namespace AirCombat
             var mouse = Mouse.current;
             IsVisible = false;
             IsAiming = false;
-            IsTooClose = false;
             if (!lockingEnabled)
             {
                 ResetLock();
@@ -96,19 +88,6 @@ namespace AirCombat
             {
                 var pointer = mouse.position.ReadValue();
                 IsAiming = (pointer - TargetScreen).sqrMagnitude <= RadiusPixels * RadiusPixels;
-            }
-
-            // Close-range safety zone: reset instantly, never use the 0.5 s aim-loss grace.
-            if (rangeOrigin != null && minimumLockDistance > 0f)
-            {
-                Vector3 separation = target.position - rangeOrigin.position;
-                separation.y = 0f;
-                IsTooClose = separation.sqrMagnitude < minimumLockDistance * minimumLockDistance;
-                if (IsTooClose)
-                {
-                    ResetLock();
-                    return;
-                }
             }
 
             var dt = Time.deltaTime;

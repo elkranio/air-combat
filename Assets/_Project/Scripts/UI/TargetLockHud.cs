@@ -33,8 +33,7 @@ namespace AirCombat
                 var center = new Vector2(screen.x - pixels.xMin, pixels.yMax - screen.y);
                 var radius = targetLock.RadiusPixels;
                 var box = new Rect(center.x - radius, center.y - radius, radius * 2, radius * 2);
-                var color = targetLock.IsTooClose ? new Color(.95f, .59f, .38f) :
-                    !targetLock.IsAiming ? new Color(1f, 0.64f, 0.25f) :
+                var color = !targetLock.IsAiming ? new Color(1f, 0.64f, 0.25f) :
                     targetLock.IsLocked ? new Color(0.76f, 1f, 0.44f) : new Color(1f, 0.91f, 0.63f);
                 float arm = Mathf.Min(radius * 0.45f, 14f * scale);
                 float thickness = 2f * scale;
@@ -57,8 +56,7 @@ namespace AirCombat
                     label = new GUIStyle(GUI.skin.label) { alignment = TextAnchor.MiddleCenter, fontStyle = FontStyle.Bold };
                 label.fontSize = Mathf.RoundToInt(13f * scale);
                 label.normal.textColor = color;
-                var text = targetLock.IsTooClose ? "TOO CLOSE" :
-                    targetLock.IsLocked ? "LOCKED" : !targetLock.IsAiming ? "HOLD" : "LOCKING";
+                var text = targetLock.IsLocked ? "LOCKED" : !targetLock.IsAiming ? "HOLD" : "LOCKING";
                 GUI.Label(new Rect(box.xMin - 12f, box.yMin - 22f * scale, box.width + 24f, 20f * scale), text, label);
             }
             finally

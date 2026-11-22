@@ -10,7 +10,7 @@ Top-down arcade air combat prototype. Unity 6.6 / URP.
 - `Assets/_Project/Scenes/FrontierBakeTruth.unity` — V18 material bake diagnostic; C switches close/gameplay camera.
 - `Assets/_Project/Scenes/ScorchedFrontier.unity` — V13 visual fallback.
 
-**Weapon Lab (current):** WASD fly, Space boost, LMB fire, **1 BURST / 2 GAUSS / 3 MISSILE**, B enemy evasion A/B, R reset, H HUD. Camera pitch fixed at 65 degrees with look-ahead always on. BURST has a persistent +/-12-degree aim wedge; Gauss has a short fixed-forward sight. Both sights are pale gray-white. In missile mode a 40-unit safety circle marks minimum lock distance; acquire for 1.0 s and LMB to launch the homing rocket. See the [current Weapon Lab guide](Tools/Unity/WEAPON_LAB.md) for approved tuning and pending ideas.
+**Weapon Lab (current):** WASD fly, Space boost, LMB fire, **1 BURST / 2 GAUSS / 3 MISSILE**, B enemy evasion A/B, R reset, H HUD. Camera pitch fixed at 65 degrees with look-ahead always on. BURST has a persistent +/-12-degree aim wedge; Gauss has a short fixed-forward sight. Both sights are pale gray-white. Missile mode has no minimum lock range or safety circle; acquire for 1.0 s, tolerate 0.5 s off-target and click LMB to launch the homing rocket. See the [current Weapon Lab guide](Tools/Unity/WEAPON_LAB.md) for approved tuning and pending ideas.
 
 **Sandbox/visual playgrounds:** WASD fly, Space boost; Sandbox retains the shared 1/2/3 camera pitch presets (90/75/65 degrees). Frontier has its separate R/H controls. The only build scene is Sandbox.
 

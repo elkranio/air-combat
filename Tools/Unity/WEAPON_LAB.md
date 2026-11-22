@@ -218,3 +218,11 @@ V12 proved the 1.0 s / 0.5 s cursor lock but intentionally shipped no missile la
 ## Weapon Lab v13a — editor prefab-reference hotfix
 
 If V13 was applied while `WeaponLab.unity` was open in Unity, the editor may keep the previous in-memory scene state and the newly serialized `missilePrefab` field can appear null. V13a resolves the existing `Assets/_Project/Art/Weapons/Missile.prefab` and `Assets/_Project/Art/VFX/MissileEffect.mat` through editor-only `AssetDatabase` when those runtime references are missing. No prefab duplicate, no scene generator or gameplay changes. The original serialized scene references remain preferred when present. This fallback is deliberately editor-only; WeaponLab is not a build scene. Return to Play Mode to verify the radius ring and launch; if refs remain missing, reopen the scene and inspect them.
+
+## v14 — approved missile lock (no close-range exclusion)
+
+After the V13/V13a playtest, the **minimum 40-unit lock radius and its persistent circle are removed**: the ring read like an area-of-effect indicator despite representing a forbidden zone. The fun occasional enemy boost into that zone did not justify the confusion. There is **no minimum range** for acquiring or retaining missile lock. `TOO CLOSE` is removed from the HUD. This section supersedes the V12/V13 lock-distance rules; they are experiment history, not active controls.
+
+- Select **3** for MISSILE; keep the cursor over the live visible opponent for **1.0 s** to lock. The **0.5 s** lost-aim grace remains; neither the target nor the aircraft needs to respect a minimum separation. Once `LOCKED`, click **LMB** to launch the existing homing missile; launch consumes lock, one missile active at a time, damage/respawn unchanged.
+- **1 BURST** (MG02, always-visible +/-12-degree wedge), **2 GAUSS** (fixed forward pale sight), camera and evasive enemy remain unchanged. Sandbox's original 1.5 s/1.0 s timing and launcher are unchanged.
+- Code-only and docs-only cleanup. Do **not** run any Weapon Lab scene generator. Check acquisition near the enemy, shooting, lock grace, switching 1/2/3, and absence of the ring.

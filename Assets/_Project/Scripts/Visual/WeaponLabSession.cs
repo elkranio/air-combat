@@ -88,7 +88,7 @@ namespace AirCombat
                     missileLock = viewCamera.gameObject.AddComponent<TargetLock>();
                     ownsMissileLock = true;
                 }
-                missileLock.ConfigureWeaponLab(fighter.transform, player);
+                missileLock.ConfigureWeaponLab(fighter.transform);
                 missileHud = viewCamera.GetComponent<TargetLockHud>();
                 if (missileHud == null)
                 {
