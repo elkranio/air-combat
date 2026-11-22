@@ -34,20 +34,23 @@ namespace AirCombat
         private LineRenderer gaussSight;
         private float gaussFlashUntil;
         private WeaponLabFreeAim freeAim;
+        private TargetLock missileLock;
         private Renderer[] flashes;
         private float[] flashUntil;
         private float nextShot;
         private float nextGaussReadyAt;
         private bool gaussSelected;
+        private bool missileSelected;
         private int burstShotsRemaining;
         private int nextBarrel;
 
         public int FiredCount { get; private set; }
         public int HitCount { get; private set; }
-        public string FireModeLabel => gaussSelected
+        public string FireModeLabel => missileSelected ? "MISSILE LOCK ONLY" : gaussSelected
             ? (Time.time >= nextGaussReadyAt ? "GAUSS READY" : "GAUSS " + (nextGaussReadyAt - Time.time).ToString("F1") + "s")
             : "BURST " + Mathf.Max(2, burstSize);
-        public string AimModeLabel => gaussSelected ? "FIXED" : freeAim != null ? freeAim.ModeLabel : "FIXED";
+        public string AimModeLabel => missileSelected ? "CURSOR" :
+            gaussSelected ? "FIXED" : freeAim != null ? freeAim.ModeLabel : "FIXED";
         public string SoundModeLabel => soundVariants != null && soundVariants.Length == 4 && soundVariants[1] != null
             ? "MG 02" : "SYNTH FALLBACK";
 
@@ -66,6 +69,7 @@ namespace AirCombat
         }
 
         public void ConfigureAim(WeaponLabFreeAim component) { freeAim = component; }
+        public void ConfigureMissileLock(TargetLock component) { missileLock = component; }
 
         private void Awake()
         {
@@ -155,6 +159,7 @@ namespace AirCombat
                     if (burstShotsRemaining > 0)
                         nextShot = Mathf.Max(nextShot, Time.time + Mathf.Max(.05f, burstCooldown));
                     gaussSelected = false;
+                    missileSelected = false;
                     burstShotsRemaining = 0;
                 }
                 if (keyboard.digit2Key.wasPressedThisFrame)
@@ -162,9 +167,20 @@ namespace AirCombat
                     if (burstShotsRemaining > 0)
                         nextShot = Mathf.Max(nextShot, Time.time + Mathf.Max(.05f, burstCooldown));
                     gaussSelected = true;
+                    missileSelected = false;
                     burstShotsRemaining = 0; // Switching weapons cancels the unfinished burst.
                 }
+                if (keyboard.digit3Key.wasPressedThisFrame)
+                {
+                    if (burstShotsRemaining > 0)
+                        nextShot = Mathf.Max(nextShot, Time.time + Mathf.Max(.05f, burstCooldown));
+                    gaussSelected = false;
+                    missileSelected = true;
+                    burstShotsRemaining = 0;
+                }
             }
+            // TargetLock runs later in LateUpdate (order 200), so mode changes are immediate.
+            if (missileLock != null) missileLock.SetLockingEnabled(missileSelected);
             if (gaussSight != null)
             {
                 gaussSight.SetPosition(1, new Vector3(0f, -.55f, 6.2f + gaussSightLength));
@@ -173,8 +189,9 @@ namespace AirCombat
 
             var mouse = Mouse.current;
             bool held = Application.isFocused && mouse != null && mouse.leftButton.isPressed;
-            bool burstActive = !gaussSelected && burstShotsRemaining > 0;
-            if (freeAim != null) freeAim.Sample(!gaussSelected, held || burstActive);
+            bool burstActive = !gaussSelected && !missileSelected && burstShotsRemaining > 0;
+            if (freeAim != null) freeAim.Sample(!gaussSelected && !missileSelected, held || burstActive);
+            if (missileSelected) return; // Lock evaluation only; launcher is a later atom.
             if (gaussSelected)
             {
                 // One shot per new click. Holding/reselecting never repeats or skips cooldown.

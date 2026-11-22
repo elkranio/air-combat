@@ -28,6 +28,10 @@ namespace AirCombat
         private WeaponLabCameraLead cameraLead;
         private TopDownCameraFollow cameraFollow;
         private WeaponLabFreeAim aim;
+        private TargetLock missileLock;
+        private TargetLockHud missileHud;
+        private bool ownsMissileLock;
+        private bool ownsMissileHud;
         private static readonly float[] SideLanes = { 0f, -16f, 19f, -30f, 29f, -8f, 9f };
 
         public void Configure(UniversalRenderPipelineAsset pipeline, Transform aircraft,
@@ -70,6 +74,24 @@ namespace AirCombat
             aim.Configure(viewCamera, player);
             aim.enabled = true;
             cannon.ConfigureAim(aim);
+            if (fighter != null)
+            {
+                // Reuse Sandbox lock UI and geometry, but attach only at runtime in Weapon Lab.
+                missileLock = viewCamera.GetComponent<TargetLock>();
+                if (missileLock == null)
+                {
+                    missileLock = viewCamera.gameObject.AddComponent<TargetLock>();
+                    ownsMissileLock = true;
+                }
+                missileLock.ConfigureWeaponLab(fighter.transform, player);
+                missileHud = viewCamera.GetComponent<TargetLockHud>();
+                if (missileHud == null)
+                {
+                    missileHud = viewCamera.gameObject.AddComponent<TargetLockHud>();
+                    ownsMissileHud = true;
+                }
+                cannon.ConfigureMissileLock(missileLock);
+            }
             spawnPosition = player.position;
             spawnRotation = player.rotation;
             originalPipeline = QualitySettings.renderPipeline;
@@ -83,6 +105,12 @@ namespace AirCombat
             if (cameraFollow != null) cameraFollow.UseWeaponLabPitchKeys(false);
             if (cameraLead != null) cameraLead.enabled = false;
             if (aim != null) aim.enabled = false;
+            cannon?.ConfigureMissileLock(null);
+            if (ownsMissileHud && missileHud != null) Destroy(missileHud);
+            if (ownsMissileLock && missileLock != null) Destroy(missileLock);
+            ownsMissileHud = ownsMissileLock = false;
+            missileHud = null;
+            missileLock = null;
             if (ownsOverride && QualitySettings.renderPipeline == studyPipeline)
                 QualitySettings.renderPipeline = originalPipeline;
             ownsOverride = false;
@@ -116,6 +144,7 @@ namespace AirCombat
 
         private void ResetToStart()
         {
+            if (missileLock != null) missileLock.ResetLock();
             player.SetPositionAndRotation(spawnPosition, spawnRotation);
             if (fighter != null) fighter.ResetEncounter();
             else PlaceAllTargets();
@@ -147,7 +176,7 @@ namespace AirCombat
                 ? $"FIGHTER {fighter.Hp}/{fighter.MaxHp} HP   Kills {fighter.Kills}" : "NO ENEMY";
             GUI.Label(new Rect(22, 17, 475, 22), "WEAPON LAB / " + enemyStatus +
                 " / B EVADE: " + (fighter != null ? fighter.EvasionLabel : "OFF"), text);
-            GUI.Label(new Rect(22, 40, 475, 22), "WASD fly   Space boost   LMB fire   1 BURST / 2 GAUSS", text);
+            GUI.Label(new Rect(22, 40, 475, 22), "WASD fly   Space boost   LMB guns   1 BURST / 2 GAUSS / 3 MISSILE", text);
             GUI.Label(new Rect(22, 63, 450, 22), "Gun " + cannon.FireModeLabel + "   Aim " + cannon.AimModeLabel +
                 "   SFX " + cannon.SoundModeLabel, text);
             GUI.Label(new Rect(22, 86, 450, 22), "Look-ahead ON   R reset   H hide HUD   B enemy evasion", text);

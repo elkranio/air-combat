@@ -193,3 +193,14 @@ The user accepted the current shooting prototype before adding enemy fire. Keep 
 - With **1 BURST** selected, show the +/-12-degree sector borders continuously (even with LMB released). Keep the existing mouse-relative aim ring visible only during LMB and until the four-shot burst completes, and hide it at rest. Firing/reticle geometry are unchanged.
 - With **2 GAUSS** selected, hide BURST's guides and show only the short, fixed-forward 36-unit line. Its old faint red color is replaced with the same pale gray-white hue as BURST's borders for contrast against the desert terrain. Gauss remains fixed-forward; no target raycast or assist is added to the sight.
 - No cursor/UI system changes, gameplay changes, scene regeneration, missiles or countermeasures here. Compile and Play existing Weapon Lab, test switching 1/2 while flying, no-click sector visibility, LMB ring, and Gauss visibility on terrain.
+
+## v12 — missile cursor lock / minimum range (lock only; no rockets yet)
+
+This is the next incremental combat test after the approved BURST/Gauss visual passes. Open existing `WeaponLab.unity`; **do not rerun** the archival scene generators.
+
+- `1` = BURST (4 rounds, MG02, always-visible +/-12 degree sector); `2` = GAUSS (fixed-forward, pale sight); `3` = **MISSILE LOCK TEST** (guns disabled; no missile can be fired in this version). The normal system pointer is still used.
+- Place the pointer over the visible opponent: the existing `TargetLockHud` bracket and progress bar appear. Full lock takes **1.0 s**; losing aim for **0.5 s** resets progress (the current hold/grace logic is otherwise unchanged). The existing sound feedback is retained.
+- At **less than 40 horizontal world units** between planes, missile lock cannot start or persist. It resets **immediately** on entering that zone, ignoring the 0.5 s grace. While cursor is over the nearby opponent, the bracket reads `TOO CLOSE`. Exiting the zone requires building a fresh 1.0 s lock. Knocked-down enemies are not valid lock targets.
+- Both values are configured at runtime by `WeaponLabSession` via the existing shared TargetLock component, *not* through a scene rewrite. Sandbox keeps its preexisting 1.5 s lock, 1.0 s grace and no minimum-distance restriction. The Weapon Lab camera receives a temporary TargetLock + TargetLockHud in Play Mode. Switching off weapon 3 clears the lock and removes its marker. R also resets acquisition.
+
+Test how often an opponent escapes the zone while you are tracking it, whether the faster lock with shorter grace is readable, and whether the 40-unit cutoff feels fair. **No rocket launching or flares in this atom.** No new scene generator, no imported assets.
