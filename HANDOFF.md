@@ -61,7 +61,7 @@ B compares base, V19 normal 1.0, V19 normal .4, V20 normal .45 (default), V20 no
 
 **V20 flight test (user screenshots):** modes 3 (V19 normal at 0.40) and 4 (V20 directional beds at 0.45) were the favorites; mode 4 currently preferred, mode 3 is the restrained fallback. Normal at 1.0 made long vein-like fissures overly prominent. This is **accepted for the single BrokenMesa comparison**, not a global rock material standard; no propagation to the other three landforms yet. A separate user screenshot showed reduced shadow definition toward the left screen edge; possible cascade/distance/resolution issue, **cause unconfirmed**. Preserve stable sunlight and test shadow profiles separately before changing the pipeline. Recent Steam capsule fan art is unrelated to in-engine production art decisions.
 
-## Current atom — Weapon Lab v0 (generated locally, flight test pending)
+## Weapon Lab v0 — user flight-tested / green
 
 User chose a dedicated large map with no enemy AI to incrementally test weapons by feel; afterburner and existing flight behavior are unchanged. No health, loadout system, ammo scarcity or final missile lock decisions yet. This is a **test range**, not a new gameplay baseline.
 
@@ -69,7 +69,11 @@ User chose a dedicated large map with no enemy AI to incrementally test weapons 
 - Left mouse **hold** fires a forward-facing 14 rounds/s autocannon with actual moving, raycast-colliding projectiles and bright short tracers. Ammunition is infinite. Shots alternate between two approximate model-relative muzzles; these are tuning placeholders, not final hardpoints. V0 has no projectile damage or enemy integration.
 - Seven **passive floating dummies**, with hit flashes and shot/hit counts, recycle ahead of the player for continuous feel-testing. No enemy AI, aggression or attack rules. No missile integration yet; existing missile test remains in Sandbox. The dummies are intentionally simple and temporary.
 - Default overheating **OFF**, `T` toggles it in Play Mode for A/B; gun cadence, velocity, heat and cooling are serialized on `WeaponLabCannon`. Generated local original `AutocannonShot.wav` is an experimental synthetic sound, NOT a claimed realistic recording; assess and replace based on actual listening before shipping. No third-party sound attribution needed.
-- `Tools/Unity/WEAPON_LAB.md` contains build command, inputs, source/output boundaries and what to judge. Local file/patch validation can be performed here, but Unity compilation, audio playback and flight evaluation must be done by the user. Only after successful local test should this become green.
+- `Tools/Unity/WEAPON_LAB.md` contains build command, inputs, source/output boundaries and what to judge. User tested v0 and pushed green `15490128`. Gun remains fixed forward; mouse aim is only a future experiment. Cannon audio and firing balance are not yet accepted as final.
+
+## Current atom — Weapon Lab camera lead (pending local test)
+
+User tested and pushed green WeaponLab v0 (`15490128` master). The fixed forward-firing autocannon feels somewhat restrictive because the mouse cursor suggests free aiming; **gun aiming is deliberately deferred to the NEXT atom**. First test a smart camera alone. `WeaponLabSession` attaches a runtime-only `WeaponLabCameraLead` to its own range root and binds the existing `TopDownCameraFollow` camera. No `WeaponLab.unity` rebuild, no modifications to shared camera controllers or Sandbox/Frontier art scenes. `C` toggles centered versus smooth look-ahead; default look-ahead, heading-relative XZ offset about 20–25% of the visible screen height at the existing ortho size 80, ~30% longer with active afterburner, ~0.42 second smoothing. Component LateUpdate runs after shared camera LateUpdate, adding the offset once per frame. It does not alter pitch presets, aircraft steering, muzzle direction, weapon behavior or target spawning. HUD shows mode. See [Tools/Unity/WEAPON_LAB.md](Tools/Unity/WEAPON_LAB.md). **Test visually in Unity; tuning not yet accepted.**
 
 ## Lessons from the visual search
 

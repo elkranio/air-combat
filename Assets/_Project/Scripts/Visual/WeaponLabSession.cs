@@ -24,6 +24,7 @@ namespace AirCombat
         private Vector3 spawnPosition;
         private Quaternion spawnRotation;
         private GUIStyle text;
+        private WeaponLabCameraLead cameraLead;
         private static readonly float[] SideLanes = { 0f, -16f, 19f, -30f, 29f, -8f, 9f };
 
         public void Configure(UniversalRenderPipelineAsset pipeline, Transform aircraft,
@@ -44,6 +45,15 @@ namespace AirCombat
             if (!Application.isPlaying) return;
             if (studyPipeline == null || player == null || flight == null || boost == null || cannon == null)
             { Debug.LogError("Weapon Lab missing flight/weapon references.", this); enabled = false; return; }
+            // Runtime-only attachment: no scene regeneration and no global camera edit.
+            var follow = FindFirstObjectByType<TopDownCameraFollow>();
+            var viewCamera = follow != null ? follow.GetComponent<Camera>() : null;
+            if (viewCamera == null)
+            { Debug.LogError("Weapon Lab needs a TopDownCameraFollow camera.", this); enabled = false; return; }
+            cameraLead = GetComponent<WeaponLabCameraLead>();
+            if (cameraLead == null) cameraLead = gameObject.AddComponent<WeaponLabCameraLead>();
+            cameraLead.Configure(viewCamera, player, boost);
+            cameraLead.enabled = true;
             spawnPosition = player.position;
             spawnRotation = player.rotation;
             originalPipeline = QualitySettings.renderPipeline;
@@ -54,6 +64,7 @@ namespace AirCombat
 
         private void OnDisable()
         {
+            if (cameraLead != null) cameraLead.enabled = false;
             if (ownsOverride && QualitySettings.renderPipeline == studyPipeline)
                 QualitySettings.renderPipeline = originalPipeline;
             ownsOverride = false;
@@ -65,6 +76,7 @@ namespace AirCombat
             if (k != null && Application.isFocused)
             {
                 if (k.hKey.wasPressedThisFrame) showUI = !showUI;
+                if (k.cKey.wasPressedThisFrame && cameraLead != null) cameraLead.Toggle();
                 if (k.rKey.wasPressedThisFrame) ResetToStart();
             }
             if (Mathf.Abs(player.position.x) > mapHalfExtent - 350f ||
@@ -116,7 +128,8 @@ namespace AirCombat
             GUI.Label(new Rect(22, 17, 450, 22), "WEAPON LAB / 12 km training range / no enemy AI", text);
             GUI.Label(new Rect(22, 40, 450, 22), "WASD fly   Space boost   HOLD LMB autocannon", text);
             GUI.Label(new Rect(22, 63, 450, 22), "T toggle overheating   R reset   H hide HUD", text);
-            GUI.Label(new Rect(22, 86, 450, 22), "1/2/3 camera 90/75/65   Static targets recycle ahead", text);
+            string cameraMode = cameraLead != null && cameraLead.LookAheadEnabled ? "LOOK-AHEAD" : "CENTER";
+            GUI.Label(new Rect(22, 86, 450, 22), "1/2/3 pitch   C camera: " + cameraMode + "   H hide HUD", text);
             string heat = cannon.HeatLimiterEnabled
                 ? $"Heat {cannon.Heat01:P0}" + (cannon.IsOverheated ? " [COOLING]" : "") : "Heat OFF";
             GUI.Label(new Rect(22, 109, 450, 22),
