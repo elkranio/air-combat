@@ -25,6 +25,7 @@ namespace AirCombat
         private Quaternion spawnRotation;
         private GUIStyle text;
         private WeaponLabCameraLead cameraLead;
+        private WeaponLabFreeAim aim;
         private static readonly float[] SideLanes = { 0f, -16f, 19f, -30f, 29f, -8f, 9f };
 
         public void Configure(UniversalRenderPipelineAsset pipeline, Transform aircraft,
@@ -54,6 +55,11 @@ namespace AirCombat
             if (cameraLead == null) cameraLead = gameObject.AddComponent<WeaponLabCameraLead>();
             cameraLead.Configure(viewCamera, player, boost);
             cameraLead.enabled = true;
+            aim = player.GetComponent<WeaponLabFreeAim>();
+            if (aim == null) aim = player.gameObject.AddComponent<WeaponLabFreeAim>();
+            aim.Configure(viewCamera, player);
+            aim.enabled = true;
+            cannon.ConfigureAim(aim);
             spawnPosition = player.position;
             spawnRotation = player.rotation;
             originalPipeline = QualitySettings.renderPipeline;
@@ -65,6 +71,7 @@ namespace AirCombat
         private void OnDisable()
         {
             if (cameraLead != null) cameraLead.enabled = false;
+            if (aim != null) aim.enabled = false;
             if (ownsOverride && QualitySettings.renderPipeline == studyPipeline)
                 QualitySettings.renderPipeline = originalPipeline;
             ownsOverride = false;
@@ -126,7 +133,7 @@ namespace AirCombat
                 text = new GUIStyle(GUI.skin.label) { fontSize = 14, normal = { textColor = Color.white } };
             GUI.Box(new Rect(12, 12, 480, 129), GUIContent.none);
             GUI.Label(new Rect(22, 17, 450, 22), "WEAPON LAB / 12 km training range / no enemy AI", text);
-            GUI.Label(new Rect(22, 40, 450, 22), "WASD fly   Space boost   HOLD LMB autocannon", text);
+            GUI.Label(new Rect(22, 40, 450, 22), "WASD fly   Space boost   LMB fire   V aim: " + cannon.AimModeLabel, text);
             GUI.Label(new Rect(22, 63, 450, 22), "G gun SFX: " + cannon.SoundModeLabel + "   T heat   R reset", text);
             string cameraMode = cameraLead != null && cameraLead.LookAheadEnabled ? "LOOK-AHEAD" : "CENTER";
             GUI.Label(new Rect(22, 86, 450, 22), "1/2/3 pitch   C: " + cameraMode + "   H hide HUD", text);

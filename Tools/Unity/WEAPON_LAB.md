@@ -15,14 +15,16 @@ Open `Assets/_Project/Scenes/WeaponLab.unity` and enter Play. The generator copi
 ## Inputs
 
 - **W/S** throttle, **A/D** turn, **Space** afterburner; **1/2/3** camera pitch 90/75/65 degrees (existing controllers).
-- **Hold LMB**: forward-firing autocannon, 14 shots/s, infinite ammunition. Alternating test muzzle points, visible projectile tracers, hit flashes on static drones.
+- **Hold LMB**: autocannon, 14 shots/s, infinite ammunition. With default free aim, two faint sector edges and the actual firing-direction ring appear while held. Projectiles originate from alternating existing muzzle points; no actual turret mesh has been rigged yet.
 - **T**: toggle overheat gating (default **OFF**), for a direct feel A/B. With limiter on, sustained fire eventually blocks shots while the weapon cools. Heat and timings are serialized and intentionally tentative.
+- **V**: toggle aiming `FREE +/-30` (default) / `FIXED` (previous forward-only firing). Never redirects or moves the mouse cursor. In FREE, the visible circle follows the screen pointer on the flight plane but stays within the wedge. If the pointer is behind the aircraft, the circle is centred ahead at its previous radial distance (clamped to the guide reach). Release LMB to hide the guide.
 - **G**: cycle cannon sound in Play Mode: `SYNTH` (original reference) / `MG 01` / `MG 02` / `MG 03` / `MG 04`. Default after installing audio: `MG 01`. HUD shows the chosen mode. This does **not** change fire rate, projectile logic, aim or damage.
 - **C**: switch camera **LOOK-AHEAD / CENTER** while flying (defaults to look-ahead). Lead follows the aircraft's forward heading, smoothly moves toward ~22% of the visible height ahead at ortho size 80, and grows slightly during afterburner. Turning and switching back never snap the camera. `1/2/3` pitch still works. This is WeaponLab-only; no mouse-aim or gun change.
 - **R**: reset aircraft to start and place the passive targets ahead. **H**: hide/show lab HUD. The map only resets automatically when approaching the distant outer edge.
 
 ## Files and boundaries
 
+- `Assets/_Project/Scripts/Weapons/WeaponLabFreeAim.cs`: WeaponLab-only bounded mouse aim, world-space guide lines and circle; creates one LineRenderer per child object, no changes to the actual mouse position. Set `halfAngle=30`, `guideReach=165`, and `aimSmoothing=.065` for current test.
 - `Assets/_Project/Scripts/Weapons/WeaponLabCannon.cs`: cadence, alternating barrel offsets, heat A/B, muzzle flash, four processed CC0 audio variants and one synthesized fallback, bounded five-voice pool (prevents piling up long audio tails). Tracer core is now 0.50 world units instead of 0.27, with a separate faint 1.10-unit halo using the existing `AirCombat/SandboxEffect` shader. This is a cheap alpha-blended glow **approximation**, not URP postprocessing bloom; test at size 80.
 - `Assets/_Project/Scripts/Weapons/WeaponLabProjectile.cs`: moving tracer rounds and swept physics raycast per frame; not a fixed-pitch hitscan laser. Tracer topology: **one LineRenderer on `Autocannon Round`**, with the optional halo **LineRenderer on child `Tracer Halo`**. Unity rejects two `LineRenderer` components on one GameObject. Both lines follow the same swept projectile endpoints; child is destroyed with its round. No separate prefab or generator step.
 - `Assets/_Project/Scripts/Weapons/WeaponLabTarget.cs`: noncombat hit flash on test targets.
@@ -59,3 +61,9 @@ Test `G` at the same speed and rate of fire. Compare initial attack/body, intell
 ### V2 audio tail diagnostic (unverified in Unity)
 
 A single click was reported to produce one projectile but two successive audible hits (the second softer and shorter). `WeaponLabCannon.Fire()` plays one clip per projectile, so the raw clip tail/echo is a likely culprit, not a confirmed diagnosis. The audio installer now trims each CC0 MG excerpt from ~340 ms to ~150 ms with a ~45 ms end fade. **Rerun `ConfigureWeaponLabAudio.Configure`** to rewrite the four generated `Autocannon_MG_01..04.wav` files; recompiling alone does not change previously generated WAV data. Compare the result on one-shot LMB clicks, then sustained fire. This is a provisional sound test, not an approved sound design.
+
+## v3 mouse free-aim experiment (no generator needed)
+
+After applying v3, open the existing `WeaponLab.unity` and Play. Nothing to reconfigure in Unity or reimport in Blender. `WeaponLabSession` attaches `WeaponLabFreeAim` at runtime and binds the actual smart-camera position. Firing now happens in `WeaponLabCannon.LateUpdate` after camera follow + camera lead to avoid a discrepancy between the visible ring and shot direction. The reticle is a **direction indicator** on the horizontal flight plane, not a prediction marker or a guaranteed hit; moving targets still require lead. Physical gun barrels are **not** visually rotated yet (two original hardpoints remain).
+
+Try `V` while holding LMB and while released; try pointer straight ahead, off-axis past the ±30° boundary, directly behind the aircraft, crossing the side/rear line, and far from the aircraft. Test `C` look-ahead and `1/2/3` pitch presets. Look for sudden jumps, guide clutter or tracer/marker disagreement. The FREE mode, limit angle and smoothing are unapproved until flight-tested.

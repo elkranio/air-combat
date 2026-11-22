@@ -3,8 +3,9 @@ using UnityEngine.InputSystem;
 
 namespace AirCombat
 {
-    // Weapon Lab only: forward-firing projectile autocannon. Does not change Sandbox missiles.
+    // Weapon Lab only: projectile autocannon with optional bounded free aim. Sandbox missiles untouched.
     [DisallowMultipleComponent]
+    [DefaultExecutionOrder(130)] // sample aim after camera follow and WeaponLabCameraLead
     public sealed class WeaponLabCannon : MonoBehaviour
     {
         [SerializeField] private Material tracerMaterial;
@@ -25,6 +26,7 @@ namespace AirCombat
         private AudioSource[] voices;
         private int nextVoice;
         private Material haloMaterial;
+        private WeaponLabFreeAim freeAim;
         private Renderer[] flashes;
         private float[] flashUntil;
         private float nextShot;
@@ -37,6 +39,7 @@ namespace AirCombat
         public bool IsOverheated => overheated;
         public int FiredCount { get; private set; }
         public int HitCount { get; private set; }
+        public string AimModeLabel => freeAim != null ? freeAim.ModeLabel : "FIXED";
         public string SoundModeLabel => soundVariants != null && soundVariants.Length == 4 && soundMode > 0
             ? "MG " + soundMode.ToString("00") : "SYNTH";
 
@@ -54,6 +57,8 @@ namespace AirCombat
             soundVariants = (AudioClip[])clips.Clone();
             soundMode = 1;
         }
+
+        public void ConfigureAim(WeaponLabFreeAim component) { freeAim = component; }
 
         private void Awake()
         {
@@ -88,7 +93,7 @@ namespace AirCombat
             }
         }
 
-        private void Update()
+        private void LateUpdate()
         {
             if (flashes != null)
                 for (int i = 0; i < flashes.Length; i++)
@@ -111,6 +116,7 @@ namespace AirCombat
 
             var mouse = Mouse.current;
             bool held = Application.isFocused && mouse != null && mouse.leftButton.isPressed;
+            if (freeAim != null) freeAim.Sample(held);
             if (!held || tracerMaterial == null)
             {
                 nextShot = Time.time;
@@ -141,7 +147,8 @@ namespace AirCombat
             nextBarrel = 1 - nextBarrel;
             var muzzle = transform.TransformPoint(MuzzleOffset(barrel));
             var round = new GameObject("Autocannon Round");
-            round.transform.SetPositionAndRotation(muzzle, transform.rotation);
+            Vector3 direction = freeAim != null ? freeAim.FireDirection : transform.forward;
+            round.transform.SetPositionAndRotation(muzzle, Quaternion.LookRotation(direction, Vector3.up));
             var line = round.AddComponent<LineRenderer>();
             line.sharedMaterial = tracerMaterial;
             line.useWorldSpace = true;
@@ -171,7 +178,7 @@ namespace AirCombat
                 halo.receiveShadows = false;
             }
             var projectile = round.AddComponent<WeaponLabProjectile>();
-            projectile.Configure(transform.forward, muzzleVelocity, maxRange, tracerLength, line, halo, this);
+            projectile.Configure(direction, muzzleVelocity, maxRange, tracerLength, line, halo, this);
             flashUntil[barrel] = Time.time + .052f;
             flashes[barrel].enabled = true;
             var clip = soundVariants != null && soundVariants.Length == 4 && soundMode > 0
