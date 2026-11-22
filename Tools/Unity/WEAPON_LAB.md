@@ -226,3 +226,11 @@ After the V13/V13a playtest, the **minimum 40-unit lock radius and its persisten
 - Select **3** for MISSILE; keep the cursor over the live visible opponent for **1.0 s** to lock. The **0.5 s** lost-aim grace remains; neither the target nor the aircraft needs to respect a minimum separation. Once `LOCKED`, click **LMB** to launch the existing homing missile; launch consumes lock, one missile active at a time, damage/respawn unchanged.
 - **1 BURST** (MG02, always-visible +/-12-degree wedge), **2 GAUSS** (fixed forward pale sight), camera and evasive enemy remain unchanged. Sandbox's original 1.5 s/1.0 s timing and launcher are unchanged.
 - Code-only and docs-only cleanup. Do **not** run any Weapon Lab scene generator. Check acquisition near the enemy, shooting, lock grace, switching 1/2/3, and absence of the ring.
+
+## v15 — enemy flare reaction prototype (provisional)
+
+Play the existing `WeaponLab.unity`; do not run generators. Select **3 MISSILE**, acquire for 1.0 s and launch with LMB. The opposing plane now sometimes scatters **six bright thermal flares** behind it. Random timing patterns per incoming missile: 35% early (0.12-0.62 s), 40% near (distance threshold randomly 42-95), 25% both (at least 0.45 s between salvos). Flares last 1.5 s, then vanish. No probability is rolled to decide whether the rocket misses.
+
+The Lab rocket checks decoys directly: a flare must be within **60 units** and inside **+/-50 degrees** of the missile's heading. The closest visible-in-seeker flare becomes the new target; the rocket cannot return to the aircraft. If the flare expires, guidance stops; if the rocket hits the flare, it explodes harmlessly. Existing projectile speed, turning limits, model/trail, target HP and respawn are intact. No close-range exclusion or ring. Sandbox missiles are unaffected; this seeker is opt-in from `WeaponLabMissileLauncher` only. BURST and GAUSS are unchanged.
+
+Test firing from different distances and headings, early wasted salvos, successful decoys, late misses and occasional two-salvo defense. No Unity scene/prefab changes or asset import. These values are a feel-test, not balance approval; no player-controlled flares or enemy missile attacks in this atom.

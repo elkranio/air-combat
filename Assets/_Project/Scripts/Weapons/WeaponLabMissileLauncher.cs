@@ -15,6 +15,7 @@ namespace AirCombat
         private Material impactMaterial;
         private WeaponLabEnemy fighter;
         private MissileProjectile activeMissile;
+        private WeaponLabFlares enemyFlares;
 
         public int FiredCount { get; private set; }
 
@@ -25,6 +26,14 @@ namespace AirCombat
             missilePrefab = prefab;
             impactMaterial = hitEffect;
             fighter = opponent;
+            if (fighter != null)
+            {
+                // Runtime-only on the existing enemy; do not touch scene/prefab assets.
+                enemyFlares = fighter.GetComponent<WeaponLabFlares>();
+                if (enemyFlares == null)
+                    enemyFlares = fighter.gameObject.AddComponent<WeaponLabFlares>();
+                enemyFlares.Configure(fighter);
+            }
         }
 
         private void LateUpdate()
@@ -43,7 +52,9 @@ namespace AirCombat
             // Same prefab, speed, turn limits and swept collision as the Sandbox rocket.
             activeMissile = Instantiate(missilePrefab,
                 transform.position + transform.forward * launchOffset, transform.rotation);
+            activeMissile.EnableLabFlares();
             activeMissile.Launch(target, OnMissileHit);
+            if (enemyFlares != null) enemyFlares.OnIncomingMissile(activeMissile);
             FiredCount++;
             targetLock.ResetLock(); // Each missile requires a new acquisition.
         }

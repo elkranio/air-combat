@@ -19,10 +19,16 @@ namespace AirCombat
         private float age;
         public float RemainingManeuverBudget { get; private set; }
         private bool launched;
+        // Opt-in from WeaponLabMissileLauncher only. Sandbox missiles never query flares.
+        private bool seekLabFlares;
+        private bool diverted;
+
+        public void EnableLabFlares() { seekLabFlares = true; }
 
         public void Launch(Transform aimTarget, Action<Vector3, Transform> hitCallback)
         {
             age = 0f;
+            diverted = false;
             RemainingManeuverBudget = Mathf.Max(0f, maneuverBudget);
             target = aimTarget;
             onHit = hitCallback;
@@ -36,6 +42,18 @@ namespace AirCombat
             if (!launched) return;
             var dt = Mathf.Min(Time.deltaTime, Mathf.Max(0f, lifetime - age));
             var from = transform.position;
+            if (seekLabFlares && !diverted && target != null)
+            {
+                // Geometry only: a flare must be within 60 units and +/-50 degrees
+                // of the missile nose. Once fooled, never reacquire the aircraft.
+                var flare = WeaponLabFlare.FindInSeeker(from, transform.forward);
+                if (flare != null)
+                {
+                    target = flare.transform;
+                    lastTargetPosition = target.position;
+                    diverted = true;
+                }
+            }
             bool hasTarget = target != null && target.gameObject.activeInHierarchy;
             if (hasTarget && RemainingManeuverBudget > 0f)
             {
