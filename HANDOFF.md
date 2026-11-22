@@ -4,7 +4,7 @@
 
 **FrontierStrata (V17)** is the current visual baseline, evolved from accepted Scorched Frontier (V13). V13 is retained as fallback; V18 is the bake diagnostic. User flight test: dramatically better than the forest variants; aircraft reads well in motion, including over ruins. Foundation works; future art polish is optional and incremental. Keep cold blue aircraft over warmer ochre clay/dust, large open spaces, ridges and localized abandoned infrastructure. Avoid dense all-over detail, unnecessary blur/outline and excessive orange saturation.
 
-Current session: user wants relaxed visual experiments for enjoyment after project housekeeping (not a gameplay sprint yet). Do not silently switch to combat work or overhaul the accepted style.
+Current session: user explicitly switched to isolated weapon feel-testing. Keep the accepted visual and flight scenes intact; begin with a cannon in WeaponLab before designing enemy survivability or permanent loadouts.
 
 ## Workflow (required)
 
@@ -60,6 +60,16 @@ B compares base, V19 normal 1.0, V19 normal .4, V20 normal .45 (default), V20 no
 `ART_AUTHORING.md` consolidates the tested V18–V20 workflow so future assets do not repeat V14A's invisible micro-bevels or V19's excessive detail. It distinguishes silhouettes (real geometry), impactful high-only surface normal detail, independent albedo and optional local AO; covers Blender selected-to-active bake, explicit device/UV/cage validation, CRLF-safe completion markers, sRGB/normal-map imports, mips/compression, URP shader keywords and V17 BrokenMesa material UV scale/offset. Actual game-size comparison is mandatory. Docs-only atom; no scenes, scripts or textures modified.
 
 **V20 flight test (user screenshots):** modes 3 (V19 normal at 0.40) and 4 (V20 directional beds at 0.45) were the favorites; mode 4 currently preferred, mode 3 is the restrained fallback. Normal at 1.0 made long vein-like fissures overly prominent. This is **accepted for the single BrokenMesa comparison**, not a global rock material standard; no propagation to the other three landforms yet. A separate user screenshot showed reduced shadow definition toward the left screen edge; possible cascade/distance/resolution issue, **cause unconfirmed**. Preserve stable sunlight and test shadow profiles separately before changing the pipeline. Recent Steam capsule fan art is unrelated to in-engine production art decisions.
+
+## Current atom — Weapon Lab v0 (generated locally, flight test pending)
+
+User chose a dedicated large map with no enemy AI to incrementally test weapons by feel; afterburner and existing flight behavior are unchanged. No health, loadout system, ammo scarcity or final missile lock decisions yet. This is a **test range**, not a new gameplay baseline.
+
+- `Tools/Unity/ConfigureWeaponLab.cs` clones `FrontierMesaPolish.unity` to `WeaponLab.unity` and replaces the environment only in that clone with a 12 km × 12 km gently undulating training ground (authored repeatable 512 PNG, one reusable ~37k-vertex mesh). The aircraft, camera, sunlight and study-local URP setup are reused; Sandbox, V17/V20 and shared aircraft assets remain untouched. R returns to start; automatic recenter only near the 6 km map edge. A generator is required; `.unity` is not hand-edited in the patch.
+- Left mouse **hold** fires a forward-facing 14 rounds/s autocannon with actual moving, raycast-colliding projectiles and bright short tracers. Ammunition is infinite. Shots alternate between two approximate model-relative muzzles; these are tuning placeholders, not final hardpoints. V0 has no projectile damage or enemy integration.
+- Seven **passive floating dummies**, with hit flashes and shot/hit counts, recycle ahead of the player for continuous feel-testing. No enemy AI, aggression or attack rules. No missile integration yet; existing missile test remains in Sandbox. The dummies are intentionally simple and temporary.
+- Default overheating **OFF**, `T` toggles it in Play Mode for A/B; gun cadence, velocity, heat and cooling are serialized on `WeaponLabCannon`. Generated local original `AutocannonShot.wav` is an experimental synthetic sound, NOT a claimed realistic recording; assess and replace based on actual listening before shipping. No third-party sound attribution needed.
+- `Tools/Unity/WEAPON_LAB.md` contains build command, inputs, source/output boundaries and what to judge. Local file/patch validation can be performed here, but Unity compilation, audio playback and flight evaluation must be done by the user. Only after successful local test should this become green.
 
 ## Lessons from the visual search
 
