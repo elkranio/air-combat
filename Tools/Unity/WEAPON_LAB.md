@@ -257,3 +257,7 @@ Open the **existing** `WeaponLab.unity`; **do not run generators**. Fly straight
 ## Gameplay Core A1 — script extraction (pending local flight test)
 
 Current Q/E and view behavior remain the same after the code-only extraction: `BreakTurn` is in `Scripts/Flight/`, `CameraLookAhead` in `Scripts/Camera/` (original Unity GUIDs preserved). The player `FlightController` now reads Q/E and passes requests to the reusable maneuver; Lab AI still triggers the same maneuver with its original timing and probabilities. WeaponLabSession installs these components in Play Mode exactly as before. The 65-degree scene camera pitch and automatic look-ahead stay unchanged; the pitch-hotkey enable/disable API is now scene-neutral. No scene/asset regeneration. Run the usual v18 combat regression plus Sandbox camera preset keys before pushing green.
+
+## Gameplay Core A2 — targeting extraction (pending Unity test)
+
+`BoundedAim` now owns the same forward-sector cursor projection in `Scripts/Targeting/` (formerly `WeaponLabFreeAim`). Shared `TargetLock` also moves into `Targeting` with its original Unity GUID; the Lab wires the single opponent through `ITargetLockEligibility` so its down/respawn state still governs missile lock. BURST (+/-12°), GAUSS, MISSILE (1.0 s / 0.5 s), weapon switching, damage, camera, and enemy AI are unchanged. Sandbox lock uses its original serialized setup and timing. No scene regeneration. Regression: BURST held reticle and hits, Gauss 1-shot and cooldown, missile lock grace / death / reset, then Sandbox lock and pitch keys.

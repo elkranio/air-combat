@@ -29,7 +29,7 @@ namespace AirCombat
         private GUIStyle text;
         private CameraLookAhead cameraLead;
         private TopDownCameraFollow cameraFollow;
-        private WeaponLabFreeAim aim;
+        private BoundedAim aim;
         private TargetLock missileLock;
         private TargetLockHud missileHud;
         private WeaponLabMissileLauncher labMissileLauncher;
@@ -77,8 +77,8 @@ namespace AirCombat
             if (cameraLead == null) cameraLead = gameObject.AddComponent<CameraLookAhead>();
             cameraLead.Configure(viewCamera, player, boost);
             cameraLead.enabled = true;
-            aim = player.GetComponent<WeaponLabFreeAim>();
-            if (aim == null) aim = player.gameObject.AddComponent<WeaponLabFreeAim>();
+            aim = player.GetComponent<BoundedAim>();
+            if (aim == null) aim = player.gameObject.AddComponent<BoundedAim>();
             aim.Configure(viewCamera, player);
             aim.enabled = true;
             cannon.ConfigureAim(aim);
@@ -112,7 +112,7 @@ namespace AirCombat
                     missileLock = viewCamera.gameObject.AddComponent<TargetLock>();
                     ownsMissileLock = true;
                 }
-                missileLock.ConfigureWeaponLab(fighter.transform);
+                missileLock.ConfigureTarget(fighter.transform, 1f, .5f, fighter);
                 missileHud = viewCamera.GetComponent<TargetLockHud>();
                 if (missileHud == null)
                 {

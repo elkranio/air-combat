@@ -5,7 +5,7 @@ namespace AirCombat
 {
     // Weapon Lab only: projectile autocannon with optional bounded free aim. Sandbox missiles untouched.
     [DisallowMultipleComponent]
-    [DefaultExecutionOrder(130)] // sample aim after camera follow and WeaponLabCameraLead
+    [DefaultExecutionOrder(130)] // sample aim after camera follow and CameraLookAhead
     public sealed class WeaponLabCannon : MonoBehaviour
     {
         [SerializeField] private Material tracerMaterial;
@@ -33,7 +33,7 @@ namespace AirCombat
         private LineRenderer gaussFlash;
         private LineRenderer gaussSight;
         private float gaussFlashUntil;
-        private WeaponLabFreeAim freeAim;
+        private BoundedAim freeAim;
         private TargetLock missileLock;
         private Renderer[] flashes;
         private float[] flashUntil;
@@ -68,7 +68,7 @@ namespace AirCombat
             soundVariants = (AudioClip[])clips.Clone();
         }
 
-        public void ConfigureAim(WeaponLabFreeAim component) { freeAim = component; }
+        public void ConfigureAim(BoundedAim component) { freeAim = component; }
         public void ConfigureMissileLock(TargetLock component) { missileLock = component; }
 
         private void Awake()

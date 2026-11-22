@@ -12,7 +12,7 @@ namespace AirCombat
         [SerializeField, Min(0.01f)] private float lockSeconds = 1.5f;
         [SerializeField, Min(0f)] private float graceSeconds = 1f;
         [SerializeField, Min(0.1f)] private float aimRadius = 8.5f;
-        private WeaponLabEnemy labEnemy;
+        private ITargetLockEligibility targetEligibility;
         private bool lockingEnabled = true;
         [SerializeField] private bool soundEnabled = true;
         [SerializeField, Range(0f, 1f)] private float soundVolume = 0.2f;
@@ -33,13 +33,15 @@ namespace AirCombat
         private AudioSource audioSource;
         private AudioClip acquireClip, lockedClip;
 
-        // Configured at runtime by WeaponLabSession; never changes Sandbox scene values.
-        public void ConfigureWeaponLab(Transform lockTarget)
+        // Optional runtime target and tuning; serialized Sandbox settings stay untouched.
+        // An encounter-specific owner can tell the seeker when the target is unavailable.
+        public void ConfigureTarget(Transform lockTarget, float acquisitionSeconds,
+            float lostAimGraceSeconds, ITargetLockEligibility eligibility = null)
         {
             target = lockTarget;
-            labEnemy = lockTarget != null ? lockTarget.GetComponent<WeaponLabEnemy>() : null;
-            lockSeconds = 1f;
-            graceSeconds = .5f;
+            targetEligibility = eligibility;
+            lockSeconds = Mathf.Max(0.01f, acquisitionSeconds);
+            graceSeconds = Mathf.Max(0f, lostAimGraceSeconds);
             SetLockingEnabled(false);
         }
 
@@ -74,7 +76,7 @@ namespace AirCombat
             IsPointerInViewport = mouse != null && Application.isFocused &&
                 viewCamera.pixelRect.Contains(mouse.position.ReadValue());
             if (target == null || !target.gameObject.activeInHierarchy ||
-                (labEnemy != null && labEnemy.IsDown))
+                (targetEligibility != null && !targetEligibility.CanBeLocked))
             {
                 ResetLock();
                 return;

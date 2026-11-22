@@ -22,7 +22,7 @@ namespace AirCombat
 
         private enum State { Watching, Breaking, Cooldown }
         private State state;
-        private WeaponLabFreeAim playerAim;
+        private BoundedAim playerAim;
         private float exposedFor;
         private float reactAfter;
         private float breakRemaining;
@@ -62,7 +62,7 @@ namespace AirCombat
 
         private void Start()
         {
-            playerAim = player != null ? player.GetComponent<WeaponLabFreeAim>() : null;
+            playerAim = player != null ? player.GetComponent<BoundedAim>() : null;
             ResetForEncounter();
         }
 

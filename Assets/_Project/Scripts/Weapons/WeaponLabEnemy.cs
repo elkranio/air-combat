@@ -4,7 +4,7 @@ namespace AirCombat
 {
     // Weapon Lab only: a five-hit, unarmed sparring aircraft. No incoming damage or combat AI.
     [DisallowMultipleComponent]
-    public sealed class WeaponLabEnemy : MonoBehaviour
+    public sealed class WeaponLabEnemy : MonoBehaviour, ITargetLockEligibility
     {
         [SerializeField, Min(1)] private int maxHp = 5;
         [SerializeField, Min(0.1f)] private float respawnDelay = 2f;
@@ -26,6 +26,7 @@ namespace AirCombat
         public int MaxHp => maxHp;
         public int Kills { get; private set; }
         public bool IsDown => down;
+        public bool CanBeLocked => !down;
         public string EvasionLabel => evasion != null ? evasion.ModeLabel : "OFF";
 
         public void Configure(Transform chaseTarget, EnemyFlightController controller,

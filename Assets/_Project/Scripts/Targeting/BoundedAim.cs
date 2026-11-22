@@ -4,10 +4,10 @@ using UnityEngine.Rendering;
 
 namespace AirCombat
 {
-    // Weapon Lab only: mouse-to-flight-plane aim in a bounded forward sector.
-    // Does not touch the system cursor, aircraft steering, camera or Sandbox weapons.
+    // Mouse-to-flight-plane aim within a bounded forward sector.
+    // Does not alter the cursor, aircraft controls or camera.
     [DisallowMultipleComponent]
-    public sealed class WeaponLabFreeAim : MonoBehaviour
+    public sealed class BoundedAim : MonoBehaviour
     {
         [SerializeField, Range(5f, 65f)] private float halfAngle = 12f;
         [SerializeField, Min(15f)] private float guideReach = 165f;
@@ -43,11 +43,11 @@ namespace AirCombat
             var shader = Shader.Find("AirCombat/SandboxEffect");
             if (shader == null)
             {
-                Debug.LogError("Weapon Lab aiming guide shader missing.", this);
+                Debug.LogError("Bounded aim guide shader missing.", this);
                 enabled = false;
                 return;
             }
-            guideMaterial = new Material(shader) { name = "Weapon Lab aim guide (runtime)" };
+            guideMaterial = new Material(shader) { name = "Bounded aim guide (runtime)" };
             leftEdge = MakeLine("Free aim / left limit", 2, .18f,
                 new Color(.87f, .91f, .94f, .44f));
             rightEdge = MakeLine("Free aim / right limit", 2, .18f,
@@ -58,8 +58,7 @@ namespace AirCombat
             Hide();
         }
 
-        // Called by WeaponLabCannon after the smart camera has settled in LateUpdate.
-        // The resulting FireDirection is used by BOTH the reticle and the projectile.
+        // Sample after the camera has settled; the aim direction drives reticle and projectile.
         public void Sample(bool sectorSelected, bool triggerHeld)
         {
             bool visible = isActiveAndEnabled && sectorSelected && aircraft != null;
