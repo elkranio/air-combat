@@ -1,6 +1,6 @@
 # G3 — Gravity Bombs (GroundAttackLab prototype)
 
-**Current G3b presentation:** No predicted impact HUD. An altitude-offset soft aircraft shadow and moving bomb shadows make release and height readable directly in the world. Details at the end of this document; prior HUD sections are retained as historical G3/G3a notes.
+**Current G3d presentation:** No impact prediction HUD. A bombs-only world-space vertical guide shows the aircraft position directly below it; physical URP shadows still provide depth. Details at the end of this document; prior HUD sections are retained as historical G3/G3a notes.
 
 Base: green `master` `6ff85069` (G2 and F1 tested). G3 changes no bake source, imported FBX, depot materials, prefab, WeaponLab scene, Sandbox or enemy AI.
 
@@ -56,3 +56,11 @@ G3a keeps the four-bomb burst, actual prediction, per-bomb independent gravity t
 - `GroundAttackLabSession` now serializes a reference to the existing Battlefield `Shadows.mat` (vertex-color URP unlit shader), then instantiates a scene-local copy. No unchecked `Shader.Find` dependency.
 - Aircraft shadow: 10.5 x 15 base footprint, 0.50 near / 0.28 far alpha, growth 0.025 per height, light offset (-0.24, 0.35) per height; at Y=48 offset is ~20m and alpha ~0.38. Bomb shadows use the same light offset, a smaller footprint, and alpha that increases as the bomb descends.
 - No changes to aiming, ballistics, bomb cooldown, ground damage, shared prefabs or Sandbox shadows. Check the aircraft shadow, bomb shadow travelling toward impact, and that both disappear appropriately.
+
+## G3d — bombs-only vertical altitude guide
+
+- `BombNadirMarker` is installed on the **GroundAttackLab** player in Play Mode; it is visible only with weapon slot **4 / Bomb**. It never appears for BURST, GAUSS or MISSILE (including WeaponLab), and is not added to the shared `PlayerJet` prefab.
+- A thin dashed line goes **strictly downward** from the aircraft, with a small, subdued unfilled ring where the ray intersects the **nearest actual collider** (ground, slope, depot roof). Raycasts ignore the player's own colliders and triggers. If no eligible surface is below, the guide is hidden.
+- This is a *nadir/altitude orientation cue*, not a CCIP aim point. It does **not** predict where bombs will land or compensate for forward speed, turns or afterburner. All bomb cadence, damage, gravity and physics remain exactly as before.
+- The guide uses a single runtime vertex-colored transparent mesh, is created once and cleaned up with the player; no authored scene/prefab or FBX changes. `AirCombat/SandboxEffect` is required.
+- Verify: 4 displays dash + ring; 1/2/3 hide it instantly; ring tracks actual XZ location when flying and appears **on slopes and depot roofs**; Q/E/W and burst behavior are unchanged.

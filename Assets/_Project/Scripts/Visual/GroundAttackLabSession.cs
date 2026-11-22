@@ -86,6 +86,10 @@ namespace AirCombat
             bombs = jet.GetComponent<BombRack>();
             if (bombs == null) bombs = jet.AddComponent<BombRack>();
             bombs.Configure(selection, flight, afterburner, breakTurn);
+            // Height reference only while bombs are equipped: no lead/prediction.
+            var nadir = jet.GetComponent<BombNadirMarker>();
+            if (nadir == null) nadir = jet.AddComponent<BombNadirMarker>();
+            nadir.Configure(selection, cameraRig.ViewCamera);
 
             startPosition = jet.transform.position;
             startRotation = jet.transform.rotation;
