@@ -2,11 +2,11 @@ using UnityEngine;
 
 namespace AirCombat
 {
-    // Weapon Lab only: add a smooth world-space offset AFTER TopDownCameraFollow.
-    // The shared camera follow, its pitch presets and all other scenes stay untouched.
+    // Optional world-space look-ahead applied after TopDownCameraFollow.
+    // Keep the follow camera and its serialized pitch independent.
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(100)]
-    public sealed class WeaponLabCameraLead : MonoBehaviour
+    public sealed class CameraLookAhead : MonoBehaviour
     {
         [SerializeField, Range(0f, 1f)] private float leadFractionOfHalfView = 0.45f;
         [SerializeField, Min(1f)] private float boostLeadMultiplier = 1.3f;

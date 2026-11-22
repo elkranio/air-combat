@@ -14,8 +14,8 @@ namespace AirCombat
 
         [SerializeField, Range(60f, 90f)] private float pitch = 75f;
 
-        private bool weaponLabPitchKeys;
-        public void UseWeaponLabPitchKeys(bool enabled) { weaponLabPitchKeys = enabled; }
+        private bool pitchHotkeysEnabled = true;
+        public void SetPitchHotkeysEnabled(bool enabled) { pitchHotkeysEnabled = enabled; }
 
         private float height;
         private Vector3 velocity;
@@ -35,9 +35,9 @@ namespace AirCombat
             if (target == null)
                 return;
 
-            // Weapon Lab keeps its scene-authored 65-degree pitch; Sandbox retains 1/2/3 presets.
+            // Scene can disable pitch keys while retaining its authored angle.
             var keyboard = Keyboard.current;
-            if (keyboard != null && Application.isFocused && !weaponLabPitchKeys)
+            if (keyboard != null && Application.isFocused && pitchHotkeysEnabled)
             {
                 if (keyboard.digit1Key.wasPressedThisFrame) pitch = 90f;
                 if (keyboard.digit2Key.wasPressedThisFrame) pitch = 75f;

@@ -30,7 +30,7 @@ namespace AirCombat
         private float cooldownRemaining;
         private float turnSign;
         private bool useBoost;
-        private WeaponLabBreakTurn breakTurn;
+        private BreakTurn breakTurn;
         private MissileProjectile incomingMissile;
         private bool missileBreakPending;
         private bool missileBreakOnDistance;
@@ -48,7 +48,7 @@ namespace AirCombat
             player = target;
         }
 
-        public void ConfigureBreakTurn(WeaponLabBreakTurn maneuver) { breakTurn = maneuver; }
+        public void ConfigureBreakTurn(BreakTurn maneuver) { breakTurn = maneuver; }
 
         public void NotifyIncomingMissile(MissileProjectile missile)
         {

@@ -1,13 +1,12 @@
 using UnityEngine;
-using UnityEngine.InputSystem;
 
 namespace AirCombat
 {
-    // Weapon Lab only: real 90-degree heading change and a short powered escape.
+    // Reusable real 90-degree heading change and short powered escape.
     // No teleport, sideways translation, invulnerability or separate cooldown.
     [DisallowMultipleComponent]
-    [DefaultExecutionOrder(-10)] // Player Q/E input before flight; enemy starts in evasion Tick.
-    public sealed class WeaponLabBreakTurn : MonoBehaviour
+    [DefaultExecutionOrder(-10)] // Visual bank runs before the later camera offset.
+    public sealed class BreakTurn : MonoBehaviour
     {
         [SerializeField, Min(.05f)] private float turnDuration = .55f;
         [SerializeField, Min(.05f)] private float burstDuration = 1f;
@@ -18,30 +17,25 @@ namespace AirCombat
         private AfterburnerVfx flames;
         private Transform visual;
         private Quaternion visualRestRotation;
-        private WeaponLabEnemy owner;
-        private bool playerControlled;
         private bool breaking;
         private int direction;
         private float elapsed;
 
         public bool IsBreaking => breaking;
 
-        public void Configure(Afterburner tank, Transform aircraftVisual, bool playerInput,
-            WeaponLabEnemy enemy = null)
+        public void Configure(Afterburner tank, Transform aircraftVisual)
         {
             boost = tank;
             flames = GetComponentInChildren<AfterburnerVfx>(true);
             visual = aircraftVisual;
             visualRestRotation = visual != null ? visual.localRotation : Quaternion.identity;
-            playerControlled = playerInput;
-            owner = enemy;
             CancelBreak();
         }
 
         public bool TryBegin(int side)
         {
             if (!isActiveAndEnabled || breaking || side == 0 || boost == null ||
-                (owner != null && owner.IsDown) || !boost.TryConsumeFullCharge()) return false;
+                !boost.TryConsumeFullCharge()) return false;
             direction = side < 0 ? -1 : 1;
             elapsed = 0f;
             breaking = true;
@@ -56,15 +50,6 @@ namespace AirCombat
             if (flames != null) flames.SetManeuverFlames(false);
         }
 
-        private void Update()
-        {
-            if (!playerControlled || !Application.isFocused) return;
-            var keyboard = Keyboard.current;
-            if (keyboard == null) return;
-            if (keyboard.qKey.wasPressedThisFrame) TryBegin(-1);
-            else if (keyboard.eKey.wasPressedThisFrame) TryBegin(1);
-        }
-
         // Called by the owning flight controller exactly once per frame, before its motor Tick.
         // Supply a variable yaw rate so the *real* plane reaches 90 degrees smoothly.
         // Normal WASD/AI steering is suppressed for the full one-second burst.
@@ -73,7 +58,6 @@ namespace AirCombat
             steer = 0f;
             yawRate = 0f;
             if (!breaking) return false;
-            if (owner != null && owner.IsDown) { CancelBreak(); return false; }
             if (dt <= 0f) return true;
 
             float turnTime = Mathf.Max(.05f, turnDuration);

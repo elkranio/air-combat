@@ -17,6 +17,7 @@ Top-down arcade air combat prototype. Unity 6.6 / URP.
 ## Documentation
 
 - [HANDOFF.md](HANDOFF.md) — active decisions and next steps; read first when switching chats.
+- [GAMEPLAY_ARCHITECTURE.md](GAMEPLAY_ARCHITECTURE.md) — active dependency map, reusable gameplay boundaries and migration sequence.
 - [ART_PIPELINE.md](ART_PIPELINE.md) — asset layout, generated outputs and cleanup rules.
 - [ART_AUTHORING.md](ART_AUTHORING.md) — **how to model, bake, import and evaluate art** (V18–V20 validated playbook).
 - [Tools/Unity/WEAPON_LAB.md](Tools/Unity/WEAPON_LAB.md) — isolated autocannon lab, build and controls.

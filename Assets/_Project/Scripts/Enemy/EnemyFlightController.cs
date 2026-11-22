@@ -35,13 +35,13 @@ namespace AirCombat
 
         public FlightState State { get; private set; }
         public float CurrentSpeed => motor != null ? motor.CurrentSpeed : cruiseSpeed;
-        public Transform Visual => visual; // Used by isolated Weapon Lab break-turn presentation.
+        public Transform Visual => visual; // Shared with optional flight maneuvers.
 
         private AircraftMotor motor;
-        private WeaponLabBreakTurn breakTurn;
+        private BreakTurn breakTurn;
 
-        // Runtime-only Lab injection; null in Sandbox.
-        public void ConfigureBreakTurn(WeaponLabBreakTurn maneuver) { breakTurn = maneuver; }
+        // Optional maneuver; null in scenes without break turns.
+        public void ConfigureBreakTurn(BreakTurn maneuver) { breakTurn = maneuver; }
         private float cruiseTime;
         private Quaternion visualRestRotation;
 

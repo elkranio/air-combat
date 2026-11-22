@@ -22,12 +22,12 @@ namespace AirCombat
         [SerializeField, Min(1f)] private float bankRate = 160f;
 
         public float CurrentSpeed => motor != null ? motor.CurrentSpeed : cruiseSpeed;
-        public Transform Visual => visual; // Used by isolated Weapon Lab break-turn presentation.
+        public Transform Visual => visual; // Shared with optional flight maneuvers.
         private AircraftMotor motor;
-        private WeaponLabBreakTurn breakTurn;
+        private BreakTurn breakTurn;
 
-        // Runtime-only Lab injection; null in Sandbox.
-        public void ConfigureBreakTurn(WeaponLabBreakTurn maneuver) { breakTurn = maneuver; }
+        // Optional maneuver; null when a scene does not equip it.
+        public void ConfigureBreakTurn(BreakTurn maneuver) { breakTurn = maneuver; }
 
         private void OnValidate()
         {
@@ -51,6 +51,13 @@ namespace AirCombat
                     - (keyboard.sKey.isPressed ? 1f : 0f);
                 steer = (keyboard.dKey.isPressed ? 1f : 0f)
                     - (keyboard.aKey.isPressed ? 1f : 0f);
+            }
+
+            // Input belongs to the pilot controller; BreakTurn also works with AI callers.
+            if (breakTurn != null && keyboard != null && Application.isFocused)
+            {
+                if (keyboard.qKey.wasPressedThisFrame) breakTurn.TryBegin(-1);
+                else if (keyboard.eKey.wasPressedThisFrame) breakTurn.TryBegin(1);
             }
 
             var targetSpeed = throttle > 0f ? maxSpeed : throttle < 0f ? minSpeed : cruiseSpeed;

@@ -27,14 +27,14 @@ namespace AirCombat
         private Vector3 spawnPosition;
         private Quaternion spawnRotation;
         private GUIStyle text;
-        private WeaponLabCameraLead cameraLead;
+        private CameraLookAhead cameraLead;
         private TopDownCameraFollow cameraFollow;
         private WeaponLabFreeAim aim;
         private TargetLock missileLock;
         private TargetLockHud missileHud;
         private WeaponLabMissileLauncher labMissileLauncher;
-        private WeaponLabBreakTurn playerBreakTurn;
-        private WeaponLabBreakTurn enemyBreakTurn;
+        private BreakTurn playerBreakTurn;
+        private BreakTurn enemyBreakTurn;
         private bool ownsPlayerBreakTurn;
         private bool ownsEnemyBreakTurn;
         private bool ownsMissileLauncher;
@@ -72,9 +72,9 @@ namespace AirCombat
             var viewCamera = cameraFollow != null ? cameraFollow.GetComponent<Camera>() : null;
             if (viewCamera == null)
             { Debug.LogError("Weapon Lab needs a TopDownCameraFollow camera.", this); enabled = false; return; }
-            cameraFollow.UseWeaponLabPitchKeys(true);
-            cameraLead = GetComponent<WeaponLabCameraLead>();
-            if (cameraLead == null) cameraLead = gameObject.AddComponent<WeaponLabCameraLead>();
+            cameraFollow.SetPitchHotkeysEnabled(false);
+            cameraLead = GetComponent<CameraLookAhead>();
+            if (cameraLead == null) cameraLead = gameObject.AddComponent<CameraLookAhead>();
             cameraLead.Configure(viewCamera, player, boost);
             cameraLead.enabled = true;
             aim = player.GetComponent<WeaponLabFreeAim>();
@@ -82,25 +82,25 @@ namespace AirCombat
             aim.Configure(viewCamera, player);
             aim.enabled = true;
             cannon.ConfigureAim(aim);
-            playerBreakTurn = player.GetComponent<WeaponLabBreakTurn>();
+            playerBreakTurn = player.GetComponent<BreakTurn>();
             if (playerBreakTurn == null)
             {
-                playerBreakTurn = player.gameObject.AddComponent<WeaponLabBreakTurn>();
+                playerBreakTurn = player.gameObject.AddComponent<BreakTurn>();
                 ownsPlayerBreakTurn = true;
             }
-            playerBreakTurn.Configure(boost, flight.Visual, true);
+            playerBreakTurn.Configure(boost, flight.Visual);
             flight.ConfigureBreakTurn(playerBreakTurn);
             if (fighter != null)
             {
                 var enemyFlight = fighter.GetComponent<EnemyFlightController>();
                 var enemyBoost = fighter.GetComponent<Afterburner>();
-                enemyBreakTurn = fighter.GetComponent<WeaponLabBreakTurn>();
+                enemyBreakTurn = fighter.GetComponent<BreakTurn>();
                 if (enemyBreakTurn == null)
                 {
-                    enemyBreakTurn = fighter.gameObject.AddComponent<WeaponLabBreakTurn>();
+                    enemyBreakTurn = fighter.gameObject.AddComponent<BreakTurn>();
                     ownsEnemyBreakTurn = true;
                 }
-                enemyBreakTurn.Configure(enemyBoost, enemyFlight != null ? enemyFlight.Visual : null, false, fighter);
+                enemyBreakTurn.Configure(enemyBoost, enemyFlight != null ? enemyFlight.Visual : null);
                 if (enemyFlight != null) enemyFlight.ConfigureBreakTurn(enemyBreakTurn);
                 var enemyEvasion = fighter.GetComponent<WeaponLabEvasion>();
                 if (enemyEvasion != null) enemyEvasion.ConfigureBreakTurn(enemyBreakTurn);
@@ -160,7 +160,7 @@ namespace AirCombat
 
         private void OnDisable()
         {
-            if (cameraFollow != null) cameraFollow.UseWeaponLabPitchKeys(false);
+            if (cameraFollow != null) cameraFollow.SetPitchHotkeysEnabled(true);
             if (cameraLead != null) cameraLead.enabled = false;
             if (aim != null) aim.enabled = false;
             cannon?.ConfigureMissileLock(null);

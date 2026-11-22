@@ -21,7 +21,7 @@ namespace AirCombat
         private bool wasActive;
         private bool maneuverFlames;
 
-        // Optional Lab-only visual override; never changes boost fuel or thrust.
+        // Optional maneuver visual override; never changes boost fuel or thrust.
         public void SetManeuverFlames(bool active) { maneuverFlames = active; }
 
         private void Awake()
