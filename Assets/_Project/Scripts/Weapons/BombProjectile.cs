@@ -40,8 +40,8 @@ namespace AirCombat
                 var shadow = gameObject.AddComponent<AircraftGroundShadow>();
                 // Same light vector as the aircraft. Fades/grows at altitude and
                 // contracts into a denser spot as the bomb approaches the ground.
-                shadow.Configure(groundShadow, 1.35f, 2.25f,
-                    .32f, .10f, 55f, .14f, new Vector2(-.48f, .69f), .055f);
+                shadow.Configure(groundShadow, 2.1f, 3.0f,
+                    .52f, .25f, 70f, .14f, new Vector2(-.24f, .35f), .032f);
             }
         }
 

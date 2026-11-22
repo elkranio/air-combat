@@ -647,6 +647,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::AirCombat.GroundAttackLabSession
   playerJet: {fileID: 161383144}
   cameraRig: {fileID: 1507333505}
+  shadowSourceMaterial: {fileID: 2100000, guid: 4ef5270b2173ae647a16740980a9861f, type: 2}
 --- !u!4 &1921309799
 Transform:
   m_ObjectHideFlags: 0

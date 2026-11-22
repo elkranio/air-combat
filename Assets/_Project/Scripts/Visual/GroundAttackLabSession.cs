@@ -11,6 +11,8 @@ namespace AirCombat
     {
         [SerializeField] private JetAssembly playerJet;
         [SerializeField] private CombatCameraRig cameraRig;
+        // Hard asset reference: do not rely on Shader.Find for an unreferenced HUD shader.
+        [SerializeField] private Material shadowSourceMaterial;
 
         private FlightController flight;
         private Afterburner afterburner;
@@ -83,20 +85,20 @@ namespace AirCombat
                 rig.Install();
                 depots[i] = rig;
             }
-            // Reuse the already-proven Sandbox soft-shadow mesh and shader.
-            // G3b creates it only on this scene's player; no prefab mutations.
-            var shadowShader = Shader.Find("AirCombat/SandboxEffect");
-            if (shadowShader != null)
+            // Reuse the proven vertex-color shadow mesh/shader, explicitly linked
+            // by this scene. An unreferenced Shader.Find may be stripped from builds.
+            if (shadowSourceMaterial != null && shadowSourceMaterial.shader != null)
             {
-                groundShadowMaterial = new Material(shadowShader) { name = "G3b soft ground shadow (runtime)" };
+                groundShadowMaterial = new Material(shadowSourceMaterial)
+                    { name = "G3c soft ground shadow (runtime)" };
                 var aircraftShadow = jet.GetComponent<AircraftGroundShadow>();
                 if (aircraftShadow == null) aircraftShadow = jet.AddComponent<AircraftGroundShadow>();
-                // GroundAttackLab sun is at (50, -35, 0). Offset by real altitude
-                // along the light direction, then broaden/fade the high shadow.
-                aircraftShadow.Configure(groundShadowMaterial, 8f, 11f,
-                    .25f, .14f, 72f, .12f, new Vector2(-.48f, .69f), .028f);
+                // At altitude 48, offset ~20m and an enlarged, legible soft shadow.
+                // Keep separation for height perception without losing the association.
+                aircraftShadow.Configure(groundShadowMaterial, 10.5f, 15f,
+                    .50f, .28f, 85f, .12f, new Vector2(-.24f, .35f), .025f);
             }
-            else Debug.LogWarning("G3b: missing SandboxEffect shadow shader.", this);
+            else Debug.LogError("G3c: GroundAttackLab has no shadow material assigned.", this);
 
             selection.EquipBombs();
             bombs = jet.GetComponent<BombRack>();

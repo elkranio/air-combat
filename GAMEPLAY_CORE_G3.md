@@ -49,3 +49,10 @@ G3a keeps the four-bomb burst, actual prediction, per-bomb independent gravity t
 - Sun-aligned `lightOffsetPerHeight=(-.48, +.69)` makes a plane at Y≈48 cast its soft shadow roughly **40 metres away along the ground**, not directly below, with height-dependent broadening/fading. Aircraft base `(width=8, length=11)`, alpha near/far `.25/.14`, fade height `72`, growth `.028`/metre; bomb base `(1.35, 2.25)`, alpha `.32/.10`, fade height `55`, growth `.055`/metre. Ground elevation `.12` for aircraft and `.14` for bombs to avoid z-fighting. Tunable numerically in `GroundAttackLabSession` and `BombProjectile`.
 - Shadows track current world positions (not the predicted impact). Bomb shadow separation reduces naturally during descent; both shadow meshes have no collider and never cast a second shadow. On detonation the projectile and its shadow disappear. Existing dark temporary **scorch marks after impact are separate**, unchanged for now.
 - Verify: no HUD brackets when selecting 4; distinct displaced soft aircraft shadow at height 48 and while turning; four separate bomb shadows moving along the ground and converging during descent; explosions/scorch still happen; Q/E, afterburner, cooldown, target HP unchanged; **Sandbox shadow regression**.
+
+## G3c — Shadow visibility fix
+
+- The G3b shadows existed but their 48m-altitude tint was very weak and the centre was displaced roughly 40m from the aircraft, making the projection hard to associate with the jet.
+- `GroundAttackLabSession` now serializes a reference to the existing Battlefield `Shadows.mat` (vertex-color URP unlit shader), then instantiates a scene-local copy. No unchecked `Shader.Find` dependency.
+- Aircraft shadow: 10.5 x 15 base footprint, 0.50 near / 0.28 far alpha, growth 0.025 per height, light offset (-0.24, 0.35) per height; at Y=48 offset is ~20m and alpha ~0.38. Bomb shadows use the same light offset, a smaller footprint, and alpha that increases as the bomb descends.
+- No changes to aiming, ballistics, bomb cooldown, ground damage, shared prefabs or Sandbox shadows. Check the aircraft shadow, bomb shadow travelling toward impact, and that both disappear appropriately.
