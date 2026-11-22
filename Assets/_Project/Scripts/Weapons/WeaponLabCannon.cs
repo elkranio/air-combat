@@ -39,18 +39,17 @@ namespace AirCombat
         private uint lastSelectionRevision;
         private Renderer[] flashes;
         private float[] flashUntil;
-        private float nextShot;
-        private float nextGaussReadyAt;
+        private Autocannon autocannon;
+        private GaussCannon gaussCannon;
         private bool gaussSelected;
         private bool missileSelected;
-        private int burstShotsRemaining;
         private int nextBarrel;
 
         public int FiredCount { get; private set; }
         public int HitCount { get; private set; }
         public string FireModeLabel => missileSelected ? "MISSILE" : gaussSelected
-            ? (Time.time >= nextGaussReadyAt ? "GAUSS READY" : "GAUSS " + (nextGaussReadyAt - Time.time).ToString("F1") + "s")
-            : "BURST " + Mathf.Max(2, burstSize);
+            ? (gaussCannon == null || gaussCannon.IsReady(Time.time) ? "GAUSS READY" : "GAUSS " + gaussCannon.RemainingCooldown(Time.time).ToString("F1") + "s")
+            : "BURST " + (autocannon != null ? autocannon.BurstSize : Mathf.Max(2, burstSize));
         public string AimModeLabel => missileSelected ? "CURSOR" :
             gaussSelected ? "FIXED" : freeAim != null ? freeAim.ModeLabel : "FIXED";
         public string SoundModeLabel => soundVariants != null && soundVariants.Length == 4 && soundVariants[1] != null
@@ -82,7 +81,7 @@ namespace AirCombat
             {
                 gaussSelected = component.Selected == WeaponMode.Gauss;
                 missileSelected = component.Selected == WeaponMode.Missile;
-                burstShotsRemaining = 0;
+                autocannon?.ClearPending();
             }
         }
 
@@ -156,6 +155,11 @@ namespace AirCombat
             gaussSight.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
             gaussSight.receiveShadows = false;
             gaussSight.enabled = false;
+
+            // Legacy serialized tuning stays on this scene component until prefab
+            // migration. Gameplay cadence is now owned by independent modules.
+            autocannon = new Autocannon(roundsPerSecond, burstSize, burstCooldown, Fire);
+            gaussCannon = new GaussCannon(gaussCooldown, FireGauss);
         }
 
         private void LateUpdate()
@@ -170,11 +174,9 @@ namespace AirCombat
                 lastSelectionRevision = selection.SelectionRevision;
                 // Any slot-key press (including reselect) cancels the remaining
                 // burst, while retaining its ordinary inter-burst cooldown.
-                if (burstShotsRemaining > 0)
-                    nextShot = Mathf.Max(nextShot, Time.time + Mathf.Max(.05f, burstCooldown));
+                autocannon?.CancelBurst(Time.time);
                 gaussSelected = selection.Selected == WeaponMode.Gauss;
                 missileSelected = selection.Selected == WeaponMode.Missile;
-                burstShotsRemaining = 0;
             }
             // TargetLock runs later in LateUpdate (order 200), so mode changes are immediate.
             if (missileLock != null) missileLock.SetLockingEnabled(missileSelected);
@@ -186,49 +188,21 @@ namespace AirCombat
 
             var mouse = Mouse.current;
             bool held = Application.isFocused && mouse != null && mouse.leftButton.isPressed;
-            bool burstActive = !gaussSelected && !missileSelected && burstShotsRemaining > 0;
+            bool burstActive = !gaussSelected && !missileSelected && autocannon != null && autocannon.HasPendingShots;
             if (freeAim != null) freeAim.Sample(!gaussSelected && !missileSelected, held || burstActive);
             if (missileSelected) return; // Lock evaluation only; launcher is a later atom.
             if (gaussSelected)
             {
-                // One shot per new click. Holding/reselecting never repeats or skips cooldown.
-                if (mouse != null && Application.isFocused && mouse.leftButton.wasPressedThisFrame &&
-                    Time.time >= nextGaussReadyAt)
-                {
-                    FireGauss();
-                    nextGaussReadyAt = Time.time + Mathf.Max(.1f, gaussCooldown);
-                }
+                gaussCannon?.Tick(mouse != null && Application.isFocused &&
+                    mouse.leftButton.wasPressedThisFrame, Time.time);
                 return;
             }
             if (tracerMaterial == null)
             {
-                burstShotsRemaining = 0;
-                nextShot = Time.time;
+                autocannon?.ResetMissingMaterial(Time.time);
                 return;
             }
-            // Releasing/re-pressing cannot bypass the interval between bursts.
-            if (burstShotsRemaining == 0 && held && Time.time >= nextShot)
-            {
-                burstShotsRemaining = Mathf.Max(2, burstSize);
-                nextShot = Time.time; // No backlog of instant shots after a long pause.
-            }
-            if (burstShotsRemaining == 0) return;
-
-            float interval = 1f / Mathf.Max(1f, roundsPerSecond);
-            // Limit catch-up after a frame hitch; never dump dozens of rounds at once.
-            int emitted = 0;
-            while (Time.time >= nextShot && emitted < 3)
-            {
-                nextShot += interval;
-                emitted++;
-                Fire();
-                if (--burstShotsRemaining == 0)
-                {
-                    nextShot = Time.time + Mathf.Max(.05f, burstCooldown);
-                    break;
-                }
-            }
-            if (emitted >= 3 && nextShot < Time.time) nextShot = Time.time + interval;
+            autocannon?.Tick(held, Time.time);
         }
 
         private void Fire()

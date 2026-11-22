@@ -1,6 +1,6 @@
 # Gameplay architecture — active migration map
 
-**Status:** A1 and A2 tested green (`c993e04`, `072b53e`); A3a weapon selection extraction pending Unity test. Incremental extraction from the tested WeaponLab prototype. No behavior redesign. The accepted combat scene is still `Assets/_Project/Scenes/WeaponLab.unity`, and `Sandbox.unity` remains the only build scene. Keep both intact while migrating. Source base: `master` `03e1781`.
+**Status:** A1/A2/A3a tested green (`c993e04`, `072b53e`, `c354c28`); A3b firing cadence extraction pending Unity test. Incremental extraction from the tested WeaponLab prototype. No behavior redesign. The accepted combat scene is still `Assets/_Project/Scenes/WeaponLab.unity`, and `Sandbox.unity` remains the only build scene. Keep both intact while migrating. Source base: `master` `03e1781`.
 
 ## Ownership and dependencies
 
@@ -8,7 +8,7 @@
 | --- | --- | --- |
 | Flight | `FlightController`, `EnemyFlightController`, `AircraftMotor`, `Afterburner`, `AfterburnerVfx`, **`BreakTurn`** | `WeaponLabSession` temporarily installs player/enemy `BreakTurn` and links controllers; `WeaponLabEvasion` is still test AI |
 | Camera | `TopDownCameraFollow`, **`CameraLookAhead`** | Session enables look-ahead and disables pitch hotkeys (Lab uses authored 65-degree pitch); Sandbox retains pitch keys |
-| Guns | `WeaponLabCannon`, `WeaponLabProjectile` (not migrated yet) | WeaponSelection now owns 1/2/3 and selection state; WeaponLabCannon still owns BURST/GAUSS cadence/audio/projectiles; extract these separately next |
+| Guns | `WeaponLabCannon`, `WeaponLabProjectile` (not migrated yet) | WeaponSelection owns 1/2/3; `Autocannon` / `GaussCannon` own independent firing schedules; legacy WeaponLabCannon still renders, plays audio and spawns Lab-specific projectiles |
 | Aim and lock | `BoundedAim`, `TargetLock`, `ITargetLockEligibility`, `TargetLockHud` | Aim and lock are scene-neutral; WeaponLabSession supplies target eligibility and timings; lock still supports one target |
 | Missiles | `MissileProjectile`, `MissileLauncher`, `WeaponLabMissileLauncher` | Shared projectile exists; Lab launcher adapts one-hit damage to 5-HP sparring enemy |
 | HUD | `FlightHud` (Sandbox), `TargetLockHud`, `EnemyIndicator` (Sandbox), Lab diagnostic `OnGUI` | Status bar and bearing arrow are not yet general scene prefabs; Radar is **not** specified |
@@ -34,7 +34,7 @@
 
 ## Remaining migration gates
 
-1. **Weapons A3b:** extract BURST/GAUSS firing, missile launch and projectile damage contracts without changing their behavior. A3a already moves selection/input to WeaponSelection.
+1. **Weapons A3c:** complete BURST/GAUSS projectile/VFX/audio ownership and then missile/damage contract extraction; A3b first moves independent firing schedules.
 2. **Scene prefabs:** after core components are verified, create player/enemy aircraft, combat camera rig and HUD prefabs; prefab references live in the prefab, scene references are injected by small composition code. No hard-coded scene paths for runtime gameplay.
 3. **HUD:** reuse Sandbox afterburner bar in WeaponLab, retain diagnostic overlay separately, verify camera viewport/pixelRect aim alignment. No radar until designed.
 4. **Blank scene proof:** assemble `GroundAttackLab` with shared prefabs and no duplicated gameplay scripts; only then prototype ground attacks.
@@ -54,3 +54,9 @@
 - The current `WeaponLabCannon` remains the authoritative BURST/GAUSS shooter for now. It reads the selected mode/revision, retains its shot cadence, sound, tracers, damage, aim, and switches the missile lock as before. The scene temporarily installs/wires selection at Play Mode entry. No change to Sandbox or serialized weapon references.
 - **Next A3b:** separate `Autocannon` and `GaussCannon` from the legacy combined component and define the missile launch/impact boundary. That step should only follow a local green for A3a, because it will touch projectile callbacks and firing order.
 - Test WeaponLab 1/2/3 switching and same-slot reselect during BURST, GAUSS holding/reclick, missile lock/launch and the two scenes' controls. No new prefabs, HUD or ground weapons in A3a.
+
+## Gameplay Core A3b — cadence modules (pending Unity test)
+
+- `Autocannon` owns burst scheduling and cancellation, `GaussCannon` owns single-click readiness. They take explicit frame time and an emission callback; no scene dependency or input polling.
+- Legacy `WeaponLabCannon` retains all serialized tuning, audio/VFX and projectile spawning until A3c, and delegates scheduling to the two new modules. The old scene GUID, launcher, aim, lock and Sandbox remain untouched.
+- Full migration and reusable prefab components are **not yet complete**. See [GAMEPLAY_CORE_A3B.md](GAMEPLAY_CORE_A3B.md) for exact regression steps.
