@@ -11,8 +11,6 @@ namespace AirCombat
     {
         [SerializeField] private JetAssembly playerJet;
         [SerializeField] private CombatCameraRig cameraRig;
-        // Hard asset reference: do not rely on Shader.Find for an unreferenced HUD shader.
-        [SerializeField] private Material shadowSourceMaterial;
 
         private FlightController flight;
         private Afterburner afterburner;
@@ -20,7 +18,6 @@ namespace AirCombat
         private WeaponController weapons;
         private BoundedAim aim;
         private BombRack bombs;
-        private Material groundShadowMaterial;
         private GroundDepotTarget[] depots;
         private Vector3 startPosition;
         private Quaternion startRotation;
@@ -85,25 +82,10 @@ namespace AirCombat
                 rig.Install();
                 depots[i] = rig;
             }
-            // Reuse the proven vertex-color shadow mesh/shader, explicitly linked
-            // by this scene. An unreferenced Shader.Find may be stripped from builds.
-            if (shadowSourceMaterial != null && shadowSourceMaterial.shader != null)
-            {
-                groundShadowMaterial = new Material(shadowSourceMaterial)
-                    { name = "G3c soft ground shadow (runtime)" };
-                var aircraftShadow = jet.GetComponent<AircraftGroundShadow>();
-                if (aircraftShadow == null) aircraftShadow = jet.AddComponent<AircraftGroundShadow>();
-                // At altitude 48, offset ~20m and an enlarged, legible soft shadow.
-                // Keep separation for height perception without losing the association.
-                aircraftShadow.Configure(groundShadowMaterial, 10.5f, 15f,
-                    .50f, .28f, 85f, .12f, new Vector2(-.24f, .35f), .025f);
-            }
-            else Debug.LogError("G3c: GroundAttackLab has no shadow material assigned.", this);
-
             selection.EquipBombs();
             bombs = jet.GetComponent<BombRack>();
             if (bombs == null) bombs = jet.AddComponent<BombRack>();
-            bombs.Configure(selection, flight, afterburner, breakTurn, groundShadowMaterial);
+            bombs.Configure(selection, flight, afterburner, breakTurn);
 
             startPosition = jet.transform.position;
             startRotation = jet.transform.rotation;
@@ -129,11 +111,6 @@ namespace AirCombat
             cameraRig.BindPlayer(playerJet.transform, afterburner, false);
             aim?.Configure(cameraRig.ViewCamera, playerJet.transform);
             cameraRig.Lock.ResetLock();
-        }
-
-        private void OnDestroy()
-        {
-            if (groundShadowMaterial != null) Destroy(groundShadowMaterial);
         }
 
         private void OnGUI()

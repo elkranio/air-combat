@@ -14,7 +14,7 @@ namespace AirCombat
         private float lifetime;
 
         public void Launch(Vector3 initialVelocity, Material shell, Material flash,
-            Material scorch, Material groundShadow = null)
+            Material scorch)
         {
             velocity = initialVelocity;
             flashMaterial = flash;
@@ -32,17 +32,8 @@ namespace AirCombat
             }
             var renderer = visual.GetComponent<MeshRenderer>();
             renderer.sharedMaterial = shell;
-            // The height-aware soft projection is the only bomb ground shadow.
-            renderer.shadowCastingMode = groundShadow != null
-                ? ShadowCastingMode.Off : ShadowCastingMode.On;
-            if (groundShadow != null)
-            {
-                var shadow = gameObject.AddComponent<AircraftGroundShadow>();
-                // Same light vector as the aircraft. Fades/grows at altitude and
-                // contracts into a denser spot as the bomb approaches the ground.
-                shadow.Configure(groundShadow, 2.1f, 3.0f,
-                    .52f, .25f, 70f, .14f, new Vector2(-.24f, .35f), .032f);
-            }
+            // The same directional light renders the bomb and aircraft shadows.
+            renderer.shadowCastingMode = ShadowCastingMode.On;
         }
 
         private void Update()

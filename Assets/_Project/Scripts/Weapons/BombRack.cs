@@ -21,7 +21,6 @@ namespace AirCombat
         private FlightController flight;
         private Afterburner boost;
         private BreakTurn breakTurn;
-        private Material groundShadowMaterial;
         private Material shellMaterial;
         private Material flashMaterial;
         private Material scorchMaterial;
@@ -38,7 +37,7 @@ namespace AirCombat
         public bool IsSelected => selection != null && selection.Selected == WeaponMode.Bomb;
 
         public void Configure(WeaponSelection weaponSelection, FlightController controller,
-            Afterburner afterburner, BreakTurn maneuver, Material shadowMaterial = null)
+            Afterburner afterburner, BreakTurn maneuver)
         {
             if (configured) return;
             configured = true;
@@ -46,7 +45,6 @@ namespace AirCombat
             flight = controller;
             boost = afterburner;
             breakTurn = maneuver;
-            groundShadowMaterial = shadowMaterial;
             var shader = Shader.Find("Universal Render Pipeline/Lit");
             shellMaterial = MakeMaterial(shader, "G3 Bomb shell", new Color(.22f,.28f,.27f));
             flashMaterial = MakeMaterial(shader, "G3 Explosion", new Color(1f,.57f,.16f));
@@ -104,7 +102,7 @@ namespace AirCombat
             go.transform.position = transform.TransformPoint(releaseOffset);
             go.transform.rotation = transform.rotation;
             go.AddComponent<BombProjectile>().Launch(velocity, shellMaterial, flashMaterial,
-                scorchMaterial, groundShadowMaterial);
+                scorchMaterial);
             FiredCount++;
         }
 

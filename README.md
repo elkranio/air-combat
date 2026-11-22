@@ -39,6 +39,7 @@ Assets/_Project/
 - [GAMEPLAY_CORE_G1.md](GAMEPLAY_CORE_G1.md) — independent GroundAttackLab flight scene.
 - [GAMEPLAY_CORE_G2.md](GAMEPLAY_CORE_G2.md) — modeled depot, Cycles roof normal/AO bake, and four scene prefab placements.
 - [GAMEPLAY_CORE_G3.md](GAMEPLAY_CORE_G3.md) — bomb burst, ballistics, indicator and per-part damage verification.
+- [LIGHTING_L1.md](LIGHTING_L1.md) — one shared URP lighting prefab, day/sunset/near-night, physically cast shadows, slope test and one-time install.
 - [Docs/Archive](Docs/Archive) — previous handoff, per-atom migration records, old Weapon Lab guide. Historical content may mention deleted scripts and scene names.
 
 ## Next

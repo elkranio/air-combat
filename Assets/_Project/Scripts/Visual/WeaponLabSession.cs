@@ -1,6 +1,5 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
-using UnityEngine.Rendering;
 using UnityEngine.Rendering.Universal;
 
 namespace AirCombat
@@ -10,7 +9,6 @@ namespace AirCombat
     [DefaultExecutionOrder(-50)]
     public sealed class WeaponLabSession : MonoBehaviour
     {
-        [SerializeField] private UniversalRenderPipelineAsset studyPipeline;
         [SerializeField] private Transform player;
         [SerializeField] private FlightController flight;
         [SerializeField] private Afterburner boost;
@@ -21,8 +19,6 @@ namespace AirCombat
         [SerializeField] private Material missileImpactMaterial;
         [SerializeField, Min(1000f)] private float mapHalfExtent = 6000f;
 
-        private RenderPipelineAsset originalPipeline;
-        private bool ownsOverride;
         private bool showUI = true;
         private Vector3 spawnPosition;
         private Quaternion spawnRotation;
@@ -48,7 +44,9 @@ namespace AirCombat
             FlightController controller, Afterburner afterburner,
             WeaponController weapon, Transform[] targets, float halfExtent)
         {
-            studyPipeline = pipeline;
+            // Retired editor generators still pass this argument; CombatLightingRig
+            // now owns the shared URP profile and scene illumination.
+            _ = pipeline;
             player = aircraft;
             flight = controller;
             boost = afterburner;
@@ -67,7 +65,7 @@ namespace AirCombat
         private void OnEnable()
         {
             if (!Application.isPlaying) return;
-            if (studyPipeline == null || player == null || flight == null || boost == null || cannon == null)
+            if (player == null || flight == null || boost == null || cannon == null)
             { Debug.LogError("Weapon Lab missing flight/weapon references.", this); enabled = false; return; }
             // Runtime-only input remapping; other scenes keep their existing pitch hotkeys.
             cameraFollow = FindFirstObjectByType<TopDownCameraFollow>();
@@ -161,9 +159,6 @@ namespace AirCombat
             }
             spawnPosition = player.position;
             spawnRotation = player.rotation;
-            originalPipeline = QualitySettings.renderPipeline;
-            QualitySettings.renderPipeline = studyPipeline;
-            ownsOverride = true;
             if (fighter == null) PlaceAllTargets();
         }
 
@@ -227,9 +222,6 @@ namespace AirCombat
             ownsMissileHud = ownsMissileLock = false;
             missileHud = null;
             missileLock = null;
-            if (ownsOverride && QualitySettings.renderPipeline == studyPipeline)
-                QualitySettings.renderPipeline = originalPipeline;
-            ownsOverride = false;
         }
 
         private void Update()
