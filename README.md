@@ -5,6 +5,7 @@ Arcade air combat prototype in Unity 6.6 / URP.
 ## Start here
 
 - **`Assets/_Project/Scenes/WeaponLab.unity`** — current air-to-air combat reference. It uses prefab instances of `PlayerJet`, `EnemyJet` and `CombatCameraRig`, with nested `Kestrel` chassis. This is the former tested `WeaponLabPrefabs.unity` (renamed in cleanup C1).
+- **`Assets/_Project/Scenes/GroundAttackLab.unity`** — G1 independent prefab flight/composition proof, after one-time Unity authoring. Flat training ground; no ground targets or ordnance yet.
 - **`Assets/_Project/Scenes/Sandbox.unity`** — legacy flight/missile comparison and the **only scene enabled in Build Settings**. Do not delete until the build entry point is deliberately migrated.
 - **`Assets/_Project/Scenes/FrontierStrata.unity`** — environment baseline (V17); not yet a combat scene.
 - `FrontierBakeTruth`, `FrontierPracticalBake`, `FrontierMesaPolish`, and `ScorchedFrontier` — visual experiments/reference scenes, deliberately retained pending separate art cleanup.
@@ -18,6 +19,7 @@ In **WeaponLab**: WASD steer/throttle, Space afterburner, Q/E Break Turn, left-c
 ```text
 Assets/_Project/
   Scenes/WeaponLab.unity          # Prefab-composed combat reference
+  Scenes/GroundAttackLab.unity   # Independent prefab flight proof (G1)
   Scenes/Sandbox.unity            # Only build scene, legacy comparison
   Prefabs/Aircraft/PlayerJet.prefab
   Prefabs/Aircraft/EnemyJet.prefab
@@ -34,8 +36,9 @@ Assets/_Project/
 - [ART_PIPELINE.md](ART_PIPELINE.md), [ART_AUTHORING.md](ART_AUTHORING.md) — active art pipeline.
 - [Tools/Unity/ARTLAB.md](Tools/Unity/ARTLAB.md) — retained visual experiments and commands.
 - [THIRD_PARTY_ASSETS.md](THIRD_PARTY_ASSETS.md) — asset licenses.
+- [GAMEPLAY_CORE_G1.md](GAMEPLAY_CORE_G1.md) — create and verify the independent GroundAttackLab flight scene.
 - [Docs/Archive](Docs/Archive) — previous handoff, per-atom migration records, old Weapon Lab guide. Historical content may mention deleted scripts and scene names.
 
 ## Next
 
-GroundAttackLab: build a **new** independent scene from the reusable prefab assets; keep the current WeaponLab as a regression reference. Add ground weapons, targets and HUD in separate approved atoms. Radar remains undesigned. Before any change, check `HANDOFF.md` and run WeaponLab + Sandbox regressions.
+G1: verify the independent prefab-based GroundAttackLab with basic flight and camera. After green, design one ground target + the first air-to-ground weapon in a separate atom. Radar remains undesigned. Before any change, check `HANDOFF.md` and run WeaponLab + Sandbox regressions.

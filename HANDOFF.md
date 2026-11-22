@@ -34,9 +34,11 @@ Approved gun/camera/maneuver numbers and the live dependency map are in [GAMEPLA
 
 **Do not run retired `ConfigureWeaponLab*` generators**; they previously rebuilt old passive-target setups. If a scene breaks, Git can recover `e60a5c3` without reconstructing from tools.
 
-## Next atom
+## G1 — GroundAttackLab (pending local Unity test)
 
-Build a fresh, independently composed `GroundAttackLab` from the approved prefabs. No new weapons at first; prove camera/flight/reference wiring without the old Lab session. After that, define ground attack (ground target contract, weapons, HUD) atom by atom. Radar is not specified. A chassis-level ScriptableObject can wait until a second airframe makes it worthwhile.
+G1 adds an independently composed `GroundAttackLab` scene from `PlayerJet` and `CombatCameraRig`, without `WeaponLabSession`. Scene authoring is under **Air Combat > Scenes > Create GroundAttackLab G1**, with a flat 12 km test plane, a directional light, and runtime `GroundAttackLabSession` binder. No enemy/ground target/ordnance; BURST/GAUSS shoot into empty space and MISSILE has no target. Authoring leaves WeaponLab and Sandbox untouched. [G1 notes](GAMEPLAY_CORE_G1.md).
+
+**Next after G1 green:** design one ground target and one air-to-ground weapon as separate atoms; do not invent a radar or loadout architecture. A chassis-level ScriptableObject can wait until a second airframe makes it worthwhile.
 
 ## Workflow
 

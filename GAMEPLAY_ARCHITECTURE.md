@@ -68,3 +68,7 @@ No new loadout framework, chassis ScriptableObject, scene router or modular HUD 
 Construct an independent `GroundAttackLab.unity` that instantiates the role and camera prefabs with explicit scene wiring. Start with a minimal playable flight loop before ground targets, payloads, HUD changes or any additional chassis. Decide a future replacement for Lab-only enemy/mission components only after that proof.
 
 For the detailed history and old setup commands see [Docs/Archive](Docs/Archive); historical guides are **not** current operating instructions.
+
+## G1 independent-scene composition (pending Unity check)
+
+`GroundAttackLabSession` is scene-specific binding for a `PlayerJet` prefab and `CombatCameraRig` prefab. It configures flight Break Turn, bounded aim, weapon selection, and camera follow/lead, with no `WeaponLabSession` or enemy dependencies. The scene contains only a non-damageable flat ground plane and light. This is a prefab reuse proof, not an approved ground-combat system. [G1 test checklist](GAMEPLAY_CORE_G1.md).
