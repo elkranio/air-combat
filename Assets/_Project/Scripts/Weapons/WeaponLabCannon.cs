@@ -155,7 +155,11 @@ namespace AirCombat
             LineRenderer halo = null;
             if (haloMaterial != null)
             {
-                halo = round.AddComponent<LineRenderer>();
+                // Unity allows only one LineRenderer per GameObject. Keep the soft
+                // halo on a child; the moving projectile owns both renderers.
+                var haloObject = new GameObject("Tracer Halo");
+                haloObject.transform.SetParent(round.transform, false);
+                halo = haloObject.AddComponent<LineRenderer>();
                 halo.sharedMaterial = haloMaterial;
                 halo.useWorldSpace = true;
                 halo.positionCount = 2;

@@ -126,12 +126,14 @@ public static class ConfigureWeaponLabAudio
             break;
         }
         int start = Math.Max(0, onset - Mathf.RoundToInt(.012f * frequency));
-        int length = Math.Min(Mathf.RoundToInt(.34f * frequency), original.Length - start);
+        // A source labeled "single" can contain a delayed reflection or even another transient.
+        // Keep the initial crack/body; do not import the late echo as a second gunshot.
+        int length = Math.Min(Mathf.RoundToInt(.15f * frequency), original.Length - start);
         if (length <= 0) throw new InvalidOperationException("WAV has no sound after onset: " + filename);
         float samplePeak = 0f;
         for (int i = 0; i < length; i++) samplePeak = Mathf.Max(samplePeak, Mathf.Abs(original[start + i]));
         float gain = samplePeak > 0f ? Mathf.Min(2.2f, .88f / samplePeak) : 1f;
-        int fade = Math.Min(length, Mathf.RoundToInt(.065f * frequency));
+        int fade = Math.Min(length, Mathf.RoundToInt(.045f * frequency));
 
         using (var stream = new MemoryStream())
         using (var writer = new BinaryWriter(stream))
