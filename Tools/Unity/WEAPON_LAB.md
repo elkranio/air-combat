@@ -129,3 +129,11 @@ V7 playtest: user decisively preferred **BURST** over CONTINUOUS because limited
 - **Shift+1/2/3** changes camera pitch in Weapon Lab (90/75/65 degrees); `1/2/3` still changes pitch normally in Sandbox. `V` keeps the autocannon free-aim preference while Gauss ignores it.
 
 **No scene upgrader and no audio importer.** Apply, compile, Play existing `WeaponLab.unity`. Compare precision, cooldown and satisfaction of landing one forward-aligned hit versus chasing with BURST. Note whether 300-unit projectile travel feels fair or merely sluggish. Unity playback and audio feel require local verification.
+
+## v9 — short forward sight and kinetic Gauss presentation
+
+After the V8 green push, the cyan glow projectile and sweeping synthetic "pew" were reported as too magical for a heavy electromagnetic gun. This is a presentation-only revision: damage (5), projectile velocity (300), max range (250), cooldown (1.5 s), fixed-forward aim and click-only trigger stay unchanged.
+
+- Selecting **2 GAUSS** displays a short, thin, red forward-pointing guide attached to the nose. It is always visible with Gauss selected (including cooldown), fades out at the tip, has no target snapping, no raycast to the enemy and no effect on collision. `gaussSightLength` defaults to 36 world units; adjustable on `WeaponLabCannon`. Switching to **1 BURST** hides it. This is an aim aid, not a physical laser weapon.
+- Replaced the bright cyan orb/2.6-wide halo with one **slim neutral-white kinetic tracer** (0.42 width, 22-unit tail instead of 16, no halo). The muzzle flash is short and warm-white instead of a long blue beam. Reworked the generated Gauss sound to a ~0.19 s metallic crack + low punch instead of a descending electronic chirp. Still temporary art/audio, for an immediate feel test.
+- **No scene generator, no new assets.** Compile and test in the current Weapon Lab: switch 1/2, turn the plane with Gauss selected, compare guide length and visibility at camera pitches, check projectile legibility, shoot while turning. No opponent/flight/terrain/autocannon changes.

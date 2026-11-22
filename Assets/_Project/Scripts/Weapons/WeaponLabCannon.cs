@@ -19,6 +19,7 @@ namespace AirCombat
         [SerializeField, Min(.1f)] private float gaussCooldown = 1.5f;
         [SerializeField, Min(1f)] private float gaussVelocity = 300f;
         [SerializeField, Min(1f)] private float gaussRange = 250f;
+        [SerializeField, Range(10f, 80f)] private float gaussSightLength = 36f;
         [SerializeField, Min(1f)] private float muzzleVelocity = 420f;
         [SerializeField, Min(1f)] private float maxRange = 430f;
         [SerializeField, Min(.1f)] private float tracerLength = 8f;
@@ -36,6 +37,7 @@ namespace AirCombat
         private AudioSource gaussVoice;
         private AudioClip gaussClip;
         private LineRenderer gaussFlash;
+        private LineRenderer gaussSight;
         private float gaussFlashUntil;
         private WeaponLabFreeAim freeAim;
         private Renderer[] flashes;
@@ -99,7 +101,7 @@ namespace AirCombat
             if (effectShader != null)
             {
                 haloMaterial = new Material(effectShader) { name = "Weapon Lab tracer halo (runtime)" };
-                gaussMaterial = new Material(effectShader) { name = "Weapon Lab Gauss cyan (runtime)" };
+                gaussMaterial = new Material(effectShader) { name = "Weapon Lab Gauss kinetic tracer (runtime)" };
             }
             else Debug.LogWarning("Weapon Lab effect shader missing; Gauss uses fallback tracer material.", this);
             flashes = new Renderer[2];
@@ -125,12 +127,29 @@ namespace AirCombat
             gaussFlash.useWorldSpace = false;
             gaussFlash.positionCount = 2;
             gaussFlash.SetPosition(0, new Vector3(0f, -.55f, 5.2f));
-            gaussFlash.SetPosition(1, new Vector3(0f, -.55f, 10.5f));
-            gaussFlash.widthMultiplier = 1.5f;
-            gaussFlash.numCapVertices = 2;
-            gaussFlash.startColor = gaussFlash.endColor = new Color(.4f, .95f, 1f, .85f);
+            gaussFlash.SetPosition(1, new Vector3(0f, -.55f, 8.2f));
+            gaussFlash.widthMultiplier = .65f;
+            gaussFlash.numCapVertices = 0;
+            gaussFlash.startColor = new Color(1f, .98f, .85f, .95f);
+            gaussFlash.endColor = new Color(.95f, .72f, .47f, .18f);
             gaussFlash.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
             gaussFlash.enabled = false;
+
+            // Short red forward sight, attached to the aircraft (not the mouse or the enemy).
+            var sightObject = new GameObject("Gauss Forward Sight");
+            sightObject.transform.SetParent(transform, false);
+            gaussSight = sightObject.AddComponent<LineRenderer>();
+            gaussSight.sharedMaterial = gaussMaterial != null ? gaussMaterial : tracerMaterial;
+            gaussSight.useWorldSpace = false;
+            gaussSight.positionCount = 2;
+            gaussSight.SetPosition(0, new Vector3(0f, -.55f, 6.2f));
+            gaussSight.widthMultiplier = .16f;
+            gaussSight.numCapVertices = 0;
+            gaussSight.startColor = new Color(1f, .35f, .27f, .78f);
+            gaussSight.endColor = new Color(1f, .3f, .23f, .05f);
+            gaussSight.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+            gaussSight.receiveShadows = false;
+            gaussSight.enabled = false;
         }
 
         private void LateUpdate()
@@ -174,6 +193,11 @@ namespace AirCombat
                     gaussSelected = true;
                     burstShotsRemaining = 0; // Switching weapons cancels the unfinished burst.
                 }
+            }
+            if (gaussSight != null)
+            {
+                gaussSight.SetPosition(1, new Vector3(0f, -.55f, 6.2f + gaussSightLength));
+                gaussSight.enabled = gaussSelected;
             }
             heat = Mathf.Max(0f, heat - coolingPerSecond * Time.deltaTime);
             if (overheated && heat <= restartHeat) overheated = false;
@@ -300,28 +324,16 @@ namespace AirCombat
             core.sharedMaterial = gaussMaterial != null ? gaussMaterial : tracerMaterial;
             core.useWorldSpace = true;
             core.positionCount = 2;
-            core.widthMultiplier = .75f;
-            core.numCapVertices = 2;
-            core.startColor = new Color(.25f, .85f, 1f, 1f);
-            core.endColor = new Color(.86f, 1f, 1f, 1f);
+            core.widthMultiplier = .42f;
+            core.numCapVertices = 0; // Sharp, elongated kinetic streak rather than a glowing orb.
+            core.startColor = new Color(.67f, .75f, .76f, .38f);
+            core.endColor = new Color(1f, .98f, .87f, 1f);
             core.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
             core.receiveShadows = false;
-            var glowObject = new GameObject("Gauss Halo");
-            glowObject.transform.SetParent(round.transform, false);
-            var glow = glowObject.AddComponent<LineRenderer>();
-            glow.sharedMaterial = gaussMaterial != null ? gaussMaterial : tracerMaterial;
-            glow.useWorldSpace = true;
-            glow.positionCount = 2;
-            glow.widthMultiplier = 2.6f;
-            glow.numCapVertices = 2;
-            glow.startColor = new Color(.12f, .67f, 1f, .13f);
-            glow.endColor = new Color(.55f, .95f, 1f, .27f);
-            glow.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
-            glow.receiveShadows = false;
             var projectile = round.AddComponent<WeaponLabProjectile>();
             projectile.Configure(direction, Mathf.Max(1f, gaussVelocity), Mathf.Max(1f, gaussRange),
-                16f, core, glow, this, 5);
-            gaussFlashUntil = Time.time + .11f;
+                22f, core, null, this, 5);
+            gaussFlashUntil = Time.time + .045f;
             if (gaussFlash != null) gaussFlash.enabled = true;
             if (gaussVoice != null && gaussClip != null)
             {
@@ -334,22 +346,26 @@ namespace AirCombat
             FiredCount++;
         }
 
-        // Temporary distinct magnetic crack/thump; generated once, no imported assets or scene edits.
+        // Short mechanical crack and low impact: no descending synth chirp/"pew".
+        // Deterministic noise, generated once at runtime; no audio imports required.
         private static AudioClip MakeGaussClip()
         {
             const int sampleRate = 24000;
-            int frames = Mathf.RoundToInt(.36f * sampleRate);
+            int frames = Mathf.RoundToInt(.19f * sampleRate);
             var samples = new float[frames];
+            uint noiseState = 0xA511E9B3u;
             for (int i = 0; i < frames; i++)
             {
                 float t = i / (float)sampleRate;
-                float envelope = Mathf.Min(1f, t * 160f) * Mathf.Exp(-11f * t);
-                float bass = Mathf.Sin(2f * Mathf.PI * (180f * t - 72f * t * t));
-                float zap = Mathf.Sin(2f * Mathf.PI * (1900f * t - 1450f * t * t));
-                float crack = Mathf.Sin(i * 2.399f) * Mathf.Exp(-48f * t);
-                samples[i] = Mathf.Clamp(envelope * (.72f * bass + .24f * zap + .3f * crack), -1f, 1f);
+                noiseState = unchecked(noiseState * 1664525u + 1013904223u);
+                float noise = ((noiseState >> 9) / 8388608f) * 2f - 1f;
+                float attack = Mathf.Min(1f, t * 1200f);
+                float crack = noise * Mathf.Exp(-105f * t);
+                float thump = Mathf.Sin(2f * Mathf.PI * (155f * t - 30f * t * t)) * Mathf.Exp(-27f * t);
+                float metal = Mathf.Sin(2f * Mathf.PI * 920f * t) * Mathf.Exp(-55f * t);
+                samples[i] = Mathf.Clamp(attack * (.63f * crack + .6f * thump + .16f * metal), -1f, 1f);
             }
-            var clip = AudioClip.Create("Weapon Lab Gauss (runtime)", frames, 1, sampleRate, false);
+            var clip = AudioClip.Create("Weapon Lab Gauss mechanical (runtime)", frames, 1, sampleRate, false);
             clip.SetData(samples, 0);
             return clip;
         }
