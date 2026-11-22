@@ -261,3 +261,7 @@ Current Q/E and view behavior remain the same after the code-only extraction: `B
 ## Gameplay Core A2 — targeting extraction (pending Unity test)
 
 `BoundedAim` now owns the same forward-sector cursor projection in `Scripts/Targeting/` (formerly `WeaponLabFreeAim`). Shared `TargetLock` also moves into `Targeting` with its original Unity GUID; the Lab wires the single opponent through `ITargetLockEligibility` so its down/respawn state still governs missile lock. BURST (+/-12°), GAUSS, MISSILE (1.0 s / 0.5 s), weapon switching, damage, camera, and enemy AI are unchanged. Sandbox lock uses its original serialized setup and timing. No scene regeneration. Regression: BURST held reticle and hits, Gauss 1-shot and cooldown, missile lock grace / death / reset, then Sandbox lock and pitch keys.
+
+## Gameplay Core A3a — reusable weapon selection (pending Unity test)
+
+`WeaponSelection` is now the shared 1/2/3 mode router, installed on the player at WeaponLab Play Mode entry. `WeaponLabCannon` remains the existing BURST/GAUSS shooting implementation and keeps its original timing and VFX; its mode changes and missile lock gating now read the selector. A same-mode key reselect still cancels any outstanding BURST shots and preserves the original cooldown. Verify quick 1/2/3 switching, reselect during BURST, Gauss click-only behavior and lock enabling in the same frame. No scene, prefab or Sandbox changes. Next atom A3b extracts separate firing components after local green.

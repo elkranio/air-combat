@@ -35,6 +35,8 @@ namespace AirCombat
         private float gaussFlashUntil;
         private BoundedAim freeAim;
         private TargetLock missileLock;
+        private WeaponSelection selection;
+        private uint lastSelectionRevision;
         private Renderer[] flashes;
         private float[] flashUntil;
         private float nextShot;
@@ -70,6 +72,19 @@ namespace AirCombat
 
         public void ConfigureAim(BoundedAim component) { freeAim = component; }
         public void ConfigureMissileLock(TargetLock component) { missileLock = component; }
+        public void ConfigureSelection(WeaponSelection component)
+        {
+            selection = component;
+            lastSelectionRevision = component != null ? component.SelectionRevision : 0;
+            // An existing component may be re-equipped when entering a new scene.
+            // Use the selected slot without changing cooldown or shot counters.
+            if (component != null)
+            {
+                gaussSelected = component.Selected == WeaponMode.Gauss;
+                missileSelected = component.Selected == WeaponMode.Missile;
+                burstShotsRemaining = 0;
+            }
+        }
 
         private void Awake()
         {
@@ -150,34 +165,16 @@ namespace AirCombat
                     if (flashes[i] != null) flashes[i].enabled = Time.time < flashUntil[i];
             if (gaussFlash != null) gaussFlash.enabled = Time.time < gaussFlashUntil;
 
-            var keyboard = Keyboard.current;
-            if (Application.isFocused && keyboard != null)
+            if (selection != null && lastSelectionRevision != selection.SelectionRevision)
             {
-                if (keyboard.digit1Key.wasPressedThisFrame)
-                {
-                    // Changing weapons must not reset an in-progress burst's cooldown.
-                    if (burstShotsRemaining > 0)
-                        nextShot = Mathf.Max(nextShot, Time.time + Mathf.Max(.05f, burstCooldown));
-                    gaussSelected = false;
-                    missileSelected = false;
-                    burstShotsRemaining = 0;
-                }
-                if (keyboard.digit2Key.wasPressedThisFrame)
-                {
-                    if (burstShotsRemaining > 0)
-                        nextShot = Mathf.Max(nextShot, Time.time + Mathf.Max(.05f, burstCooldown));
-                    gaussSelected = true;
-                    missileSelected = false;
-                    burstShotsRemaining = 0; // Switching weapons cancels the unfinished burst.
-                }
-                if (keyboard.digit3Key.wasPressedThisFrame)
-                {
-                    if (burstShotsRemaining > 0)
-                        nextShot = Mathf.Max(nextShot, Time.time + Mathf.Max(.05f, burstCooldown));
-                    gaussSelected = false;
-                    missileSelected = true;
-                    burstShotsRemaining = 0;
-                }
+                lastSelectionRevision = selection.SelectionRevision;
+                // Any slot-key press (including reselect) cancels the remaining
+                // burst, while retaining its ordinary inter-burst cooldown.
+                if (burstShotsRemaining > 0)
+                    nextShot = Mathf.Max(nextShot, Time.time + Mathf.Max(.05f, burstCooldown));
+                gaussSelected = selection.Selected == WeaponMode.Gauss;
+                missileSelected = selection.Selected == WeaponMode.Missile;
+                burstShotsRemaining = 0;
             }
             // TargetLock runs later in LateUpdate (order 200), so mode changes are immediate.
             if (missileLock != null) missileLock.SetLockingEnabled(missileSelected);

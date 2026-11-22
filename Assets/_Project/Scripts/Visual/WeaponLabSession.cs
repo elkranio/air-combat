@@ -33,6 +33,8 @@ namespace AirCombat
         private TargetLock missileLock;
         private TargetLockHud missileHud;
         private WeaponLabMissileLauncher labMissileLauncher;
+        private WeaponSelection weaponSelection;
+        private bool ownsWeaponSelection;
         private BreakTurn playerBreakTurn;
         private BreakTurn enemyBreakTurn;
         private bool ownsPlayerBreakTurn;
@@ -82,6 +84,13 @@ namespace AirCombat
             aim.Configure(viewCamera, player);
             aim.enabled = true;
             cannon.ConfigureAim(aim);
+            weaponSelection = player.GetComponent<WeaponSelection>();
+            if (weaponSelection == null)
+            {
+                weaponSelection = player.gameObject.AddComponent<WeaponSelection>();
+                ownsWeaponSelection = true;
+            }
+            cannon.ConfigureSelection(weaponSelection);
             playerBreakTurn = player.GetComponent<BreakTurn>();
             if (playerBreakTurn == null)
             {
@@ -164,6 +173,10 @@ namespace AirCombat
             if (cameraLead != null) cameraLead.enabled = false;
             if (aim != null) aim.enabled = false;
             cannon?.ConfigureMissileLock(null);
+            cannon?.ConfigureSelection(null);
+            if (ownsWeaponSelection && weaponSelection != null) Destroy(weaponSelection);
+            weaponSelection = null;
+            ownsWeaponSelection = false;
             flight?.ConfigureBreakTurn(null);
             if (fighter != null)
             {
