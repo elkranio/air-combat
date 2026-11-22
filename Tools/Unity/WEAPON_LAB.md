@@ -101,3 +101,9 @@ This adds `WeaponLabEvasion` and an ordinary `Afterburner` to the V4 opponent, r
 - Tweaks are serialized in `WeaponLabEvasion.cs`: notice range, probabilities, reaction window, escape duration and cooldown. All numbers are provisional. Shared `EnemyFlightController` checks an optional lab-only component; Sandbox opponents have none and retain their existing behavior.
 
 Test whether an approaching enemy sometimes remains easy, sometimes breaks away and sometimes lights its engines, without reading as a perfect dodge-bot. Compare `B ON`/`B OFF` under otherwise similar conditions; do not tune enemy gunfire or player HP yet.
+
+## v6 — guaranteed boost request on every evasive break (A/B test)
+
+Test result: V5 remains too easy to shoot down. This is an intentionally tiny V6 code-only change: when the enemy elects to break out of the sector, it **always requests afterburner** during the original first 70% of the break instead of rolling the former 40% chance. Existing fuel limits, charge/recharge, turning/banking, 72% evasion decision, reaction/cooldown, five HP and player free aim ±12° are unchanged. `B` still compares reactive AI ON/OFF. The HUD's `BOOST` means a boost *request*, not guaranteed thrust when the fuel tank is empty.
+
+**No scene generator, audio installer or asset rebuild.** Apply patch, let scripts compile, Play the existing `WeaponLab.unity`. Do not run the V0/V4/V5 upgraders for this code-only test. If even the boosted enemy is easy to kill, the next separate variable to test is turn rate/escape direction; do not mix that into this A/B.

@@ -13,7 +13,6 @@ namespace AirCombat
         [SerializeField, Min(15f)] private float noticeRange = 135f;
         [SerializeField, Range(0f, 20f)] private float sectorPadding = 2f;
         [SerializeField, Range(0f, 1f)] private float evadeChance = .72f;
-        [SerializeField, Range(0f, 1f)] private float afterburnerChance = .40f;
         [SerializeField, Min(.05f)] private float minReaction = .32f;
         [SerializeField, Min(.05f)] private float maxReaction = .52f;
         [SerializeField, Min(.1f)] private float minBreakDuration = .85f;
@@ -115,7 +114,7 @@ namespace AirCombat
                 ? (Random.value < .5f ? -1f : 1f) : Mathf.Sign(signedAngle);
             breakDuration = Random.Range(minBreakDuration, Mathf.Max(minBreakDuration, maxBreakDuration));
             breakRemaining = breakDuration;
-            useBoost = Random.value < afterburnerChance;
+            useBoost = true; // Every committed evasive break requests boost; fuel still limits it.
             state = State.Breaking;
             steer = turnSign * .95f;
             boost = useBoost;
