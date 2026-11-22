@@ -10,6 +10,7 @@ namespace AirCombat
         [SerializeField] private Afterburner afterburner;
         [SerializeField] private Material effectMaterial;
         [SerializeField] private Vector3[] nozzlePositions;
+        [SerializeField] private JetChassis chassis; // optional; old scenes keep nozzlePositions
         [SerializeField, Min(0.05f)] private float flameRadius = 0.42f;
         [SerializeField, Min(0.1f)] private float flameLength = 7f;
         [SerializeField] private bool playIgnitionSound;
@@ -23,17 +24,20 @@ namespace AirCombat
 
         // Optional maneuver visual override; never changes boost fuel or thrust.
         public void SetManeuverFlames(bool active) { maneuverFlames = active; }
+        public void BindChassis(JetChassis visualChassis) { chassis = visualChassis; }
 
         private void Awake()
         {
-            if (afterburner == null || effectMaterial == null || nozzlePositions == null) return;
+            bool useSockets = chassis != null && chassis.EngineLeft != null && chassis.EngineRight != null;
+            if (afterburner == null || effectMaterial == null || (!useSockets && nozzlePositions == null)) return;
             flameMesh = BuildFlame();
-            plumes = new Transform[nozzlePositions.Length];
+            plumes = new Transform[useSockets ? 2 : nozzlePositions.Length];
             for (int i = 0; i < plumes.Length; i++)
             {
                 var plume = new GameObject("Afterburner Flame " + i);
-                plume.transform.SetParent(transform, false);
-                plume.transform.localPosition = nozzlePositions[i];
+                var socket = useSockets ? (i == 0 ? chassis.EngineLeft : chassis.EngineRight) : null;
+                plume.transform.SetParent(socket != null ? socket : transform, false);
+                plume.transform.localPosition = socket != null ? Vector3.zero : nozzlePositions[i];
                 plume.AddComponent<MeshFilter>().sharedMesh = flameMesh;
                 var renderer = plume.AddComponent<MeshRenderer>();
                 renderer.sharedMaterial = effectMaterial;

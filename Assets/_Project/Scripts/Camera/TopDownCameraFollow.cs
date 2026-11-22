@@ -17,6 +17,19 @@ namespace AirCombat
         private bool pitchHotkeysEnabled = true;
         public void SetPitchHotkeysEnabled(bool enabled) { pitchHotkeysEnabled = enabled; }
 
+        // Supports camera prefabs whose target is intentionally unset in the asset.
+        public void Configure(Transform followTarget, Afterburner boost)
+        {
+            target = followTarget;
+            afterburner = boost;
+            if (target == null) return;
+            height = Mathf.Max(0.1f, transform.position.y - target.position.y);
+            unshakenFocus = target.position;
+            velocity = Vector3.zero;
+            shakeWeight = 0f;
+            ApplyPose(Vector3.zero);
+        }
+
         private float height;
         private Vector3 velocity;
         private Vector3 unshakenFocus;

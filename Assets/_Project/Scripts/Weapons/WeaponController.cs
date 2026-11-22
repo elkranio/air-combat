@@ -85,11 +85,17 @@ namespace AirCombat
             // this base class. Shot presentation belongs to independent emitters.
             burstEmitter = GetComponent<AutocannonEmitter>();
             if (burstEmitter == null) burstEmitter = gameObject.AddComponent<AutocannonEmitter>();
-            burstEmitter.Configure(tracerMaterial, shotClip, soundVariants, soundVolume,
-                muzzleVelocity, maxRange, tracerLength);
-
             gaussEmitter = GetComponent<GaussEmitter>();
             if (gaussEmitter == null) gaussEmitter = gameObject.AddComponent<GaussEmitter>();
+            // Prefab jets use chassis sockets. Legacy scene jets retain original offsets.
+            var assembly = GetComponent<JetAssembly>();
+            if (assembly != null && assembly.IsConfigured)
+            {
+                burstEmitter.BindChassis(assembly.Chassis);
+                gaussEmitter.BindChassis(assembly.Chassis);
+            }
+            burstEmitter.Configure(tracerMaterial, shotClip, soundVariants, soundVolume,
+                muzzleVelocity, maxRange, tracerLength);
             gaussEmitter.Configure(tracerMaterial, soundVolume,
                 gaussVelocity, gaussRange, gaussSightLength);
 

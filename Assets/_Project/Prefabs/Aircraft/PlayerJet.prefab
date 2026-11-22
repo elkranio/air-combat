@@ -1,0 +1,312 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1 &2842573960577416802
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 4252336086881465608}
+  - component: {fileID: 1524526755045885736}
+  - component: {fileID: 296407285340714469}
+  - component: {fileID: 6036662072039324412}
+  - component: {fileID: 3201370958015670425}
+  - component: {fileID: 6748336428752180392}
+  - component: {fileID: 925756056558440792}
+  - component: {fileID: 7591061402932717815}
+  - component: {fileID: 4501855048515277846}
+  m_Layer: 0
+  m_Name: PlayerJet
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &4252336086881465608
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2842573960577416802}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children:
+  - {fileID: 7132811968191042332}
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1524526755045885736
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2842573960577416802}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d1f1cb0e8dfe2d84ab4549656b268910, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::AirCombat.FlightController
+  visual: {fileID: 7132811968191042332}
+  afterburner: {fileID: 296407285340714469}
+  minSpeed: 25
+  cruiseSpeed: 45
+  maxSpeed: 70
+  acceleration: 35
+  deceleration: 45
+  turnRate: 125
+  maxBank: 40
+  bankRate: 160
+--- !u!114 &296407285340714469
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2842573960577416802}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8c8e7b7546c6f3c4bb9b3992c922f1bc, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::AirCombat.Afterburner
+  boostSpeed: 110
+  boostAcceleration: 180
+  capacitySeconds: 2
+  rechargeSeconds: 5
+  rechargeDelay: 0.4
+--- !u!114 &6036662072039324412
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2842573960577416802}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 18963f9f886843e0a94c3cf73b7be846, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::AirCombat.JetAssembly
+  visualRoot: {fileID: 7132811968191042332}
+  chassis: {fileID: 1318354429482483451}
+--- !u!114 &3201370958015670425
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2842573960577416802}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e2a3178a6e0f436e9b5aa1d04482d57e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::AirCombat.WeaponController
+  tracerMaterial: {fileID: 2100000, guid: 925da85cab297e040b35d238acf3fbd4, type: 2}
+  shotClip: {fileID: 8300000, guid: d8c85a4fb6a14f1f9a2fe74286dc49d6, type: 3}
+  soundVariants:
+  - {fileID: 8300000, guid: 265cf78389497894e88d74c7b1d17e7c, type: 3}
+  - {fileID: 8300000, guid: 1477b8989b57255438e22ded9bece768, type: 3}
+  - {fileID: 8300000, guid: 578907bc28860d0428f613a08053077d, type: 3}
+  - {fileID: 8300000, guid: 98c9c3d1370f0cb489a5c685195045ca, type: 3}
+  roundsPerSecond: 14
+  burstSize: 4
+  burstCooldown: 0.45
+  gaussCooldown: 1.5
+  gaussVelocity: 300
+  gaussRange: 250
+  gaussSightLength: 36
+  muzzleVelocity: 420
+  maxRange: 430
+  tracerLength: 8
+  soundVolume: 0.44
+--- !u!114 &6748336428752180392
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2842573960577416802}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3f03b7701d374fa49db08fa8bd3f91ab, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::AirCombat.BoundedAim
+  halfAngle: 12
+  guideReach: 165
+  minimumReticleDistance: 12
+  aimSmoothing: 0.065
+--- !u!114 &925756056558440792
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2842573960577416802}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 499d7d72a89042b5bcba98cae16fb5c5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::AirCombat.WeaponSelection
+  initialMode: 0
+--- !u!114 &7591061402932717815
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2842573960577416802}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 79469fc5b1674e8b91808eb7806ab3a7, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::AirCombat.BreakTurn
+  turnDuration: 0.55
+  burstDuration: 1
+  breakBankAngle: 70
+  turnAngle: 90
+--- !u!114 &4501855048515277846
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2842573960577416802}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: be8dab895ef84a4dba9132eb9d7dd2b3, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::AirCombat.GuidedMissileLauncher
+  launchOffset: 6
+  hitDamage: 5
+--- !u!1 &4218519665877420799
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 7132811968191042332}
+  - component: {fileID: 9100922285445500381}
+  m_Layer: 0
+  m_Name: JetVisual
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &7132811968191042332
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4218519665877420799}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: -0.0000038146973, y: -0.5293226, z: -0.5459504}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children:
+  - {fileID: 5525868971384843671}
+  m_Father: {fileID: 4252336086881465608}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &9100922285445500381
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4218519665877420799}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9dc1780d2b381354a846049dceaef6df, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::AirCombat.AfterburnerVfx
+  afterburner: {fileID: 296407285340714469}
+  effectMaterial: {fileID: 2100000, guid: 5930cc9d78e3a764ebb9c9b0fa80227d, type: 2}
+  nozzlePositions:
+  - {x: -1.3394725, y: -0.24384642, z: -4.9366693}
+  - {x: 1.3394802, y: -0.24384642, z: -4.9366693}
+  chassis: {fileID: 1318354429482483451}
+  flameRadius: 0.65122306
+  flameLength: 7
+  playIgnitionSound: 1
+  ignitionVolume: 0.18
+--- !u!1001 &5060750514747197400
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 7132811968191042332}
+    m_Modifications:
+    - target: {fileID: 762429172124412495, guid: 65a5ae05c6cb16e459d6c0455ae3835c, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 762429172124412495, guid: 65a5ae05c6cb16e459d6c0455ae3835c, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 762429172124412495, guid: 65a5ae05c6cb16e459d6c0455ae3835c, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 762429172124412495, guid: 65a5ae05c6cb16e459d6c0455ae3835c, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 762429172124412495, guid: 65a5ae05c6cb16e459d6c0455ae3835c, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 762429172124412495, guid: 65a5ae05c6cb16e459d6c0455ae3835c, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 762429172124412495, guid: 65a5ae05c6cb16e459d6c0455ae3835c, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 762429172124412495, guid: 65a5ae05c6cb16e459d6c0455ae3835c, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 762429172124412495, guid: 65a5ae05c6cb16e459d6c0455ae3835c, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 762429172124412495, guid: 65a5ae05c6cb16e459d6c0455ae3835c, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1903668746981946909, guid: 65a5ae05c6cb16e459d6c0455ae3835c, type: 3}
+      propertyPath: m_Name
+      value: Kestrel
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 65a5ae05c6cb16e459d6c0455ae3835c, type: 3}
+--- !u!114 &1318354429482483451 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 6084602351375382819, guid: 65a5ae05c6cb16e459d6c0455ae3835c, type: 3}
+  m_PrefabInstance: {fileID: 5060750514747197400}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ad29f764e5d34f348e312cf786a88f41, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::AirCombat.JetChassis
+--- !u!4 &5525868971384843671 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 762429172124412495, guid: 65a5ae05c6cb16e459d6c0455ae3835c, type: 3}
+  m_PrefabInstance: {fileID: 5060750514747197400}
+  m_PrefabAsset: {fileID: 0}

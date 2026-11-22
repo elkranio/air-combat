@@ -24,6 +24,9 @@ namespace AirCombat
         private int nextVoice;
         private int nextBarrel;
         private bool configured;
+        private JetChassis chassis;
+
+        public void BindChassis(JetChassis visualChassis) { chassis = visualChassis; }
 
         public void Configure(Material tracer, AudioClip fallbackShot, AudioClip[] clips,
             float volume, float velocity, float range, float length)
@@ -59,8 +62,9 @@ namespace AirCombat
             {
                 var go = GameObject.CreatePrimitive(PrimitiveType.Sphere);
                 go.name = i == 0 ? "Autocannon Muzzle L" : "Autocannon Muzzle R";
-                go.transform.SetParent(transform, false);
-                go.transform.localPosition = MuzzleOffset(i);
+                var socket = chassis != null ? (i == 0 ? chassis.AutocannonLeft : chassis.AutocannonRight) : null;
+                go.transform.SetParent(socket != null ? socket : transform, false);
+                go.transform.localPosition = socket != null ? Vector3.zero : MuzzleOffset(i);
                 go.transform.localScale = new Vector3(1.02f, 1.02f, 1.85f);
                 var collider = go.GetComponent<Collider>();
                 if (collider != null) Destroy(collider);
@@ -85,7 +89,8 @@ namespace AirCombat
         {
             int barrel = nextBarrel;
             nextBarrel = 1 - nextBarrel;
-            var muzzle = transform.TransformPoint(MuzzleOffset(barrel));
+            var socket = chassis != null ? (barrel == 0 ? chassis.AutocannonLeft : chassis.AutocannonRight) : null;
+            var muzzle = socket != null ? socket.position : transform.TransformPoint(MuzzleOffset(barrel));
             var round = new GameObject("Autocannon Round");
             round.transform.SetPositionAndRotation(muzzle, Quaternion.LookRotation(direction, Vector3.up));
             var line = round.AddComponent<LineRenderer>();

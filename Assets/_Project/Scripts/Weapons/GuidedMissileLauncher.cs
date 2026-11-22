@@ -12,6 +12,13 @@ namespace AirCombat
     {
         [SerializeField, Min(0f)] private float launchOffset = 6f;
         [SerializeField, Min(1)] private int hitDamage = 5;
+        private JetChassis chassis;
+
+        private void Awake()
+        {
+            var assembly = GetComponent<JetAssembly>();
+            chassis = assembly != null ? assembly.Chassis : null;
+        }
 
         private TargetLock targetLock;
         private MissileProjectile missilePrefab;
@@ -43,8 +50,10 @@ namespace AirCombat
             if (target == null || !target.gameObject.activeInHierarchy) return;
 
             // Same prefab, speed, turn budget and collision as the current Lab rocket.
+            var launchPoint = chassis != null ? chassis.MissileMount : null;
             activeMissile = Instantiate(missilePrefab,
-                transform.position + transform.forward * launchOffset, transform.rotation);
+                launchPoint != null ? launchPoint.position : transform.position + transform.forward * launchOffset,
+                transform.rotation);
             activeMissile.Launch(target, OnMissileHit);
             MissileLaunched?.Invoke(activeMissile);
             FiredCount++;
