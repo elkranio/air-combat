@@ -242,7 +242,7 @@ MonoBehaviour:
   firingTolerance: 9
   maxElevation: 70
   leadRefreshSeconds: 0.45
-  roundsPerBurst: 18
+  roundsPerBurst: 12
   roundsPerSecond: 18
   pauseBetweenBursts: 2.5
   muzzleSpeed: 240

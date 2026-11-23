@@ -17,7 +17,7 @@ namespace AirCombat
         [SerializeField, Min(.05f)] private float leadRefreshSeconds = .45f;
 
         [Header("Burst")]
-        [SerializeField, Range(1, 40)] private int roundsPerBurst = 18;
+        [SerializeField, Range(1, 40)] private int roundsPerBurst = 12;
         [SerializeField, Min(1f)] private float roundsPerSecond = 18f;
         [SerializeField, Min(0f)] private float pauseBetweenBursts = 2.5f;
         [SerializeField, Min(1f)] private float muzzleSpeed = 240f;
