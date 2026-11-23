@@ -8,7 +8,7 @@ Unity 6.6 / URP arcade air-combat prototype. **Committed scenes, prefabs and the
 2. [GAMEPLAY_COMBAT.md](GAMEPLAY_COMBAT.md) — controls, six weapon slots, ground threats, real gameplay numbers and tuning.
 3. [GAMEPLAY_ARCHITECTURE.md](GAMEPLAY_ARCHITECTURE.md) — ownership, scene wiring, prefab contracts and safe change boundaries.
 4. [ART_PIPELINE.md](ART_PIPELINE.md) / [ART_AUTHORING.md](ART_AUTHORING.md) — art assets and model/bake workflow; [LIGHTING_L1.md](LIGHTING_L1.md) — shared URP lighting; [THIRD_PARTY_ASSETS.md](THIRD_PARTY_ASSETS.md) — licenses.
-5. [HANDOFF.md](HANDOFF.md) tracks the **current E1c scale test**. [Docs/Art/ARCADE_DESERT_E1C.md](Docs/Art/ARCADE_DESERT_E1C.md) — one huge plateau, jet paint and Y78/110/150 comparison; [ARCADE_VISUAL_DIRECTION.md](Docs/Art/ARCADE_VISUAL_DIRECTION.md) — accepted style; [ENVIRONMENT_MAP_PLAN.md](Docs/Art/ENVIRONMENT_MAP_PLAN.md) — long-term map; [ARCADE_DESERT_E1B.md](Docs/Art/ARCADE_DESERT_E1B.md) — prior scale trial. [Docs/Art/CAMERA_C1_COMBAT.md](Docs/Art/CAMERA_C1_COMBAT.md) — accepted C3 camera.
+5. [Docs/Art/ARCADE_DESERT_E1D.md](Docs/Art/ARCADE_DESERT_E1D.md) — **active E1d shadow-range study** (separate future-main URP profile, 600m / 4 cascades). [HANDOFF.md](HANDOFF.md) — state and next tests; [ARCADE_DESERT_E1C.md](Docs/Art/ARCADE_DESERT_E1C.md) — plateau/altitude; [ARCADE_VISUAL_DIRECTION.md](Docs/Art/ARCADE_VISUAL_DIRECTION.md) — art direction; [ENVIRONMENT_MAP_PLAN.md](Docs/Art/ENVIRONMENT_MAP_PLAN.md) — map plan; [CAMERA_C1_COMBAT.md](Docs/Art/CAMERA_C1_COMBAT.md) — accepted C3 camera.
 
 ## Playable/reference scenes
 

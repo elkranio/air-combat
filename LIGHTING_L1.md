@@ -2,6 +2,8 @@
 
 **Already installed. Do not run the one-time L1 installer again.** The authoritative asset is `Assets/_Project/Prefabs/Environment/CombatLightingRig.prefab`, used by both `WeaponLab.unity` and `GroundAttackLab.unity`.
 
+**E1d map-only experiment (not a shared-light change):** `Assets/_Project/Settings/ArcadeCombat_URP.asset` is created via `Air Combat > Art > E1d - Install Long-Range Shadows` and assigned **only** to the `ArcadeDesertE1` scene instance of this rig. It raises shadow distance to 600 and cascades to 4; 4096 stays. This is a candidate for future main scenes, not approved production settings; see [E1d](Docs/Art/ARCADE_DESERT_E1D.md). The original shared profile stays at 230/2.
+
 ## Reuse in new combat scenes
 
 - Instance the **same prefab**. Its `CombatLightingRig` component owns the sun and runtime URP profile (`Assets/Settings/ScorchedFrontier_URP.asset`), not a separate script or scene-specific sun.
