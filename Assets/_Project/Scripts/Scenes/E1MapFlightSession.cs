@@ -3,7 +3,7 @@ using UnityEngine.InputSystem;
 
 namespace AirCombat
 {
-    // E1 art-map-only flight composition. No combat systems, encounter or mission logic.
+    // Main-map flight composition, with an optional independent encounter.
     // Keeps the original PlayerJet prefab unchanged and makes a large map flyable.
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-80)]
@@ -16,6 +16,7 @@ namespace AirCombat
         [SerializeField, Min(100f)] private float resetHalfExtent = 850f;
         [SerializeField] private bool altitudeComparison; // E1c only, disabled in other scenes.
 
+        private Air01Encounter encounter;
         private FlightController flight;
         private Afterburner boost;
         private BreakTurn breakTurn;
@@ -70,17 +71,22 @@ namespace AirCombat
             cameraRig.BindPlayer(player.transform, boost, false);
             cameraRig.BindLockTarget(null, 1f, .5f);
 
-            if (combatHud != null)
+            encounter = GetComponent<Air01Encounter>();
+            if (combatHud != null || encounter != null)
             {
                 var radar = player.GetComponent<AircraftRadar>();
                 if (radar == null) radar = player.gameObject.AddComponent<AircraftRadar>();
-                if (airContacts != null)
+                // Parked art trials are not hostile contacts during a live encounter.
+                if (encounter == null && airContacts != null)
                     foreach (var contact in airContacts) radar.Register(contact);
                 var health = player.GetComponent<PlayerHitPoints>();
                 if (health == null) health = player.gameObject.AddComponent<PlayerHitPoints>();
-                health.ResetHealth(); // HUD-01 preview only; no hitbox/combat on E1 yet.
-                combatHud.Bind(cameraRig.ViewCamera, boost, health, radar,
-                    player.GetComponent<PlayerWeaponTrigger>());
+                health.ResetHealth();
+                if (encounter != null)
+                    encounter.Bind(player, cameraRig.ViewCamera, radar, health, resetHalfExtent);
+                if (combatHud != null)
+                    combatHud.Bind(cameraRig.ViewCamera, boost, health, radar,
+                        player.GetComponent<PlayerWeaponTrigger>());
             }
         }
 
@@ -110,6 +116,7 @@ namespace AirCombat
             player.transform.position = p;
             // R/bounds reset should retain whichever height is being tested.
             spawnPosition.y = altitude;
+            encounter?.SetAltitude(altitude);
             SnapCamera(); // Prevent a large vertical camera sweep.
         }
 
@@ -118,6 +125,7 @@ namespace AirCombat
             breakTurn.CancelBreak();
             player.transform.SetPositionAndRotation(spawnPosition, spawnRotation);
             SnapCamera(); // No fast camera sweep across the 2 km map.
+            encounter?.Restart();
         }
 
         private void SnapCamera()

@@ -39,6 +39,9 @@ namespace AirCombat
         private int nextBarrel;
         private bool configured;
         private JetChassis chassis;
+        private Transform owner;
+
+        public void BindOwner(Transform aircraftRoot) { owner = aircraftRoot; }
 
         public void BindChassis(JetChassis visualChassis) { chassis = visualChassis; }
 
@@ -224,6 +227,7 @@ namespace AirCombat
             var projectile = round.AddComponent<BallisticProjectile>();
             projectile.Configure(direction, muzzleVelocity, maxRange, tracerLength, line, halo,
                 onHit, hitDamage, outer, head, arcadeHeadSize, impactFx);
+            projectile.BindOwner(owner);
             flashUntil[barrel] = Time.time + (arcadeVisuals ? arcadeFlashSeconds : .052f);
             flashes[barrel].enabled = true;
             var clip = soundVariants != null && soundVariants.Length == 4 && soundVariants[1] != null

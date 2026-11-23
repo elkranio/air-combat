@@ -20,6 +20,28 @@ namespace AirCombat
         private Action onHit;
         private Action<Vector3> onImpactFx;
         private int damage = 1;
+        private Transform owner;
+        private AircraftSide ownerSide;
+
+        // Only modular aircraft guns supply an owner. Legacy emitters retain
+        // their original target rules. Capture the side at emission time.
+        public void BindOwner(Transform source)
+        {
+            owner = source;
+            var side = source != null ? source.GetComponent<AircraftTeam>() : null;
+            ownerSide = side != null ? side.Side : AircraftSide.Unassigned;
+        }
+
+        public bool IsOwnedBy(Transform source) => source != null && owner == source;
+
+        private bool IsFriendly(DamageableTarget candidate)
+        {
+            if (owner != null && (candidate.transform == owner || candidate.transform.IsChildOf(owner)))
+                return true;
+            if (ownerSide == AircraftSide.Unassigned) return false;
+            var team = candidate.GetComponentInParent<AircraftTeam>();
+            return team != null && team.Side == ownerSide;
+        }
         private float distanceTravelled;
         private static readonly RaycastHit[] HitBuffer = new RaycastHit[16];
 
@@ -59,7 +81,7 @@ namespace AirCombat
             {
                 var candidate = HitBuffer[i].collider.GetComponentInParent<DamageableTarget>();
                 if (candidate == null || candidate.Domain != CombatTargetDomain.Air ||
-                    HitBuffer[i].distance >= best) continue;
+                    HitBuffer[i].distance >= best || IsFriendly(candidate)) continue;
                 nearest = candidate;
                 hitPoint = HitBuffer[i].point;
                 best = HitBuffer[i].distance;
