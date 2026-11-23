@@ -14,6 +14,7 @@ namespace AirCombat
         [SerializeField] private AntiAircraftTurret antiAircraft; // Optional scene instance (AA1).
         [SerializeField] private CombatHud combatHud; // Scene-linked reusable HUD prefab.
         [SerializeField] private SurfaceToAirLauncher missileTower; // SAM1 scene instance.
+        [SerializeField] private bool resetOutsideBounds = true;
 
         private FlightController flight;
         private Afterburner afterburner;
@@ -169,7 +170,7 @@ namespace AirCombat
             if (keyboard.hKey.wasPressedThisFrame) showDiagnostics = !showDiagnostics;
             if (keyboard.rKey.wasPressedThisFrame) ResetFlight();
             var position = playerJet.transform.position;
-            if (Mathf.Abs(position.x) > 5200f || Mathf.Abs(position.z) > 5200f)
+            if (resetOutsideBounds && (Mathf.Abs(position.x) > 5200f || Mathf.Abs(position.z) > 5200f))
                 ResetFlight();
         }
 

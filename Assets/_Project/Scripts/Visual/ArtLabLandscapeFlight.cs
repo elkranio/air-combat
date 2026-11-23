@@ -16,6 +16,7 @@ namespace AirCombat
         [SerializeField] private FlightController flight;
         [SerializeField] private Afterburner boost;
         [SerializeField] private float halfMap = 600f;
+        [SerializeField] private bool resetOutsideBounds = true;
         [SerializeField] private string studyTitle = "ArtLab v10 / Landscape flight";
         [SerializeField] private string cameraHelp;
         [SerializeField] private string controlsHelp;
@@ -73,7 +74,7 @@ namespace AirCombat
             float margin = Mathf.Max(180f, viewCamera.orthographicSize * viewCamera.aspect + 40f);
             float limit = Mathf.Max(40f, halfMap - margin);
             var p = player.position;
-            if (reset || Mathf.Abs(p.x) > limit || Mathf.Abs(p.z) > limit)
+            if (reset || (resetOutsideBounds && (Mathf.Abs(p.x) > limit || Mathf.Abs(p.z) > limit)))
                 player.SetPositionAndRotation(startPosition, startRotation);
         }
 

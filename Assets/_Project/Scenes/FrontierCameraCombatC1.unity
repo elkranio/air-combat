@@ -10086,6 +10086,7 @@ MonoBehaviour:
   flight: {fileID: 1472259049}
   boost: {fileID: 1472259047}
   halfMap: 600
+  resetOutsideBounds: 0
   studyTitle: C1b / COMBAT - CAMERA 50 DEG
   cameraHelp: 'C: camera A/B   J/K/L: 50/58/65   H: hide'
   controlsHelp: A/D steer  W boost  Q/E break  1-6 guns  LMB fire  R reset
@@ -13262,6 +13263,7 @@ MonoBehaviour:
   antiAircraft: {fileID: 1430448680}
   combatHud: {fileID: 1210358072}
   missileTower: {fileID: 1266414249}
+  resetOutsideBounds: 0
 --- !u!4 &2042560088
 Transform:
   m_ObjectHideFlags: 0
