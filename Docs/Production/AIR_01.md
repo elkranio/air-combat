@@ -19,3 +19,5 @@ Apply patch and import. Open and save `ArcadeDesertE1.unity`, outside Play Mode.
 ## Approved next atoms
 
 AIR-02: arcade attack passes (approach / attack / disengage), real shared weapon, reciprocal damage, no endless pursuit. AIR-03: delayed/probabilistic threat reactions and break-turn evasion; tune combat rhythm. AIR-04: hit/death juice, sparks, fire/smoke/explosion and possible falling wreck/debris. No VFX overhaul before combat is enjoyable.
+
+AIR-02 implementation and current test gate: [AIR-02](AIR_02.md).

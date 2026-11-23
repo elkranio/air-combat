@@ -143,7 +143,7 @@ namespace AirCombat
                     fontSize = 14,
                     normal = { textColor = Color.white }
                 };
-            GUI.Box(new Rect(12f, 12f, 390f, altitudeComparison ? 108f : 88f), GUIContent.none);
+            GUI.Box(new Rect(12f, 12f, 390f, (altitudeComparison ? 108f : 88f) + (encounter != null ? 22f : 0f)), GUIContent.none);
             GUI.Label(new Rect(22f, 17f, 365f, 22f),
                 altitudeComparison ? "B1a / BARRACKS APPROACH" : "E1 / MAP — FIRST FLIGHT", label);
             GUI.Label(new Rect(22f, 39f, 365f, 22f), "A/D turn  W boost  Q/E break  R reset  H hide", label);
@@ -152,6 +152,9 @@ namespace AirCombat
             if (altitudeComparison)
                 GUI.Label(new Rect(22f, 83f, 365f, 22f),
                     $"7 / 8 / 9 : Y78 / Y110 / Y150     Current Y {player.transform.position.y:F0}", label);
+            if (encounter != null)
+                GUI.Label(new Rect(22f, altitudeComparison ? 105f : 83f, 365f, 22f),
+                    encounter.DebugStatus, label);
         }
     }
 }

@@ -2,15 +2,15 @@ using UnityEngine;
 
 namespace AirCombat
 {
-    // Temporary one-fighter encounter. AIR-01 validates assembly, movement,
-    // spawn, radar and damage. No combat decisions or firing requests yet.
+    // One-fighter encounter: spawn, radar registration, health and reset.
+    // AIR-02 delegates flight/fire intent to the independent arcade pilot.
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-70)]
     public sealed class Air01Encounter : MonoBehaviour
     {
         [SerializeField] private GameObject enemyPrefab;
         [SerializeField, Min(1f)] private float spawnRadius = 550f;
-        [SerializeField, Min(0f)] private float initialBoostSeconds = .8f;
+        [SerializeField] private ArcadeFighterPilot.Settings attack = new ArcadeFighterPilot.Settings();
         private JetAssembly player;
         private Camera view;
         private AircraftRadar radar;
@@ -20,9 +20,18 @@ namespace AirCombat
         private PlayerHitPoints enemyHealth;
         private RadarAirContact contact;
         private float boundary;
-        private float spawnedAt;
-        private bool returning;
+        private ArcadeFighterPilot pilot;
+        private FlightController playerFlight;
+        private PlayerWeaponTrigger playerTrigger;
+        private Afterburner playerBoost;
+        private BreakTurn playerBreak;
         private bool bound;
+        private bool defeated;
+        private bool victory;
+        private GUIStyle resultStyle;
+
+        public string DebugStatus => defeated ? "DEFEAT" : victory ? "VICTORY" : pilot == null ? "NO ENEMY" :
+            $"Tiger {pilot.State} | HP {enemyHealth.Hp}/{enemyHealth.MaxHp} | passes {pilot.AttackPasses} | hits {pilot.HitCount}/{pilot.FiredCount}";
 
         public void Bind(JetAssembly aircraft, Camera camera, AircraftRadar sensor,
             PlayerHitPoints health, float halfExtent)
@@ -41,6 +50,10 @@ namespace AirCombat
             if (team == null) team = player.gameObject.AddComponent<AircraftTeam>();
             team.SetSide(AircraftSide.Player);
             playerHealth.InstallHitbox();
+            playerFlight = player.GetComponent<FlightController>();
+            playerTrigger = player.GetComponent<PlayerWeaponTrigger>();
+            playerBoost = player.GetComponent<Afterburner>();
+            playerBreak = player.GetComponent<BreakTurn>();
             bound = true;
         }
 
@@ -49,36 +62,37 @@ namespace AirCombat
         public void Restart()
         {
             if (!bound) return;
-            // Clear only this encounter's modular gun rounds; no previous sortie
-            // may hit the new fighter. This search runs once per reset, not per frame.
-            foreach (var round in FindObjectsByType<BallisticProjectile>(FindObjectsSortMode.None))
-            {
-                if (!round.IsOwnedBy(player.transform) && (enemy == null || !round.IsOwnedBy(enemy.transform))) continue;
-                round.gameObject.SetActive(false);
-                Destroy(round.gameObject);
-            }
+            // Cancel a committed player burst before clearing the previous fight.
+            if (playerTrigger != null) playerTrigger.enabled = false;
+            ClearRounds(player.transform);
             RemoveEnemy();
             playerHealth.ResetHealth();
+            if (playerFlight != null) playerFlight.enabled = true;
+            if (playerTrigger != null) playerTrigger.enabled = true;
+            defeated = victory = false;
             if (!TrySpawnPosition(out Vector3 position, out Quaternion rotation))
             {
                 Debug.LogError("AIR-01: no off-screen spawn on the requested ring within map bounds.", this);
                 return;
             }
             enemy = Instantiate(enemyPrefab, position, rotation);
-            enemy.name = "EF-01 Tiger / AIR-01";
+            enemy.name = "EF-01 Tiger / AIR-02";
             enemyFlight = enemy.GetComponent<CombatAircraftFlight>();
             enemyHealth = enemy.GetComponent<PlayerHitPoints>();
             contact = enemy.GetComponent<RadarAirContact>();
-            if (enemyFlight == null || enemyHealth == null || contact == null)
+            var enemyBoost = enemy.GetComponent<Afterburner>();
+            var gun = enemy.GetComponentInChildren<AutocannonWeapon>();
+            if (enemyFlight == null || enemyHealth == null || contact == null || enemyBoost == null ||
+                gun == null || !gun.isActiveAndEnabled || gun.Preset == null)
             {
-                Debug.LogError("AIR-01: incomplete fighter prefab.", enemy);
+                Debug.LogError("AIR-02: incomplete fighter prefab or AC-01 mount.", enemy);
                 RemoveEnemy();
                 return;
             }
             enemyHealth.InstallHitbox();
             radar.Register(contact);
-            spawnedAt = Time.time;
-            returning = false;
+            pilot = new ArcadeFighterPilot(enemyFlight, enemyBoost, gun, player.transform,
+                playerFlight, boundary, attack);
         }
 
         private bool TrySpawnPosition(out Vector3 position, out Quaternion rotation)
@@ -111,21 +125,61 @@ namespace AirCombat
 
         private void Update()
         {
-            if (enemy == null || enemyHealth == null) return;
-            if (!enemyHealth.IsAlive) { RemoveEnemy(); return; }
-            // Temporary fly-through target, not combat AI. Fly straight until
-            // near the edge, then return toward map centre with normal steering.
-            Vector3 p = enemy.transform.position;
-            float extent = Mathf.Max(Mathf.Abs(p.x), Mathf.Abs(p.z));
-            if (extent > boundary - 150f) returning = true;
-            else if (extent < boundary - 300f) returning = false;
-            float steer = 0f;
-            if (returning)
+            if (!bound || defeated || victory || enemy == null || enemyHealth == null) return;
+            if (!playerHealth.IsAlive)
             {
-                Vector3 inward = new Vector3(-p.x, 0f, -p.z);
-                steer = Mathf.Clamp(Vector3.SignedAngle(enemy.transform.forward, inward, Vector3.up) / 30f, -1f, 1f);
+                defeated = true;
+                pilot?.Stop(Time.time);
+                if (playerTrigger != null) playerTrigger.enabled = false;
+                if (playerFlight != null) playerFlight.enabled = false;
+                playerBreak?.CancelBreak();
+                playerBoost?.Tick(false, 0f);
+                ClearRounds(player.transform);
+                RemoveEnemy();
+                return;
             }
-            enemyFlight.SetPilotCommand(steer, !returning && Time.time - spawnedAt < initialBoostSeconds);
+            if (!enemyHealth.IsAlive)
+            {
+                victory = true;
+                RemoveEnemy();
+                return;
+            }
+            pilot?.TickFlight(Time.time);
+        }
+
+        private void LateUpdate()
+        {
+            if (bound && !defeated && !victory && playerHealth.IsAlive &&
+                enemyHealth != null && enemyHealth.IsAlive)
+                pilot?.TickFire(Time.time);
+        }
+
+        private void OnGUI()
+        {
+            if ((!victory && !defeated) || Event.current.type != EventType.Repaint) return;
+            if (resultStyle == null)
+                resultStyle = new GUIStyle(GUI.skin.label)
+                {
+                    alignment = TextAnchor.MiddleCenter,
+                    fontSize = 16,
+                    normal = { textColor = Color.white }
+                };
+            var rect = new Rect((Screen.width - 340f) * .5f, 12f, 340f, 30f);
+            GUI.Box(rect, GUIContent.none);
+            GUI.Label(rect, defeated ? "AIRCRAFT LOST — R TO RESTART" : "TIGER DOWN — R TO RESTART", resultStyle);
+        }
+
+        private static void ClearRounds(Transform owner)
+        {
+            if (owner == null) return;
+            // Once per reset or elimination, never a per-frame search. No stale
+            // hostile rounds or callbacks to a destroyed fighter survive the encounter.
+            foreach (var round in FindObjectsByType<BallisticProjectile>(FindObjectsSortMode.None))
+            {
+                if (!round.IsOwnedBy(owner)) continue;
+                round.gameObject.SetActive(false);
+                Destroy(round.gameObject);
+            }
         }
 
         public void SetAltitude(float y)
@@ -141,9 +195,12 @@ namespace AirCombat
             if (radar != null && contact != null) radar.Unregister(contact);
             if (enemy != null)
             {
+                pilot?.Stop(Time.time);
+                ClearRounds(enemy.transform);
                 enemy.SetActive(false);
                 Destroy(enemy);
             }
+            pilot = null;
             enemy = null;
             enemyHealth = null;
             enemyFlight = null;
