@@ -1,6 +1,6 @@
 # Environment map direction — approved plan (2026-11-23)
 
-**Status:** hybrid map direction approved. Rotating C1b caused combat readability issues and mild motion sickness; **C3 fixed-world 50° plus look-ahead is green**. **E1a flat ground direction chosen; E1 first-flight map (vivid 2×2 km, rocks + existing jet) is the active production atom.** Previous studies: V17/V19, V2A–V2A5, RockKitR1, BrokenVector, Unity Terrain T1.
+**Status:** stylized hybrid map direction approved; **C3 fixed-world 50° + heading look-ahead is green**. A persistent 2×2 km E1 map already exists. **E1b** is the current art upgrade: muted flat ground, three larger authored rock meshes, slightly raised jet, isolated aircraft paint and real shadows. See [E1b test](ARCADE_DESERT_E1B.md). Do not recreate the map. Older studies: V17/V19, V2A–V2A5, RockKitR1, BrokenVector, Unity Terrain T1.
 
 ## Target
 

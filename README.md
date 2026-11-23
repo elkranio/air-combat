@@ -8,7 +8,7 @@ Unity 6.6 / URP arcade air-combat prototype. **Committed scenes, prefabs and the
 2. [GAMEPLAY_COMBAT.md](GAMEPLAY_COMBAT.md) — controls, six weapon slots, ground threats, real gameplay numbers and tuning.
 3. [GAMEPLAY_ARCHITECTURE.md](GAMEPLAY_ARCHITECTURE.md) — ownership, scene wiring, prefab contracts and safe change boundaries.
 4. [ART_PIPELINE.md](ART_PIPELINE.md) / [ART_AUTHORING.md](ART_AUTHORING.md) — art assets and model/bake workflow; [LIGHTING_L1.md](LIGHTING_L1.md) — shared URP lighting; [THIRD_PARTY_ASSETS.md](THIRD_PARTY_ASSETS.md) — licenses.
-5. [Docs/Art/ENVIRONMENT_MAP_PLAN.md](Docs/Art/ENVIRONMENT_MAP_PLAN.md) — **approved hybrid map direction**. [Docs/Art/CAMERA_C1_COMBAT.md](Docs/Art/CAMERA_C1_COMBAT.md) — **accepted C3 fixed-world 50° + forward look-ahead**. [Docs/Art/ARCADE_VISUAL_DIRECTION.md](Docs/Art/ARCADE_VISUAL_DIRECTION.md) — **current stylized arcade art pillars**. [Docs/Art/ARCADE_DESERT_E1.md](Docs/Art/ARCADE_DESERT_E1.md) — **active E1 big-map first flight**. [ENVIRONMENT_ART_RESTART.md](ENVIRONMENT_ART_RESTART.md) keeps earlier art experiments.
+5. [Docs/Art/ENVIRONMENT_MAP_PLAN.md](Docs/Art/ENVIRONMENT_MAP_PLAN.md) — **approved hybrid map direction**. [Docs/Art/CAMERA_C1_COMBAT.md](Docs/Art/CAMERA_C1_COMBAT.md) — **accepted C3 fixed-world 50° + forward look-ahead**. [Docs/Art/ARCADE_VISUAL_DIRECTION.md](Docs/Art/ARCADE_VISUAL_DIRECTION.md) — **current stylized arcade art pillars**. [Docs/Art/ARCADE_DESERT_E1.md](Docs/Art/ARCADE_DESERT_E1.md) — **active E1 big-map first flight**. [ENVIRONMENT_ART_RESTART.md](ENVIRONMENT_ART_RESTART.md) keeps earlier art experiments. [Docs/Art/ARCADE_DESERT_E1B.md](Docs/Art/ARCADE_DESERT_E1B.md) — **current E1b muted ground / authored rock map pass** (one-time install on existing scene).
 
 ## Playable/reference scenes
 
@@ -21,7 +21,7 @@ Unity 6.6 / URP arcade air-combat prototype. **Committed scenes, prefabs and the
 | `Assets/_Project/Scenes/FrontierPracticalBake.unity` | V19 reference for readable roads/industrial layout/rocks; old art lighting |
 | `Assets/_Project/Scenes/FrontierCameraC1.unity` | C1 camera experiment (visually promising; 50° preferred) |
 | `Assets/_Project/Scenes/FrontierCameraCombatC1.unity` | **Accepted C3 camera combat regression**; six weapons, fighter, AA1/SAM1, radar and historical E1a `T` ground test. |
-| `Assets/_Project/Scenes/ArcadeDesertE1.unity` | **NEW map foundation after one-time E1 authoring**: vivid 2×2 km flat-color Unity Terrain, sparse rocks, existing PlayerJet, C3 and shared daylight/real shadows. Art/flight only. |
+| `Assets/_Project/Scenes/ArcadeDesertE1.unity` | **Active persistent 2×2 km E1 map**; E1b one-time upgrade supplies muted flat ground, 3 authored chunky rock models, scene-only Kestrel paint, Y78 flight and shared real shadows. No rebuild. |
 
 Controls in the two combat labs: **A/D** turn, **W** boost, **Q/E** emergency Break Turn, **R** reset, **H** diagnostics (hidden by default), **LMB** fire/commit. WeaponLab: **1–3**. GroundAttackLab: **1–6** (4 bombs, 5 cabrage rockets, 6 direct NURS). Sandbox retains its legacy W/S + Space controls.
 

@@ -1,6 +1,6 @@
 # E1 — Vibrant Desert first-flight map
 
-Status: **one-time scene builder prepared; Unity Play Mode art verdict pending**. This is the *beginning* of the large map, not a disposable material comparison. Read [visual style](ARCADE_VISUAL_DIRECTION.md) and [map plan](ENVIRONMENT_MAP_PLAN.md).
+Status: **original E1 scene created and committed**. The bright initial ground and small rocks described below were superseded for the active art pass by [E1b muted ground / chunky outcrops](ARCADE_DESERT_E1B.md). These are historical setup instructions: do **not** rerun the E1 builder on the existing map. Read [visual direction](ARCADE_VISUAL_DIRECTION.md) and [map plan](ENVIRONMENT_MAP_PLAN.md).
 
 ## Create once
 
