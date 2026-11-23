@@ -35,6 +35,9 @@ namespace AirCombat
             if (emitter == null) emitter = GetComponent<AutocannonEmitter>();
             if (emitter == null) emitter = gameObject.AddComponent<AutocannonEmitter>();
             emitter.BindChassis(aircraft.Chassis);
+            // Visual-only settings live on the variant, not player controls or AI.
+            emitter.ConfigureArcadeVisuals(preset.GlowMaterial, preset.ArcadeCoreWidth,
+                preset.ArcadeGlowWidth, preset.ArcadeGlowAlpha, preset.ArcadeFlashSeconds);
             emitter.Configure(preset.TracerMaterial, preset.FallbackShot,
                 preset.SoundVariants, preset.SoundVolume, preset.MuzzleVelocity,
                 preset.MaxRange, preset.TracerLength, preset.HitDamage);

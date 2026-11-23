@@ -19,6 +19,12 @@ namespace AirCombat
         [Header("Presentation")]
         [SerializeField] private Material tracerMaterial;
         [SerializeField, Min(.1f)] private float tracerLength = 8f;
+        [Header("Arcade tracer (optional, modular mounts only)")]
+        [SerializeField] private Material glowMaterial;
+        [SerializeField, Range(.3f, 1.5f)] private float arcadeCoreWidth = .72f;
+        [SerializeField, Range(1f, 5f)] private float arcadeGlowWidth = 2.8f;
+        [SerializeField, Range(.1f, 1f)] private float arcadeGlowAlpha = .64f;
+        [SerializeField, Range(.04f, .2f)] private float arcadeFlashSeconds = .085f;
         [SerializeField] private AudioClip fallbackShot;
         [SerializeField] private AudioClip[] soundVariants;
         [SerializeField, Range(.01f, 1f)] private float soundVolume = .3f;
@@ -32,6 +38,11 @@ namespace AirCombat
         public int HitDamage => hitDamage;
         public Material TracerMaterial => tracerMaterial;
         public float TracerLength => tracerLength;
+        public Material GlowMaterial => glowMaterial;
+        public float ArcadeCoreWidth => arcadeCoreWidth;
+        public float ArcadeGlowWidth => arcadeGlowWidth;
+        public float ArcadeGlowAlpha => arcadeGlowAlpha;
+        public float ArcadeFlashSeconds => arcadeFlashSeconds;
         public AudioClip FallbackShot => fallbackShot;
         public AudioClip[] SoundVariants => soundVariants;
         public float SoundVolume => soundVolume;

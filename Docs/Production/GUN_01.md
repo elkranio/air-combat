@@ -21,4 +21,4 @@
 - Verify L/R muzzle origin, existing four-shot cadence, cooldown, tracer/SFX and projectile lifetime. HUD-01 radar/HP/boost remain visible; static Tiger remains a visual/radar contact, **not yet a damageable dogfight target**.
 - Regression: `WeaponLab` old bounded BURST/GAUSS/A2A, `GroundAttackLab` all six slots, AA/SAM and radar, E1 Y78/7/8/9/R/boost. No other scene should accidentally receive an LMB adapter.
 
-**Next:** review fixed-forward gun feel. Only then integrate the visually accepted EF-01 Tiger with existing enemy flight/evasion/health and add one airborne combat encounter; do not implement a MechWarrior-style slots menu now.
+**Follow-up:** [GUN-02](GUN_02.md) adds preset-controlled glow and muzzle juice after fixed-forward fire was green. After HUD-02, integrate the visually accepted EF-01 Tiger with existing enemy flight/evasion/health and add one airborne combat encounter; do not implement a MechWarrior-style slots menu now.
