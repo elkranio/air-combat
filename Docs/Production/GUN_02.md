@@ -14,4 +14,6 @@
 3. Test a green/bright background later when available. If excessive, reduce `arcadeGlowAlpha` first, then `arcadeGlowWidth`; if too thin, raise them on `AC01_Burst.asset`. No scene or prefab rewiring / installer required.
 4. Regression-check `WeaponLab` legacy BURST, `GroundAttackLab` 1–6 and the HUD/radar. Unity compile / rendered look require local user verification.
 
+**GUN-02b follow-up:** [High-juice tracer pass](GUN_02B.md) strengthens the first halo after the Game-view screenshot showed little visible change. The GUN-02b Play Mode gate is pending.
+
 **Next after visual green:** HUD-02 — mouse-wheel cycling of equipped modular weapons, bottom-left combat status panel flush with left screen edge and about 20% shorter, selected weapon ID plus a readiness bar that empties on burst and refills over cooldown. Distinguish the *burst firing phase* from *cooldown*: the UI must not claim READY while rounds are still being emitted. Keep weapon UI independent of a particular weapon type; a second weapon can be equipped later without rewriting the HUD.

@@ -13,13 +13,20 @@ namespace AirCombat
         private float trailLength;
         private LineRenderer tracer;
         private LineRenderer glow;
+        private LineRenderer outerGlow;
+        private LineRenderer head;
+        private float headSize;
+        private Vector3 headSide;
         private Action onHit;
+        private Action<Vector3> onImpactFx;
         private int damage = 1;
         private float distanceTravelled;
         private static readonly RaycastHit[] HitBuffer = new RaycastHit[16];
 
         public void Configure(Vector3 forward, float velocity, float range, float length,
-            LineRenderer line, LineRenderer halo, Action hitCallback, int hitDamage = 1)
+            LineRenderer line, LineRenderer halo, Action hitCallback, int hitDamage = 1,
+            LineRenderer outer = null, LineRenderer leadingHead = null,
+            float leadingHeadSize = 0f, Action<Vector3> impactFx = null)
         {
             direction = forward.normalized;
             speed = velocity;
@@ -27,7 +34,13 @@ namespace AirCombat
             trailLength = length;
             tracer = line;
             glow = halo;
+            outerGlow = outer;
+            head = leadingHead;
+            headSize = leadingHeadSize;
+            headSide = Vector3.Cross(direction, Vector3.up).normalized;
+            if (headSide.sqrMagnitude < .01f) headSide = Vector3.right;
             onHit = hitCallback;
+            onImpactFx = impactFx;
             damage = Mathf.Max(1, hitDamage);
             Draw();
         }
@@ -54,7 +67,11 @@ namespace AirCombat
             if (nearest != null)
             {
                 transform.position = hitPoint;
-                if (nearest.ApplyDamage(hitPoint, damage)) onHit?.Invoke();
+                if (nearest.ApplyDamage(hitPoint, damage))
+                {
+                    onHit?.Invoke();
+                    onImpactFx?.Invoke(hitPoint);
+                }
                 Destroy(gameObject);
                 return;
             }
@@ -75,6 +92,16 @@ namespace AirCombat
             {
                 glow.SetPosition(0, tail);
                 glow.SetPosition(1, front);
+            }
+            if (outerGlow != null)
+            {
+                outerGlow.SetPosition(0, tail);
+                outerGlow.SetPosition(1, front);
+            }
+            if (head != null)
+            {
+                head.SetPosition(0, front - headSide * (headSize * .5f));
+                head.SetPosition(1, front + headSide * (headSize * .5f));
             }
         }
     }

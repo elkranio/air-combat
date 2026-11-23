@@ -22,9 +22,15 @@ MonoBehaviour:
   tracerMaterial: {fileID: 2100000, guid: 925da85cab297e040b35d238acf3fbd4, type: 2}
   tracerLength: 8
   glowMaterial: {fileID: 2100000, guid: 989e3d1d906e4c2793d1185f54f6413a, type: 2}
-  arcadeCoreWidth: 0.72
-  arcadeGlowWidth: 2.8
-  arcadeGlowAlpha: 0.64
+  arcadeCoreMaterial: {fileID: 2100000, guid: 6d26dc3d609a4e91bf92a56e7e0fa3a2, type: 2}
+  arcadeHeadMaterial: {fileID: 2100000, guid: a86c8cf0e6e34337bbfbf2c4b588713f, type: 2}
+  arcadeCoreWidth: 0.82
+  arcadeGlowWidth: 3.4
+  arcadeGlowAlpha: 0.9
+  arcadeOuterGlowWidth: 7.5
+  arcadeOuterGlowAlpha: 0.24
+  arcadeHeadSize: 2.4
+  arcadeImpactScale: 1
   arcadeFlashSeconds: 0.085
   fallbackShot: {fileID: 8300000, guid: d8c85a4fb6a14f1f9a2fe74286dc49d6, type: 3}
   soundVariants:

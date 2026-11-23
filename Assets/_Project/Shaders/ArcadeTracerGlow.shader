@@ -1,6 +1,11 @@
 Shader "AirCombat/ArcadeTracerGlow"
 {
-    Properties { _Tint ("Tint", Color) = (1, 1, 1, 1) }
+    Properties
+    {
+        _Tint ("Tint", Color) = (1, 1, 1, 1)
+        _Intensity ("Emission strength", Range(0, 8)) = 1
+        _Radial ("Radial disc (otherwise streak)", Range(0, 1)) = 0
+    }
     SubShader
     {
         Tags { "RenderPipeline"="UniversalPipeline" "Queue"="Transparent+20" "RenderType"="Transparent" }
@@ -18,6 +23,8 @@ Shader "AirCombat/ArcadeTracerGlow"
 
             CBUFFER_START(UnityPerMaterial)
                 half4 _Tint;
+                half _Intensity;
+                half _Radial;
             CBUFFER_END
 
             struct Attributes
@@ -42,13 +49,18 @@ Shader "AirCombat/ArcadeTracerGlow"
             }
             half4 Frag(Varyings i) : SV_Target
             {
-                // LineRenderer supplies width across UV.y: hot centre, soft edge.
-                // Additive blending makes this visible over sand/green terrain,
-                // with or without camera postprocessing bloom.
+                // Streak: fall off across width AND toward the trailing end.
+                // Bright head: radial falloff in both UV directions.
+                // Mesh UVs come directly from LineRenderer (no texture asset).
                 half across = saturate(1.0h - abs(i.uv.y * 2.0h - 1.0h));
-                half softness = across * across;
-                return half4(i.color.rgb * _Tint.rgb,
-                    i.color.a * _Tint.a * softness);
+                half widthFade = across * across * (3.0h - 2.0h * across);
+                half lengthFade = lerp(.45h, 1.0h, saturate(i.uv.x));
+                half2 discUv = (i.uv - .5h) * 2.0h;
+                half radial = saturate(1.0h - dot(discUv, discUv));
+                half radialFade = radial * radial;
+                half mask = lerp(widthFade * lengthFade, radialFade, _Radial);
+                return half4(i.color.rgb * _Tint.rgb * _Intensity,
+                    saturate(i.color.a * _Tint.a * mask));
             }
             ENDHLSL
         }

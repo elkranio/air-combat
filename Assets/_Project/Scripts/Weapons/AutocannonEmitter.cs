@@ -12,11 +12,17 @@ namespace AirCombat
         private const int VoiceCount = 5;
         private Material tracerMaterial;
         private Material haloMaterial;
+        private Material arcadeCoreMaterial;
+        private Material arcadeHeadMaterial;
         private bool ownsHaloMaterial;
         private bool arcadeVisuals;
-        private float arcadeCoreWidth = .72f;
-        private float arcadeGlowWidth = 2.8f;
-        private float arcadeGlowAlpha = .64f;
+        private float arcadeCoreWidth = .82f;
+        private float arcadeGlowWidth = 3.4f;
+        private float arcadeGlowAlpha = .90f;
+        private float arcadeOuterGlowWidth = 7.5f;
+        private float arcadeOuterGlowAlpha = .24f;
+        private float arcadeHeadSize = 2.4f;
+        private float arcadeImpactScale = 1f;
         private float arcadeFlashSeconds = .085f;
         private LineRenderer[] flashGlows;
         private AudioClip shotClip;
@@ -38,15 +44,23 @@ namespace AirCombat
 
         // Must be called before Configure. Optional: old lab emitters retain their
         // existing alpha-blended lines and flashes, without a style migration.
-        public void ConfigureArcadeVisuals(Material glow, float coreWidth,
-            float glowWidth, float glowAlpha, float flashSeconds)
+        public void ConfigureArcadeVisuals(Material glow, Material core, Material head,
+            float coreWidth, float glowWidth, float glowAlpha,
+            float outerWidth, float outerAlpha, float headSize,
+            float impactScale, float flashSeconds)
         {
             if (configured || glow == null) return;
             arcadeVisuals = true;
             haloMaterial = glow; // Asset-owned: do not Destroy this material.
+            arcadeCoreMaterial = core != null ? core : tracerMaterial;
+            arcadeHeadMaterial = head != null ? head : glow;
             arcadeCoreWidth = Mathf.Clamp(coreWidth, .3f, 1.5f);
             arcadeGlowWidth = Mathf.Max(arcadeCoreWidth, glowWidth);
             arcadeGlowAlpha = Mathf.Clamp01(glowAlpha);
+            arcadeOuterGlowWidth = Mathf.Max(arcadeGlowWidth, outerWidth);
+            arcadeOuterGlowAlpha = Mathf.Clamp01(outerAlpha);
+            arcadeHeadSize = Mathf.Clamp(headSize, .5f, 6f);
+            arcadeImpactScale = Mathf.Clamp(impactScale, 0f, 3f);
             arcadeFlashSeconds = Mathf.Clamp(flashSeconds, .04f, .2f);
         }
 
@@ -120,9 +134,9 @@ namespace AirCombat
                     flare.positionCount = 2;
                     flare.SetPosition(0, new Vector3(0f, 0f, -.25f));
                     flare.SetPosition(1, new Vector3(0f, 0f, 3.5f));
-                    flare.widthMultiplier = 2.3f;
-                    flare.startColor = new Color(1f, .78f, .36f, .75f);
-                    flare.endColor = new Color(1f, .92f, .62f, .05f);
+                    flare.widthMultiplier = 3.0f;
+                    flare.startColor = new Color(1f, .91f, .58f, .95f);
+                    flare.endColor = new Color(1f, .58f, .16f, .05f);
                     flare.shadowCastingMode = ShadowCastingMode.Off;
                     flare.receiveShadows = false;
                     flare.enabled = false;
@@ -155,14 +169,15 @@ namespace AirCombat
             var round = new GameObject("Autocannon Round");
             round.transform.SetPositionAndRotation(muzzle, Quaternion.LookRotation(direction, Vector3.up));
             var line = round.AddComponent<LineRenderer>();
-            line.sharedMaterial = tracerMaterial;
+            line.sharedMaterial = arcadeVisuals && arcadeCoreMaterial != null
+                ? arcadeCoreMaterial : tracerMaterial;
             line.useWorldSpace = true;
             line.positionCount = 2;
             line.widthMultiplier = arcadeVisuals ? arcadeCoreWidth : .50f;
             line.numCapVertices = 2;
-            line.startColor = arcadeVisuals ? new Color(1f, .52f, .13f, .9f)
+            line.startColor = arcadeVisuals ? new Color(1f, .64f, .19f, .82f)
                 : new Color(1f, .69f, .33f, 1f);
-            line.endColor = arcadeVisuals ? new Color(1f, 1f, .92f, 1f)
+            line.endColor = arcadeVisuals ? new Color(1f, 1f, .94f, 1f)
                 : new Color(1f, 1f, .90f, 1f);
             line.shadowCastingMode = ShadowCastingMode.Off;
             line.receiveShadows = false;
@@ -179,16 +194,36 @@ namespace AirCombat
                 halo.widthMultiplier = arcadeVisuals ? arcadeGlowWidth : 1.10f;
                 halo.numCapVertices = 2;
                 halo.startColor = arcadeVisuals
-                    ? new Color(1f, .36f, .09f, arcadeGlowAlpha * .35f)
+                    ? new Color(1f, .35f, .065f, arcadeGlowAlpha * .55f)
                     : new Color(1f, .55f, .17f, .13f);
                 halo.endColor = arcadeVisuals
-                    ? new Color(1f, .86f, .36f, arcadeGlowAlpha)
+                    ? new Color(1f, .82f, .23f, arcadeGlowAlpha)
                     : new Color(1f, .91f, .50f, .22f);
                 halo.shadowCastingMode = ShadowCastingMode.Off;
                 halo.receiveShadows = false;
             }
+            LineRenderer outer = null;
+            LineRenderer head = null;
+            if (arcadeVisuals)
+            {
+                // The far halo is broad but soft. It is not a solid neon cylinder.
+                outer = MakeAdditiveLine(round.transform, "Tracer / soft outer glow",
+                    haloMaterial, arcadeOuterGlowWidth);
+                outer.startColor = new Color(1f, .30f, .035f, arcadeOuterGlowAlpha * .45f);
+                outer.endColor = new Color(1f, .63f, .16f, arcadeOuterGlowAlpha);
+
+                // A small radial additive sprite rides the *front* of the round.
+                // Its line segment is updated by BallisticProjectile, so it has
+                // exactly the same lifetime and trajectory as the physical round.
+                head = MakeAdditiveLine(round.transform, "Tracer / hot leading head",
+                    arcadeHeadMaterial, arcadeHeadSize);
+                head.startColor = head.endColor = new Color(1f, .91f, .56f, 1f);
+            }
+            Action<Vector3> impactFx = null;
+            if (arcadeVisuals && arcadeImpactScale > 0f) impactFx = SpawnArcadeImpact;
             var projectile = round.AddComponent<BallisticProjectile>();
-            projectile.Configure(direction, muzzleVelocity, maxRange, tracerLength, line, halo, onHit, hitDamage);
+            projectile.Configure(direction, muzzleVelocity, maxRange, tracerLength, line, halo,
+                onHit, hitDamage, outer, head, arcadeHeadSize, impactFx);
             flashUntil[barrel] = Time.time + (arcadeVisuals ? arcadeFlashSeconds : .052f);
             flashes[barrel].enabled = true;
             var clip = soundVariants != null && soundVariants.Length == 4 && soundVariants[1] != null
@@ -202,6 +237,27 @@ namespace AirCombat
                 source.pitch = 0.97f + .014f * (firedCount % 5);
                 source.Play();
             }
+        }
+
+        private static LineRenderer MakeAdditiveLine(Transform parent, string name,
+            Material material, float width)
+        {
+            var child = new GameObject(name);
+            child.transform.SetParent(parent, false);
+            var result = child.AddComponent<LineRenderer>();
+            result.sharedMaterial = material;
+            result.useWorldSpace = true;
+            result.positionCount = 2;
+            result.widthMultiplier = width;
+            result.numCapVertices = 4;
+            result.shadowCastingMode = ShadowCastingMode.Off;
+            result.receiveShadows = false;
+            return result;
+        }
+
+        private void SpawnArcadeImpact(Vector3 position)
+        {
+            ArcadeCannonImpactFx.Spawn(position, haloMaterial, arcadeImpactScale);
         }
 
         private static Vector3 MuzzleOffset(int barrel)

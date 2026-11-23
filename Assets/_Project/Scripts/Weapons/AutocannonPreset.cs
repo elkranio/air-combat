@@ -21,9 +21,15 @@ namespace AirCombat
         [SerializeField, Min(.1f)] private float tracerLength = 8f;
         [Header("Arcade tracer (optional, modular mounts only)")]
         [SerializeField] private Material glowMaterial;
-        [SerializeField, Range(.3f, 1.5f)] private float arcadeCoreWidth = .72f;
-        [SerializeField, Range(1f, 5f)] private float arcadeGlowWidth = 2.8f;
-        [SerializeField, Range(.1f, 1f)] private float arcadeGlowAlpha = .64f;
+        [SerializeField] private Material arcadeCoreMaterial;
+        [SerializeField] private Material arcadeHeadMaterial;
+        [SerializeField, Range(.3f, 1.5f)] private float arcadeCoreWidth = .82f;
+        [SerializeField, Range(1f, 8f)] private float arcadeGlowWidth = 3.4f;
+        [SerializeField, Range(.1f, 1f)] private float arcadeGlowAlpha = .90f;
+        [SerializeField, Range(2f, 14f)] private float arcadeOuterGlowWidth = 7.5f;
+        [SerializeField, Range(0f, 1f)] private float arcadeOuterGlowAlpha = .24f;
+        [SerializeField, Range(.5f, 6f)] private float arcadeHeadSize = 2.4f;
+        [SerializeField, Range(0f, 3f)] private float arcadeImpactScale = 1.0f;
         [SerializeField, Range(.04f, .2f)] private float arcadeFlashSeconds = .085f;
         [SerializeField] private AudioClip fallbackShot;
         [SerializeField] private AudioClip[] soundVariants;
@@ -39,9 +45,15 @@ namespace AirCombat
         public Material TracerMaterial => tracerMaterial;
         public float TracerLength => tracerLength;
         public Material GlowMaterial => glowMaterial;
+        public Material ArcadeCoreMaterial => arcadeCoreMaterial;
+        public Material ArcadeHeadMaterial => arcadeHeadMaterial;
         public float ArcadeCoreWidth => arcadeCoreWidth;
         public float ArcadeGlowWidth => arcadeGlowWidth;
         public float ArcadeGlowAlpha => arcadeGlowAlpha;
+        public float ArcadeOuterGlowWidth => arcadeOuterGlowWidth;
+        public float ArcadeOuterGlowAlpha => arcadeOuterGlowAlpha;
+        public float ArcadeHeadSize => arcadeHeadSize;
+        public float ArcadeImpactScale => arcadeImpactScale;
         public float ArcadeFlashSeconds => arcadeFlashSeconds;
         public AudioClip FallbackShot => fallbackShot;
         public AudioClip[] SoundVariants => soundVariants;
