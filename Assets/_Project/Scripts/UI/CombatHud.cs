@@ -25,8 +25,8 @@ namespace AirCombat
                 return;
             }
             statusBar.Bind(camera, boost, hitPoints);
-            // C1b opts into heading-up only while its rotating camera is active.
-            // Existing labs have no study component, so their radar stays north-up.
+            // C2 uses the study camera axes for both the jet and world contacts.
+            // Existing combat labs have no study component: radar stays north-up.
             radarDisplay.Bind(sensor, camera != null
                 ? camera.GetComponent<HeadingLockedObliqueCameraStudy>() : null);
         }

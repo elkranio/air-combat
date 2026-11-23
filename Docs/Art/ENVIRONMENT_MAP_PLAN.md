@@ -1,6 +1,6 @@
 # Environment map direction — approved plan (2026-11-23)
 
-**Status:** map direction agreed. **C1 camera feel has passed its first visual check at 50°; C1b combat validation is next, then resume map E1.** This document supersedes the *next step* in `ENVIRONMENT_ART_RESTART.md`, not its useful history/lessons. Relevant older tests: V17/V19 practical-bake scene, V2A–V2A5 rejected geometry, rejected RockKitR1 and BrokenVector cliff pack, native Unity Terrain T1.
+**Status:** map direction agreed. C1 heading-locked 50° looks more volumetric, but C1b full-combat playtest revealed harder aiming/anticipation and mild motion sickness. **C2 fixed-world 50° is the active camera experiment; E1 map construction follows its verdict.** This document supersedes the *next step* in `ENVIRONMENT_ART_RESTART.md`, not its useful history/lessons. Relevant older tests: V17/V19 practical-bake scene, V2A–V2A5 rejected geometry, rejected RockKitR1 and BrokenVector cliff pack, native Unity Terrain T1.
 
 ## Target
 
@@ -23,9 +23,9 @@ Build **one cohesive, expandable, low-altitude arcade air-combat map**, beginnin
 
 ## Stages (one reviewed atom at a time)
 
-**C1 — camera feel (visual green, combat pending):** isolated copy of V19. Test a strong three-quarter *heading-locked* view, where the aircraft appears approximately upper-right on screen while turning rotates the camera/world. Compare against old north-up framing with a hotkey, same art and zoom. Keep or reject quickly, with a single Play Mode verdict. **C1b is a separate combat-validation atom, not a relighting/environment rebuild.** See below.
+**C1 — camera feel (visual green, combat usability problematic):** isolated copy of V19. Test a strong three-quarter *heading-locked* view, where the aircraft appears approximately upper-right on screen while turning rotates the camera/world. Compare against old north-up framing with a hotkey, same art and zoom. Keep or reject quickly, with a single Play Mode verdict. **C1b is a separate combat-validation atom, not a relighting/environment rebuild.** See below.
 
-**E1 — new map foundation, AFTER C1b:** create a separate persistent environment scene; start from the useful V19 composition principles (road + one industrial area + crisp rocks), not by mutating V19. Bring it onto `CombatLightingRig.prefab` and evaluate ground color/contrast, airplane scale, real shadows and open-space proportions. One representative region is the **start of the larger map**, not a throwaway demo.
+**E1 — new map foundation, AFTER C2:** create a separate persistent environment scene; start from the useful V19 composition principles (road + one industrial area + crisp rocks), not by mutating V19. Bring it onto `CombatLightingRig.prefab` and evaluate ground color/contrast, airplane scale, real shadows and open-space proportions. One representative region is the **start of the larger map**, not a throwaway demo.
 
 **E2 — ground/asset visual coherence:** improve ground surface definition, slope/surface transitions, ground-to-rock joins, compatible material roughness and texture detail at flight zoom. Compare to the V19 screenshot and reject mips/tiling that look like zoomed-up screenshots. Address shadow resolution/edge issues under controlled comparisons, not indiscriminate sharpening.
 
@@ -54,7 +54,7 @@ Build **one cohesive, expandable, low-altitude arcade air-combat map**, beginnin
 - Test 30–60 seconds of straight flight, sharp A/D turns, boost, around the refinery/rocks and near map limits. Watch camera rotation, perceived plane heading, forward visibility, sense of speed, shadows/occlusion and ability to choose a direction intuitively.
 - Verdict immediately: **keep / reject / revise only if one small obvious tweak could decide it**. If rejected, return to the familiar camera for E1 without detouring into a new camera subsystem. If accepted, adapt the design to combat HUD/targeting only *after* C1, with separate implementation and regression tests.
 
-**Observed result (2026-11-23):** First C1 Play Mode test is **visually promising/green**. The oblique, rotating view makes V19's older scenery look more volumetric, lively, and forgiving. User chose **50° pitch** as the best of the three. This is **not yet a gameplay approval**: combat weapons, mouse aiming, missile acquisition, radar and target visibility still need C1b. Only after that choose keep/adjust/reject and start E1.
+**Observed result (2026-11-23):** First C1 Play Mode test **visually promising**: rotating 3/4 makes the older map feel more volumetric, with **50° preferred**. C1b full combat then revealed reduced awareness/forward anticipation, harder combat and **mild but noticeable motion sickness** from world rotation. Aesthetic success is not permission to sacrifice comfort. See [C1b/C2 combat camera](CAMERA_C1_COMBAT.md).
 
 ## C1b — full combat feel with the 50° camera
 
@@ -62,6 +62,8 @@ Source: the **committed C1 camera study**, not a regenerated V19 and not a mutat
 
 Use unchanged, authored prefab gameplay from GroundAttackLab: 1 BURST, 2 GAUSS, 3 A2A locked missile, 4 four bombs, 5 cabrage NURS, 6 direct NURS; AA1 autocannon, SAM1 vertical missile, four damageable depot assemblies, 20 HP, fuel bar and radar. Add the established WeaponLab fighter **only to exercise real air-target lock**, not as a new enemy system. C1b creates a terrain mesh collider because V19 had none: otherwise ground weapons fall through the scenery. Camera tilts `J/K/L` = `50/58/65` in C1b (the `1–6` keys must stay reserved for weapons); **50 starts selected**, `C` compares heading-locked vs old north-up. Preserve old V19 lighting **for the camera/combat comparison**. The shared modern light belongs in E1, not this isolation test.
 
-Radar in C1b: **heading-up with a fixed upward aircraft triangle and contacts/range rings rotating relative to real aircraft heading**. When toggling C to the older north-up camera, the radar reverts to old north-up/rotating triangle. Regular combat labs without C1 remain unchanged.
+Originally, C1b's **heading-up** radar fixed the aircraft marker upward; this was wrong because the jet actually appears **upper-right**. **C2 corrects the radar to camera-relative**: aircraft marker, site positions and threat rings all follow the camera's actual yaw axes. Fixed yaw means the marker turns and world orientation is stable; heading-locked means the marker stays upper-right and the world rotates. Ordinary combat labs without C1 remain north-up.
 
-**Success test:** can the player visually read hostile fighter, lock, fire, see projectile impacts, dodge both AA and SAM, keep threats legible on radar while turning and feel the camera works for all six modes? Watch the temporary editor scene for spawn/terrain-collider problems and especially screen-space aiming. Do not rebalance weapons or rebuild the environment as part of the camera verdict.
+**C1b combat verdict:** visuals improved, combat readability worsened, mild motion sickness. Do not promote heading-locked camera to default.
+
+**C2 — fixed yaw 50° (current):** In the *existing committed* `FrontierCameraCombatC1.unity`, the default camera stays at **yaw -45° / pitch 50° / ortho 80** as the aircraft steers. The jet initially points upper-right and rotates naturally relative to the stable ground. Press **C** to compare against the old heading-locked camera at the **same 50°** (no simultaneous pitch change); `J/K/L` remain 50/58/65 for optional checks, `1–6` remain weapons. Radar is camera-relative. Everything else — six weapons, fighter, AA1, SAM1, HP, source art and lighting — stays the same. **No scene regeneration and no new hybrid camera mode.** Watch motion sickness, heading cues, cursor aim, threat anticipation and target framing. If C2 passes, use it as the camera baseline for E1; otherwise prefer a comfortable fixed camera and solve scenic impact via map design.

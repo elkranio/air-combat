@@ -3,7 +3,8 @@ using UnityEngine.InputSystem;
 
 namespace AirCombat
 {
-    // C1 only: camera-relative screen heading stays diagonal while the map turns.
+    // C1 art camera and C2 combat comparison. In C2 the default is fixed-yaw
+    // 50-degree 3/4: the aircraft turns on screen while the environment stays still.
     // FlightController and aircraft world heading are deliberately unchanged.
     [DisallowMultipleComponent]
     [RequireComponent(typeof(Camera))]
@@ -17,6 +18,7 @@ namespace AirCombat
         [SerializeField, Min(0.01f)] private float rotationSmoothTime = 0.14f;
 
         [SerializeField] private bool combatHotkeys;
+        // Art C1 retains its original mode; combat C1b starts with C2 fixed yaw.
         private bool headingLocked = true;
         private bool showHint = true;
         private float cameraHeight;
@@ -43,6 +45,9 @@ namespace AirCombat
                 return;
             }
 
+            // Don't regenerate the already committed C1b scene: combatHotkeys is
+            // its existing serialized flag. Art-only C1 still starts heading-locked.
+            headingLocked = !combatHotkeys;
             cameraHeight = Mathf.Max(20f, transform.position.y - aircraft.position.y);
             GetComponent<Camera>().orthographicSize = 80f;
             SnapPose();
@@ -53,6 +58,8 @@ namespace AirCombat
             var keys = Keyboard.current;
             if (keys == null || !Application.isFocused) return;
 
+            // Combat: C compares fixed-yaw 50 vs heading-locked 50, changing ONE
+            // variable (world rotation). Art-only C1 keeps its original comparison.
             if (keys.cKey.wasPressedThisFrame) headingLocked = !headingLocked;
             // C1 art-only scene uses 1/2/3. C1b combat uses 1-6 for
             // weapons, so switch pitch presets to J/K/L there.
@@ -77,10 +84,9 @@ namespace AirCombat
                 return;
             }
 
-            float targetYaw = headingLocked ? aircraft.eulerAngles.y - 45f : 0f;
-            float targetPitch = headingLocked ? obliquePitch : 65f;
-            Vector3 targetFocus = aircraft.position +
-                                  (headingLocked ? aircraft.forward * forwardLead : Vector3.zero);
+            float targetYaw = CameraYaw();
+            float targetPitch = CameraPitch();
+            Vector3 targetFocus = CameraFocus();
 
             yaw = Mathf.SmoothDampAngle(yaw, targetYaw, ref yawVelocity, rotationSmoothTime);
             pitch = Mathf.SmoothDamp(pitch, targetPitch, ref pitchVelocity, rotationSmoothTime);
@@ -90,15 +96,27 @@ namespace AirCombat
 
         private void SnapPose()
         {
-            yaw = headingLocked ? aircraft.eulerAngles.y - 45f : 0f;
-            pitch = headingLocked ? obliquePitch : 65f;
-            focus = aircraft.position +
-                    (headingLocked ? aircraft.forward * forwardLead : Vector3.zero);
+            yaw = CameraYaw();
+            pitch = CameraPitch();
+            focus = CameraFocus();
             focusVelocity = Vector3.zero;
             yawVelocity = 0f;
             pitchVelocity = 0f;
             ApplyPose();
         }
+
+        private float CameraYaw()
+        {
+            // C2: match the original upper-right aircraft presentation at spawn,
+            // but do not change this yaw as the jet turns. No surprise rotation.
+            if (combatHotkeys && !headingLocked) return -45f;
+            return headingLocked ? aircraft.eulerAngles.y - 45f : 0f;
+        }
+
+        private float CameraPitch() => (headingLocked || combatHotkeys) ? obliquePitch : 65f;
+
+        private Vector3 CameraFocus() => aircraft.position +
+            ((headingLocked || combatHotkeys) ? aircraft.forward * forwardLead : Vector3.zero);
 
         private void ApplyPose()
         {
@@ -120,10 +138,14 @@ namespace AirCombat
                 };
             float y = Mathf.Max(12f, Screen.height - 75f);
             GUI.Box(new Rect(12, y, 415, 63), GUIContent.none);
-            GUI.Label(new Rect(22, y + 5, 395, 22),
-                headingLocked ? $"C1 / HEADING LOCKED 3/4   pitch {obliquePitch:F0}" : "C1 / ORIGINAL NORTH-UP 65", style);
+            string mode = combatHotkeys
+                ? headingLocked ? $"C1b / ROTATING WORLD   pitch {obliquePitch:F0}"
+                    : $"C2 / FIXED WORLD   pitch {obliquePitch:F0}"
+                : headingLocked ? $"C1 / HEADING LOCKED 3/4   pitch {obliquePitch:F0}"
+                    : "C1 / ORIGINAL NORTH-UP 65";
+            GUI.Label(new Rect(22, y + 5, 395, 22), mode, style);
             GUI.Label(new Rect(22, y + 28, 395, 22),
-                combatHotkeys ? "C: camera   J/K/L: 50/58/65   1-6: weapons   H: hide"
+                combatHotkeys ? "C: fixed/rotating   J/K/L: 50/58/65   1-6: guns"
                     : "C: toggle camera   1/2/3: 50/58/65   H: hide", style);
         }
     }

@@ -4,9 +4,10 @@ using UnityEngine.UI;
 
 namespace AirCombat
 {
-    // Compact mesh-based radar: north-up in normal labs; heading-up in C1b.
-    // Everything is drawn within its own
-    // circular viewport; UI does not receive pointer events or affect the camera.
+    // Compact mesh-based radar. Ordinary labs are north-up. C2 projects all
+    // contacts and the jet icon into the study camera's actual horizontal axes,
+    // so it stays aligned with the viewport whether camera yaw rotates or not.
+    // Graphics are clipped to the disc; UI never intercepts the mouse.
     [DisallowMultipleComponent]
     public sealed class RadarHud : MaskableGraphic
     {
@@ -102,12 +103,11 @@ namespace AirCombat
             if (radar != null)
             {
                 float scale = radius / radar.Range;
-                bool headingUp = headingCamera != null && headingCamera.HeadingLocked;
-                Vector2 aircraftHeading = radar.Heading;
+                GetDisplayAxes(out Vector2 displayRight, out Vector2 displayUp);
                 for (int i = 0; i < detected.Count; i++)
                 {
                     var contact = detected[i];
-                    Vector2 at = center + RelativeOnDisplay(contact.RelativePosition, aircraftHeading, headingUp) * scale;
+                    Vector2 at = center + RelativeOnDisplay(contact.RelativePosition, displayRight, displayUp) * scale;
                     float threatRadius = contact.ThreatRadius * scale;
                     if (contact.Kind == RadarContactType.GroundDefense && threatRadius > .1f)
                         ClippedThreatRing(mesh, at, threatRadius, center, radius);
@@ -115,7 +115,7 @@ namespace AirCombat
                 for (int i = 0; i < detected.Count; i++)
                 {
                     var contact = detected[i];
-                    Vector2 at = center + RelativeOnDisplay(contact.RelativePosition, aircraftHeading, headingUp) * scale;
+                    Vector2 at = center + RelativeOnDisplay(contact.RelativePosition, displayRight, displayUp) * scale;
                     if (contact.Kind == RadarContactType.IncomingMissile)
                     {
                         // Inbound missile is visibly different from a ground-site dot.
@@ -139,21 +139,37 @@ namespace AirCombat
                 }
             }
 
-            // In heading-up mode the jet is always up and the *world contacts*
-            // rotate around it. Press C (north-up) to recover the old behavior.
-            Vector2 heading = headingCamera != null && headingCamera.HeadingLocked
-                ? Vector2.up : radar != null ? radar.Heading : Vector2.up;
+            // Render the aircraft icon in precisely the same axes as contacts.
+            // Fixed-yaw C2 => icon rotates while map stays still; C1b rotating
+            // view => icon stays roughly upper-right and world contacts rotate.
+            GetDisplayAxes(out Vector2 iconRight, out Vector2 iconUp);
+            Vector2 heading = radar != null
+                ? RelativeOnDisplay(radar.Heading, iconRight, iconUp).normalized
+                : Vector2.up;
             Vector2 right = new Vector2(heading.y, -heading.x);
             Disk(mesh, center, 5.7f, new Color(.46f, .98f, .91f, .13f));
             Triangle(mesh, center + heading * 7f, center - heading * 5f - right * 4.2f,
                 center - heading * 5f + right * 4.2f, new Color(.68f, 1f, .94f, .98f));
         }
 
-        private static Vector2 RelativeOnDisplay(Vector2 offset, Vector2 heading, bool headingUp)
+        private void GetDisplayAxes(out Vector2 right, out Vector2 up)
         {
-            if (!headingUp) return offset; // +X east / +Y world north.
-            Vector2 right = new Vector2(heading.y, -heading.x);
-            return new Vector2(Vector2.Dot(offset, right), Vector2.Dot(offset, heading));
+            right = Vector2.right;
+            up = Vector2.up;
+            if (headingCamera == null) return; // Other labs stay north-up.
+
+            // Project the actual camera screen axes onto the horizontal X/Z
+            // plane; normalize away pitch foreshortening for a readable 2D radar.
+            // No guesswork about heading lock, smoothing or fixed yaw offset.
+            Vector3 cameraRight = headingCamera.transform.right;
+            Vector3 cameraUp = headingCamera.transform.up;
+            right = new Vector2(cameraRight.x, cameraRight.z).normalized;
+            up = new Vector2(cameraUp.x, cameraUp.z).normalized;
+        }
+
+        private static Vector2 RelativeOnDisplay(Vector2 offset, Vector2 right, Vector2 up)
+        {
+            return new Vector2(Vector2.Dot(offset, right), Vector2.Dot(offset, up));
         }
 
         private void ClippedThreatRing(VertexHelper mesh, Vector2 at, float threatRadius,
