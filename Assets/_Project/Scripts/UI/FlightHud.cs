@@ -3,7 +3,7 @@ using UnityEngine.UI;
 
 namespace AirCombat
 {
-    // Persistent aircraft instruments live outside the camera's combat viewport.
+    // Compact status instrument over the full-screen camera. No viewport crop.
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-100)]
     public sealed class FlightHud : MonoBehaviour
@@ -14,9 +14,6 @@ namespace AirCombat
         [SerializeField] private RectTransform bar;
         [SerializeField] private Image chargeFill;
         [SerializeField] private Text chargeText;
-        [SerializeField, Range(0.025f, 0.1f)] private float barFraction = DefaultBarFraction;
-        private int lastWidth = -1, lastHeight = -1;
-        private float lastFraction = -1f;
         private int lastPercent = -1;
         private bool lastActive;
         // Optional. Sandbox keeps its original fuel-only UI without these links.
@@ -40,29 +37,30 @@ namespace AirCombat
 
         public void Bind(Camera camera, Afterburner boost, PlayerHitPoints hitPoints)
         {
-            // Do not leave the old camera cropped if this HUD is rebound.
-            if (viewCamera != null && viewCamera != camera)
+            // Older HUD cropped the camera to make room for a screen-wide bar.
+            // Always restore full-screen presentation before binding this UI.
+            if (viewCamera != null)
             {
                 viewCamera.rect = new Rect(0f, 0f, 1f, 1f);
                 viewCamera.ResetAspect();
             }
             viewCamera = camera;
+            if (viewCamera != null)
+            {
+                viewCamera.rect = new Rect(0f, 0f, 1f, 1f);
+                viewCamera.ResetAspect();
+            }
             afterburner = boost;
             health = hitPoints;
             if (hpSection != null) hpSection.gameObject.SetActive(health != null);
-            lastWidth = lastHeight = -1;
+            if (hpFill != null) hpFill.enabled = false; // Numeric HP, not a second bar.
             lastPercent = lastHp = -1;
-            ApplyViewport();
         }
 
         private void OnEnable()
         {
-            lastWidth = lastHeight = -1;
             lastPercent = lastHp = -1;
-            ApplyViewport();
         }
-
-        private void Update() { ApplyViewport(); }
 
         private void LateUpdate()
         {
@@ -76,42 +74,21 @@ namespace AirCombat
             }
             int percent = Mathf.RoundToInt(charge * 100f);
             if (chargeText != null && (percent != lastPercent || active != lastActive))
-                chargeText.text = hpSection != null ? "FUEL " + percent + "%" : percent + "%";
+                chargeText.text = "BOOST " + percent + "%";
             lastPercent = percent;
             lastActive = active;
 
-            if (health != null)
+            if (health != null && hpText != null)
             {
                 float fraction = health.MaxHp > 0 ? (float)health.Hp / health.MaxHp : 0f;
-                if (hpFill != null)
-                {
-                    hpFill.rectTransform.anchorMax = new Vector2(fraction, 1f);
-                    hpFill.color = fraction <= .3f ? new Color(1f, .39f, .32f) :
-                        new Color(.56f, .84f, .66f);
-                }
-                if (hpText != null && lastHp != health.Hp)
+                hpText.color = fraction <= .3f ? new Color(1f, .39f, .32f) :
+                    new Color(.94f, .98f, .96f);
+                if (lastHp != health.Hp)
                     hpText.text = "HP " + health.Hp + "/" + health.MaxHp;
                 lastHp = health.Hp;
             }
         }
 
-        private void ApplyViewport()
-        {
-            float fraction = Mathf.Clamp(barFraction, 0.025f, 0.1f);
-            if (Screen.width == lastWidth && Screen.height == lastHeight && Mathf.Approximately(fraction, lastFraction)) return;
-            lastWidth = Screen.width; lastHeight = Screen.height; lastFraction = fraction;
-            if (bar != null) bar.anchorMax = new Vector2(1f, fraction);
-            if (viewCamera == null) return;
-            viewCamera.rect = new Rect(0f, fraction, 1f, 1f - fraction);
-            var pixels = viewCamera.pixelRect;
-            if (pixels.height > 0f) viewCamera.aspect = pixels.width / pixels.height;
-        }
-
-        private void OnDisable()
-        {
-            if (viewCamera == null) return;
-            viewCamera.rect = new Rect(0f, 0f, 1f, 1f);
-            viewCamera.ResetAspect();
-        }
+        // The prefab owns position and dimensions; the HUD never alters Camera.rect.
     }
 }

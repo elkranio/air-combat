@@ -15,6 +15,7 @@ namespace AirCombat
         [SerializeField] private WeaponController cannon;
         [SerializeField] private Transform[] passiveTargets; // V0 generator compatibility only
         [SerializeField] private WeaponLabEnemy fighter;
+        [SerializeField] private CombatHud combatHud;
         [SerializeField] private MissileProjectile missilePrefab; // Same asset as Sandbox, linked in WeaponLab scene.
         [SerializeField] private Material missileImpactMaterial;
         [SerializeField, Min(1000f)] private float mapHalfExtent = 6000f;
@@ -54,6 +55,10 @@ namespace AirCombat
             passiveTargets = targets;
             mapHalfExtent = halfExtent;
         }
+
+        // Scene authoring only; does not place scene-specific objects on a shared prefab.
+        public WeaponLabEnemy Fighter => fighter;
+        public void ConfigureHud(CombatHud hud) { combatHud = hud; }
 
         // Upgrade existing range without recreating it or discarding imported audio.
         public void ConfigureFighter(WeaponLabEnemy opponent)
@@ -160,6 +165,21 @@ namespace AirCombat
             spawnPosition = player.position;
             spawnRotation = player.rotation;
             if (fighter == null) PlaceAllTargets();
+
+            if (combatHud != null)
+            {
+                var radar = player.GetComponent<AircraftRadar>();
+                if (radar == null) radar = player.gameObject.AddComponent<AircraftRadar>();
+                if (fighter != null)
+                {
+                    var contact = fighter.GetComponent<RadarAirContact>();
+                    if (contact != null) radar.Register(contact);
+                }
+                var health = player.GetComponent<PlayerHitPoints>();
+                if (health == null) health = player.gameObject.AddComponent<PlayerHitPoints>();
+                health.ResetHealth(); // No enemy gunfire in WeaponLab yet.
+                combatHud.Bind(viewCamera, boost, health, radar);
+            }
         }
 
         private void NotifyIncomingMissile(MissileProjectile missile)

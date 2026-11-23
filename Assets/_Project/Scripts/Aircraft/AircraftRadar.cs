@@ -5,7 +5,7 @@ namespace AirCombat
 {
     // A contact supplies its world position and (optional) attack radius.
     // Radar detection is owned by the aircraft, never by the HUD or the target.
-    public enum RadarContactType { GroundDefense, IncomingMissile }
+    public enum RadarContactType { GroundDefense, IncomingMissile, Aircraft }
 
     public interface IRadarContact
     {
@@ -15,17 +15,29 @@ namespace AirCombat
         RadarContactType RadarKind { get; }
     }
 
+    // Aircraft additionally expose the direction of their nose in world space.
+    // Ground sites and missiles keep the original, smaller IRadarContact contract.
+    public interface IRadarAirContact : IRadarContact
+    {
+        Vector3 RadarForward { get; }
+    }
+
     public readonly struct RadarDetection
     {
         public readonly Vector2 RelativePosition;
         public readonly float ThreatRadius;
         public readonly RadarContactType Kind;
+        public readonly Vector2 Heading;
+        public readonly bool InRange;
 
-        public RadarDetection(Vector2 relativePosition, float threatRadius, RadarContactType kind)
+        public RadarDetection(Vector2 relativePosition, float threatRadius, RadarContactType kind,
+            Vector2 heading, bool inRange)
         {
             RelativePosition = relativePosition;
             ThreatRadius = threatRadius;
             Kind = kind;
+            Heading = heading;
+            InRange = inRange;
         }
     }
 
@@ -37,7 +49,7 @@ namespace AirCombat
         private readonly List<IRadarContact> contacts = new List<IRadarContact>();
 
         public float Range => Mathf.Max(1f, range);
-        // North is fixed on the display; only the player glyph follows this heading.
+        // World-space heading; RadarHud transforms it through the presentation camera.
         public Vector2 Heading
         {
             get
@@ -55,9 +67,9 @@ namespace AirCombat
 
         public void Unregister(IRadarContact contact) { contacts.Remove(contact); }
 
-        // Returns only contacts whose centres fall inside the aircraft's 2D scan.
-        // X is world east (+X), Y is world north (+Z): no heading rotation.
-        // No allocations or world-wide object search on every HUD update.
+        // Only registered aircraft get an off-range bearing cue. Ground defenses
+        // and missiles remain sensor-limited, as in the original regression lab.
+        // X is world east (+X), Y is world north (+Z); presentation is separate.
         public void Sample(List<RadarDetection> results)
         {
             results.Clear();
@@ -70,10 +82,19 @@ namespace AirCombat
                     !contact.IsRadarVisible) continue;
                 Vector3 delta = contact.RadarPosition - transform.position;
                 delta.y = 0f;
-                if (delta.sqrMagnitude > rangeSquared) continue;
-                Vector2 offset = new Vector2(delta.x, delta.z);
-                results.Add(new RadarDetection(offset, Mathf.Max(0f, contact.RadarThreatRadius),
-                    contact.RadarKind));
+                bool inRange = delta.sqrMagnitude <= rangeSquared;
+                var air = contact as IRadarAirContact;
+                if (!inRange && air == null) continue;
+
+                Vector2 heading = Vector2.zero;
+                if (air != null)
+                {
+                    Vector3 forward = air.RadarForward;
+                    heading = new Vector2(forward.x, forward.z).normalized;
+                }
+                results.Add(new RadarDetection(new Vector2(delta.x, delta.z),
+                    Mathf.Max(0f, contact.RadarThreatRadius), contact.RadarKind,
+                    heading, inRange));
             }
         }
     }

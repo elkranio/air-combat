@@ -11,6 +11,8 @@ namespace AirCombat
     {
         [SerializeField] private JetAssembly player;
         [SerializeField] private CombatCameraRig cameraRig;
+        [SerializeField] private CombatHud combatHud;
+        [SerializeField] private RadarAirContact[] airContacts;
         [SerializeField, Min(100f)] private float resetHalfExtent = 850f;
         [SerializeField] private bool altitudeComparison; // E1c only, disabled in other scenes.
 
@@ -33,6 +35,14 @@ namespace AirCombat
         // Editor-only scene authoring enables the three-height visual test.
         // This never changes the shared FlightController or player prefab.
         public void EnableAltitudeComparison() => altitudeComparison = true;
+
+        // Editor authoring links the scene to the reusable HUD and known aircraft.
+        // No scene references are serialized into the CombatHUD prefab.
+        public void ConfigureHud(CombatHud hud, RadarAirContact[] contacts)
+        {
+            combatHud = hud;
+            airContacts = contacts;
+        }
 
         private void Awake()
         {
@@ -59,6 +69,18 @@ namespace AirCombat
             flight.ConfigureBreakTurn(breakTurn);
             cameraRig.BindPlayer(player.transform, boost, false);
             cameraRig.BindLockTarget(null, 1f, .5f);
+
+            if (combatHud != null)
+            {
+                var radar = player.GetComponent<AircraftRadar>();
+                if (radar == null) radar = player.gameObject.AddComponent<AircraftRadar>();
+                if (airContacts != null)
+                    foreach (var contact in airContacts) radar.Register(contact);
+                var health = player.GetComponent<PlayerHitPoints>();
+                if (health == null) health = player.gameObject.AddComponent<PlayerHitPoints>();
+                health.ResetHealth(); // HUD-01 preview only; no hitbox/combat on E1 yet.
+                combatHud.Bind(cameraRig.ViewCamera, boost, health, radar);
+            }
         }
 
         private void Update()

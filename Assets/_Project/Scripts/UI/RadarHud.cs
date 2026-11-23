@@ -115,8 +115,33 @@ namespace AirCombat
                 for (int i = 0; i < detected.Count; i++)
                 {
                     var contact = detected[i];
-                    Vector2 at = center + RelativeOnDisplay(contact.RelativePosition, displayRight, displayUp) * scale;
-                    if (contact.Kind == RadarContactType.IncomingMissile)
+                    Vector2 offset = RelativeOnDisplay(contact.RelativePosition, displayRight, displayUp) * scale;
+                    Vector2 at = center + offset;
+                    if (contact.Kind == RadarContactType.Aircraft)
+                    {
+                        if (!contact.InRange)
+                        {
+                            // A known but unscanned aircraft has bearing only. Its
+                            // distance and nose direction stay undisclosed.
+                            if (offset.sqrMagnitude < .0001f) continue;
+                            at = center + offset.normalized * (radius - 4.5f);
+                            Disk(mesh, at, 4.4f, new Color(1f, .28f, .20f, .22f));
+                            Disk(mesh, at, 2.6f, new Color(1f, .38f, .25f, .98f));
+                            continue;
+                        }
+                        // The arrow follows the aircraft's world heading in the
+                        // same camera-projected axes as the player's glyph.
+                        if (offset.magnitude > radius - 7f)
+                            at = center + offset.normalized * (radius - 7f);
+                        Vector2 nose = RelativeOnDisplay(contact.Heading, displayRight, displayUp);
+                        nose = nose.sqrMagnitude > .0001f ? nose.normalized : Vector2.up;
+                        Vector2 wing = new Vector2(nose.y, -nose.x);
+                        Disk(mesh, at, 6f, new Color(1f, .26f, .20f, .18f));
+                        Triangle(mesh, at + nose * 6f, at - nose * 4f - wing * 4.5f,
+                            at - nose * 4f + wing * 4.5f,
+                            new Color(1f, .34f, .26f, .98f));
+                    }
+                    else if (contact.Kind == RadarContactType.IncomingMissile)
                     {
                         // Inbound missile is visibly different from a ground-site dot.
                         // Keep even its glow inside the radar boundary.

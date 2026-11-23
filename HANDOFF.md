@@ -1,14 +1,14 @@
 # Air Combat — current handoff
 
-Updated 2026-11-24 for `master` at **`645081ba`**. **Next work: AIR-TO-AIR COMBAT.** This is a documentation-only handoff; no gameplay, prefab or scene changes are implied by this update.
+Updated 2026-11-24. **HUD-01 preproduction authored; Unity scene installation / Play Mode verdict pending.** Next gameplay test after HUD green: fixed-forward BURST, then one Tiger and multiple fighters. See [HUD-01](Docs/Production/HUD_01.md).
 
 ## Goal and immediate order
 
 Stylized, aggressive **arcade** air/ground combat: one fighter can outfight multiple enemies, destroy vehicles and wreck a base, supported later by heavy music, spectacular explosions and powerful sound. No milsim balance or photorealism; no transforming aircraft or loss of recognizable fighter silhouettes.
 
-1. **FIRST CODE ATOM — player BURST/autocannon aim test.** Today the gun supports limited cursor-angle aiming inherited from the older top-down camera. Test **fixed forward firing along the aircraft heading on LMB**, no mouse steering/aim cone. The decisive criterion is feel and visibility **with the new production fixed-world camera**, not with the old laboratory view. Do not silently change GAUSS, missiles, NPC shooting, or all six slots. Exact wiring/extent to be agreed in the next atom.
-2. **Then — one enemy EF-01 Tiger.** Replace the enemy fighter's visual chassis with the new Tiger model when visually accepted; reuse existing enemy mechanics rather than cloning a second AI. Develop one readable 1v1 dogfight on the current camera.
-3. **Then — multiple enemies.** Prove that the arcade loop remains playable against 2+ fighters; tune AI/readability later, not milsim lethality. A **minimal radar** should show enemy contacts *when detected*, using/expanding existing radar systems; exact HUD/lock/detection rules remain to be specified before implementation.
+1. **HUD-01 (this patch):** reuse `CombatHUD.prefab` in sortie scenes. Compact HP `current/max`, short BOOST bar, full-size camera viewport. Main radar follows camera screen axes: all registered enemy aircraft show as rim bearing-blips beyond 460 units and directional triangles inside; AA/SAM/missiles preserve their existing detection rules. Scene installer and test checklist: [HUD-01](Docs/Production/HUD_01.md).
+2. **NEXT GAMEPLAY ATOM — fixed-forward BURST.** Existing limited cursor aim is inherited from the former top-down camera. Test LMB rounds strictly along aircraft forward on the new production camera. Change no other weapons or AI until feel is evaluated.
+3. **THEN — one Tiger, followed by multiple fighters.** Visually accept EF-01 Tiger before fitting it to existing `EnemyJet` mechanics. Prove aggressive, readable 1v1 and later 2+ arcade air combat; no milsim lethality.
 
 Do **not** pre-plan more combat atoms here. User will set the next 2–3 tasks after the documentation patch is green.
 
