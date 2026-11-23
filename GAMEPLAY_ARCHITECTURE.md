@@ -1,11 +1,11 @@
 # Gameplay architecture — current
 
-Based on green C2 `master` `8ae843` (2026-11-23). AA1 is authored against it, pending Unity smoke test.
+Based on green AA1 and boosted PlayerJet (2026-11-23); R1 radar is pending Unity smoke test.
 
 ## Composition
 
 - `WeaponLab.unity`: `PlayerJet`, `EnemyJet`, `CombatCameraRig` and `CombatLightingRig` prefab instances. `WeaponLabSession` connects the player, fighter AI, missile lock and diagnostics.
-- `GroundAttackLab.unity`: the same player, camera and lighting prefabs, plus four `MilitaryDepot` instances. `GroundAttackLabSession` equips bombs/NURS, binds cabrage/camera, and installs depot hit zones. AA1's optional turret prefab gets its target via the same scene binder.
+- `GroundAttackLab.unity`: the same player, camera and lighting prefabs, plus four `MilitaryDepot` instances and an AA1 turret. `GroundAttackLabSession` equips bombs/NURS, binds cabrage/camera, installs depot hit zones and equips the player-only R1 radar. AA1 gets its target through the scene binder.
 - `Sandbox.unity`: legacy input, missile and flat decorative shadow comparison. The only Build Settings scene; do not silently migrate it.
 - `FrontierStrata` and bake scenes are art baselines, not current combat levels.
 
@@ -13,7 +13,7 @@ Based on green C2 `master` `8ae843` (2026-11-23). AA1 is authored against it, pe
 
 | Folder | Components | Contract |
 | --- | --- | --- |
-| `Aircraft` | `JetAssembly`, `JetChassis`, `CombatCameraRig` | Role roots and visual sockets; no serialized cross-scene targets |
+| `Aircraft` | `JetAssembly`, `JetChassis`, `CombatCameraRig`, `AircraftRadar`, `IRadarContact` | Role roots, sockets and detection/registered contacts; no serialized cross-scene targets |
 | `Flight` | `FlightController`, `AircraftMotor`, `Afterburner`, `BreakTurn`, `CabrageManeuver` | Movement and maneuvers; cabrage equipped by the ground lab |
 | `Enemy` | `EnemyFlightController`, `AntiAircraftTurret` | Flight pursuit and stationary AA tracking/firing; scene-neutral behaviors |
 | `Weapons` | `WeaponSelection`, `WeaponController`, air weapons, `BombRack`, `NursRocketRack`, `AntiAircraftProjectile`, projectiles/ballistics | Launch/cadence and physical flight; AA rounds are air-only |
@@ -22,7 +22,7 @@ Based on green C2 `master` `8ae843` (2026-11-23). AA1 is authored against it, pe
 | `Camera` | `TopDownCameraFollow`, `CameraLookAhead`, `NursCameraCue` | Common follow; bounded NURS lead only when the scene equips it |
 | `Environment` | `CombatLightingRig` | Shared light/time-of-day and URP shadow policy |
 | `Scenes` | `WeaponLabSession`, `GroundAttackLabSession` | Scene composition, diagnostics and reset, **not** gameplay data models |
-| `Visual`, `UI` | VFX, bomb nadir helper, HUD | Presentation; `AircraftGroundShadow` is legacy Sandbox-only |
+| `Visual`, `UI` | VFX, bomb nadir helper, HUD, `RadarHud` | Presentation; `AircraftGroundShadow` is legacy Sandbox-only |
 
 ## Physics, damage and shadows
 
@@ -34,7 +34,7 @@ Based on green C2 `master` `8ae843` (2026-11-23). AA1 is authored against it, pe
 
 ## Accepted weapon/camera numbers
 
-- Cruise 70, W boost to 110; Q/E real 90-degree Break Turn with full tank required. Sandbox has different legacy input.
+- Cruise 70, W boost to 140 (2.5s tank); Q/E real 90-degree Break Turn with full tank required. Sandbox has different legacy input.
 - BURST: 4 shots at 14/s, .45s between bursts, bounded ±12°; GAUSS: fixed heading, 5 damage, speed 300, max range 250, 1.5s cooldown.
 - MISSILE: cursor lock 1s, .5s target-loss grace, one active missile, reacquire after launch; Lab fighter has 5 HP and respawns.
 - Bombs: 4 × .25s, cooldown 3s from last shot, gravity 80 and drag .045, W scatter; the slot-4 nadir helper is **not** an impact prediction.
@@ -42,4 +42,4 @@ Based on green C2 `master` `8ae843` (2026-11-23). AA1 is authored against it, pe
 
 ## Rules
 
-Keep role, visual chassis and scene binding independent. Preserve `.meta` GUIDs when moving scripts; don't regenerate accepted scenes. No speculative loadout framework, radar, AA coordination, mission router or universal HUD until an actual second use case. Test WeaponLab, GroundAttackLab and Sandbox before green.
+Keep role, visual chassis and scene binding independent. Preserve `.meta` GUIDs when moving scripts; don't regenerate accepted scenes. R1 radar sensor owns range/visibility and registered contacts, while `RadarHud` only renders relative 2D positions and actual AA fire radius. No speculative contact database, AA coordination, mission router or universal HUD. Test WeaponLab, GroundAttackLab and Sandbox before green.

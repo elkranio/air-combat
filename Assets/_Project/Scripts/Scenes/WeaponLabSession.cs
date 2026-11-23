@@ -19,7 +19,7 @@ namespace AirCombat
         [SerializeField] private Material missileImpactMaterial;
         [SerializeField, Min(1000f)] private float mapHalfExtent = 6000f;
 
-        private bool showUI = true;
+        private bool showUI;
         private Vector3 spawnPosition;
         private Quaternion spawnRotation;
         private GUIStyle text;

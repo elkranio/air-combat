@@ -6,7 +6,7 @@ namespace AirCombat
     // ballistic lead point; the gun fires along the CURRENT barrel orientation.
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(180)]
-    public sealed class AntiAircraftTurret : DamageableTarget
+    public sealed class AntiAircraftTurret : DamageableTarget, IRadarContact
     {
         [Header("Tracking")]
         [SerializeField, Min(1f)] private float detectionRange = 230f;
@@ -53,6 +53,10 @@ namespace AirCombat
         public int MaxHp => maxHp;
         public bool IsDown => hp <= 0;
         public override CombatTargetDomain Domain => CombatTargetDomain.Ground;
+        // The same firing range drives radar's danger ring: no duplicated balance constant.
+        public Vector3 RadarPosition => transform.position;
+        public float RadarThreatRadius => detectionRange;
+        public bool IsRadarVisible => isActiveAndEnabled && !IsDown;
 
         // Used by the one-time AA1 prefab authoring tool; prefab has no player link.
         public void ConfigureArt(Transform yaw, Transform elevation, Transform left, Transform right,

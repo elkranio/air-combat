@@ -26,7 +26,7 @@ namespace AirCombat
         private PlayerHitPoints playerHealth;
         private Vector3 startPosition;
         private Quaternion startRotation;
-        private bool showDiagnostics = true;
+        private bool showDiagnostics;
         private GUIStyle label;
 
         // Editor authoring only sets scene object references. Prefabs own no scene links.
@@ -127,6 +127,13 @@ namespace AirCombat
                 playerHealth.InstallHitbox();
                 antiAircraft.BindTarget(jet.transform, playerHealth);
             }
+
+            // R1: radar belongs to this aircraft, with scene-registered contacts.
+            // The UI has no knowledge of turrets, range balance or scene prefabs.
+            var radar = jet.GetComponent<AircraftRadar>();
+            if (radar == null) radar = jet.AddComponent<AircraftRadar>();
+            if (antiAircraft != null) radar.Register(antiAircraft);
+            RadarHud.Create(transform, radar);
         }
 
         private void Update()
