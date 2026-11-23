@@ -236,18 +236,19 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 33faabc6120b40608d6d4811fcebd334, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::AirCombat.AntiAircraftTurret
-  detectionRange: 350
+  detectionRange: 230
   yawSpeed: 85
   pitchSpeed: 55
   firingTolerance: 9
   maxElevation: 70
+  leadRefreshSeconds: 0.45
   roundsPerBurst: 18
   roundsPerSecond: 18
   pauseBetweenBursts: 2.5
   muzzleSpeed: 240
   projectileRange: 470
   gravity: 12
-  spreadDegrees: 1
+  spreadDegrees: 1.75
   maxHp: 6
   yawPivot: {fileID: 6906593840573813150}
   pitchPivot: {fileID: 33709173617075767}

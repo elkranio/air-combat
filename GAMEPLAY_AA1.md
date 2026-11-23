@@ -1,6 +1,6 @@
-# AA1 — stationary tracer autocannon (Unity test required)
+# AA1 — stationary tracer autocannon (AA1b tuning)
 
-Base: green cleanup C2 `master` `8ae843` (2026-11-23). One stationary hostile ground turret. **No HUD threat indicator, no radar, no hitscan or predictive area marker.** The rounds themselves must be enough warning to dodge.
+Baseline: tested AA1 on `master` `ae509cb` (2026-11-23). AA1b is a tuning-only patch; test before green. One stationary hostile ground turret. **No HUD threat indicator, no radar, no hitscan or predictive area marker.** The rounds themselves must be enough warning to dodge.
 
 ## One-time installation
 
@@ -16,13 +16,20 @@ The prefab is built from Unity primitive meshes for an initial **editable low-po
 
 ## Mechanics and tuning (Inspector on prefab)
 
-- Detection **350** world units; target sampled each frame and velocity smoothed. A constant-velocity intercept estimates **travel time and gravity**; it is not guaranteed to hit a turning aircraft.
-- Variant **B**: turret continuously rotates while firing: **yaw 85°/s**, **pitch 55°/s**, max elevation 70°. Fires only once within 9° of its current target lead. No instantaneous tracking or snapshot aim at burst start.
-- **18 physical rounds** per burst at **18 rounds/s**, followed by **2.5s** pause. Alternate twin barrels, slight ±1° shot scatter.
+- Detection **230** world units (350 / 1.5 approximately); target position is sampled every frame, but the velocity used by the intercept is refreshed only every **0.45 seconds**. Straight-flight prediction still accounts for bullet travel time and gravity; sharp maneuvers can outpace the stale intercept velocity.
+- Variant **B**: turret continuously rotates while firing: **yaw 85°/s**, **pitch 55°/s**, max elevation 70°. Fires only once within 9° of its current target lead. The barrel still tracks continuously, but does not instantaneously correct its velocity estimate on sharp turns.
+- **18 physical rounds** per burst at **18 rounds/s**, followed by **2.5s** pause. Alternate twin barrels, slight ±1.75° shot scatter.
 - Round speed **240 units/s**, gravity **12 units/s²**, max range **470**. Continuous swept segment raycast (no frame tunneling); the actual round produces the orange line + short impact spark. Hits on roof, terrain and other solid geometry stop it; only **Air** damage targets lose HP.
 - Lab-only `PlayerHitPoints`: **20 HP**, a basic aircraft-sized BoxCollider, no auto-death animation. At 0 HP the turret stops acquiring; press **R** to reset both. HP and shot/hit counts are in the existing H diagnostic panel.
 - Turret itself: **6 HP**, `CombatTargetDomain.Ground`, accepts existing bombs/NURS blasts; destroyed turret stops firing, its already launched rounds continue. R restores the turret for repeatable tests.
 - This is a single isolated defense; no radar, AA coordination, railgun warning beams, reusable threat map or mission framework yet.
+
+## AA1b playtest
+
+- With the existing scene and prefab, **do not rerun the one-time installer**. The prefab and script values are updated directly by this patch.
+- Check the first burst starts noticeably closer. Fly straight into the gun: it should still be dangerous. Zigzag or use Q/E after seeing tracers: the lead should lag a new heading enough to create a dodge window.
+- If it still fires completely outside the camera, reduce `detectionRange` further in the prefab (the next iteration can calibrate this against camera framing); no HUD warnings are added.
+- Only three difficulty dials changed: detection 350→230, lead velocity refresh continuous→0.45s, scatter ±1°→±1.75°. Burst count/cadence, turret servo speeds, projectile speed and player HP remain unchanged.
 
 ## Verification
 

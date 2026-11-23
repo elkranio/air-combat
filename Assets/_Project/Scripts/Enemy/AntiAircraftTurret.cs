@@ -9,11 +9,12 @@ namespace AirCombat
     public sealed class AntiAircraftTurret : DamageableTarget
     {
         [Header("Tracking")]
-        [SerializeField, Min(1f)] private float detectionRange = 350f;
+        [SerializeField, Min(1f)] private float detectionRange = 230f;
         [SerializeField, Min(1f)] private float yawSpeed = 85f;
         [SerializeField, Min(1f)] private float pitchSpeed = 55f;
         [SerializeField, Range(1f, 30f)] private float firingTolerance = 9f;
         [SerializeField, Range(0f, 85f)] private float maxElevation = 70f;
+        [SerializeField, Min(.05f)] private float leadRefreshSeconds = .45f;
 
         [Header("Burst")]
         [SerializeField, Range(1, 40)] private int roundsPerBurst = 18;
@@ -22,7 +23,7 @@ namespace AirCombat
         [SerializeField, Min(1f)] private float muzzleSpeed = 240f;
         [SerializeField, Min(1f)] private float projectileRange = 470f;
         [SerializeField, Min(0f)] private float gravity = 12f;
-        [SerializeField, Range(0f, 5f)] private float spreadDegrees = 1.0f;
+        [SerializeField, Range(0f, 5f)] private float spreadDegrees = 1.75f;
 
         [Header("Durability")]
         [SerializeField, Min(1)] private int maxHp = 6;
@@ -37,7 +38,10 @@ namespace AirCombat
         private PlayerHitPoints targetHp;
         private Vector3 previousTargetPosition;
         private Vector3 targetVelocity;
+        private Vector3 leadVelocity;
         private bool hasTargetSample;
+        private bool hasLeadSample;
+        private float nextLeadRefreshAt;
         private float nextShotAt;
         private float nextBurstAt;
         private int shotsRemaining;
@@ -74,8 +78,9 @@ namespace AirCombat
             hp = maxHp;
             shotsRemaining = FiredCount = HitCount = 0;
             nextShotAt = nextBurstAt = Time.time;
-            targetVelocity = Vector3.zero;
-            hasTargetSample = false;
+            targetVelocity = leadVelocity = Vector3.zero;
+            hasTargetSample = hasLeadSample = false;
+            nextLeadRefreshAt = 0f;
             if (yawPivot != null) yawPivot.localRotation = Quaternion.Euler(0f, 180f, 0f);
             if (pitchPivot != null) pitchPivot.localRotation = Quaternion.identity;
         }
@@ -109,9 +114,19 @@ namespace AirCombat
             if ((aircraftPosition - transform.position).sqrMagnitude > detectionRange * detectionRange)
             {
                 shotsRemaining = 0;
+                hasLeadSample = false;
                 return;
             }
 
+            // Follow the aircraft every frame, but refresh the estimated velocity
+            // less often. A sudden break changes the flight path before the gun's
+            // intercept solution catches up. The servos still turn during bursts.
+            if (!hasLeadSample || Time.time >= nextLeadRefreshAt)
+            {
+                leadVelocity = targetVelocity;
+                nextLeadRefreshAt = Time.time + leadRefreshSeconds;
+                hasLeadSample = true;
+            }
             Vector3 lead = PredictImpactTarget(leftMuzzle.position, aircraftPosition);
             Vector3 toLead = lead - yawPivot.position;
             Vector3 flat = transform.InverseTransformDirection(toLead);
@@ -156,7 +171,7 @@ namespace AirCombat
             Vector3 result = aircraftPosition;
             for (int i = 0; i < 3; i++)
             {
-                result = aircraftPosition + targetVelocity * flightTime +
+                result = aircraftPosition + leadVelocity * flightTime +
                     Vector3.up * (.5f * gravity * flightTime * flightTime);
                 flightTime = Mathf.Clamp(Vector3.Distance(muzzle, result) / muzzleSpeed,
                     0f, projectileRange / muzzleSpeed);
