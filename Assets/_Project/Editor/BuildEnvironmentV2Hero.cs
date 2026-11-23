@@ -117,7 +117,7 @@ public static class BuildEnvironmentV2Hero
         // Same aircraft and ArtLab camera controls as V17/V2A.
         // Spawn over the canyon: both steep banks fit into ortho size 80 at 16:9.
         Vector3 cameraOffset = camera.transform.position - player.transform.position;
-        player.transform.position = new Vector3(120f, 48f, -425f);
+        player.transform.position = new Vector3(120f, 48f, -300f);
         player.transform.rotation = Quaternion.identity;
         camera.transform.position = player.transform.position + cameraOffset;
         camera.orthographic = true;

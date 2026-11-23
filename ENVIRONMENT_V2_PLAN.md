@@ -123,5 +123,7 @@ All pieces have predictable orientation, metric scales, pivots, colliders only i
 | --- | --- | --- |
 | V2A ground / macro shapes | **Green / pushed, 2026-11-23** | Ground-only study works but the sampled screenshot is nearly featureless/soft at flight height |
 | V2A2 geological definition | **Rejected visually, 2026-11-23** | Coarse 5-unit cells and long parallel trenches produced stepped/striped ground. Keep as diagnostic, not a source for V2B |
-| V2A3 watershed / denser terrain | **Built in code; Unity test pending** | See [ENVIRONMENT_V2A3.md](ENVIRONMENT_V2A3.md); compare green V2A vs V2A3 in a NEW scene, then green/revise/reject |
-| V2B–V2G | Not started | Roads follow only after geology reads clearly at gameplay distance |
+| V2A3 watershed / denser terrain | **Rejected visually, 2026-11-23** | Denser/less regular erosion still read as soft diffuse stains at flight altitude |
+| V2A4 hand-authored gorge and three masses | **Playable/committed, art rejected** | Physically deep trench and rock obstacles proved the low-altitude scale, but the extruded regular gorge and pyramid-like masses are not acceptable art; its initial start Z is fixed from -425 to -300 in V2A5 |
+| V2A5 single fractured cliff | **Implementation ready; needs local Blender/Unity test** | [V2A5 one-rock playtest](Docs/Art/ENVIRONMENT_V2A5.md). One dramatic discontinuous rock face, separate scene, AO optional. Decide on silhouette grammar before any terrain/road kit |
+| V2B–V2G | Not started | Roads follow only after one geological module reads clearly at gameplay distance |
