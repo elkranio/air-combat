@@ -1,6 +1,6 @@
 # B1 — first military base (working production plan)
 
-**Status:** B1a three-barracks test is prepared; **Unity Play Mode verdict pending**. Build on the existing `ArcadeDesertE1.unity`, use muted ground, current dark-contrast Kestrel, Y150 flight and the accepted C3 camera/light rig. **One reviewable atom at a time**. The base is for finding our art/scale language, not yet a fully functional combat mission. [First asset and install steps](BARRACKS_B1A.md).
+**Status:** B1a barracks scale and basic mass provisionally accepted; **B1b stylized roof/entry and scene-only shadow-direction pass is current (Unity Play Mode pending)**. Build on the existing `ArcadeDesertE1.unity`, use muted ground, current dark-contrast Kestrel, Y150 flight and the accepted C3 camera/light rig. **One reviewable atom at a time**. The base is for finding our art/scale language, not yet a fully functional combat mission. [First asset and install steps](BARRACKS_B1A.md).
 
 ## Site concept
 
@@ -8,8 +8,8 @@ A small generic military airfield outpost with a believable approach: one asphal
 
 ## Production sequence
 
-1. **B1a — three barracks first:** model one simple 32×12×6 m barracks, install three prefab instances in a row on a new sector of the *same* map, and move the Y150 aircraft spawn to a readable approach. Leave the accepted plateau untouched. First compare roof/wall palette, shadows, dimensions and three-building rhythm; no bake. [Asset gate](BARRACKS_B1A.md).
-2. **B1b — site footprint:** once the barracks read well, add a minimal asphalt access road/apron and only the functional footprints needed for the future site. Align to the actual C3 camera and Y150 flight approach; no full runway yet.
+1. **B1a — three barracks v0 (placed):** one 32×12×6 m master in three instances, separate base sector, Y150 approach, accepted plateau unchanged. Scale and mass appear promising; shadows and character need improvement. [B1a source](BARRACKS_B1A.md).
+2. **B1b — stylized barracks and directional shadows (current):** preserve B1a prefabs and GUIDs, enlarge roof eaves, add one entrance canopy + two roof vents, stronger cool/warm material grouping; rotate the sun on the **main scene instance only**. No bake or installer. [Changes and visual gate](BARRACKS_B1B.md).
 3. **B1c — warehouse/maintenance hall:** use 2–3 references for proportions (low broad industrial mass, wide doors, roof slope/overhang, a loading/service side), then model one reusable building. Match accepted barracks proportions/material language. Simple faceted form, few matte materials, proper shadow/collider; no detailed bake initially.
 4. **B1d — motor pool:** parking slab, one boxy jeep/truck silhouette, then an APC/tank *only if size and shape read*. A second vehicle is a variation pass, not a forced asset dump.
 5. **B1e — utility and identity:** small generator/service building, flagpole, minimal fence/gate and selected markings. Use functionally clear, sparsely distributed pieces.
@@ -24,6 +24,6 @@ A small generic military airfield outpost with a believable approach: one asphal
 
 For each new asset, gather a *small* set of real-world massing photos and optionally one strong stylized-game reference. Extract proportions, large shapes and distinct functional parts; do **not** copy another game's geometry. Block out first, then compare in Unity, then detail only if it helps. Source images belong in `Resources/References/` with source/licensing notes. Editable model in `Resources/Blender/`, export in `Assets/_Project/Art/Buildings/Base/`, prefab in scene-neutral reusable folder.
 
-## Gate for B1a green
+## Gate for B1b green
 
-Three copies of a single barracks prefab read as **barracks** from the normal gameplay camera, contrast with the ground, and sit at convincing scale against the flying jet and distant plateau. Check dynamic shadows and roof silhouette, no baked direct lighting, clean imported model / prefab references. If it fails, revise *this building*, not the map or six weapons at once.
+From the Y150 approach, all three buildings should read as military utility barracks, not generic sheds or toy models. Roof silhouette, readable main entry, two rooftop vents and visible side-cast shadows should improve the scene without adding noise. Check plateau and aircraft lighting from the new angle. Do not confuse a plausible-looking shadow with proof of fixed shadow distance/culling. No baked sunlight or combat modifications.
