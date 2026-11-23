@@ -5,7 +5,7 @@ Unity 6.6 / URP. **Stylized arcade air combat**, fixed-world oblique camera and 
 ## Start here
 
 1. [HANDOFF.md](HANDOFF.md) — current green, remaining issues, next step.
-2. [Docs/Production/BASE_DESIGN.md](Docs/Production/BASE_DESIGN.md) — **active production plan**, starting with [B1a three barracks](Docs/Production/BARRACKS_B1A.md) on a separate sector of the main map.
+2. [Docs/Production/BASE_DESIGN.md](Docs/Production/BASE_DESIGN.md) — **active production plan**; [B1d road + prepared ground](Docs/Production/ROAD_B1D.md) is the current art atom after barracks and HQ.
 3. [Docs/Production/MAP_DESIGN.md](Docs/Production/MAP_DESIGN.md) — map size, elevation, flight/collision language.
 4. [Docs/Production/ART_DIRECTION.md](Docs/Production/ART_DIRECTION.md) — palette, geometry, scale, lighting and VFX direction.
 5. [ART_PIPELINE.md](ART_PIPELINE.md) / [ART_AUTHORING.md](ART_AUTHORING.md) — model/asset pipeline and bake discipline.
@@ -16,7 +16,7 @@ Unity 6.6 / URP. **Stylized arcade air combat**, fixed-world oblique camera and 
 
 | Scene | Role |
 | --- | --- |
-| `Assets/_Project/Scenes/ArcadeDesertE1.unity` | **Main working map**: muted terrain, preserved plateau, three barracks and [B1c headquarters](Docs/Production/HQ_B1C.md), flight at Y78, `ArcadeCameraRig`, real 600-unit shadow candidate. Art/flight only for now. |
+| `Assets/_Project/Scenes/ArcadeDesertE1.unity` | **Main working map**: muted terrain, preserved plateau, three barracks, [B1c headquarters](Docs/Production/HQ_B1C.md), and [B1d access roads/compacted soil](Docs/Production/ROAD_B1D.md), flight at Y78, `ArcadeCameraRig`, real 600-unit shadow candidate. Art/flight only for now. |
 | `Assets/_Project/Scenes/WeaponLab.unity` | **Regression only**: fighter and air weapons 1–3. |
 | `Assets/_Project/Scenes/GroundAttackLab.unity` | **Regression only**: ground weapons 4–6, AA/SAM, radar/HUD. |
 

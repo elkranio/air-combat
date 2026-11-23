@@ -1,6 +1,6 @@
 # B1 — first military base (working production plan)
 
-**Status:** the three stylized barracks are provisionally accepted; **B1c modular headquarters and courtyard** are ready for Unity visual review. Continue on the same `ArcadeDesertE1.unity`, default Y78 flight and accepted C3 camera. This is an incremental art/scale test, not a combat mission. [HQ asset and install instructions](HQ_B1C.md).
+**Status:** three B1b barracks and B1c headquarters look broadly acceptable in Game view; **B1d roads and prepared soil** now being evaluated. Continue on the same `ArcadeDesertE1.unity`, default Y78 flight and accepted C3 camera. This is an incremental art/scale test, not a combat mission. [HQ asset and install instructions](HQ_B1C.md).
 
 ## Site concept
 
@@ -11,7 +11,7 @@ A small generic military airfield outpost with a believable approach: one asphal
 1. **B1a — three barracks v0 (placed):** one 32×12×6 m master in three instances, separate base sector, Y150 approach, accepted plateau unchanged. Scale and mass appear promising; shadows and character need improvement. [B1a source](BARRACKS_B1A.md).
 2. **B1b — stylized barracks and directional shadows (current):** preserve B1a prefabs and GUIDs, enlarge roof eaves, add one entrance canopy + two roof vents, stronger cool/warm material grouping; rotate the sun on the **main scene instance only**. No bake or installer. [Changes and visual gate](BARRACKS_B1B.md).
 3. **B1c — modular headquarters and courtyard (current):** one two-height 29×19 m HQ, independent entry, concrete plaza, two planters and flagpole beside barracks. Spawn at Y78; no road or bake yet. [Current gate](HQ_B1C.md).
-4. **B1d — asphalt connection:** first connect the HQ plaza to the barracks with a short access road. Compare palette and silhouettes together before creating more asset types. Then add a warehouse/maintenance hall and motor pool in separate iterations.
+4. **B1d — road + ground preparation (current):** separate north-south approach, barracks service lane and HQ courtyard spur; subtle compacted soil painted into native Terrain with soft irregular boundary; sparse repair/skid meshes. No bake, no changes to approved architecture. [B1d visual gate](ROAD_B1D.md). Then a *separate* small variation pass on one existing building.
 5. **B1e — utility and identity:** small generator/service building, flagpole, minimal fence/gate and selected markings. Use functionally clear, sparsely distributed pieces.
 6. **B1f — adjacent airstrip:** a simple appropriately scaled runway/apron connection and perhaps one hangar, matched to base proportions. No detailed airport before earlier pieces are accepted.
 7. **B1g — first combat-context test:** add existing AA1/SAM1 props and perhaps depot to the base via an isolated scene-composition atom; check gameplay readability. Do not modify the already-green lab prefabs just to decorate this scene.
@@ -24,6 +24,6 @@ A small generic military airfield outpost with a believable approach: one asphal
 
 For each new asset, gather a *small* set of real-world massing photos and optionally one strong stylized-game reference. Extract proportions, large shapes and distinct functional parts; do **not** copy another game's geometry. Block out first, then compare in Unity, then detail only if it helps. Source images belong in `Resources/References/` with source/licensing notes. Editable model in `Resources/Blender/`, export in `Assets/_Project/Art/Buildings/Base/`, prefab in scene-neutral reusable folder.
 
-## Gate for B1c green
+## Gate for B1d green
 
-The repeated barracks and HQ should read as one military compound, not toy props or generic civilian houses. HQ feels more important but speaks the same material language; entry, plaza, planters and flag remain separate objects. Confirm dynamic URP shadows and readable ground contrast at Y78. If it fails, revise HQ, not the whole map.
+The HQ and row of barracks must now read as one compact *used* base with a believable service road and prepared soil, not scattered assets on uniformly colored sand or an overly clean diorama. Check dynamic URP shadows, moderate road width, subdued surface wear and softened soil border at Y78. Reject over-dark asphalt, repetitive noise and any buried/skimming surfaces before further buildings.

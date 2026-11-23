@@ -1,6 +1,6 @@
 # Air Combat — current handoff
 
-Updated 2026-11-23. **Cleanup A/B GREEN.** Current active art slice is B1c HQ courtyard beside the three barracks. Keep accepted scene/prefab GUIDs and do not resurrect retired art studies.
+Updated 2026-11-23. **Cleanup A/B GREEN.** Current art slice is **B1d road + prepared ground** between the accepted B1c HQ and three B1b barracks. Keep accepted scene/prefab GUIDs and do not resurrect retired art studies.
 
 ## Active production
 
@@ -8,7 +8,7 @@ Updated 2026-11-23. **Cleanup A/B GREEN.** Current active art slice is B1c HQ co
 - **Camera:** dedicated production `Assets/_Project/Prefabs/Camera/ArcadeCameraRig.prefab`: fixed-world yaw **-45°**, pitch **50°**, ortho **80**, heading look-ahead **48**, boost extra **14**, ~**0.42s** lead damping, safe viewport margin **20%**. No old C1 rotation mode on main map.
 - **Lighting:** `CombatLightingRig.prefab` is the only sun; the map uses its own `Assets/_Project/Settings/ArcadeCombat_URP.asset` candidate (**600** shadow distance, **4** cascades, **4096** shadow atlas). Earlier aircraft-shadow loss on ground/screen edges motivated this change. **Do not claim shadow-range visual acceptance without testing**; shadow geometry can still leave camera view. WeaponLab/GroundAttackLab use the unchanged existing rig/profile.
 - **World scale:** landforms, not pebble props, make the geography. One low plateau is an accepted module; stacked/higher formations may eventually become flyover hazards or collision walls. No extra plateaus, roads or canyon pass before the first base-style test.
-- **Active B1c:** [HQ courtyard](Docs/Production/HQ_B1C.md) beside the accepted **three-barracks row** at approximately (-485,-270). One HQ building, a separately movable entrance, concrete apron, two planters and a separate flagpole at roughly (-422,-320). Existing plateau at (110,135) remains untouched. B1c installs Y78 as the default without altering the spawn X/Z/heading or shared prefabs. **Unity Game view visual verdict pending.** Next after green: road between barracks and HQ, then evaluate whether architecture/asphalt share one coherent visual language.
+- **B1d ready for Unity review:** [access road and prepared ground](Docs/Production/ROAD_B1D.md). Three separately editable road prefabs connect the southern approach, barracks service lane and west edge of HQ courtyard; sparse repairs/skids are a separate prefab. A new TerrainLayer darkens/softens the prepared site footprint directly on the existing E1 Terrain. Preserves the B1c HQ at (-422,-320), B1b three-barracks row at (-485,-270), plateau at (110,135), sun, camera, player Y78 and weapons. **No Unity Play Mode verdict yet.** After green: a restrained building-variation pass, then next building. No AO or sun bake.
 
 ## Combat proof retained (not integrated into main map yet)
 

@@ -13,6 +13,10 @@ The current asset direction is [Stylized Arcade Military](Docs/Production/ART_DI
 - `Assets/_Project/Settings/ArcadeCombat_URP.asset`: main-map candidate for 600-unit, four-cascade shadows. Compare its cost/quality to the current combat-lab profile before global adoption.
 - `Assets/ThirdParty/`: only protected dependencies after cleanup; attribution/license rules in [THIRD_PARTY_ASSETS.md](THIRD_PARTY_ASSETS.md).
 
+## B1d surface authoring
+
+The B1d Unity Editor installer saves road/shoulder mesh assets and prefabs, and a compacted-ground `TerrainLayer` + diffuse PNG. The ground transition is painted **into the existing editable Terrain alphamap**, not glued on as a giant flat mesh. Roads/shoulders/repair marks remain separate editable objects. After installing once, edit the generated material/prefab and Terrain painting directly; do not rerun installers. The next pass can deliberately weather one building without imposing textures/bakes on every asset.
+
 ## Model handoff
 
 1. Find a few relevant geometry reference images (proportion/massing, not styling to copy), set object footprint in **world units** next to the actual aircraft at Y78.
