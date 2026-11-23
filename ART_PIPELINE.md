@@ -1,30 +1,25 @@
-# Art pipeline
+# Art pipeline — active map and assets
 
-WeaponLab and GroundAttackLab are the gameplay references; Sandbox is a legacy comparison and the only Build Settings scene. FrontierStrata (V17) is the active visual playground; Scorched Frontier (V13) is the fallback. Gameplay and environment iteration stay separate until deliberately integrated.
+The current asset direction is [Stylized Arcade Military](Docs/Production/ART_DIRECTION.md). We author **one reusable asset at a time**, compare in the actual `ArcadeDesertE1` flight view and only then reuse or expand it. No more blind whole-map generators.
 
-## Practical authoring and bake guide
+## Folders
 
-**Before making a new model or baking a map, read [ART_AUTHORING.md](ART_AUTHORING.md).** It contains the V18–V20 tested low/high-poly recipe, Cycles selected-to-active settings, URP import contract, gameplay-distance A/B checklist and unresolved issues. This file remains the reference for folder ownership and asset lifecycle.
+- `Resources/Blender/`: editable `.blend` sources for **currently used** aircraft, targets and accepted new props; not imported into Unity.
+- `Resources/References/`: raw reference images and notes, not game assets. Check licenses before any direct reuse.
+- `Tools/Blender/`: reproducible authoring/generator scripts **only for live assets**. Rejected V17/V19/forest study generators are retired.
+- `Assets/_Project/Art/`: imported meshes, materials and textures. `Environment/ArcadeDesertE1` holds the current terrain, plateau and local aircraft paint.
+- `Assets/_Project/Prefabs/`: scene-neutral gameplay and camera prefabs. Prefer prefab reuse over copying materials or composing dependencies inside an obsolete scene.
+- `Assets/_Project/Scenes/ArcadeDesertE1.unity`: persistent, hand-editable map; **never regenerate**. Combat labs remain strictly for regression.
+- `Assets/_Project/Settings/ArcadeCombat_URP.asset`: main-map candidate for 600-unit, four-cascade shadows. Compare its cost/quality to the current combat-lab profile before global adoption.
+- `Assets/ThirdParty/`: only protected dependencies after cleanup; attribution/license rules in [THIRD_PARTY_ASSETS.md](THIRD_PARTY_ASSETS.md).
 
-## Layout
+## Model handoff
 
-- `Resources/Blender/`: editable Blender sources (not imported by Unity).
-- `Resources/References/`: raw visual references, not shipped with the game.
-- `Tools/Blender/`: reproducible authored asset generators; run from the repo root with `blender -b --python-exit-code 1 --python ...`.
-- `Tools/Unity/`: editor-only import, prefab and scene assembly tools. See [ARTLAB.md](Tools/Unity/ARTLAB.md).
-- `Assets/_Project/Art/`: authored FBX meshes, textures, materials and prefabs, grouped by Aircraft, Buildings, Nature, Terrain, Weapons and VFX. Frontier-specific aircraft materials live in `Aircraft/FrontierMaterials/`; do not alter Sandbox materials implicitly.
-- `Assets/_Project/Art/Environment/FrontierHeroKit/`: V14A reproducible authored FBX modules, base color/local AO/normal PNGs, materials and prefabs. Editable source: `Resources/Blender/FrontierHeroKit.blend`. Keep AO and normal maps separate; world shadows remain dynamic. Kit is used by V17; old showcase is historical. Do not rerun the old full kit in place.
-- `Assets/_Project/Generated/WeaponLab/`: separate low-cost 12 km test range scene outputs (small repeat PNG, shared ground mesh, training materials). Generator and controls: [WEAPON_LAB.md](Tools/Unity/WEAPON_LAB.md). Not a replacement for accepted V17 terrain.
-- `Assets/_Project/Generated/Battlefield/`: current gameplay landscape; keep until its replacement is tested.
-- `Assets/_Project/Generated/ScorchedFrontier/`: reproducible terrain, textures and V0 environment modules. Do not edit a generated prefab by hand without changing its generator, or move a useful authored asset into a disposable output folder.
-- `Assets/_Project/Generated/FrontierStrata/`: active V17 terrain, local geology maps, shared ground and road assets consolidated by the V18 cleanup utility. Preserve GUIDs and geometry for V19.
-- `Assets/_Project/Art/Environment/FrontierBakeTruth/` and `Generated/FrontierBakeTruth/`: isolated test assets. V18 proved meaningful high-only normal detail is visible at size 80; optional AO. Source `Resources/Blender/FrontierBakeTruth.blend`. Diagnostic import settings are not production defaults.
-- `Assets/_Project/Scenes/`, `Scripts/`, `Shaders/`: Unity scenes, runtime components and shaders. Use stable names for accepted baselines; version new experimental scenes only when necessary.
-- `Assets/Settings/ScorchedFrontier_URP.asset`: accepted study-local dynamic-shadow settings, temporarily selected in Play Mode. Not the global Sandbox pipeline.
-- `Assets/ThirdParty/`: existing dependencies; see [THIRD_PARTY_ASSETS.md](THIRD_PARTY_ASSETS.md). Do not remove until actual replacements are installed.
+1. Find a few relevant geometry reference images (proportion/massing, not styling to copy), set object footprint in **world units** next to the actual aircraft at Y150.
+2. Block out an intentionally designed silhouette. Use a small number of large surfaces, clear side/roof separation, no procedural spikes or crowded bevels. Inspect from gameplay yaw -45°, pitch 50°, ortho 80.
+3. Assign 2–4 intentional flat/matte material colors. Give neutral buildings enough contrast from muted sand `#B8A993`; reserve saturated accents for aircraft, doors/markings, weapons and VFX.
+4. If the model reads with dynamic URP sunlight, **do not bake just because the tool exists**. If local concavity/structural seams need more read, author restrained AO/normal independently; never bake a directional sun/shadow into albedo.
+5. Keep source `.blend` or documented model generator, source mesh, unity mesh import settings, prefab/materials and `.meta` GUIDs. Check collider/shadow flags and asset sizes before green.
+6. Evaluate at cruise and boost under real day lighting; compare readability, size, color, shadows and performance. Approve or reject the individual asset before adding another.
 
-## Asset rules
-
-Prefer reusable mesh and material references, GPU instancing for dense vegetation, and PNG textures with mipmaps and GPU compression. Avoid per-instance combined mesh exports and uncompressed full-map native texture assets. Inspect generated folder size before pushing. Move Unity assets via AssetDatabase with their `.meta` GUIDs, and check dependencies before deleting retired output. Keep raw models and Blender generators for later reuse.
-
-Commit generated assets and matching scene only after playtest. Retired experiments are recoverable from Git; do not copy huge archived files back into Assets or rewrite Git history.
+No historical V14–V20 steps are production instructions. Git preserves those experiments.

@@ -1,58 +1,29 @@
 # Air Combat — current handoff
 
-**Active Cleanup A (pending Unity verification):** migrate `ArcadeDesertE1` from scene-only `HeadingLockedObliqueCameraStudy` to production `ArcadeCameraFollow` on a new `ArcadeCameraRig.prefab`; old camera/combat labs stay intact. Run **Air Combat > Maintenance > Cleanup A - Extract Arcade Camera Prefab** exactly once and commit the prefab + changed scene + `.meta`. [Detailed migration / Cleanup B plan](Docs/Production/CLEANUP_A.md). No old art scenes/assets have been removed yet.
+Updated 2026-11-23. **Cleanup A GREEN**: `ArcadeCameraRig.prefab` and `ArcadeCameraFollow` are committed and used by the main map. **Cleanup B** retires art experiments and one-time installers with dependency guards; follow [Cleanup B verification](Docs/Production/CLEANUP_B.md) before calling this cleanup green.
 
-Updated 2026-11-23 for E1 first-flight production and vivid stylized arcade art direction. **Read this file and [GAMEPLAY_COMBAT.md](GAMEPLAY_COMBAT.md) before modifying gameplay.** This cleanup does not change flight, ballistics, weapons, enemies, HUD, scene objects or gameplay prefabs.
+## Active production
 
-## Current playable baseline
+- **Main:** `Assets/_Project/Scenes/ArcadeDesertE1.unity`, one persistent **2000×2000** editable Unity Terrain with muted nearly uniform ground (`#B8A993`), an approved approximately **430×275×30 m** plateau, and scene-specific dark blue-grey Kestrel paint. The first stable cruising altitude is **Y150**; `7/8/9` remain temporary Y78/Y110/Y150 comparisons. `R` resets, `A/D` steer, `W` boosts, `Q/E` break-turn, `H` hides overlay.
+- **Camera:** dedicated production `Assets/_Project/Prefabs/Camera/ArcadeCameraRig.prefab`: fixed-world yaw **-45°**, pitch **50°**, ortho **80**, heading look-ahead **48**, boost extra **14**, ~**0.42s** lead damping, safe viewport margin **20%**. No old C1 rotation mode on main map.
+- **Lighting:** `CombatLightingRig.prefab` is the only sun; the map uses its own `Assets/_Project/Settings/ArcadeCombat_URP.asset` candidate (**600** shadow distance, **4** cascades, **4096** shadow atlas). Earlier aircraft-shadow loss on ground/screen edges motivated this change. **Do not claim shadow-range visual acceptance without testing**; shadow geometry can still leave camera view. WeaponLab/GroundAttackLab use the unchanged existing rig/profile.
+- **World scale:** landforms, not pebble props, make the geography. One low plateau is an accepted module; stacked/higher formations may eventually become flyover hazards or collision walls. No extra plateaus, roads or canyon pass before the first base-style test.
+- **Current next task:** [B1 Military Base](Docs/Production/BASE_DESIGN.md). Block out a compact site/road/apron, then author **one warehouse/maintenance building** from reference, review its shape, color, dimensions and shadows in moving gameplay view. Add barracks, service block, parking/vehicles, airstrip and other props **only after** a convincing first building. No full-base generator.
 
-- **Unity 6.6 / URP**. `WeaponLab` is the fighter-combat regression; `GroundAttackLab` is the ground-combat regression. `Sandbox` is legacy and the only Build Settings scene; `FrontierStrata` is an art reference.
-- Player constant cruise **70**, W boost **140** with a **2.5s** fuel tank, A/D steering, Q/E 90° Break Turn requiring a full tank; R reset, H diagnostics. WeaponLab slots 1–3; GroundAttackLab slots 1–6.
-- **GroundAttackLab**: four independently damageable military depots; four-bomb run (4); six-rockets-during-cabrage attack (5); forward/down direct six-NURS salvo (6); AA1 autocannon and vertical-launch SAM1; north-up radar at top-right, HP + fuel strip at bottom. No NURS predicted-impact marker. No flares/decoys.
-- **SAM tuning in the committed missile prefab**, after manual green playtest: speed **150**, homing turn **140°/s**, total homing turn budget **180°**. This cleanup aligns the script initializers with that prefab; **serialized Inspector values remain authoritative**. SAM lock 1.4s within 350, vertical start -> pitch-over -> homing, three quick launch beeps then silence. Site and inbound missile appear on radar. Player A2A missile is a separate class/prefab.
-- **Direct NURS G5 (slot 6)**: independently playable, 6 rockets / 0.15s, down-angle 10°, radius-8 ground splash, 4s cooldown; normal steering during release. Boost spreads shots; Q/E and weapon switch cancel only pending shots. No targeting reticle.
+## Combat proof retained (not integrated into main map yet)
 
-## Known issues / next design decisions
+- `WeaponLab`: player vs fighter, BURST (1), GAUSS (2), guided A2A missile (3).
+- `GroundAttackLab`: bombs (4, four drops), committed cabrage NURS (5, six rockets), direct NURS (6, six shots). AA1 cannon, vertical-launch SAM1, player HP/fuel and RadarHud. Player A/D, W boost (cruise 70, boost 140, fuel 2.5s), Q/E Break Turn, R reset. For gameplay details and serialized values see [GAMEPLAY_COMBAT.md](GAMEPLAY_COMBAT.md).
+- Air and ground combat work is **mechanical proof-of-concept**. Eventually tune weapon responsiveness, impacts, sound, tracers, breakup, debris, smoke, explosions and ground contact VFX for the stylized arcade look. Do **not** balance or rewrite combat during B1 art production.
+- Known design debt: direct NURS currently feels too long-range; cabrage remains difficult but intentionally distinct. `GroundDepotTarget` destruction still uses a provisional runtime mesh cut.
 
-1. **Direct NURS range is too long for the desired arcade feel.** Tune muzzle speed / down-angle / ballistics separately after another visual playtest. Current mechanic is approved; don't "fix" by adding automatic aiming. Use `DirectNursRack` and `NursBallistics` to find the relevant controls.
-2. Cabrage is deliberately demanding and still needs refinement. It should remain a different attack option; don't silently replace slot 5 with slot 6. Future cabrage tuning may trade precision for a denser area salvo.
-3. Continue testing multiple AA/SAM sites and mobile ground threats in small missions, but do not build mission systems or countermeasures prematurely. Initial enemy SAM is dangerous but dodgeable with the player's current maneuvers.
-4. `GroundDepotTarget` still has a temporary runtime mesh-cutting destruction implementation; don't turn it into an art-pipeline refactor during combat tuning.
+## Architecture and safety
 
-## Environment plan / next work (2026-11-23)
+- Use existing prefabs: `PlayerJet`, `EnemyJet`, `Kestrel`, `ArcadeCameraRig`, legacy `CombatCameraRig` (still used in the labs), AA1, SAM1 launcher/missile, `MilitaryDepot`, `CombatHUD`, `CombatLightingRig`.
+- `ArcadeDesertE1` currently runs `E1MapFlightSession` **without combat**. `WeaponLabSession` and `GroundAttackLabSession` retain their self-contained setups. The eventual combined mission needs deliberate scene wiring rather than moving scene objects blindly.
+- Keep Unity `.meta` GUIDs stable. Use original authored/Blender sources for live assets. Runtime and prefab references take precedence over obsolete docs or C# default values.
+- After B cleanup, validate **main map** flight and shadow/plateau, **WeaponLab** air weapons, **GroundAttackLab** all six weapons/AA/SAM/HUD. Deleting old scenes is not a substitute for Play Mode.
 
-- **Current approved direction:** one expandable **stylized hybrid** low-flight map with broad hills/lowlands, crisp ground/rocks/buildings, roads and one genuinely flyable canyon that reaches aircraft altitude and can cause wall crashes. Unify screen-space detail and materials; avoid V19's sharp-prop / blurry-ground mismatch, toy styling and texture stretching. New map uses the accepted `CombatLightingRig.prefab`, then restrained post/shader grading. Plan: [Docs/Art/ENVIRONMENT_MAP_PLAN.md](Docs/Art/ENVIRONMENT_MAP_PLAN.md).
-- **Camera verdict (2026-11-23):** rotating C1b 50° is visually richer but harms combat and causes mild motion sickness. **C2 fixed-world 50° is GREEN**: yaw -45°, pitch 50°, ortho 80; aircraft rotates onscreen, environment does not. Radar already aligns with the actual camera axes. Gameplay comfort is the priority.
-- **Camera C3 GREEN (2026-11-23):** fixed-world yaw **-45°**, pitch **50°**, ortho 80; heading-based forward lead **48 world units**, **+14** on active afterburner, independent **0.42s** smoothing and **20%** viewport-safe margin. C1b rotating-world camera was visually attractive but made combat less comfortable and caused mild motion sickness. `C` remains an optional comparison. Radar follows actual camera axes. [Camera notes](Docs/Art/CAMERA_C1_COMBAT.md).
-- **Scene safety:** `FrontierCameraCombatC1.unity` is already authored/committed; never rerun its one-time builder. C3 and E1a operate within that scene; do not alter aircraft/combat prefabs, lighting or other labs. Microfix disables automatic out-of-bounds resets in this study; `R` still resets manually.
-- **E1a/flat conclusion:** ground should be visually quiet, **muted and mid-light rather than dark or saturated**. The vivid first E1 pass `#DDA44D` was tested and rejected for its eye-catching saturation. Let aircraft, buildings, threats and VFX provide controlled color accents.
-- **E1b result (user Play Mode):** flat muted `#B8A993` ground **accepted**, but the 18 rock chunks read like miniature props; light wings merged into the ground; Y78/shadow relationship harmed scale. **Active E1c:** same existing 2×2 km `ArcadeDesertE1.unity` (not a rebuild). One **430×275m / ~30m** authored low plateau, old E1/E1b rocks disabled; dark blue-grey Kestrel scene-only paint `#31536B` / `#19364B`, orange `#E07940`; initial **Y150**, gameplay-only `7/8/9` compare Y78/Y110/Y150 with instant camera snap. **E1c Unity verdict pending**. One-time menu `Air Combat > Art > E1c - Install Big Plateau + Altitude Test`; existing E1/E1b/E1c builders must not be rerun. [E1c instructions](Docs/Art/ARCADE_DESERT_E1C.md).
-- **Visual direction:** Stylized Arcade Military, chunky faceted but softened rock silhouettes (neither round toys nor spikes), quiet ground, clearer/larger geometry and slightly higher aircraft. Aircraft, buildings and later effects carry saturation. Combat systems are proof-of-concept; later high-impact audio, tracers, breakup/debris, smoke and explosions form a separate juice pass. [Art pillars](Docs/Art/ARCADE_VISUAL_DIRECTION.md).
-- **After E1c playtest:** choose height/plateau proportion first; then isolate a **longer, more aggressive Kestrel silhouette** test (no shared prefab changes before approval). Only then add hills/canyon, roads/bases and eventually the VFX/audio juice pass. Combat mechanical proofs remain intact.
+## Working rules
 
-- **Active E1d — isolated shadow range (pending Unity Play Mode):** In `ArcadeDesertE1.unity`, at Y110 the player shadow was visible on the plateau but missing on the lower ground; similar shadow popping happened at screen edges near buildings. Current shared URP uses 230-unit shadow distance, 2 cascades, 4096 main-light atlas. One-time menu `Air Combat > Art > E1d - Install Long-Range Shadows` duplicates it as `Assets/_Project/Settings/ArcadeCombat_URP.asset` (intended future-main candidate) with **600-unit shadow distance, 4 cascades, 4096 unchanged** and overrides only the E1 scene rig. Playtest Y78/110/150 and frame edges before declaring the cause fixed; shared combat labs/prefab and old profile must stay unchanged. [E1d details](Docs/Art/ARCADE_DESERT_E1D.md).
-
-## Art checkpoint
-
-- `FrontierStrata` V17 remains the terrain/art baseline; the V18/V19 selected-to-active bake workflow works technically, but this is **not** automatic artistic acceptance. See [ART_AUTHORING.md](ART_AUTHORING.md) before making new environmental assets.
-- V20 **Beds 0.45** is preferred only for the studied BrokenMesa; V19 **0.40** is a softer fallback. Still unresolved: screen-edge shadow degradation, overall image clarity / atmosphere, and final refinery art language.
-- **V2A–V2A5 art reset (2026-11-23):** all failed V2 live scenes/meshes/textures/one-time generators and their Unity `.meta` files were culled. V17 and earlier proven bake references remain. The one-rock and free-pack fallbacks were **tried** (RockKitR1 and BrokenVector cliff pack), but neither won visually. Native T1 is technically usable but too blurry/stretched on steep slopes. **Do not treat these older fallback steps as the next task**; see the approved hybrid map plan. See [art reset](ENVIRONMENT_ART_RESTART.md) for the reasons behind previous rejections.
-- For each new visual atom, add **accepted / rejected / unresolved**, tested camera/size and generated asset size to this handoff, then archive the iteration after its conclusions are folded into the live art guides.
-
-## Code ownership / safe boundaries
-
-- `GroundAttackLabSession` owns lab-only setup: bombs, cabrage, direct NURS, health, radar registrations, scene targets and HUD binding. `WeaponLabSession` owns the other lab. Shared `PlayerJet` and air-combat prefabs should **not** be modified to wire in ground-only experiments.
-- Existing AA1, SAM1, missile and HUD prefabs are **authored and committed**. Do not rerun their one-shot editor installers; those scripts have been moved to `Docs/Archive/EditorInstallers/` as noncompiled historical source.
-- `AircraftRadar` detects explicit `IRadarContact`s within 460 X/Z units. `RadarHud` only renders the detections: ground threat circles and hostile incoming-missile glyphs; never display our own projectiles as incoming threats.
-- Keep player `MissileProjectile` (air-to-air) and `SurfaceToAirMissile` (SAM) independent. Lighting is owned by the shared `CombatLightingRig.prefab`; `AircraftGroundShadow` is legacy Sandbox-only.
-
-## Quick regression after each combat change
-
-1. **GroundAttackLab**: slots 1–6, normal flight/boost/Q/E, bombs, cabrage recovery and camera, direct NURS spread/cancel/cooldown, target damage, AA1 tracers, SAM lock/launch/impact, radar/HP/fuel, H and R. Watch SAM diagnostic `LastFlightReport` if a rocket disappears unexpectedly.
-2. **WeaponLab**: fighter pursuit/evasion, BURST, GAUSS, lock-on A2A missile, W/Q/E and R, no ground-attack weapons accidentally equipped.
-3. **Sandbox**: legacy movement and original HUD/shadow still work. Check light presets/shadows in both combat labs if modifying URP.
-4. **No scene regeneration or asset GUID churn** during code-only patches. Unity Play Mode is a separate validation step; a successful `git apply --check` is not a Unity compile/gameplay test.
-
-## Handoff discipline
-
-For each atom, create a short `GAMEPLAY_*.md` with **actual numbers, files, intended behavior, testing and known limits**. Add a one-line link under README's working notes only while the atom is active. At a cleanup checkpoint, reconcile the true committed prefabs/code into this handoff and [GAMEPLAY_COMBAT.md](GAMEPLAY_COMBAT.md), then move superseded atom docs to [Docs/Archive](Docs/Archive/README.md). Keep this handoff updated even if a conversation ends suddenly.
+Build one approved atom at a time; send a `.patch` with check/apply commands; test in Unity; green push. Update this handoff and the active plan when an artistic or technical decision is accepted. Keep old experiments in Git history, not as production source or dozens of competing Markdown plans.

@@ -6,7 +6,13 @@ EditorBuildSettings:
   serializedVersion: 2
   m_Scenes:
   - enabled: 1
-    path: Assets/_Project/Scenes/Sandbox.unity
-    guid: 4b452e551d8b9a947b835cb3535febc1
+    path: Assets/_Project/Scenes/ArcadeDesertE1.unity
+    guid: beb6007b43c7f0640abfcff1ff7e1b7f
+  - enabled: 0
+    path: Assets/_Project/Scenes/WeaponLab.unity
+    guid: 5584378ad16d9204582aaaf0395185b1
+  - enabled: 0
+    path: Assets/_Project/Scenes/GroundAttackLab.unity
+    guid: ac0583bfeeceac74eab21c4db2fe26fc
   m_configObjects:
     com.unity.input.settings.actions: {fileID: -944628639613478452, guid: 052faaac586de48259a63d0c4782560b, type: 3}

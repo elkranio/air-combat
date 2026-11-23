@@ -1,28 +1,13 @@
-# L1 — shared combat lighting and real URP shadows (current)
+# Lighting — shared URP sun and shadow profiles
 
-**Already installed. Do not run the one-time L1 installer again.** The authoritative asset is `Assets/_Project/Prefabs/Environment/CombatLightingRig.prefab`, used by both `WeaponLab.unity` and `GroundAttackLab.unity`.
+The authoritative sunlight prefab is `Assets/_Project/Prefabs/Environment/CombatLightingRig.prefab`. Instantiate **one** per gameplay scene. `CombatLightingRig` chooses day/sunset/near-night, sun azimuth/elevation, intensity and ambient; it restores global settings on disable. No second directional sun or painted shadows.
 
-**E1d map-only experiment (not a shared-light change):** `Assets/_Project/Settings/ArcadeCombat_URP.asset` is created via `Air Combat > Art > E1d - Install Long-Range Shadows` and assigned **only** to the `ArcadeDesertE1` scene instance of this rig. It raises shadow distance to 600 and cascades to 4; 4096 stays. This is a candidate for future main scenes, not approved production settings; see [E1d](Docs/Art/ARCADE_DESERT_E1D.md). The original shared profile stays at 230/2.
+## Profiles
 
-## Reuse in new combat scenes
+- **Main authored map** (`ArcadeDesertE1`): isolated candidate `Assets/_Project/Settings/ArcadeCombat_URP.asset`, **shadow distance 600**, **4 cascades**, main-light shadow atlas **4096**. It is a scene-instance override, not the global rig prefab. Intended to address aircraft shadow loss over lower ground and shadows disappearing near viewport edges. **Final in-game quality and cost have not been conclusively verified**.
+- **WeaponLab / GroundAttackLab**: established `Assets/Settings/ScorchedFrontier_URP.asset` with **shadow distance 230**, **2 cascades**, atlas **4096**. Keep unchanged until a deliberate cross-scene migration.
+- The actual sun casts directional soft shadows on aircraft, plateau, structures, terrain, projectiles. The old projected ground-shadow component and its Sandbox scene are retired. Do not rebake the sun into mesh albedo or replace real shadows with cartoon blobs.
 
-- Instance the **same prefab**. Its `CombatLightingRig` component owns the sun and runtime URP profile (`Assets/Settings/ScorchedFrontier_URP.asset`), not a separate script or scene-specific sun.
-- The accepted URP profile provides a 4096 main-light shadowmap and a 230-unit shadow distance. Do not change the global URP profile as part of a camera or weapon cleanup.
-- The rig supplies Day, Sunset and NearNight time-of-day presets, azimuth and elevation adjustment, and ambient multiplier. All are Inspector-editable in Play Mode. `SuggestedEmissionMultiplier` is only a hint for future emissive props; it does not modify materials.
-- The rig restores the previously active pipeline and scene ambient/sun settings on disable, provided it still owns those settings. Do not instantiate multiple combat lighting authorities in the same scene.
-- Renderers on aircraft, bombs, NURS and depot geometry cast **real 3D shadows** on terrain, roofs and the sloped test receiver. Their positions follow geometry and the common sun angle.
+## Checks
 
-## Do not reuse
-
-- `Scripts/Visual/AircraftGroundShadow.cs` is an older ground-projected translucent mesh for the legacy Sandbox and art experiments, not a terrain-aware physical shadow.
-- No replacement projected-shadow component or additional material glow is needed for the accepted combat baseline.
-- Do not rebake directional light into albedo/normal/AO maps. Environment art assets follow [ART_AUTHORING.md](ART_AUTHORING.md).
-
-## Verify
-
-1. WeaponLab and GroundAttackLab each have a single `CombatLightingRig` prefab instance, with no extra directional sun or Missing Script after script moves.
-2. Compare Day / Sunset / NearNight; look for a single physically plausible aircraft shadow and moving bomb/rocket shadows on ground and roofs. Check the temporary slope in GroundAttackLab.
-3. Exit Play Mode and change scenes. Lighting state/URP profile must not leak into Sandbox or unrelated art scenes.
-4. Confirm Bombs, NURS, camera cue and aircraft flight are unchanged, and Sandbox retains its legacy decorative shadow.
-
-Original one-time import procedure and installation notes: [Docs/Archive/LIGHTING_L1_INSTALL_HISTORY.md](Docs/Archive/LIGHTING_L1_INSTALL_HISTORY.md).
+Fly at Y78/110/150 over bare ground and the ~30m plateau. Ensure the shadow remains visible *if its location is in the camera viewport*, including near screen edges; absence due to view geometry is not fixed by render distance. Compare quality near cascade transitions and from a moving jet at ortho 80, yaw -45°, pitch 50°. Larger shadow range/cascade count can increase shadow rendering time even with simple geometry; profile before deployment. Also regression-test the two combat labs with their original lighting.
