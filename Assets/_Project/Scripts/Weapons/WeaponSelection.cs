@@ -3,7 +3,7 @@ using UnityEngine.InputSystem;
 
 namespace AirCombat
 {
-    public enum WeaponMode { Burst, Gauss, Missile, Bomb, Nurs }
+    public enum WeaponMode { Burst, Gauss, Missile, Bomb, Nurs, DirectNurs }
 
     // Owns weapon selection. Firing and aiming stay in their respective components.
     // SelectionRevision advances even when reselecting the current slot: a reselect
@@ -19,20 +19,23 @@ namespace AirCombat
         public bool SelectionLocked { get; private set; }
         public bool BombsEquipped { get; private set; }
         public bool NursEquipped { get; private set; }
+        public bool DirectNursEquipped { get; private set; }
 
-        // GroundAttackLab enables slots 4/5; WeaponLab/Sandbox keep their old slots.
+        // GroundAttackLab enables slots 4/5/6; WeaponLab/Sandbox keep their old slots.
         public void EquipBombs() { BombsEquipped = true; }
         public void EquipNurs() { NursEquipped = true; }
+        public void EquipDirectNurs() { DirectNursEquipped = true; }
         public void SetSelectionLocked(bool locked) { SelectionLocked = locked; }
 
         private void Awake() { Selected = initialMode; }
 
         public void Select(WeaponMode next)
         {
-            if (next < WeaponMode.Burst || next > WeaponMode.Nurs)
+            if (next < WeaponMode.Burst || next > WeaponMode.DirectNurs)
                 throw new System.ArgumentOutOfRangeException(nameof(next));
             if (SelectionLocked || (next == WeaponMode.Bomb && !BombsEquipped) ||
-                (next == WeaponMode.Nurs && !NursEquipped)) return;
+                (next == WeaponMode.Nurs && !NursEquipped) ||
+                (next == WeaponMode.DirectNurs && !DirectNursEquipped)) return;
             Selected = next;
             unchecked { SelectionRevision++; }
         }
@@ -48,6 +51,7 @@ namespace AirCombat
             if (keyboard.digit3Key.wasPressedThisFrame) Select(WeaponMode.Missile);
             if (keyboard.digit4Key.wasPressedThisFrame && BombsEquipped) Select(WeaponMode.Bomb);
             if (keyboard.digit5Key.wasPressedThisFrame && NursEquipped) Select(WeaponMode.Nurs);
+            if (keyboard.digit6Key.wasPressedThisFrame && DirectNursEquipped) Select(WeaponMode.DirectNurs);
         }
     }
 }

@@ -23,6 +23,7 @@ namespace AirCombat
         private BombRack bombs;
         private CabrageManeuver cabrage;
         private NursRocketRack nurs;
+        private DirectNursRack directNurs;
         private NursCameraCue nursCamera;
         private GroundDepotTarget[] depots;
         private PlayerHitPoints playerHealth;
@@ -110,6 +111,7 @@ namespace AirCombat
             }
             selection.EquipBombs();
             selection.EquipNurs();
+            selection.EquipDirectNurs();
             bombs = jet.GetComponent<BombRack>();
             if (bombs == null) bombs = jet.AddComponent<BombRack>();
             bombs.Configure(selection, flight, afterburner, breakTurn);
@@ -120,6 +122,9 @@ namespace AirCombat
             nurs = jet.GetComponent<NursRocketRack>();
             if (nurs == null) nurs = jet.AddComponent<NursRocketRack>();
             nurs.Configure(cabrage, flight);
+            directNurs = jet.GetComponent<DirectNursRack>();
+            if (directNurs == null) directNurs = jet.AddComponent<DirectNursRack>();
+            directNurs.Configure(selection, flight, afterburner, breakTurn);
             // G4c keeps aircraft-safe camera lead, without an impact predictor.
             nursCamera = cameraRig.GetComponent<NursCameraCue>();
             if (nursCamera == null) nursCamera = cameraRig.gameObject.AddComponent<NursCameraCue>();
@@ -171,6 +176,7 @@ namespace AirCombat
         private void ResetFlight()
         {
             bombs?.CancelBurst();
+            directNurs?.CancelSalvo();
             cabrage?.ResetManeuver();
             breakTurn?.CancelBreak();
             nursCamera?.ResetCue();
@@ -188,9 +194,9 @@ namespace AirCombat
             if (!showDiagnostics || !enabled || Event.current.type != EventType.Repaint) return;
             if (label == null)
                 label = new GUIStyle(GUI.skin.label) { fontSize = 14, normal = { textColor = Color.white } };
-            GUI.Box(new Rect(12, 12, 650, missileTower != null ? 212 : antiAircraft != null ? 164 : 140), GUIContent.none);
-            GUI.Label(new Rect(22, 17, 620, 22), "GROUND ATTACK LAB G4b / BOMBS + CABRAGE NURS", label);
-            GUI.Label(new Rect(22, 40, 620, 22), "A/D turn  W boost  Q/E break/abort  1/2/3/4/5 weapons  R reset  H HUD", label);
+            GUI.Box(new Rect(12, 12, 650, missileTower != null ? 237 : antiAircraft != null ? 189 : 165), GUIContent.none);
+            GUI.Label(new Rect(22, 17, 620, 22), "GROUND ATTACK LAB G5 / BOMBS + CABRAGE + DIRECT NURS", label);
+            GUI.Label(new Rect(22, 40, 620, 22), "A/D turn  W boost  Q/E break/abort  1/2/3/4/5/6 weapons  R reset  H HUD", label);
             GUI.Label(new Rect(22, 63, 620, 22),
                 $"Speed {flight.CurrentSpeed:F0}   Fuel {afterburner.Charge01:P0}   Bombs {bombs.FiredCount}   Pending {bombs.PendingCount}   CD {bombs.CooldownLeft:F1}s", label);
             GUI.Label(new Rect(22, 86, 620, 22),
@@ -208,6 +214,8 @@ namespace AirCombat
             if (missileTower != null)
                 GUI.Label(new Rect(22, 178, 620, 22),
                     "SAM last: " + missileTower.LastFlightReport, label);
+            GUI.Label(new Rect(22, missileTower != null ? 201 : antiAircraft != null ? 155 : 132, 620, 22),
+                $"G5 DIRECT: Fired {directNurs.FiredCount}   Pending {directNurs.PendingCount}   Impacts {directNurs.ImpactCount}   GroundHits {directNurs.DamagedPartHits}   CD {directNurs.CooldownLeft:F1}s", label);
         }
     }
 }

@@ -18,17 +18,19 @@ namespace AirCombat
         private Material scorchMaterial;
         private Action<int> onImpact;
         private float elapsed;
+        private float blastRadius = 6f;
         private bool launched;
 
         public void Launch(Vector3 initialVelocity, Transform owner,
             Material shell, Material trailMaterial, Material flash, Material scorch,
-            Action<int> impactCallback)
+            Action<int> impactCallback, float radius = 6f)
         {
             velocity = initialVelocity;
             shooter = owner;
             flashMaterial = flash;
             scorchMaterial = scorch;
             onImpact = impactCallback;
+            blastRadius = Mathf.Max(.1f, radius);
 
             var visual = GameObject.CreatePrimitive(PrimitiveType.Capsule);
             visual.name = "NURS shell";
@@ -115,7 +117,6 @@ namespace AirCombat
 
         private void Detonate(Vector3 point)
         {
-            const float blastRadius = 6f;
             int damagedParts = GroundBlastDamage.Apply(point, blastRadius, 1);
             BombImpactFx.Spawn(point, flashMaterial, scorchMaterial, blastRadius);
             onImpact?.Invoke(damagedParts);

@@ -11,6 +11,8 @@ Unity 6.6 / URP arcade air-combat prototype. The accepted gameplay is in committ
 
 **Controls (WeaponLab + GroundAttackLab):** A/D steer, constant 70 cruise, W afterburner to 140 (2.5s full tank), Q/E Break Turn, R reset, H diagnostics **off by default**. S/Space unused. WeaponLab: 1 BURST, 2 GAUSS, 3 MISSILE, B enemy evasion. GroundAttackLab also has **4 BOMBS** (four gravity bombs, .25s spacing, 3s cooldown, nadir/height-only marker) and **5 NURS** (committed 2.5s climb, six physical rockets, 2.5s return, Q/E emergency abort). No NURS impact predictor; G4c adds aircraft-safe camera lead instead. **H1** places the north-up radar at the top-right and a shared 4%-height **FUEL + HP** status bar at the bottom of GroundAttackLab. Radar detection stays 460 with the actual AA danger ring. Sandbox retains its original W/S + Space controls.
 
+**G5 Direct NURS (GroundAttackLab only):** **6** fires six unguided forward/downward rockets with a small ground splash, keeping flight controls active. **5** remains the cabrage attack. No aim/impact marker.
+
 ## Source ownership
 
 ```text
@@ -42,10 +44,11 @@ Keep `PlayerJet`, `CombatCameraRig`, and `CombatLightingRig` reusable; scene-spe
 - [GAMEPLAY_HUD_H1.md](GAMEPLAY_HUD_H1.md) — **H1 Combat HUD prefab**, install, runtime binding and playtest.
 - [GAMEPLAY_SAM_M1.md](GAMEPLAY_SAM_M1.md) — SAM1 installation, sound lock, separate inbound missile and radar checks.
 - [GAMEPLAY_SAM_M1B.md](GAMEPLAY_SAM_M1B.md) — SAM1b fixed VLS tower, reliable lock, initial pitch-over and homing budget.
+- [GAMEPLAY_CORE_G5.md](GAMEPLAY_CORE_G5.md) — **G5 direct NURS**, initial balance, flight/cancellation rules and playtest.
 - [ART_PIPELINE.md](ART_PIPELINE.md), [ART_AUTHORING.md](ART_AUTHORING.md), [Tools/Unity/ARTLAB.md](Tools/Unity/ARTLAB.md) — art sources and pipeline.
 - [GAMEPLAY_CORE_G1.md](GAMEPLAY_CORE_G1.md), [GAMEPLAY_CORE_G2.md](GAMEPLAY_CORE_G2.md) — historical scene creation and depot bake/import.
 - [THIRD_PARTY_ASSETS.md](THIRD_PARTY_ASSETS.md) — licenses; [Docs/Archive](Docs/Archive) — old migration logs.
 
 ## Next
 
-**SAM1b is pending Unity playtest**: run **Air Combat > SAM1b > Upgrade Existing Launcher to Vertical** once to update the existing SAM prefab in place. Fixed vertical missile launch, range-only audible acquisition and separate homing budget. No countermeasures, coordinated sites or armed enemy fighter weapons yet.
+**G5 direct NURS requires a Unity playtest.** GroundAttackLab slot 6 runs on existing scene objects; no scene/prefab installer. Compare it against bombs (4) and cabrage (5), then test combined AA1/SAM1 encounters. No countermeasures or coordinated sites yet.
