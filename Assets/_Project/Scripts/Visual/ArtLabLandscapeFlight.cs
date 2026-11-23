@@ -17,6 +17,7 @@ namespace AirCombat
         [SerializeField] private Afterburner boost;
         [SerializeField] private float halfMap = 600f;
         [SerializeField] private string studyTitle = "ArtLab v10 / Landscape flight";
+        [SerializeField] private string cameraHelp;
         private RenderPipelineAsset previousPipeline;
         private bool ownsOverride;
         private Vector3 startPosition;
@@ -29,6 +30,12 @@ namespace AirCombat
         {
             studyPipeline = pipeline; player = aircraft; viewCamera = camera;
             flight = controller; boost = afterburner; halfMap = halfExtent; studyTitle = title;
+        }
+
+        public void SetStudyLegend(string title, string cameraLine)
+        {
+            studyTitle = title;
+            cameraHelp = cameraLine;
         }
 
         private void OnEnable()
@@ -74,7 +81,8 @@ namespace AirCombat
             GUI.Box(new Rect(12, 12, 415, 106), GUIContent.none);
             GUI.Label(new Rect(22, 16, 395, 22), string.IsNullOrEmpty(studyTitle) ? "ArtLab v10 / Landscape flight" : studyTitle, label);
             GUI.Label(new Rect(22, 38, 395, 22), "WASD: flight   Space: boost   R: recenter", label);
-            GUI.Label(new Rect(22, 60, 395, 22), "1/2/3: camera 90/75/65 deg   H: hide", label);
+            GUI.Label(new Rect(22, 60, 395, 22),
+                string.IsNullOrEmpty(cameraHelp) ? "1/2/3: camera 90/75/65 deg   H: hide" : cameraHelp, label);
             GUI.Label(new Rect(22, 82, 395, 22), $"Speed {flight.CurrentSpeed:F0}   Boost {boost.Charge01:P0}   {halfMap * 2f:F0} x {halfMap * 2f:F0}", label);
         }
     }

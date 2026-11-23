@@ -17,11 +17,17 @@ Updated 2026-11-23 after the documentation/retired-editor-tools cleanup. **Read 
 3. Continue testing multiple AA/SAM sites and mobile ground threats in small missions, but do not build mission systems or countermeasures prematurely. Initial enemy SAM is dangerous but dodgeable with the player's current maneuvers.
 4. `GroundDepotTarget` still has a temporary runtime mesh-cutting destruction implementation; don't turn it into an art-pipeline refactor during combat tuning.
 
+## Environment plan / next work (2026-11-23)
+
+- **Current approved direction:** one expandable **stylized hybrid** low-flight map with broad hills/lowlands, crisp ground/rocks/buildings, roads and one genuinely flyable canyon that reaches aircraft altitude and can cause wall crashes. Unify screen-space detail and materials; avoid V19's sharp-prop / blurry-ground mismatch, toy styling and texture stretching. New map uses the accepted `CombatLightingRig.prefab`, then restrained post/shader grading. Plan: [Docs/Art/ENVIRONMENT_MAP_PLAN.md](Docs/Art/ENVIRONMENT_MAP_PLAN.md).
+- **Do C1 camera experiment first**, then resume map E1 regardless of verdict. C1 is *actual aircraft-relative 3/4*: world/camera rotates as aircraft turns while the aircraft appears diagonal on screen. Use one-time `Air Combat > Art > C1 - Create Heading-Locked Camera Study`, open the resulting `FrontierCameraC1.unity`, Play; **C** toggles old north-up vs new heading-locked, **1/2/3** try 50/58/65-degree pitch, **A/D** steer. V19 lighting is deliberately unchanged in C1. **VERDICT: PENDING** until Unity Play Mode.
+- **Next after C1:** E1 new persistent environment scene and shared-light foundation based on V19 composition; then E2 sharpness/material coherence, E3 real collision canyon, E4 buildings/dressing, E5 grading/map expansion. No gigantic one-shot procedural rebuild.
+
 ## Art checkpoint
 
 - `FrontierStrata` V17 remains the terrain/art baseline; the V18/V19 selected-to-active bake workflow works technically, but this is **not** automatic artistic acceptance. See [ART_AUTHORING.md](ART_AUTHORING.md) before making new environmental assets.
 - V20 **Beds 0.45** is preferred only for the studied BrokenMesa; V19 **0.40** is a softer fallback. Still unresolved: screen-edge shadow degradation, overall image clarity / atmosphere, and final refinery art language.
-- **V2A–V2A5 art reset (2026-11-23):** all failed V2 live scenes/meshes/textures/one-time generators and their Unity `.meta` files were culled. V17 and earlier proven bake references remain. Next: **one** structurally sound rock/cliff in Blender, evaluate Solid mode at gameplay zoom *before* UV/bake. If it fails, import licensed free reference assets for a like-for-like comparison. See [art reset](ENVIRONMENT_ART_RESTART.md).
+- **V2A–V2A5 art reset (2026-11-23):** all failed V2 live scenes/meshes/textures/one-time generators and their Unity `.meta` files were culled. V17 and earlier proven bake references remain. The one-rock and free-pack fallbacks were **tried** (RockKitR1 and BrokenVector cliff pack), but neither won visually. Native T1 is technically usable but too blurry/stretched on steep slopes. **Do not treat these older fallback steps as the next task**; see the approved hybrid map plan. See [art reset](ENVIRONMENT_ART_RESTART.md) for the reasons behind previous rejections.
 - For each new visual atom, add **accepted / rejected / unresolved**, tested camera/size and generated asset size to this handoff, then archive the iteration after its conclusions are folded into the live art guides.
 
 ## Code ownership / safe boundaries

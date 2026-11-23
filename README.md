@@ -8,7 +8,7 @@ Unity 6.6 / URP arcade air-combat prototype. **Committed scenes, prefabs and the
 2. [GAMEPLAY_COMBAT.md](GAMEPLAY_COMBAT.md) — controls, six weapon slots, ground threats, real gameplay numbers and tuning.
 3. [GAMEPLAY_ARCHITECTURE.md](GAMEPLAY_ARCHITECTURE.md) — ownership, scene wiring, prefab contracts and safe change boundaries.
 4. [ART_PIPELINE.md](ART_PIPELINE.md) / [ART_AUTHORING.md](ART_AUTHORING.md) — art assets and model/bake workflow; [LIGHTING_L1.md](LIGHTING_L1.md) — shared URP lighting; [THIRD_PARTY_ASSETS.md](THIRD_PARTY_ASSETS.md) — licenses.
-5. [ENVIRONMENT_ART_RESTART.md](ENVIRONMENT_ART_RESTART.md) — **environment art reset after V2A–V2A5**, next single-rock test and free-asset comparison fallback.
+5. [Docs/Art/ENVIRONMENT_MAP_PLAN.md](Docs/Art/ENVIRONMENT_MAP_PLAN.md) — **current approved environment direction and C1 camera experiment**; read before doing more terrain/art work. [ENVIRONMENT_ART_RESTART.md](ENVIRONMENT_ART_RESTART.md) documents older rejected V2 art experiments.
 
 ## Playable/reference scenes
 
@@ -18,6 +18,8 @@ Unity 6.6 / URP arcade air-combat prototype. **Committed scenes, prefabs and the
 | `Assets/_Project/Scenes/GroundAttackLab.unity` | Ground attack: depots, bombs, cabrage, direct NURS, AA1, SAM1, shared CombatHUD |
 | `Assets/_Project/Scenes/Sandbox.unity` | Legacy comparison; currently the only Build Settings entry, not a template for new combat scenes |
 | `Assets/_Project/Scenes/FrontierStrata.unity` | V17 environmental art reference, not the combat regression |
+| `Assets/_Project/Scenes/FrontierPracticalBake.unity` | V19 reference for readable roads/industrial layout/rocks; old art lighting |
+| `Assets/_Project/Scenes/FrontierCameraC1.unity` | **C1 experimental scene created once via Unity menu**; aircraft-relative 3/4 camera A/B (not yet accepted) |
 
 Controls in the two combat labs: **A/D** turn, **W** boost, **Q/E** emergency Break Turn, **R** reset, **H** diagnostics (hidden by default), **LMB** fire/commit. WeaponLab: **1–3**. GroundAttackLab: **1–6** (4 bombs, 5 cabrage rockets, 6 direct NURS). Sandbox retains its legacy W/S + Space controls.
 
