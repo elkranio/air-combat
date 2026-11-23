@@ -15,3 +15,10 @@ AIR-01 live Tiger and AIR-01a paint are GREEN at `6302df5`. AIR-02 is authored f
 2. Fly and turn without firing: Tiger closes, makes visible bursts, passes and comes back. H shows Approach/Attack/Disengage (and ReturnToMap near edges). Check that it does not orbit indefinitely or shoot backwards, and that player HP decreases only on projectile hits.
 3. Fight back: check enemy HP decreases, self/friendly hits remain excluded, radar vanishes on kill. Lose a fight: HP 0 and flight/trigger stop. R should clear previous rounds and restore both combatants. Check repeated R during a burst, altitude comparison and boundary resets.
 4. Verify existing labs still work. No tuning changes to the 70/140 flight baseline, 20 HP, 4-shot AC-01 or current effects. Evaluate encounter tempo and hit rate before AIR-03 (evasion); AIR-04 is hit/death juice.
+
+## AIR-02b — pair encounter, 5 HP each
+
+- Two independent Tiger pilots spawn together, separated by 45 horizontal units (configurable `pairSpacing` on the existing `Air01Encounter` component), on the same random offscreen 550-unit ring. Both candidates must fit inside bounds and stay offscreen. They enter with a small +/-3-degree heading difference; neither follows the other.
+- Fighter prefab HP lowered **20 -> 5**; player remains 20 HP. Existing Tiger 60/120 speed and 100-degree turning nerf remains. Aircraft AI, weapon stats, steering, target marker and colors are unchanged.
+- Both are separate enemy teams, damage targets, radar contacts and `ArcadeFighterPilot` instances. Killing either removes only that Tiger, its radar contact and its rounds. The surviving Tiger continues attacking. Victory is reported only after both are down. Player defeat removes both. `R` resets HP and replaces both at a new random bearing.
+- Test: mark either Tiger with RMB and switch to the other, kill one and see its marker disappear; then mark and kill the survivor. Verify both radar contacts, team-based self/friendly-fire filtering, clean reset after kills/death and no changes to WeaponLab/GroundAttackLab.

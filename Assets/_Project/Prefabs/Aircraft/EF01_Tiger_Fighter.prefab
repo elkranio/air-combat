@@ -133,7 +133,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0252dee5824041d89df16af3c22b515c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::AirCombat.PlayerHitPoints
-  maxHp: 20
+  maxHp: 5
 --- !u!114 &5885432053115185686
 MonoBehaviour:
   m_ObjectHideFlags: 0
