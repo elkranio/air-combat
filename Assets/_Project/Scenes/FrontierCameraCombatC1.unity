@@ -10755,6 +10755,10 @@ MonoBehaviour:
   aircraft: {fileID: 1472259046}
   obliquePitch: 50
   forwardLead: 28
+  cruiseLead: 48
+  boostExtraLead: 14
+  leadTransitionSeconds: 0.42
+  aircraftViewportMargin: 0.2
   positionSmoothTime: 0.12
   rotationSmoothTime: 0.14
   combatHotkeys: 1

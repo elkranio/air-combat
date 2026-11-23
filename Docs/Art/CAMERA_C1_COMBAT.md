@@ -1,6 +1,6 @@
-# C1b/C2 — full combat study, rotating vs fixed 50° camera
+# C1b/C2/C3 — combat camera, fixed 50° and forward look-ahead
 
-Status: **C1b played: visually promising but combat harder, reduced anticipation and mild motion sickness while the world rotates. C2 fixed-yaw 50° now ready for Play Mode evaluation.** Reference: [ENVIRONMENT_MAP_PLAN.md](ENVIRONMENT_MAP_PLAN.md).
+Status: **C1b rotating 50° rejected for combat comfort; C2 fixed-yaw 50° is green. C3 adds smoothed aircraft-heading look-ahead and modest boost lead on the same scene; Play Mode verdict pending.** Reference: [ENVIRONMENT_MAP_PLAN.md](ENVIRONMENT_MAP_PLAN.md).
 
 ## Rationale
 
@@ -22,7 +22,7 @@ C1 (the copied V19 scene) was a positive visual experiment; the user explicitly 
 
 ## Controls and checks
 
-- **Camera (C2):** `C` compares **fixed-world 50°** (default, yaw -45°, jet turns onscreen) vs **rotating-world 50°** (old C1b). Both use the same pitch and forward lead, so this A/B changes only world rotation. `J/K/L` select **50/58/65°** for either C2 mode; default **50°**.
+- **Camera (C3):** default **fixed-world yaw -45°, 50° pitch**, aircraft turns onscreen. `C` toggles older rotating-world C1b (the old 28m lead), useful only as a reference; it is no longer a pure yaw-only comparison. `J/K/L` select 50/58/65°; default 50°.
 - **Flight:** `A/D` steer, `W` boost, `Q/E` 90° Break Turn, `R` reset, `H` overlays.
 - **Important:** `1/2/3` in **C1b** select weapons, NOT camera pitch. The original art-only C1 still uses `1/2/3` for pitch.
 - **Weapons:** `1` BURST, `2` GAUSS, `3` locked A2A MISSILE, `4` bombs, `5` cabrage NURS, `6` direct NURS, `LMB` fire/commit. `B` toggles fighter's existing evasion AI.
@@ -36,4 +36,8 @@ This intentionally does **not** transplant the accepted CombatLightingRig to V19
 
 **C1b observed verdict:** At 50° the environment reads more volumetrically and feels lively. But full combat is less readable, there is less time/space to anticipate threats, and rotating terrain causes noticeable mild motion sickness. This is **not approved as the final camera**.
 
-**C2 question:** Can a **fixed-yaw 50°** camera retain 3D depth and remove nausea while restoring aim, navigation and AA/SAM avoidance? On the already committed `FrontierCameraCombatC1.unity` hit Play; no editor menu/rebuild/asset migration. Test `1` burst, `3` lock, `4–6` ground attacks, Q/E and SAM dodges, and compare `C` briefly at the *same* pitch. Prioritize comfort over visuals. If fixed 50° loses too much forward visibility, document that before considering any alternate movement; **no threshold-based / hybrid auto rotation is planned**. Record verdict in HANDOFF and proceed to E1.
+**C2 observed verdict (2026-11-23):** fixed 50° is more comfortable and better for gameplay, while keeping the desired depth. Approved as the starting point for the map. The remaining issue: show substantially more world **ahead of the aircraft**, at every heading, with a small additional shift during boost.
+
+**C3 — camera follow / forward visibility (awaiting green):** Same `FrontierCameraCombatC1.unity`, no new scene or editor menu. In fixed mode, separate follow smoothing (0.12s) from heading-lead smoothing (0.42s); **48 world units** forward at cruise, **+14** while `Afterburner.IsActive`, with smooth release. Project the actual jet through the orthographic camera and clamp lead to keep it at least **20% inside the screen** on both axes. Camera yaw remains fixed as the jet banks/turns. The existing NURS cabrage cue (24m selected / 70m committed, independently clamped) runs *after* this follow. In rotating comparison mode keep the previous 28m lead; art-only C1 remains unchanged.
+
+**C3 validation:** open committed combat scene, Play, test full 360° A/D turns and Q/E breaks while tracking space *ahead* (including left/right/down-screen headings), W boost enter/release (the extra should be subtle), enemy targeting/lock, slots 4–6, and cabrage selected/committed at map edges. The aircraft must never be cropped or whip across the viewport. If sustained boost/repeated turns feel uncomfortable, tune lead/transition in the C1b camera Inspector before changing gameplay. On green: record result in HANDOFF and proceed to E1.
