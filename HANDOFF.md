@@ -21,6 +21,7 @@ Updated 2026-11-23 after the documentation/retired-editor-tools cleanup. **Read 
 
 - `FrontierStrata` V17 remains the terrain/art baseline; the V18/V19 selected-to-active bake workflow works technically, but this is **not** automatic artistic acceptance. See [ART_AUTHORING.md](ART_AUTHORING.md) before making new environmental assets.
 - V20 **Beds 0.45** is preferred only for the studied BrokenMesa; V19 **0.40** is a softer fallback. Still unresolved: screen-edge shadow degradation, overall image clarity / atmosphere, and final refinery art language.
+- **V2A–V2A5 art reset (2026-11-23):** all failed V2 live scenes/meshes/textures/one-time generators and their Unity `.meta` files were culled. V17 and earlier proven bake references remain. Next: **one** structurally sound rock/cliff in Blender, evaluate Solid mode at gameplay zoom *before* UV/bake. If it fails, import licensed free reference assets for a like-for-like comparison. See [art reset](ENVIRONMENT_ART_RESTART.md).
 - For each new visual atom, add **accepted / rejected / unresolved**, tested camera/size and generated asset size to this handoff, then archive the iteration after its conclusions are folded into the live art guides.
 
 ## Code ownership / safe boundaries

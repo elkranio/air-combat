@@ -8,7 +8,7 @@ Unity 6.6 / URP arcade air-combat prototype. **Committed scenes, prefabs and the
 2. [GAMEPLAY_COMBAT.md](GAMEPLAY_COMBAT.md) — controls, six weapon slots, ground threats, real gameplay numbers and tuning.
 3. [GAMEPLAY_ARCHITECTURE.md](GAMEPLAY_ARCHITECTURE.md) — ownership, scene wiring, prefab contracts and safe change boundaries.
 4. [ART_PIPELINE.md](ART_PIPELINE.md) / [ART_AUTHORING.md](ART_AUTHORING.md) — art assets and model/bake workflow; [LIGHTING_L1.md](LIGHTING_L1.md) — shared URP lighting; [THIRD_PARTY_ASSETS.md](THIRD_PARTY_ASSETS.md) — licenses.
-5. [ENVIRONMENT_V2_PLAN.md](ENVIRONMENT_V2_PLAN.md) — **V2 dry frontier art direction, modular production roadmap and V2A terrain playtest.**
+5. [ENVIRONMENT_ART_RESTART.md](ENVIRONMENT_ART_RESTART.md) — **environment art reset after V2A–V2A5**, next single-rock test and free-asset comparison fallback.
 
 ## Playable/reference scenes
 
