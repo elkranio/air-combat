@@ -66,7 +66,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8c8e7b7546c6f3c4bb9b3992c922f1bc, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::AirCombat.Afterburner
-  boostSpeed: 140
+  boostSpeed: 120
   boostAcceleration: 180
   capacitySeconds: 2.5
   rechargeSeconds: 5
@@ -102,10 +102,10 @@ MonoBehaviour:
   aircraft: {fileID: 155660780951595650}
   boost: {fileID: 2224154437315256129}
   breakTurn: {fileID: 8290820027876101242}
-  cruiseSpeed: 70
+  cruiseSpeed: 60
   acceleration: 35
   deceleration: 45
-  turnRate: 125
+  turnRate: 100
   maxBank: 40
   bankRate: 160
 --- !u!114 &673208277050848784
