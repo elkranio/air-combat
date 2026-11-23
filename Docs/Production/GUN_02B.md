@@ -1,6 +1,6 @@
 # GUN-02b — high-juice tracer pass (visual-only)
 
-**Status:** authored against GUN-02 green (`28457f6a`); requires Unity Game-view approval.
+**Status:** GUN-02b committed and Play Mode reviewed (`96162ee0`); the glow reads well, but the projectiles looked oversized. GUN-02c is the follow-up thin-tracer tuning, pending Game-view verification.
 No damage, velocity, range, burst, cooldown, target domain, flight or input changes.
 
 ## Why
@@ -17,7 +17,7 @@ GUN-02's first additive halo is too weak on the sand background: it reads as a y
 
 ## Tuning
 
-In `Assets/_Project/Prefabs/Weapons/AC01_Burst.asset`:
+Original GUN-02b values in `Assets/_Project/Prefabs/Weapons/AC01_Burst.asset` (kept below for comparison):
 
 - `arcadeCoreWidth` **0.82**;
 - `arcadeGlowWidth` **3.4**, `arcadeGlowAlpha` **0.9**;
@@ -32,3 +32,7 @@ The shared additive material `AC01_TracerGlow.mat` uses emission strength **2.8*
 Open `ArcadeDesertE1.unity`, Play, fire along multiple screen directions, over sand and dark apron. Judge the streak at *normal* game resolution, not just a magnified screenshot. Check bright head vs soft tail, muzzle punch, absence of pink shaders and opaque yellow sticks, correct movement at flight speed, and no stray trails after a round despawns. The static Tiger is **not** a damageable encounter, so hit sparks need a future real airborne damage target to be visible. Confirm existing WeaponLab/GroundAttackLab tracers have not changed.
 
 **Next:** visual green, then the already planned HUD-02 weapon wheel + readiness display. No HUD work in this atom.
+
+## GUN-02c — restore slim rounds, keep the glow
+
+The GUN-02b screenshot showed luminous bolts instead of slim cannon tracers. The **live** `AC01_Burst.asset` now uses `arcadeCoreWidth = 0.5` (pre-juice width), `arcadeHeadSize = 0.75`, `arcadeGlowWidth = 2.2`, and `arcadeOuterGlowWidth = 5.0`. Keep both glow alpha values (`0.9` / `0.24`), all additive material intensities, tracer length, muzzle flash, hit spark and all weapon mechanics unchanged. This narrows the solid-looking bullet and glowing footprint without reverting to flat yellow dashes. Recheck against sand and dark airfield at normal Game resolution; further tweak **preset widths/head size**, not gameplay. HUD-02 follows after visual acceptance.
