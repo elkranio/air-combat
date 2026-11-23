@@ -10,13 +10,13 @@ namespace AirCombat
     [DefaultExecutionOrder(210)]
     public sealed class SurfaceToAirMissile : MonoBehaviour, IRadarContact
     {
-        [SerializeField, Min(1f)] private float speed = 112f;
+        [SerializeField, Min(1f)] private float speed = 134.4f;
         [Header("Vertical launch (no pursuit budget spent)")]
         [SerializeField, Min(.05f)] private float verticalSeconds = .34f;
         [SerializeField, Min(1f)] private float pitchOverRate = 210f;
         [SerializeField, Min(.05f)] private float pitchOverMaxSeconds = .75f;
         [Header("Pursuit")]
-        [SerializeField, Min(1f)] private float turnRate = 72f;
+        [SerializeField, Min(1f)] private float turnRate = 86.4f;
         [SerializeField, Min(0f)] private float totalTurnBudget = 145f;
         [SerializeField, Min(.1f)] private float lifetime = 6.5f;
         [SerializeField, Min(.1f)] private float hitRadius = 4.2f;

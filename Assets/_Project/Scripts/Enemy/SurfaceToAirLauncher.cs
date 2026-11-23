@@ -26,6 +26,8 @@ namespace AirCombat
         private float lockProgress;
         private float nextLaunchAt;
         private float nextBeepAt;
+        private int launchBeepsRemaining;
+        private float nextLaunchBeepAt;
         private int hp;
 
         public int Hp => hp;
@@ -91,16 +93,19 @@ namespace AirCombat
             lockProgress = 0f;
             nextLaunchAt = Time.time;
             nextBeepAt = 0f;
+            launchBeepsRemaining = 0;
+            nextLaunchBeepAt = 0f;
+            if (warningAudio != null) warningAudio.Stop();
             LaunchedCount = 0;
             LastFlightReport = "NO LAUNCH";
         }
 
         private void LateUpdate()
         {
-            // An already-launched missile is still a threat when its site is destroyed.
+            // Three short launch beeps, then silence during missile flight.
+            PlayLaunchSignal();
             if (HasIncomingMissile)
             {
-                WarningBeep(.18f);
                 lockProgress = 0f;
                 return;
             }
@@ -126,8 +131,11 @@ namespace AirCombat
                 return;
             }
             lockProgress += Time.deltaTime;
-            WarningBeep(lockProgress >= lockSeconds * .65f ? .22f : .38f);
-            if (lockProgress < lockSeconds) return;
+            if (lockProgress < lockSeconds)
+            {
+                WarningBeep(lockProgress >= lockSeconds * .65f ? .22f : .38f);
+                return;
+            }
             lockProgress = 0f;
             nextLaunchAt = Time.time + reloadSeconds;
             // Force +Y ejection even when upgrading a legacy angled prefab.
@@ -136,6 +144,11 @@ namespace AirCombat
             missile = Instantiate(missilePrefab, launchPosition,
                 Quaternion.LookRotation(Vector3.up, Vector3.forward));
             missile.Launch(target, hitPoints, radar, transform, OnMissileFinished);
+            // Clear any overlapping acquisition beep and sound the launch exactly three times.
+            if (warningAudio != null) warningAudio.Stop();
+            launchBeepsRemaining = 3;
+            nextLaunchBeepAt = Time.time;
+            PlayLaunchSignal();
             LaunchedCount++;
             LastFlightReport = $"SPAWNED #{LaunchedCount} at Y={launchPosition.y:F1}";
             Debug.Log($"SAM1: {LastFlightReport}; target={target.position}", this);
@@ -154,6 +167,15 @@ namespace AirCombat
             if (warningAudio == null || warningClip == null || Time.time < nextBeepAt) return;
             warningAudio.PlayOneShot(warningClip);
             nextBeepAt = Time.time + interval;
+        }
+
+        private void PlayLaunchSignal()
+        {
+            if (launchBeepsRemaining <= 0 || warningAudio == null || warningClip == null ||
+                Time.time < nextLaunchBeepAt) return;
+            warningAudio.PlayOneShot(warningClip);
+            launchBeepsRemaining--;
+            nextLaunchBeepAt = Time.time + .15f;
         }
 
         private static AudioClip CreateWarningTone()

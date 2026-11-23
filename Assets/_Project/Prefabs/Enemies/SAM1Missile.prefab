@@ -413,11 +413,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: bee0c09bad084b5eaa18ef896d9a45cc, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::AirCombat.SurfaceToAirMissile
-  speed: 112
+  speed: 134.4
   verticalSeconds: 0.34
   pitchOverRate: 210
   pitchOverMaxSeconds: 0.75
-  turnRate: 72
+  turnRate: 86.4
   totalTurnBudget: 145
   lifetime: 6.5
   hitRadius: 4.2
