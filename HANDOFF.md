@@ -12,6 +12,8 @@ Updated 2026-11-23. **Cleanup A/B GREEN.** Current art slice is **B1d road + pre
 
 - **Current B1d3 visual test:** B1d2 roads and soil are committed. The last direction asks for **one whole-site hard-edged irregular lot**, not several blurred stamps or a rectangle. Run **Air Combat > Art > B1d3 - Install Sharp-Edge Prepared Lot** once. It clears the B1 painted Terrain splat and creates an independent, toggleable soil mesh; roads, buildings, plateau and Y78 are unchanged. Disable `B1 / Prepared lot - DISABLE to compare` in Hierarchy to A/B against natural sand. [B1d3 setup and visual gate](Docs/Production/PREPARED_LOT_B1D3.md).
 
+- **B1e new airfield slice:** A separate runway/hangar/tower/apron sector sits west of the main prepared lot. The chosen B1d3 lot remains independently disableable. Static Kestrel chassis copies on the apron are visual-only. Y78 start, B1b barracks, B1c HQ, original roads and plateau stay unchanged. New one-time installer: **Air Combat > Art > B1e - Install Airfield: Runway + Hangar + Tower**. Visual verdict pending. [Airfield notes](Docs/Production/AIRFIELD_B1E.md). Once it passes, author deliberately curved service-road links instead of 90-degree tile connections.
+
 ## Combat proof retained (not integrated into main map yet)
 
 - `WeaponLab`: player vs fighter, BURST (1), GAUSS (2), guided A2A missile (3).

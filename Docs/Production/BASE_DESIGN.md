@@ -1,6 +1,6 @@
 # B1 — first military base (working production plan)
 
-**Status:** B1b barracks, B1c HQ, and B1d roads are in place. Original blurry B1d soil was rejected; B1d2 recolored it. **B1d3 is a new visual A/B:** one prepared ground clearing, hard uneven outline and its own disableable root. Continue on `ArcadeDesertE1.unity`, default Y78 and C3 camera. The next new building is postponed until the lot experiment passes. [B1d3 directions](PREPARED_LOT_B1D3.md).
+**Status:** B1d3 hard-edged prepared lot is the chosen base-soil candidate after user green; **B1e airfield** (runway, hangar, tower, two parked aircraft) is next to evaluate. Keep `ArcadeDesertE1.unity`, Y78, C3 camera and existing HQ/barracks. [B1d3](PREPARED_LOT_B1D3.md) / [B1e airfield](AIRFIELD_B1E.md).
 
 ## Site concept
 
@@ -13,8 +13,9 @@ A small generic military airfield outpost with a believable approach: one asphal
 3. **B1c — modular headquarters and courtyard (current):** one two-height 29×19 m HQ, independent entry, concrete plaza, two planters and flagpole beside barracks. Spawn at Y78; no road or bake yet. [Current gate](HQ_B1C.md).
 4. **B1d/B1d2/B1d3 — road + prepared-lot test (current):** approved north-south approach, barracks lane and HQ spur, plus sparse repair/skid meshes. After rejected grey/blurred B1d ground, B1d2 supplied warm brown. B1d3 tests **one truly continuous clearing with an unblurred uneven boundary** on a separately disableable object. The old B1d alpha paint is removed locally without touching roads. No bake or architecture changes. [B1d roads](ROAD_B1D.md) / [B1d3 A/B](PREPARED_LOT_B1D3.md). Then consider a small variation pass on one existing building.
 5. **B1e — utility and identity:** small generator/service building, flagpole, minimal fence/gate and selected markings. Use functionally clear, sparsely distributed pieces.
-6. **B1f — adjacent airstrip:** a simple appropriately scaled runway/apron connection and perhaps one hangar, matched to base proportions. No detailed airport before earlier pieces are accepted.
-7. **B1g — first combat-context test:** add existing AA1/SAM1 props and perhaps depot to the base via an isolated scene-composition atom; check gameplay readability. Do not modify the already-green lab prefabs just to decorate this scene.
+6. **B1e — separate airfield slice (new visual test):** 460×36m runway with clear asphalt, wide apron, one open-front faceted hangar, control tower, two stationary Kestrels. Put it west of the main compound and leave B1d3 dirt footprint alone. Review in flight **before** drawing the final connections. [Exact assets/gate](AIRFIELD_B1E.md).
+7. **B1f — final road connection:** hand-authored curved service-road links from the accepted compound to hangar/apron, integrated turns/junctions, restrained wear. No L-shaped tile snapping.
+8. **B1g — first combat-context test:** add existing AA1/SAM1 props and perhaps depot to the base via an isolated scene-composition atom; check gameplay readability. Do not modify the already-green lab prefabs just to decorate this scene.
 
 ## Material / shape checkpoints
 
