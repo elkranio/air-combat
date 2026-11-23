@@ -1,48 +1,42 @@
 # Air Combat — current handoff
 
-## Baseline
+Updated 2026-11-23 after the documentation/retired-editor-tools cleanup. **Read this file and [GAMEPLAY_COMBAT.md](GAMEPLAY_COMBAT.md) before modifying gameplay.** This cleanup does not change flight, ballistics, weapons, enemies, HUD, scene objects or gameplay prefabs.
 
-- **Green base:** AA1, boosted PlayerJet, north-up R1 radar and installed H1 CombatHUD on `master` (2026-11-23). SAM1 vertical launch is playable; **SAM1e sound/speed/turn tuning requires Unity playtest**.
-- Unity 6.6 / URP. **WeaponLab** is the prefab-composed air-combat regression. **GroundAttackLab** is the ground-combat regression. **Sandbox** remains the only Build Settings entry and is a legacy comparison.
-- **F1 flight green:** 70 constant cruise, W boost to 140 (2.5s tank), A/D steering, Q/E Break Turn. Shared `FlightController` enables this with `useFixedCruiseWBoost` on PlayerJet, not globally; Sandbox retains W/S throttle and Space afterburner.
+## Current playable baseline
 
-## Green mechanics
+- **Unity 6.6 / URP**. `WeaponLab` is the fighter-combat regression; `GroundAttackLab` is the ground-combat regression. `Sandbox` is legacy and the only Build Settings scene; `FrontierStrata` is an art reference.
+- Player constant cruise **70**, W boost **140** with a **2.5s** fuel tank, A/D steering, Q/E 90° Break Turn requiring a full tank; R reset, H diagnostics. WeaponLab slots 1–3; GroundAttackLab slots 1–6.
+- **GroundAttackLab**: four independently damageable military depots; four-bomb run (4); six-rockets-during-cabrage attack (5); forward/down direct six-NURS salvo (6); AA1 autocannon and vertical-launch SAM1; north-up radar at top-right, HP + fuel strip at bottom. No NURS predicted-impact marker. No flares/decoys.
+- **SAM tuning in the committed missile prefab**, after manual green playtest: speed **150**, homing turn **140°/s**, total homing turn budget **180°**. This cleanup aligns the script initializers with that prefab; **serialized Inspector values remain authoritative**. SAM lock 1.4s within 350, vertical start -> pitch-over -> homing, three quick launch beeps then silence. Site and inbound missile appear on radar. Player A2A missile is a separate class/prefab.
+- **Direct NURS G5 (slot 6)**: independently playable, 6 rockets / 0.15s, down-angle 10°, radius-8 ground splash, 4s cooldown; normal steering during release. Boost spreads shots; Q/E and weapon switch cancel only pending shots. No targeting reticle.
 
-- **Air:** BURST (four-shot), GAUSS, guided MISSILE with cursor lock and reacquisition, enemy fighter pursuit/evasion and respawn; see [architecture](GAMEPLAY_ARCHITECTURE.md).
-- **G2 depot:** four prefab instances with independently destructible bunker (3 HP), two tanks (1 HP each) and crates (2 HP). The runtime per-part mesh clipping is a temporary visual solution, not authored fracture geometry.
-- **G3 bombs / slot 4:** four gravity bombs at 0.25s spacing, 3s cooldown after release, afterburner scatter, Q/E cancellation, ground-only blast damage (radius 13). Nadir line/ring shows altitude and ground directly below, **not** predicted impact. No area brackets.
-- **G4 cabrage + NURS / slot 5:** 2.5s climb and 2.5s return, steering/boost/selection lock, Q/E emergency break-and-return. Six unguided physical rockets during climb, blast radius 6, ground-only damage. Normal cooldown 12s, emergency 20s, starting after return.
-- **G4c camera:** extra lead 24 when slot 5 selected, 70 while committed, constrained to keep the jet in viewport (20% margin). NURS ground-impact marker was removed and its preview calculation deleted; R1 radar is a separate aircraft instrument.
-- **L1 lighting:** shared `CombatLightingRig` prefab across the two combat labs, Day/Sunset/NearNight and true URP shadows from aircraft, ordnance and terrain. `AircraftGroundShadow` remains only for legacy Sandbox/prototypes. No second shadow projection system.
+## Known issues / next design decisions
 
-## AA1, R1 and H1 green
+1. **Direct NURS range is too long for the desired arcade feel.** Tune muzzle speed / down-angle / ballistics separately after another visual playtest. Current mechanic is approved; don't "fix" by adding automatic aiming. Use `DirectNursRack` and `NursBallistics` to find the relevant controls.
+2. Cabrage is deliberately demanding and still needs refinement. It should remain a different attack option; don't silently replace slot 5 with slot 6. Future cabrage tuning may trade precision for a denser area salvo.
+3. Continue testing multiple AA/SAM sites and mobile ground threats in small missions, but do not build mission systems or countermeasures prematurely. Initial enemy SAM is dangerous but dodgeable with the player's current maneuvers.
+4. `GroundDepotTarget` still has a temporary runtime mesh-cutting destruction implementation; don't turn it into an art-pipeline refactor during combat tuning.
 
-The installed stationary AA prefab is green: real yaw/pitch servos, stale-velocity ballistic lead, 12-round tracer bursts and 2.5s rest. Detection range 230; incoming damage uses a lab-only aircraft hitbox, 20 player HP. `GroundAttackLabSession` binds player at runtime; **do not rerun the AA1 one-time installer**.
+## Art checkpoint
 
-**R1/H1** equip GroundAttackLab with a range-limited `AircraftRadar` (460), north-up top-right `RadarHud` and the bottom HP/fuel CombatHUD strip. The AA1 turret implements `IRadarContact`; its radar ring reads the live turret detection range, and disappears when destroyed. No aim warning beam or enemy AI change. Debug HUD in both combat labs starts hidden; H toggles it. See [radar test plan](GAMEPLAY_RADAR_R1.md).
+- `FrontierStrata` V17 remains the terrain/art baseline; the V18/V19 selected-to-active bake workflow works technically, but this is **not** automatic artistic acceptance. See [ART_AUTHORING.md](ART_AUTHORING.md) before making new environmental assets.
+- V20 **Beds 0.45** is preferred only for the studied BrokenMesa; V19 **0.40** is a softer fallback. Still unresolved: screen-edge shadow degradation, overall image clarity / atmosphere, and final refinery art language.
+- For each new visual atom, add **accepted / rejected / unresolved**, tested camera/size and generated asset size to this handoff, then archive the iteration after its conclusions are folded into the live art guides.
 
-## SAM1e — pending tuning playtest
+## Code ownership / safe boundaries
 
-The committed vertical-launch SAM prefab at (-320,0,215) needs **no installer or model update**. Range-only 1.4s acquisition beeps, then three rapid launch beeps; no repetitive warning during flight. A separate missile rises 0.34s, pitches over for up to 0.75s and homes at **134.4 speed** (112 × 1.2) with **86.4°/s** turn rate (72 × 1.2). The pursuit budget stays at **145°**, with free initial pitch-over. Radar shows the site’s 350-unit ring and inbound missile only. Air-to-air missile untouched. See [SAM1e](GAMEPLAY_SAM_M1E.md).
+- `GroundAttackLabSession` owns lab-only setup: bombs, cabrage, direct NURS, health, radar registrations, scene targets and HUD binding. `WeaponLabSession` owns the other lab. Shared `PlayerJet` and air-combat prefabs should **not** be modified to wire in ground-only experiments.
+- Existing AA1, SAM1, missile and HUD prefabs are **authored and committed**. Do not rerun their one-shot editor installers; those scripts have been moved to `Docs/Archive/EditorInstallers/` as noncompiled historical source.
+- `AircraftRadar` detects explicit `IRadarContact`s within 460 X/Z units. `RadarHud` only renders the detections: ground threat circles and hostile incoming-missile glyphs; never display our own projectiles as incoming threats.
+- Keep player `MissileProjectile` (air-to-air) and `SurfaceToAirMissile` (SAM) independent. Lighting is owned by the shared `CombatLightingRig.prefab`; `AircraftGroundShadow` is legacy Sandbox-only.
 
-## Code boundaries
+## Quick regression after each combat change
 
-- `Assets/_Project/Scripts/Scenes/`: `WeaponLabSession` and `GroundAttackLabSession` own scene wiring, diagnostics and scene-only runtime components; they do not belong in shared prefabs.
-- `Scripts/Flight`, `Weapons`, `Combat`, `Targeting`, `Camera`: reusable behavior. Ground blast damage is domain-filtered and shared between bombs and NURS; each weapon still owns its own ballistics and blast radius.
-- `Scripts/Environment/CombatLightingRig.cs` + `Prefabs/Environment/CombatLightingRig.prefab`: single source of truth for combat light/time presets and real shadows. Legacy `Visual/AircraftGroundShadow.cs` must not be attached to these combat scenes.
-- Preserve existing `.meta` GUIDs when moving Unity scripts or authored assets. Do **not** rerun old `ConfigureWeaponLab*`, G1 or L1 one-shot scene installers.
+1. **GroundAttackLab**: slots 1–6, normal flight/boost/Q/E, bombs, cabrage recovery and camera, direct NURS spread/cancel/cooldown, target damage, AA1 tracers, SAM lock/launch/impact, radar/HP/fuel, H and R. Watch SAM diagnostic `LastFlightReport` if a rocket disappears unexpectedly.
+2. **WeaponLab**: fighter pursuit/evasion, BURST, GAUSS, lock-on A2A missile, W/Q/E and R, no ground-attack weapons accidentally equipped.
+3. **Sandbox**: legacy movement and original HUD/shadow still work. Check light presets/shadows in both combat labs if modifying URP.
+4. **No scene regeneration or asset GUID churn** during code-only patches. Unity Play Mode is a separate validation step; a successful `git apply --check` is not a Unity compile/gameplay test.
 
-## Regression check before the next green
+## Handoff discipline
 
-1. With Unity **closed**, apply the patch to clean `master`; inspect `git status --short` and confirm moved `.cs` files have their original `.meta` GUIDs.
-2. Open **WeaponLab**: no Missing Scripts or broken prefab/lighting references. Test BURST, GAUSS, missile lock/reacquire, enemy evasion, Q/E, W, R/H, look-ahead, day/sunset shadows.
-3. Open **GroundAttackLab**: H1 top-right north-up radar and bottom fuel/HP bar, no duplicate radar, H toggles hidden diagnostics. Check red AA ring (230) and red SAM ring (350) within the aircraft sensor (460); the player arrow rotates without spinning the world. R resets both sites and player HP.
-4. Test SAM1 audible acquisition, finite physical missile, distinct amber inbound radar glyph and meaningful Q/E/W avoidance. Test site destroyed during missile flight, R cleanup and bomb/NURS suppression. Then test slots 4/5, AA1 tracer streams and camera regressions.
-5. Turn the shared lighting prefab's Day/Sunset/NearNight in Play Mode; ensure aircraft/ordnance cast genuine shadows on ground, slope and roofs. Exit Play Mode; verify lighting settings are restored.
-6. Open **Sandbox**: legacy input, missiles and old decorative shadow unchanged. Confirm Build Settings still only lists Sandbox. No scene/prefab/URP asset should have been rewritten by this cleanup.
-
-## Not yet built
-
-Coordinated AA/multiple emplacements, dynamic radar contact discovery, hostile aircraft weapons, finished destruction VFX, countermeasures, mission flow and alternative chassis/loadout system. Missile warning audio is intentionally per-site in SAM1; generalize only after multiple overlapping threats exist. Preserve current player and air-to-air balance during SAM1 tests.
-
-**Workflow:** one approved atom → `.patch` → `git apply --check --verbose` and `git apply` → Unity playtest → green push. Older migration notes are in [Docs/Archive](Docs/Archive).
+For each atom, create a short `GAMEPLAY_*.md` with **actual numbers, files, intended behavior, testing and known limits**. Add a one-line link under README's working notes only while the atom is active. At a cleanup checkpoint, reconcile the true committed prefabs/code into this handoff and [GAMEPLAY_COMBAT.md](GAMEPLAY_COMBAT.md), then move superseded atom docs to [Docs/Archive](Docs/Archive/README.md). Keep this handoff updated even if a conversation ends suddenly.

@@ -1,45 +1,37 @@
-# Gameplay architecture — current
+# Gameplay architecture — current contracts
 
-Based on green AA1, boosted PlayerJet, R1 radar and H1 HUD; SAM1 is the current Unity-test-required atom (2026-11-23).
+This is the **live architecture**, not a change log. Implementation chronology is in [`Docs/Archive`](Docs/Archive/README.md); gameplay data and playtest notes are in [GAMEPLAY_COMBAT.md](GAMEPLAY_COMBAT.md).
 
-## Composition
+## Scenes and ownership
 
-- `WeaponLab.unity`: `PlayerJet`, `EnemyJet`, `CombatCameraRig` and `CombatLightingRig` prefab instances. `WeaponLabSession` connects the player, fighter AI, missile lock and diagnostics.
-- `GroundAttackLab.unity`: the same player, camera and lighting prefabs, plus four `MilitaryDepot` instances and an AA1 turret. `GroundAttackLabSession` equips bombs/NURS, binds cabrage/camera, installs depot hit zones and equips the player-only R1 radar. AA1 and SAM1 get their target through the scene binder; the site and missile are independent prefabs.
-- `Sandbox.unity`: legacy input, missile and flat decorative shadow comparison. The only Build Settings scene; do not silently migrate it.
-- `FrontierStrata` and bake scenes are art baselines, not current combat levels.
+- `Assets/_Project/Scenes/WeaponLab.unity`: player jet, enemy fighter, combat camera and shared lighting. `WeaponLabSession` binds air combat weapons, target lock, fighter behavior and diagnostics.
+- `Assets/_Project/Scenes/GroundAttackLab.unity`: same reusable player/camera/lighting prefabs, four military depots, one AA1 and one SAM1. `GroundAttackLabSession` attaches/configures lab-only `BombRack`, `CabrageManeuver`, `NursRocketRack`, `DirectNursRack`, `PlayerHitPoints`, `AircraftRadar`, `NursCameraCue` and bomb nadir; it binds existing scene AA/SAM targets and the shared CombatHUD.
+- `Sandbox.unity`: legacy flight/shadow and input comparison. **Do not migrate it implicitly.** `FrontierStrata`/bake scenes are art references.
 
-## Reusable ownership
+## Modules
 
-| Folder | Components | Contract |
-| --- | --- | --- |
-| `Aircraft` | `JetAssembly`, `JetChassis`, `CombatCameraRig`, `AircraftRadar`, `IRadarContact` | Role roots, sockets and detection/registered contacts; no serialized cross-scene targets |
-| `Flight` | `FlightController`, `AircraftMotor`, `Afterburner`, `BreakTurn`, `CabrageManeuver` | Movement and maneuvers; cabrage equipped by the ground lab |
-| `Enemy` | `EnemyFlightController`, `AntiAircraftTurret`, `SurfaceToAirLauncher` | Flight pursuit and stationary AA tracking/firing; scene-neutral behaviors |
-| `Weapons` | `WeaponSelection`, `WeaponController`, air weapons, `BombRack`, `NursRocketRack`, `AntiAircraftProjectile`, `SurfaceToAirMissile`, projectiles/ballistics | Launch/cadence and physical flight; AA rounds are air-only |
-| `Targeting` | `BoundedAim`, `TargetLock`, `ITargetLockEligibility` | Air lock and bounded gun aim |
-| `Combat` | `DamageableTarget`, `CombatTargetDomain`, `GroundBlastDamage`, `GroundDepotPart`, `GroundDepotTarget`, `PlayerHitPoints` | Shared domain-filtered blast; depot remains a lab-specific geometry adapter |
-| `Camera` | `TopDownCameraFollow`, `CameraLookAhead`, `NursCameraCue` | Common follow; bounded NURS lead only when the scene equips it |
-| `Environment` | `CombatLightingRig` | Shared light/time-of-day and URP shadow policy |
-| `Scenes` | `WeaponLabSession`, `GroundAttackLabSession` | Scene composition, diagnostics and reset, **not** gameplay data models |
-| `Visual`, `UI` | VFX, bomb nadir helper, HUD, `RadarHud` | Presentation; `AircraftGroundShadow` is legacy Sandbox-only |
+| Folder | Components / responsibility |
+| --- | --- |
+| `Scripts/Aircraft` | `JetAssembly`, `JetChassis`, `CombatCameraRig`, `AircraftRadar`, `IRadarContact` — reusable aircraft/camera roots and scan sensor |
+| `Scripts/Flight` | `FlightController`, `AircraftMotor`, `Afterburner`, `BreakTurn`, `CabrageManeuver` — movement, fuel, evasive and cabrage states |
+| `Scripts/Enemy` | `EnemyFlightController`, `AntiAircraftTurret`, `SurfaceToAirLauncher` — hostile aircraft and ground-site behavior |
+| `Scripts/Weapons` | air weapons, `BombRack`, `NursRocketRack`, `DirectNursRack`, `NursProjectile`, `SurfaceToAirMissile`, `MissileProjectile` — firing schedule, physical flight and blast |
+| `Scripts/Combat` | `DamageableTarget`, `CombatTargetDomain`, `GroundBlastDamage`, `GroundDepotTarget`, `PlayerHitPoints` — domains, HP and ground-only splash |
+| `Scripts/Targeting` | `BoundedAim`, `TargetLock`, air lock eligibility |
+| `Scripts/Camera` | follow/lead and `NursCameraCue`; **no NURS impact predictor** |
+| `Scripts/UI` | `CombatHud`, `FlightHud`, `RadarHud`, lock HUD; no hostile AI/gameplay logic in UI |
+| `Scripts/Environment` | shared `CombatLightingRig`/URP and actual shadows |
+| `Scripts/Scenes` | scene composition only; isolate experiments from reusable prefabs |
 
-## Physics, damage and shadows
+## Combat contracts
 
-- AA1 incoming tracer rounds are **air-only** and collide with solid geometry; its stationary turret is a `Ground` damage receiver. SAM1 is a separate homing projectile, and the SAM launcher is also `Ground` damageable. `PlayerHitPoints` is attached to GroundAttackLab only.
-- Player guns/guided missile remain **air-only**. Bombs and NURS use separate physical integration and distinct blast radii (13 / 6). `GroundBlastDamage` applies each blast once per ground-domain damage receiver and returns actual hit count; it does not change projectile motion or target HP.
-- `GroundDepotTarget` temporarily deletes mesh triangles for destroyed zones using **runtime mesh clones**. These are not source meshes or authored breakable meshes. Current live clones replace older ones; original FBX remains immutable.
-- The `Prefabs/Environment/CombatLightingRig.prefab` is the **only combat sun/shadow authority**; it references the accepted shared URP asset. Aircraft/ordnance/depot meshes use real shadow maps. No extra procedural ground shadow for combat scenes.
-- `Visual/AircraftGroundShadow.cs` is a flat legacy projection for Sandbox and early art experiments. Do not use it as a general terrain shadow system.
+- `WeaponSelection` exposes slots 1–6, but **only GroundAttackLab equips slots 4–6**. `WeaponController` routes individual weapon behavior; the shared player-aircraft prefab must not own GroundAttackLab-specific loadouts.
+- `DamageableTarget.Domain` distinguishes **Air** from **Ground**. Player gun/A2A attacks are for air targets; bombs and both kinds of NURS use `GroundBlastDamage` against ground receivers. AA and SAM deal damage to the ground-lab player HP receiver only. Keep blast and projectile motion independent.
+- AA1 uses a tracked yaw/pitch ballistic autocannon and finite physical tracers. SAM1 is a **fixed vertical launch site** with range-only acquisition. `SurfaceToAirMissile` performs vertical clearance, a free pitch-over and finite-budget pursuit. Do not merge it with the player's `MissileProjectile`.
+- `AircraftRadar` owns sensor range, explicit contact registration and X/Z filtering; `RadarHud` consumes detections in a north-up circular screen UI. SAM missiles dynamically register/unregister only when inbound. No scene-wide scan on every frame.
+- `CombatHud` prefab owns radar display and bottom HP/fuel status, while the scene binds camera, sensor and health. Shared `CombatLightingRig.prefab` is the only combat lighting authority. `AircraftGroundShadow` belongs to legacy Sandbox.
+- The existing `GroundDepotTarget` destruction visual uses temporary runtime mesh clones; preserve original meshes/FBXs. Do not duplicate it into a generic destruction system without an explicit design task.
 
-## Accepted weapon/camera numbers
+## Safe iteration rules
 
-- Cruise 70, W boost to 140 (2.5s tank); Q/E real 90-degree Break Turn with full tank required. Sandbox has different legacy input.
-- BURST: 4 shots at 14/s, .45s between bursts, bounded ±12°; GAUSS: fixed heading, 5 damage, speed 300, max range 250, 1.5s cooldown.
-- MISSILE: cursor lock 1s, .5s target-loss grace, one active missile, reacquire after launch; Lab fighter has 5 HP and respawns.
-- Bombs: 4 × .25s, cooldown 3s from last shot, gravity 80 and drag .045, W scatter; the slot-4 nadir helper is **not** an impact prediction.
-- NURS: 6 rockets during 2.5s climb, 170 launch kick and ballistic gravity 80; 2.5s return, Q/E emergency return, cooldown 12/20 after recovery. Slot-5 camera lead is 24/70 and aircraft-clamped; **no NURS aim marker**.
-
-## Rules
-
-Keep role, visual chassis and scene binding independent. Preserve `.meta` GUIDs when moving scripts; don't regenerate accepted scenes. R1 sensor owns range/visibility/registered contacts, while `RadarHud` renders ground-site dots/rings and incoming-missile arrows. `CombatHud` provides shared top-right radar and bottom HP/fuel strip. SAM1 sound and missile have no dependency on the player air-to-air missile. No speculative mission router or coordinated AA. Test WeaponLab, GroundAttackLab and Sandbox before green.
+Maintain stable Unity `.meta` GUIDs. Tune values in **committed prefabs first** when components are serialized (e.g., the SAM missile prefab uses 150 / 140 / 180 and its script initializer now matches). Do not rerun historical one-time AA1/HUD/SAM1 authoring commands; their source is outside Unity compilation in the archive. No speculative mission router, broad service abstraction, uncontrolled scene regeneration or unwanted weapon balance changes. Verify `WeaponLab`, `GroundAttackLab` and `Sandbox` independently before calling a patch green.
