@@ -19,11 +19,46 @@ namespace AirCombat
         private float lastFraction = -1f;
         private int lastPercent = -1;
         private bool lastActive;
+        // Optional. Sandbox keeps its original fuel-only UI without these links.
+        [SerializeField] private RectTransform hpSection;
+        [SerializeField] private Image hpFill;
+        [SerializeField] private Text hpText;
+        private PlayerHitPoints health;
+        private int lastHp = -1;
+
+        // Prefab authoring sets only local UI references. Scene binding is runtime-only.
+        public void ConfigureVisuals(RectTransform statusBar, Image fuelBar, Text fuelLabel,
+            RectTransform healthSection, Image healthBar, Text healthLabel)
+        {
+            bar = statusBar;
+            chargeFill = fuelBar;
+            chargeText = fuelLabel;
+            hpSection = healthSection;
+            hpFill = healthBar;
+            hpText = healthLabel;
+        }
+
+        public void Bind(Camera camera, Afterburner boost, PlayerHitPoints hitPoints)
+        {
+            // Do not leave the old camera cropped if this HUD is rebound.
+            if (viewCamera != null && viewCamera != camera)
+            {
+                viewCamera.rect = new Rect(0f, 0f, 1f, 1f);
+                viewCamera.ResetAspect();
+            }
+            viewCamera = camera;
+            afterburner = boost;
+            health = hitPoints;
+            if (hpSection != null) hpSection.gameObject.SetActive(health != null);
+            lastWidth = lastHeight = -1;
+            lastPercent = lastHp = -1;
+            ApplyViewport();
+        }
 
         private void OnEnable()
         {
             lastWidth = lastHeight = -1;
-            lastPercent = -1;
+            lastPercent = lastHp = -1;
             ApplyViewport();
         }
 
@@ -41,9 +76,23 @@ namespace AirCombat
             }
             int percent = Mathf.RoundToInt(charge * 100f);
             if (chargeText != null && (percent != lastPercent || active != lastActive))
-                chargeText.text = percent + "%";
+                chargeText.text = hpSection != null ? "FUEL " + percent + "%" : percent + "%";
             lastPercent = percent;
             lastActive = active;
+
+            if (health != null)
+            {
+                float fraction = health.MaxHp > 0 ? (float)health.Hp / health.MaxHp : 0f;
+                if (hpFill != null)
+                {
+                    hpFill.rectTransform.anchorMax = new Vector2(fraction, 1f);
+                    hpFill.color = fraction <= .3f ? new Color(1f, .39f, .32f) :
+                        new Color(.56f, .84f, .66f);
+                }
+                if (hpText != null && lastHp != health.Hp)
+                    hpText.text = "HP " + health.Hp + "/" + health.MaxHp;
+                lastHp = health.Hp;
+            }
         }
 
         private void ApplyViewport()

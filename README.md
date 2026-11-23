@@ -9,7 +9,7 @@ Unity 6.6 / URP arcade air-combat prototype. The accepted gameplay is in committ
 - `Assets/_Project/Scenes/Sandbox.unity` — legacy flight/missile comparison; **the only Build Settings scene**.
 - `Assets/_Project/Scenes/FrontierStrata.unity` — V17 environment art baseline. The other Frontier/bake scenes remain art references, not gameplay scenes.
 
-**Controls (WeaponLab + GroundAttackLab):** A/D steer, constant 70 cruise, W afterburner to 140 (2.5s full tank), Q/E Break Turn, R reset, H diagnostics **off by default**. S/Space unused. WeaponLab: 1 BURST, 2 GAUSS, 3 MISSILE, B enemy evasion. GroundAttackLab also has **4 BOMBS** (four gravity bombs, .25s spacing, 3s cooldown, nadir/height-only marker) and **5 NURS** (committed 2.5s climb, six physical rockets, 2.5s return, Q/E emergency abort). No NURS impact predictor; G4c adds aircraft-safe camera lead instead. **R1b** uses a small, translucent north-up radar (bottom-left, above fuel strip) in GroundAttackLab, with 460-unit detection, an AA danger ring and rotating player triangle. Sandbox retains its original W/S + Space controls.
+**Controls (WeaponLab + GroundAttackLab):** A/D steer, constant 70 cruise, W afterburner to 140 (2.5s full tank), Q/E Break Turn, R reset, H diagnostics **off by default**. S/Space unused. WeaponLab: 1 BURST, 2 GAUSS, 3 MISSILE, B enemy evasion. GroundAttackLab also has **4 BOMBS** (four gravity bombs, .25s spacing, 3s cooldown, nadir/height-only marker) and **5 NURS** (committed 2.5s climb, six physical rockets, 2.5s return, Q/E emergency abort). No NURS impact predictor; G4c adds aircraft-safe camera lead instead. **H1** places the north-up radar at the top-right and a shared 4%-height **FUEL + HP** status bar at the bottom of GroundAttackLab. Radar detection stays 460 with the actual AA danger ring. Sandbox retains its original W/S + Space controls.
 
 ## Source ownership
 
@@ -39,10 +39,11 @@ Keep `PlayerJet`, `CombatCameraRig`, and `CombatLightingRig` reusable; scene-spe
 - [LIGHTING_L1.md](LIGHTING_L1.md) — shared lighting prefab, live shadows and verification.
 - [GAMEPLAY_AA1.md](GAMEPLAY_AA1.md) — AA1 twin-barrel turret, physical tracer and tuning.
 - [GAMEPLAY_RADAR_R1.md](GAMEPLAY_RADAR_R1.md) — **R1 radar**, detection, UI, tuning and test checklist.
+- [GAMEPLAY_HUD_H1.md](GAMEPLAY_HUD_H1.md) — **H1 Combat HUD prefab**, install, runtime binding and playtest.
 - [ART_PIPELINE.md](ART_PIPELINE.md), [ART_AUTHORING.md](ART_AUTHORING.md), [Tools/Unity/ARTLAB.md](Tools/Unity/ARTLAB.md) — art sources and pipeline.
 - [GAMEPLAY_CORE_G1.md](GAMEPLAY_CORE_G1.md), [GAMEPLAY_CORE_G2.md](GAMEPLAY_CORE_G2.md) — historical scene creation and depot bake/import.
 - [THIRD_PARTY_ASSETS.md](THIRD_PARTY_ASSETS.md) — licenses; [Docs/Archive](Docs/Archive) — old migration logs.
 
 ## Next
 
-**R1 radar green; R1b north-up correction awaiting Unity playtest.** Coordinated AA, railguns and armed enemy fighter behavior are not implemented. Keep other scenes unchanged.
+**R1b north-up radar green. H1 shared Combat HUD pending Unity test and one-time scene installation.** Coordinated AA, railguns and armed enemy fighter behavior are not implemented. Keep other scenes unchanged.

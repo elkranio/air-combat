@@ -12,6 +12,7 @@ namespace AirCombat
         [SerializeField] private JetAssembly playerJet;
         [SerializeField] private CombatCameraRig cameraRig;
         [SerializeField] private AntiAircraftTurret antiAircraft; // Optional scene instance (AA1).
+        [SerializeField] private CombatHud combatHud; // Scene-linked reusable HUD prefab.
 
         private FlightController flight;
         private Afterburner afterburner;
@@ -41,6 +42,13 @@ namespace AirCombat
         public void ConfigureAntiAircraft(AntiAircraftTurret turret)
         {
             antiAircraft = turret;
+        }
+
+        // Called by the one-time HUD authoring installer. No scene references
+        // are serialized inside the CombatHUD prefab itself.
+        public void ConfigureHud(CombatHud hud)
+        {
+            combatHud = hud;
         }
 
         private void Awake()
@@ -133,7 +141,8 @@ namespace AirCombat
             var radar = jet.GetComponent<AircraftRadar>();
             if (radar == null) radar = jet.AddComponent<AircraftRadar>();
             if (antiAircraft != null) radar.Register(antiAircraft);
-            RadarHud.Create(transform, radar);
+            if (combatHud != null) combatHud.Bind(cameraRig.ViewCamera, afterburner, playerHealth, radar);
+            else RadarHud.Create(transform, radar); // Before the one-time prefab installation.
         }
 
         private void Update()

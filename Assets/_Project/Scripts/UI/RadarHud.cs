@@ -12,13 +12,20 @@ namespace AirCombat
         private const int CircleSegments = 72;
         private const float Padding = 3f;
 
-        [Header("Layout (pixels, screen-bottom-left origin)")]
+        [Header("Layout (pixels, screen-top-right origin)")]
         [SerializeField, Range(.08f, .3f)] private float screenHeightFraction = .15f;
         [SerializeField] private Vector2 screenInset = new Vector2(18f, 16f);
         [SerializeField, Range(.1f, 1f)] private float opacity = .82f;
 
         private readonly List<RadarDetection> detected = new List<RadarDetection>(16);
         private AircraftRadar radar;
+
+        // Called by the owning HUD prefab; the sensor remains aircraft-owned.
+        public void Bind(AircraftRadar sensor)
+        {
+            radar = sensor;
+            SetVerticesDirty();
+        }
         private int lastScreenHeight = -1;
         private int lastScreenWidth = -1;
         private float lastSizeFraction = -1f;
@@ -64,13 +71,11 @@ namespace AirCombat
             lastSizeFraction = screenHeightFraction;
             lastInset = screenInset;
             float diameter = Mathf.Clamp(Screen.height * screenHeightFraction, 112f, 166f);
-            rectTransform.anchorMin = Vector2.zero;
-            rectTransform.anchorMax = Vector2.zero;
-            rectTransform.pivot = Vector2.zero;
+            rectTransform.anchorMin = Vector2.one;
+            rectTransform.anchorMax = Vector2.one;
+            rectTransform.pivot = Vector2.one;
             rectTransform.sizeDelta = new Vector2(diameter, diameter);
-            // Keep clear of the persistent 4%-height afterburner bar.
-            rectTransform.anchoredPosition = new Vector2(screenInset.x,
-                Screen.height * FlightHud.DefaultBarFraction + screenInset.y);
+            rectTransform.anchoredPosition = new Vector2(-screenInset.x, -screenInset.y);
         }
 
         protected override void OnPopulateMesh(VertexHelper mesh)
