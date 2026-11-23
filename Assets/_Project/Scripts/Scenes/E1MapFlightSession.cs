@@ -23,7 +23,7 @@ namespace AirCombat
         private Vector3 spawnPosition;
         private Quaternion spawnRotation;
         private GUIStyle label;
-        private bool showLegend = true;
+        private bool showLegend = false;
 
         public void Configure(JetAssembly jet, CombatCameraRig rig, float boundary)
         {
