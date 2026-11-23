@@ -9,7 +9,7 @@ Unity 6.6 / URP arcade air-combat prototype. The accepted gameplay is in committ
 - `Assets/_Project/Scenes/Sandbox.unity` — legacy flight/missile comparison; **the only Build Settings scene**.
 - `Assets/_Project/Scenes/FrontierStrata.unity` — V17 environment art baseline. The other Frontier/bake scenes remain art references, not gameplay scenes.
 
-**Controls (WeaponLab + GroundAttackLab):** A/D steer, constant 70 cruise, W afterburner to 140 (2.5s full tank), Q/E Break Turn, R reset, H diagnostics **off by default**. S/Space unused. WeaponLab: 1 BURST, 2 GAUSS, 3 MISSILE, B enemy evasion. GroundAttackLab also has **4 BOMBS** (four gravity bombs, .25s spacing, 3s cooldown, nadir/height-only marker) and **5 NURS** (committed 2.5s climb, six physical rockets, 2.5s return, Q/E emergency abort). No NURS impact predictor; G4c adds aircraft-safe camera lead instead. **R1** adds a small, translucent heading-up radar (bottom-left, above fuel strip) to GroundAttackLab, with 460-unit detection and AA danger ring. Sandbox retains its original W/S + Space controls.
+**Controls (WeaponLab + GroundAttackLab):** A/D steer, constant 70 cruise, W afterburner to 140 (2.5s full tank), Q/E Break Turn, R reset, H diagnostics **off by default**. S/Space unused. WeaponLab: 1 BURST, 2 GAUSS, 3 MISSILE, B enemy evasion. GroundAttackLab also has **4 BOMBS** (four gravity bombs, .25s spacing, 3s cooldown, nadir/height-only marker) and **5 NURS** (committed 2.5s climb, six physical rockets, 2.5s return, Q/E emergency abort). No NURS impact predictor; G4c adds aircraft-safe camera lead instead. **R1b** uses a small, translucent north-up radar (bottom-left, above fuel strip) in GroundAttackLab, with 460-unit detection, an AA danger ring and rotating player triangle. Sandbox retains its original W/S + Space controls.
 
 ## Source ownership
 
@@ -45,4 +45,4 @@ Keep `PlayerJet`, `CombatCameraRig`, and `CombatLightingRig` reusable; scene-spe
 
 ## Next
 
-**R1 radar pending local Unity playtest** on green AA1 + boosted PlayerJet. Coordinated AA, railguns and armed enemy fighter behavior are not implemented. Keep other scenes unchanged.
+**R1 radar green; R1b north-up correction awaiting Unity playtest.** Coordinated AA, railguns and armed enemy fighter behavior are not implemented. Keep other scenes unchanged.

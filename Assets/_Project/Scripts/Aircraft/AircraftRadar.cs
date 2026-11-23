@@ -32,6 +32,16 @@ namespace AirCombat
         private readonly List<IRadarContact> contacts = new List<IRadarContact>();
 
         public float Range => Mathf.Max(1f, range);
+        // North is fixed on the display; only the player glyph follows this heading.
+        public Vector2 Heading
+        {
+            get
+            {
+                Vector3 forward = transform.forward;
+                Vector2 heading = new Vector2(forward.x, forward.z);
+                return heading.sqrMagnitude > 0.0001f ? heading.normalized : Vector2.up;
+            }
+        }
 
         public void Register(IRadarContact contact)
         {
@@ -39,16 +49,11 @@ namespace AirCombat
         }
 
         // Returns only contacts whose centres fall inside the aircraft's 2D scan.
-        // X is aircraft-right, Y is aircraft-forward: heading stays at radar top.
+        // X is world east (+X), Y is world north (+Z): no heading rotation.
         // No allocations or world-wide object search on every HUD update.
         public void Sample(List<RadarDetection> results)
         {
             results.Clear();
-            Vector3 forward = transform.forward;
-            forward.y = 0f;
-            if (forward.sqrMagnitude < 0.0001f) forward = Vector3.forward;
-            else forward.Normalize();
-            Vector3 right = Vector3.Cross(Vector3.up, forward);
             float rangeSquared = Range * Range;
 
             foreach (var contact in contacts)
@@ -59,7 +64,7 @@ namespace AirCombat
                 Vector3 delta = contact.RadarPosition - transform.position;
                 delta.y = 0f;
                 if (delta.sqrMagnitude > rangeSquared) continue;
-                Vector2 offset = new Vector2(Vector3.Dot(delta, right), Vector3.Dot(delta, forward));
+                Vector2 offset = new Vector2(delta.x, delta.z);
                 results.Add(new RadarDetection(offset, Mathf.Max(0f, contact.RadarThreatRadius)));
             }
         }

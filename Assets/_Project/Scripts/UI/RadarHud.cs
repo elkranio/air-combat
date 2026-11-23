@@ -4,7 +4,7 @@ using UnityEngine.UI;
 
 namespace AirCombat
 {
-    // Compact, heading-up, mesh-based radar. Everything is drawn within its own
+    // Compact, north-up, mesh-based radar. Everything is drawn within its own
     // circular viewport; UI does not receive pointer events or affect the camera.
     [DisallowMultipleComponent]
     public sealed class RadarHud : MaskableGraphic
@@ -109,10 +109,12 @@ namespace AirCombat
                 }
             }
 
-            // Fixed player glyph: radar rotates with the jet instead of the icon.
+            // World north stays at the top; only the player triangle rotates.
+            Vector2 heading = radar != null ? radar.Heading : Vector2.up;
+            Vector2 right = new Vector2(heading.y, -heading.x);
             Disk(mesh, center, 5.7f, new Color(.46f, .98f, .91f, .13f));
-            Triangle(mesh, center + new Vector2(0f, 7f), center + new Vector2(-4.2f, -5f),
-                center + new Vector2(4.2f, -5f), new Color(.68f, 1f, .94f, .98f));
+            Triangle(mesh, center + heading * 7f, center - heading * 5f - right * 4.2f,
+                center - heading * 5f + right * 4.2f, new Color(.68f, 1f, .94f, .98f));
         }
 
         private void ClippedThreatRing(VertexHelper mesh, Vector2 at, float threatRadius,
