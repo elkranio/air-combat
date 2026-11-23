@@ -114,7 +114,7 @@ namespace AirCombat
                 };
             GUI.Box(new Rect(12f, 12f, 390f, altitudeComparison ? 108f : 88f), GUIContent.none);
             GUI.Label(new Rect(22f, 17f, 365f, 22f),
-                altitudeComparison ? "E1c / SCALE RESET — PLATEAU" : "E1 / MAP — FIRST FLIGHT", label);
+                altitudeComparison ? "B1a / BARRACKS APPROACH" : "E1 / MAP — FIRST FLIGHT", label);
             GUI.Label(new Rect(22f, 39f, 365f, 22f), "A/D turn  W boost  Q/E break  R reset  H hide", label);
             GUI.Label(new Rect(22f, 61f, 365f, 22f),
                 $"Speed {flight.CurrentSpeed:F0}   Boost {boost.Charge01:P0}   Terrain 2000 x 2000", label);

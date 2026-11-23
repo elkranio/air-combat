@@ -5,7 +5,7 @@ Unity 6.6 / URP. **Stylized arcade air combat**, fixed-world oblique camera and 
 ## Start here
 
 1. [HANDOFF.md](HANDOFF.md) — current green, remaining issues, next step.
-2. [Docs/Production/BASE_DESIGN.md](Docs/Production/BASE_DESIGN.md) — **active production plan:** build the first military base one asset at a time.
+2. [Docs/Production/BASE_DESIGN.md](Docs/Production/BASE_DESIGN.md) — **active production plan**, starting with [B1a three barracks](Docs/Production/BARRACKS_B1A.md) on a separate sector of the main map.
 3. [Docs/Production/MAP_DESIGN.md](Docs/Production/MAP_DESIGN.md) — map size, elevation, flight/collision language.
 4. [Docs/Production/ART_DIRECTION.md](Docs/Production/ART_DIRECTION.md) — palette, geometry, scale, lighting and VFX direction.
 5. [ART_PIPELINE.md](ART_PIPELINE.md) / [ART_AUTHORING.md](ART_AUTHORING.md) — model/asset pipeline and bake discipline.
