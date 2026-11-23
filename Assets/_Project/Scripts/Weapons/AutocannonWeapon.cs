@@ -5,7 +5,7 @@ namespace AirCombat
     // Independent, scene-neutral cannon mount. Place its prefab below either
     // a player or enemy JetAssembly. No input, targeting or mission ownership.
     [DisallowMultipleComponent]
-    public sealed class AutocannonWeapon : MonoBehaviour, ITriggeredWeapon
+    public sealed class AutocannonWeapon : MonoBehaviour, ITriggeredWeapon, IWeaponHudStatus
     {
         [SerializeField] private AutocannonPreset preset;
         [SerializeField] private AutocannonEmitter emitter;
@@ -14,6 +14,9 @@ namespace AirCombat
         private Autocannon cadence;
 
         public AutocannonPreset Preset => preset;
+        public string HudName => preset != null ? preset.WeaponId : "AUTOCANNON";
+        public float Readiness01(float now) => cadence != null && isActiveAndEnabled
+            ? cadence.Readiness01(now) : 0f;
         public int FiredCount { get; private set; }
         public int HitCount { get; private set; }
         public bool HasPendingShots => cadence != null && cadence.HasPendingShots;

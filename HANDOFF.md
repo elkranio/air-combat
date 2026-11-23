@@ -1,16 +1,16 @@
 # Air Combat — current handoff
 
-Updated 2026-11-24. **HUD-01 preproduction authored; Unity scene installation / Play Mode verdict pending.** Next gameplay test after HUD green: fixed-forward BURST, then one Tiger and multiple fighters. See [HUD-01](Docs/Production/HUD_01.md).
+Updated 2026-11-24. **HUD-01 GREEN, GUN-01 forward AC-01 GREEN, GUN-02/c tracer juice GREEN.** Current atom: compact [HUD-02](Docs/Production/HUD_02.md) with real weapon cooldown and mouse-wheel selection. Next after visual check: discuss Tiger AI behavior; do not wire it yet.
 
 ## Goal and immediate order
 
 Stylized, aggressive **arcade** air/ground combat: one fighter can outfight multiple enemies, destroy vehicles and wreck a base, supported later by heavy music, spectacular explosions and powerful sound. No milsim balance or photorealism; no transforming aircraft or loss of recognizable fighter silhouettes.
 
-1. **HUD-01 (this patch):** reuse `CombatHUD.prefab` in sortie scenes. Compact HP `current/max`, short BOOST bar, full-size camera viewport. Main radar follows camera screen axes: all registered enemy aircraft show as rim bearing-blips beyond 460 units and directional triangles inside; AA/SAM/missiles preserve their existing detection rules. Scene installer and test checklist: [HUD-01](Docs/Production/HUD_01.md).
-2. **NEXT GAMEPLAY ATOM — fixed-forward BURST.** Existing limited cursor aim is inherited from the former top-down camera. Test LMB rounds strictly along aircraft forward on the new production camera. Change no other weapons or AI until feel is evaluated.
-3. **THEN — one Tiger, followed by multiple fighters.** Visually accept EF-01 Tiger before fitting it to existing `EnemyJet` mechanics. Prove aggressive, readable 1v1 and later 2+ arcade air combat; no milsim lethality.
+1. **GREEN:** [HUD-01](Docs/Production/HUD_01.md) shared radar, compact HP/BOOST; main camera-aligned radar displays the static Tiger contact.
+2. **GREEN:** [GUN-01](Docs/Production/GUN_01.md) independent player AC-01 module, nose-forward LMB fire; GUN-02/c tracer glow passes accepted as a usable starting point. Existing combat labs retain their legacy guns.
+3. **NOW HUD-02:** show selected AC-01 on compact bottom-left HUD and the real burst cooldown; wheel-select equipped modular weapons. See [HUD-02](Docs/Production/HUD_02.md). Next, discuss 1v1 Tiger AI before implementing it.
 
-Do **not** pre-plan more combat atoms here. User will set the next 2–3 tasks after the documentation patch is green.
+No Tiger behavior implementation in HUD-02. User will set the next enemy AI atoms after testing the panel.
 
 ## Current repository reality
 
@@ -22,8 +22,8 @@ Do **not** pre-plan more combat atoms here. User will set the next 2–3 tasks a
 
 ## Combat proofs (keep for regression)
 
-- `WeaponLab` / `WeaponLabSession`: fighter pursuit, BURST (1), GAUSS (2), guided A2A missile (3), on its **legacy camera**. Existing BURST behavior still permits mouse-bounded aim; fixed-forward is **not implemented**.
-- `GroundAttackLab` / `GroundAttackLabSession`: bombs (4), committed cabrage NURS (5), direct NURS (6), AA1, vertical-launch SAM1, `AircraftRadar` / `RadarHud`, HP/fuel and all six weapon slots. Cruise **70**, boost **140**, tank **2.5 s**; Q/E emergency turn. Radar working in a lab does **not** mean radar is currently on the production map.
+- `WeaponLab` / `WeaponLabSession`: fighter pursuit, BURST (1), GAUSS (2), guided A2A missile (3), on its **legacy camera**. Lab BURST still permits mouse-bounded aim; the main map uses modular fixed-forward AC-01.
+- `GroundAttackLab` / `GroundAttackLabSession`: bombs (4), committed cabrage NURS (5), direct NURS (6), AA1, vertical-launch SAM1, `AircraftRadar` / `RadarHud`, HP/fuel and all six weapon slots. Cruise **70**, boost **140**, tank **2.5 s**; Q/E emergency turn. The main map also has HUD-01 radar, but still no live combat session.
 - **Deferred debt**: direct NURS range feels too long, provisional `GroundDepotTarget` mesh-cut destruction, and functional-but-rough shot/impact/audio/particle presentation. No new general balance pass until core dogfight feel is proven.
 
 ## Rules and regression

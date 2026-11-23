@@ -79,7 +79,8 @@ namespace AirCombat
                 var health = player.GetComponent<PlayerHitPoints>();
                 if (health == null) health = player.gameObject.AddComponent<PlayerHitPoints>();
                 health.ResetHealth(); // HUD-01 preview only; no hitbox/combat on E1 yet.
-                combatHud.Bind(cameraRig.ViewCamera, boost, health, radar);
+                combatHud.Bind(cameraRig.ViewCamera, boost, health, radar,
+                    player.GetComponent<PlayerWeaponTrigger>());
             }
         }
 

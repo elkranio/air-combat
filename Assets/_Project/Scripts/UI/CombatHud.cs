@@ -9,6 +9,7 @@ namespace AirCombat
     {
         [SerializeField] private FlightHud statusBar;
         [SerializeField] private RadarHud radarDisplay;
+        [SerializeField] private WeaponHud weaponDisplay;
 
         public void ConfigureParts(FlightHud bar, RadarHud radar)
         {
@@ -17,7 +18,7 @@ namespace AirCombat
         }
 
         public void Bind(Camera camera, Afterburner boost, PlayerHitPoints hitPoints,
-            AircraftRadar sensor)
+            AircraftRadar sensor, PlayerWeaponTrigger weapons = null)
         {
             if (statusBar == null || radarDisplay == null)
             {
@@ -25,6 +26,7 @@ namespace AirCombat
                 return;
             }
             statusBar.Bind(camera, boost, hitPoints);
+            if (weaponDisplay != null) weaponDisplay.Bind(weapons);
             // Only oblique cameras need camera-relative radar presentation.
             // Legacy WeaponLab/GroundAttackLab stay north-up, unchanged.
             bool oblique = camera != null &&

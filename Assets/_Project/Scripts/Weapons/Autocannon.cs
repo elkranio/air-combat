@@ -17,6 +17,11 @@ namespace AirCombat
         public int BurstSize => Mathf.Max(2, burstSize);
         public bool HasPendingShots => remaining > 0;
 
+        // In-flight burst is unavailable; after the last round, refill over the
+        // *actual* inter-burst cooldown. This is HUD data, not a second timer.
+        public float Readiness01(float now) => remaining > 0 ? 0f :
+            Mathf.Clamp01(1f - (nextShot - now) / burstCooldown);
+
         public Autocannon(float rate, int count, float cooldown, Action emitRound)
         {
             roundsPerSecond = Mathf.Max(1f, rate);
