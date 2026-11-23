@@ -1,6 +1,6 @@
 # Air Combat — current handoff
 
-Updated 2026-11-23 after the documentation/retired-editor-tools cleanup. **Read this file and [GAMEPLAY_COMBAT.md](GAMEPLAY_COMBAT.md) before modifying gameplay.** This cleanup does not change flight, ballistics, weapons, enemies, HUD, scene objects or gameplay prefabs.
+Updated 2026-11-23 for E1 first-flight production and vivid stylized arcade art direction. **Read this file and [GAMEPLAY_COMBAT.md](GAMEPLAY_COMBAT.md) before modifying gameplay.** This cleanup does not change flight, ballistics, weapons, enemies, HUD, scene objects or gameplay prefabs.
 
 ## Current playable baseline
 
@@ -23,7 +23,10 @@ Updated 2026-11-23 after the documentation/retired-editor-tools cleanup. **Read 
 - **Camera verdict (2026-11-23):** rotating C1b 50° is visually richer but harms combat and causes mild motion sickness. **C2 fixed-world 50° is GREEN**: yaw -45°, pitch 50°, ortho 80; aircraft rotates onscreen, environment does not. Radar already aligns with the actual camera axes. Gameplay comfort is the priority.
 - **Camera C3 GREEN (2026-11-23):** fixed-world yaw **-45°**, pitch **50°**, ortho 80; heading-based forward lead **48 world units**, **+14** on active afterburner, independent **0.42s** smoothing and **20%** viewport-safe margin. C1b rotating-world camera was visually attractive but made combat less comfortable and caused mild motion sickness. `C` remains an optional comparison. Radar follows actual camera axes. [Camera notes](Docs/Art/CAMERA_C1_COMBAT.md).
 - **Scene safety:** `FrontierCameraCombatC1.unity` is already authored/committed; never rerun its one-time builder. C3 and E1a operate within that scene; do not alter aircraft/combat prefabs, lighting or other labs. Microfix disables automatic out-of-bounds resets in this study; `R` still resets manually.
-- **Active E1a:** quick runtime ground-language comparison in the existing combat study, `T`: Original / Flat / Macro / Fine. Prioritize clean arcade readability over the muddy, texture-heavy V19 appearance. [Ground test](Docs/Art/GROUND_STYLE_E1A.md). **Next:** E1 new persistent hybrid-map scene and shared CombatLightingRig, then E2 surface coherence, E3 real canyon/collision, E4 structures/dressing, E5 grading/map growth.
+- **E1a conclusion:** favor **flat-color ground** over noisy terrain. E1a `T` comparison remains in old C1b/C3 scene as a historical material check, not the production map. The new style is intentionally **more saturated** than the earlier muted proposal.
+- **Active E1:** new persistent scene `ArcadeDesertE1.unity`, created **once** via `Air Combat > Art > E1 - Create Vibrant Desert Map`; 2×2 km editable Unity Terrain, initial matte `#DDA44D` flat fill, 12 sparse groups of 3 simple warm stone meshes, original PlayerJet, fixed C3 50° / lead, and shared `CombatLightingRig`. No combat systems or building/canyon pass yet. Builder refuses to overwrite saved art. [First-flight instructions](Docs/Art/ARCADE_DESERT_E1.md).
+- **Approved visual intent:** **Stylized Arcade Military** — bold readable form, vivid but cohesive warm terrain/rocks, cold aircraft contrast, restrained surface noise, shadows/negative space; neither milsim photorealism nor toy cartoon. Weapon feel remains mechanical proof-of-concept; later add high-impact audio, tracers, aircraft breakup, debris, smoke, explosions and terrain impact VFX as a separate art/juice pass. [Art pillars](Docs/Art/ARCADE_VISUAL_DIRECTION.md).
+- **After E1 visual review:** explore several **aircraft paint/silhouette** variants within the same map; only then build out macro terrain, a real flyable/collidable canyon, road/industry and broader level detail. Keep flight/control and comfort primary. No giant one-shot environment generator.
 
 ## Art checkpoint
 

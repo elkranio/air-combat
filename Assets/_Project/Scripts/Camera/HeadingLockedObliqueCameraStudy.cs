@@ -23,9 +23,10 @@ namespace AirCombat
         [SerializeField, Min(0.01f)] private float rotationSmoothTime = 0.14f;
 
         [SerializeField] private bool combatHotkeys;
+        [SerializeField] private bool fixedWorldOnly; // E1: lock accepted camera; no C mode toggle.
         // Art C1 retains its original mode; combat C1b starts with C2 fixed yaw.
         private bool headingLocked = true;
-        private bool showHint = true;
+        [SerializeField] private bool showHint = true;
         private float cameraHeight;
         private float yaw;
         private float yawVelocity;
@@ -43,6 +44,23 @@ namespace AirCombat
         public void Configure(Transform player) => aircraft = player;
         public void SetPreferredPitch(float degrees) => obliquePitch = Mathf.Clamp(degrees, 45f, 75f);
         public void SetCombatHotkeys(bool enabled) => combatHotkeys = enabled;
+
+        // E1 map shares accepted C3 follow/lead without the distracting C1 A/B mode.
+        // All settings are serialized into the new scene; old studies are unchanged.
+        public void ConfigureMapMode(Transform player)
+        {
+            aircraft = player;
+            combatHotkeys = true;
+            fixedWorldOnly = true;
+            showHint = false;
+            obliquePitch = 50f;
+        }
+
+        // Called when E1 auto-resets at its boundary; avoids a fast cross-map sweep.
+        public void SnapToAircraft()
+        {
+            if (Application.isPlaying && aircraft != null) SnapPose();
+        }
 
         private void OnEnable()
         {
@@ -71,7 +89,7 @@ namespace AirCombat
 
             // Combat: C compares fixed C3 (+ heading lead) against the old
             // rotating C1b; original art-only C1 keeps its existing behavior.
-            if (keys.cKey.wasPressedThisFrame) headingLocked = !headingLocked;
+            if (!fixedWorldOnly && keys.cKey.wasPressedThisFrame) headingLocked = !headingLocked;
             // C1 art-only scene uses 1/2/3. C1b combat uses 1-6 for
             // weapons, so switch pitch presets to J/K/L there.
             if (combatHotkeys ? keys.jKey.wasPressedThisFrame : keys.digit1Key.wasPressedThisFrame)

@@ -1,6 +1,6 @@
 # E1a — ground style test on accepted C3 camera
 
-Status: **active quick visual atom** after the accepted C3 fixed-world 50° camera + lead. The goal is not to finish the map, but to answer one art question fast: **how simple should the ground be so the game reads like an arcade jet game, not a muddy survival sandbox?**
+Status: **historical comparison; flat-color approach selected for the new vivid E1 map**. The original C3 `T` toggles still exist in the old combat study; do not use this document as the next production task. See [E1](ARCADE_DESERT_E1.md). The goal is not to finish the map, but to answer one art question fast: **how simple should the ground be so the game reads like an arcade jet game, not a muddy survival sandbox?**
 
 ## Rationale
 

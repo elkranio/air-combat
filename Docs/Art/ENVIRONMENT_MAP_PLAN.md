@@ -1,6 +1,6 @@
 # Environment map direction — approved plan (2026-11-23)
 
-**Status:** hybrid map direction approved. The rotating 50° C1b view had stronger volume but harmed combat readability and caused mild motion sickness. **C3 fixed-world 50° with smoothed forward/boost lead is green. E1a ground-style comparison is active before E1 map construction.** Previous studies: V17/V19, V2A–V2A5, RockKitR1, BrokenVector, Unity Terrain T1.
+**Status:** hybrid map direction approved. Rotating C1b caused combat readability issues and mild motion sickness; **C3 fixed-world 50° plus look-ahead is green**. **E1a flat ground direction chosen; E1 first-flight map (vivid 2×2 km, rocks + existing jet) is the active production atom.** Previous studies: V17/V19, V2A–V2A5, RockKitR1, BrokenVector, Unity Terrain T1.
 
 ## Target
 
@@ -27,11 +27,11 @@ Build **one cohesive, expandable, low-altitude arcade air-combat map**, beginnin
 
 **C2/C3 — accepted gameplay camera:** fixed-world yaw **-45°**, pitch **50°**, ortho 80, smoothed heading-based cruise lead **48** with **+14** on boost. Do not restore auto-rotating world just for visual depth.
 
-**E1a — ground-style comparison, BEFORE E1:** use the existing accepted C3 combat scene. `T` cycles Original / Flat / Macro / Fine ground-only preview treatments, without editing scenes or touching aircraft/weapons. Pick clean ground material language before building more geometry. See [ground-style study](GROUND_STYLE_E1A.md).
+**E1a — archived decision:** preferred direction is flat-color ground, not noisy texture. The earlier `T` Original / Flat / Macro / Fine preview remains in C1b for diagnosis. See [original study](GROUND_STYLE_E1A.md).
 
-**E1 — new map foundation, AFTER E1a:** create a separate persistent environment scene; start from the useful V19 composition principles (road + one industrial area + crisp rocks), not by mutating V19. Bring it onto `CombatLightingRig.prefab` and evaluate ground color/contrast, airplane scale, real shadows and open-space proportions. One representative region is the **start of the larger map**, not a throwaway demo.
+**E1 — current first-flight foundation:** create one **persistent, initially uncluttered 2×2 km editable native Terrain scene** with vivid flat-color fill (`#DDA44D`), 12 sparse groups of 3 simple stone shapes, current unchanged PlayerJet, fixed C3 camera and shared `CombatLightingRig`. **Fly first, evaluate palette/shadows/scale/shape before roads, industry or canyon.** This is the start of the larger map, not a throwaway demo. [Exact E1 contract](ARCADE_DESERT_E1.md), [style pillars](ARCADE_VISUAL_DIRECTION.md).
 
-**E2 — ground/asset visual coherence:** improve ground surface definition, slope/surface transitions, ground-to-rock joins, compatible material roughness and texture detail at flight zoom. Compare to the V19 screenshot and reject mips/tiling that look like zoomed-up screenshots. Address shadow resolution/edge issues under controlled comparisons, not indiscriminate sharpening.
+**E2 — aircraft art + ground coherence:** first compare paint variants on the **current jet**, then mild stylized silhouette options at the same gameplay camera. In parallel, if E1 passes, tune ground/rock palettes, transitions, material response and crispness. Only then sculpt larger hills/lowlands and extend the authored environment. No mandatory texture noise: the flat ground may remain intentional.
 
 **E3 — fly-through canyon:** shape one entrance, near-straight flight corridor and exit; authored steep walls, high enough to intercept a low-flying jet, blended naturally into open ground. Test wall clearance, real collision/crash and readable anticipation of the entrance. Exact length/width are **playtest tuning**, not locked values.
 
