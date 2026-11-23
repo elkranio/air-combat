@@ -41,10 +41,11 @@ Keep `PlayerJet`, `CombatCameraRig`, and `CombatLightingRig` reusable; scene-spe
 - [GAMEPLAY_RADAR_R1.md](GAMEPLAY_RADAR_R1.md) — **R1 radar**, detection, UI, tuning and test checklist.
 - [GAMEPLAY_HUD_H1.md](GAMEPLAY_HUD_H1.md) — **H1 Combat HUD prefab**, install, runtime binding and playtest.
 - [GAMEPLAY_SAM_M1.md](GAMEPLAY_SAM_M1.md) — SAM1 installation, sound lock, separate inbound missile and radar checks.
+- [GAMEPLAY_SAM_M1B.md](GAMEPLAY_SAM_M1B.md) — SAM1b fixed VLS tower, reliable lock, initial pitch-over and homing budget.
 - [ART_PIPELINE.md](ART_PIPELINE.md), [ART_AUTHORING.md](ART_AUTHORING.md), [Tools/Unity/ARTLAB.md](Tools/Unity/ARTLAB.md) — art sources and pipeline.
 - [GAMEPLAY_CORE_G1.md](GAMEPLAY_CORE_G1.md), [GAMEPLAY_CORE_G2.md](GAMEPLAY_CORE_G2.md) — historical scene creation and depot bake/import.
 - [THIRD_PARTY_ASSETS.md](THIRD_PARTY_ASSETS.md) — licenses; [Docs/Archive](Docs/Archive) — old migration logs.
 
 ## Next
 
-**SAM1 is pending Unity playtest**: one missile tower added to GroundAttackLab, with a separate ground-launched homing missile, audible lock and inbound-only radar contact. No countermeasures, coordinated sites or armed enemy fighter behavior yet.
+**SAM1b is pending Unity playtest**: run **Air Combat > SAM1b > Upgrade Existing Launcher to Vertical** once to update the existing SAM prefab in place. Fixed vertical missile launch, range-only audible acquisition and separate homing budget. No countermeasures, coordinated sites or armed enemy fighter weapons yet.

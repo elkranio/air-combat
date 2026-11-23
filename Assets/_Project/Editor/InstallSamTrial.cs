@@ -64,14 +64,14 @@ namespace AirCombat.EditorTools
 
                 var launcherRoot = new GameObject(InstanceName);
                 SceneManager.MoveGameObjectToScene(launcherRoot, preview);
-                BuildLauncher(launcherRoot.transform, foundation, armor, trim, dark, orange,
-                    out Transform yaw, out Transform pitch, out Transform launchSocket);
+                Transform launchSocket = SamVerticalLauncherArt.Build(launcherRoot.transform,
+                    foundation, armor, trim, dark, orange);
                 var box = launcherRoot.AddComponent<BoxCollider>();
-                box.center = new Vector3(0f, 3.4f, 0f);
-                box.size = new Vector3(11f, 7f, 11f);
+                box.center = new Vector3(0f, 4.1f, 0f);
+                box.size = new Vector3(12f, 8.2f, 12f);
                 var missile = AssetDatabase.LoadAssetAtPath<GameObject>(MissilePath);
                 if (missile == null) throw new InvalidOperationException("SAM1: Missile prefab load failed.");
-                launcherRoot.AddComponent<SurfaceToAirLauncher>().ConfigureArt(yaw, pitch,
+                launcherRoot.AddComponent<SurfaceToAirLauncher>().ConfigureArt(
                     launchSocket, missile.GetComponent<SurfaceToAirMissile>());
                 PrefabUtility.SaveAsPrefabAsset(launcherRoot, LauncherPath, out saved);
                 if (!saved) throw new InvalidOperationException("SAM1: Couldn't save launcher prefab.");
@@ -101,37 +101,6 @@ namespace AirCombat.EditorTools
             material.SetFloat("_Smoothness", .12f);
             AssetDatabase.CreateAsset(material, MaterialFolder + "/SAM1_" + name + ".mat");
             return material;
-        }
-
-        private static void BuildLauncher(Transform root, Material baseMat, Material armor,
-            Material trim, Material dark, Material orange, out Transform yaw,
-            out Transform pitch, out Transform muzzle)
-        {
-            Part(root, "Concrete emplacement", PrimitiveType.Cylinder,
-                new Vector3(0f, .24f, 0f), new Vector3(13f, .24f, 13f), baseMat);
-            Part(root, "Fixed housing", PrimitiveType.Cylinder,
-                new Vector3(0f, 1.15f, 0f), new Vector3(6.5f, .9f, 6.5f), armor);
-            Part(root, "Turntable", PrimitiveType.Cylinder,
-                new Vector3(0f, 2.08f, 0f), new Vector3(5.4f, .22f, 5.4f), dark);
-            yaw = Node(root, "Yaw pivot", new Vector3(0f, 2.4f, 0f));
-            Part(yaw, "Armoured turret", PrimitiveType.Cube,
-                new Vector3(0f, .75f, -.3f), new Vector3(4.5f, 1.65f, 4.4f), armor);
-            Part(yaw, "Flat cabin roof", PrimitiveType.Cube,
-                new Vector3(0f, 1.67f, -.4f), new Vector3(4.1f, .24f, 3.85f), trim);
-            Part(yaw, "IFF stripe", PrimitiveType.Cube,
-                new Vector3(0f, 1.84f, -.4f), new Vector3(.62f, .12f, 2.65f), orange);
-            pitch = Node(yaw, "Elevation pivot", new Vector3(0f, 1.2f, 1.15f));
-            for (int side = -1; side <= 1; side += 2)
-            {
-                float x = 1.36f * side;
-                Part(pitch, "Missile canister", PrimitiveType.Cube,
-                    new Vector3(x, .18f, 2.5f), new Vector3(1.85f, 1.85f, 5.65f), trim);
-                Part(pitch, "Canister nose", PrimitiveType.Cube,
-                    new Vector3(x, .18f, 5.33f), new Vector3(1.48f, 1.48f, .32f), dark);
-                Part(pitch, "Canister rear band", PrimitiveType.Cube,
-                    new Vector3(x, .18f, .43f), new Vector3(1.95f, 1.95f, .44f), orange);
-            }
-            muzzle = Node(pitch, "Launch muzzle", new Vector3(-1.36f, .18f, 5.75f));
         }
 
         private static void BuildMissile(Transform root, Material armor, Material trim,

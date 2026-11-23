@@ -3,13 +3,19 @@ using UnityEngine.Rendering;
 
 namespace AirCombat
 {
-    // M1 surface-to-air missile: separate from the approved air-to-air missile.
-    // Finite speed, yaw/pitch turn limit and TOTAL turning budget make Q/E useful.
+    // M1b surface-to-air missile: separate from the approved air-to-air missile.
+    // Vertical ejection and initial pitch-over are FREE of the pursuit turn budget.
+    // Once homing, finite turn speed and TOTAL turning budget make Q/E useful.
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(210)]
     public sealed class SurfaceToAirMissile : MonoBehaviour, IRadarContact
     {
         [SerializeField, Min(1f)] private float speed = 112f;
+        [Header("Vertical launch (no pursuit budget spent)")]
+        [SerializeField, Min(.05f)] private float verticalSeconds = .34f;
+        [SerializeField, Min(1f)] private float pitchOverRate = 210f;
+        [SerializeField, Min(.05f)] private float pitchOverMaxSeconds = .75f;
+        [Header("Pursuit")]
         [SerializeField, Min(1f)] private float turnRate = 72f;
         [SerializeField, Min(0f)] private float totalTurnBudget = 145f;
         [SerializeField, Min(.1f)] private float lifetime = 6.5f;
@@ -18,6 +24,9 @@ namespace AirCombat
         [SerializeField] private TrailRenderer exhaust;
         [SerializeField] private Material impactMaterial;
 
+        private enum FlightPhase { Vertical, PitchOver, Homing }
+        private FlightPhase phase;
+        private float phaseElapsed;
         private Transform target;
         private PlayerHitPoints hitPoints;
         private AircraftRadar radar;
@@ -30,6 +39,9 @@ namespace AirCombat
         private static int lastPhysicsSyncFrame = -1;
 
         public bool IsFlying => flying;
+        public string PhaseLabel => !flying ? "OFF" : phase == FlightPhase.Vertical ? "VERTICAL"
+            : phase == FlightPhase.PitchOver ? "PITCH-OVER" : "HOMING";
+        public float RemainingTurnBudget => remainingTurn;
         public RadarContactType RadarKind => RadarContactType.IncomingMissile;
         public Vector3 RadarPosition => transform.position;
         public float RadarThreatRadius => 0f;
@@ -49,7 +61,9 @@ namespace AirCombat
             launchSite = owner;
             previousTargetPosition = target != null ? target.position : transform.position;
             remainingTurn = totalTurnBudget;
-            age = 0f;
+            age = phaseElapsed = 0f;
+            phase = FlightPhase.Vertical;
+            transform.rotation = Quaternion.LookRotation(Vector3.up, Vector3.forward);
             flying = true;
             if (exhaust != null) { exhaust.Clear(); exhaust.emitting = true; }
             radar?.Register(this); // Only hostile missiles, not player's ordnance.
@@ -66,7 +80,35 @@ namespace AirCombat
             float dt = Time.deltaTime;
             Vector3 from = transform.position;
             bool hasTarget = target != null && hitPoints != null && hitPoints.IsAlive;
-            if (hasTarget && remainingTurn > 0f)
+            if (phase == FlightPhase.Vertical)
+            {
+                // Keep the ejection truly vertical before steering starts.
+                phaseElapsed += dt;
+                if (phaseElapsed >= verticalSeconds)
+                {
+                    phase = FlightPhase.PitchOver;
+                    phaseElapsed = 0f;
+                }
+            }
+            else if (phase == FlightPhase.PitchOver)
+            {
+                phaseElapsed += dt;
+                if (hasTarget)
+                {
+                    Vector3 desired = target.position - from;
+                    if (desired.sqrMagnitude > .001f)
+                    {
+                        Quaternion toward = Quaternion.LookRotation(desired, Vector3.up);
+                        transform.rotation = Quaternion.RotateTowards(transform.rotation, toward,
+                            pitchOverRate * dt);
+                        if (Vector3.Angle(transform.forward, desired) < 6f)
+                            phase = FlightPhase.Homing;
+                    }
+                }
+                // Never grant endless free turning against a maneuvering jet.
+                if (phaseElapsed >= pitchOverMaxSeconds) phase = FlightPhase.Homing;
+            }
+            else if (hasTarget && remainingTurn > 0f)
             {
                 Vector3 desired = target.position - from;
                 if (desired.sqrMagnitude > .001f)

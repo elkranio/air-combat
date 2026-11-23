@@ -204,7 +204,7 @@ namespace AirCombat
                     $"AA1: Player {playerHealth.Hp}/{playerHealth.MaxHp} HP   Turret {antiAircraft.Hp}/{antiAircraft.MaxHp} HP   Shots {antiAircraft.FiredCount}   Hits {antiAircraft.HitCount}", label);
             if (missileTower != null && playerHealth != null)
                 GUI.Label(new Rect(22, 155, 620, 22),
-                    $"SAM1: Site {missileTower.Hp}/{missileTower.MaxHp} HP   Lock {missileTower.LockProgress01:P0}   Missiles {missileTower.LaunchedCount}   Inbound {missileTower.HasIncomingMissile}", label);
+                    $"SAM1b: {missileTower.StatusLabel}   Lock {missileTower.LockProgress01:P0}   Reload {missileTower.ReloadLeft:F1}s   Missiles {missileTower.LaunchedCount}   Site {missileTower.Hp}/{missileTower.MaxHp}", label);
         }
     }
 }

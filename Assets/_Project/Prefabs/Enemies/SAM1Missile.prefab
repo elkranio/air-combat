@@ -414,6 +414,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::AirCombat.SurfaceToAirMissile
   speed: 112
+  verticalSeconds: 0.34
+  pitchOverRate: 210
+  pitchOverMaxSeconds: 0.75
   turnRate: 72
   totalTurnBudget: 145
   lifetime: 6.5

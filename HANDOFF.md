@@ -2,7 +2,7 @@
 
 ## Baseline
 
-- **Green base:** AA1, boosted PlayerJet, north-up R1 radar and installed H1 CombatHUD on `master` (2026-11-23). **SAM1 missile tower is the new Unity-test-required atom.**
+- **Green base:** AA1, boosted PlayerJet, north-up R1 radar and installed H1 CombatHUD on `master` (2026-11-23). **SAM1b vertical-launch upgrade is pending Unity playtest.**
 - Unity 6.6 / URP. **WeaponLab** is the prefab-composed air-combat regression. **GroundAttackLab** is the ground-combat regression. **Sandbox** remains the only Build Settings entry and is a legacy comparison.
 - **F1 flight green:** 70 constant cruise, W boost to 140 (2.5s tank), A/D steering, Q/E Break Turn. Shared `FlightController` enables this with `useFixedCruiseWBoost` on PlayerJet, not globally; Sandbox retains W/S throttle and Space afterburner.
 
@@ -21,9 +21,9 @@ The installed stationary AA prefab is green: real yaw/pitch servos, stale-veloci
 
 **R1/H1** equip GroundAttackLab with a range-limited `AircraftRadar` (460), north-up top-right `RadarHud` and the bottom HP/fuel CombatHUD strip. The AA1 turret implements `IRadarContact`; its radar ring reads the live turret detection range, and disappears when destroyed. No aim warning beam or enemy AI change. Debug HUD in both combat labs starts hidden; H toggles it. See [radar test plan](GAMEPLAY_RADAR_R1.md).
 
-## SAM1 — pending Unity test
+## SAM1b — pending Unity test
 
-One separate `SAM1Launcher` prefab and one independent `SAM1Missile` prefab, with finite homing, audible lock, inbound-only missile radar glyph and 350-unit engagement zone. A one-time editor installer places SAM at (-320,0,215). The session binds aircraft, HP and existing radar; do not modify the approved air-to-air `MissileProjectile`. See [SAM1](GAMEPLAY_SAM_M1.md).
+The authored SAM1 prefab stays at (-320,0,215), but must be **upgraded in place once** via **Air Combat > SAM1b > Upgrade Existing Launcher to Vertical** after patch application. SAM no longer tracks the jet mechanically: range-only 1.4s audible acquisition launches a separate rocket vertically (0.34s), then a quick pitch-over (up to 0.75s) before 72°/s homing with a fresh 145° budget. Radar shows launcher ring (350) and incoming missile only. Do not rerun original installer; player air-to-air missile unchanged. See [SAM1b playtest](GAMEPLAY_SAM_M1B.md).
 
 ## Code boundaries
 

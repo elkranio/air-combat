@@ -1,4 +1,6 @@
-# SAM1 — ground-launched guided missile (Unity playtest required)
+# SAM1 — ground-launched guided missile (historical M1 trial)
+
+**Superseded by [SAM1b vertical launch](GAMEPLAY_SAM_M1B.md).** Do not repeat this original installer on an existing SAM prefab; use the one-time SAM1b upgrade command instead. The rotating muzzle lock described below is the old failed prototype.
 
 Built against current `master` with accepted AA1, north-up R1 radar and H1 CombatHUD. This is a separate projectile prefab; **do not change** `MissileProjectile` (air-to-air) or player weapon balance.
 

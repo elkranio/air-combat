@@ -2,8 +2,8 @@ using UnityEngine;
 
 namespace AirCombat
 {
-    // M1: independent, stationary SAM. The authored prefab owns turret geometry;
-    // the scene binds its target, sensor and health receiver at runtime.
+    // M1b: fixed vertical-launch SAM. Radar acquisition is independent of
+    // launcher orientation; the missile owns the pitch-over and pursuit phases.
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(180)]
     public sealed class SurfaceToAirLauncher : DamageableTarget, IRadarContact
@@ -11,14 +11,9 @@ namespace AirCombat
         [Header("Acquisition")]
         [SerializeField, Min(1f)] private float engagementRange = 350f;
         [SerializeField, Min(.1f)] private float lockSeconds = 1.4f;
-        [SerializeField, Min(1f)] private float yawSpeed = 65f;
-        [SerializeField, Min(1f)] private float pitchSpeed = 40f;
-        [SerializeField, Range(1f, 30f)] private float lockTolerance = 11f;
         [Header("Fire")]
         [SerializeField, Min(.1f)] private float reloadSeconds = 7f;
         [SerializeField, Min(1)] private int maxHp = 6;
-        [SerializeField] private Transform yawPivot;
-        [SerializeField] private Transform pitchPivot;
         [SerializeField] private Transform launchSocket;
         [SerializeField] private SurfaceToAirMissile missilePrefab;
 
@@ -39,18 +34,31 @@ namespace AirCombat
         public int LaunchedCount { get; private set; }
         public bool HasIncomingMissile => missile != null && missile.IsFlying;
         public float LockProgress01 => Mathf.Clamp01(lockProgress / Mathf.Max(.1f, lockSeconds));
+        public float ReloadLeft => Mathf.Max(0f, nextLaunchAt - Time.time);
+        public string StatusLabel
+        {
+            get
+            {
+                if (IsDown) return "DESTROYED";
+                if (HasIncomingMissile) return "LAUNCHED / " + missile.PhaseLabel;
+                if (missilePrefab == null || launchSocket == null) return "UNCONFIGURED";
+                if (target == null || hitPoints == null || !hitPoints.IsAlive) return "NO TARGET";
+                Vector3 flat = target.position - transform.position;
+                flat.y = 0f;
+                if (flat.sqrMagnitude > engagementRange * engagementRange) return "OUT OF RANGE";
+                if (Time.time < nextLaunchAt) return "RELOADING";
+                return "ACQUIRING";
+            }
+        }
         public override CombatTargetDomain Domain => CombatTargetDomain.Ground;
         public RadarContactType RadarKind => RadarContactType.GroundDefense;
         public Vector3 RadarPosition => transform.position;
         public float RadarThreatRadius => engagementRange;
         public bool IsRadarVisible => isActiveAndEnabled && !IsDown;
 
-        // Editor installer supplies scene-independent prefab references.
-        public void ConfigureArt(Transform yaw, Transform pitch, Transform muzzle,
-            SurfaceToAirMissile projectile)
+        // Editor installer/upgrade supplies scene-independent prefab references.
+        public void ConfigureArt(Transform muzzle, SurfaceToAirMissile projectile)
         {
-            yawPivot = yaw;
-            pitchPivot = pitch;
             launchSocket = muzzle;
             missilePrefab = projectile;
         }
@@ -83,8 +91,6 @@ namespace AirCombat
             nextLaunchAt = Time.time;
             nextBeepAt = 0f;
             LaunchedCount = 0;
-            if (yawPivot != null) yawPivot.localRotation = Quaternion.Euler(0f, 180f, 0f);
-            if (pitchPivot != null) pitchPivot.localRotation = Quaternion.identity;
         }
 
         private void LateUpdate()
@@ -97,7 +103,7 @@ namespace AirCombat
                 return;
             }
             if (IsDown || target == null || hitPoints == null || !hitPoints.IsAlive ||
-                missilePrefab == null || launchSocket == null || yawPivot == null || pitchPivot == null)
+                missilePrefab == null || launchSocket == null)
             {
                 lockProgress = 0f;
                 return;
@@ -110,39 +116,22 @@ namespace AirCombat
                 return;
             }
 
-            float dt = Time.deltaTime;
-            Vector3 toTarget = target.position - yawPivot.position;
-            Vector3 flat = transform.InverseTransformDirection(toTarget);
-            flat.y = 0f;
-            if (flat.sqrMagnitude < .0001f) return;
-            float yaw = Mathf.Atan2(flat.x, flat.z) * Mathf.Rad2Deg;
-            float nextYaw = Mathf.MoveTowardsAngle(yawPivot.localEulerAngles.y, yaw, yawSpeed * dt);
-            yawPivot.localRotation = Quaternion.Euler(0f, nextYaw, 0f);
-            Vector3 local = yawPivot.InverseTransformPoint(target.position);
-            float horizontal = new Vector2(local.x, local.z).magnitude;
-            float desiredPitch = Mathf.Clamp(Mathf.Atan2(local.y - pitchPivot.localPosition.y,
-                horizontal) * Mathf.Rad2Deg, -5f, 75f);
-            float currentPitch = Mathf.DeltaAngle(0f, pitchPivot.localEulerAngles.x);
-            pitchPivot.localRotation = Quaternion.Euler(
-                Mathf.MoveTowardsAngle(currentPitch, -desiredPitch, pitchSpeed * dt), 0f, 0f);
-
+            // Range + uninterrupted dwell time are the ONLY lock requirements.
+            // The site has no traverse servo and can fire at a maneuvering jet.
             if (Time.time < nextLaunchAt)
             {
                 lockProgress = 0f;
                 return;
             }
-            float angle = Vector3.Angle(launchSocket.forward, target.position - launchSocket.position);
-            if (angle > lockTolerance)
-            {
-                lockProgress = 0f;
-                return;
-            }
-            lockProgress += dt;
+            lockProgress += Time.deltaTime;
             WarningBeep(lockProgress >= lockSeconds * .65f ? .22f : .38f);
             if (lockProgress < lockSeconds) return;
             lockProgress = 0f;
             nextLaunchAt = Time.time + reloadSeconds;
-            missile = Instantiate(missilePrefab, launchSocket.position, launchSocket.rotation);
+            // Force +Y ejection even when upgrading a legacy angled prefab.
+            // The missile independently handles the pitch-over and pursuit.
+            missile = Instantiate(missilePrefab, launchSocket.position,
+                Quaternion.LookRotation(Vector3.up, Vector3.forward));
             missile.Launch(target, hitPoints, radar, transform);
             LaunchedCount++;
         }
