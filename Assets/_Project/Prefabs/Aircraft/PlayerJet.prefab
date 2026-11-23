@@ -75,9 +75,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8c8e7b7546c6f3c4bb9b3992c922f1bc, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::AirCombat.Afterburner
-  boostSpeed: 110
+  boostSpeed: 140
   boostAcceleration: 180
-  capacitySeconds: 2
+  capacitySeconds: 2.5
   rechargeSeconds: 5
   rechargeDelay: 0.4
 --- !u!114 &6036662072039324412

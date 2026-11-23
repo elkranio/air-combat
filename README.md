@@ -9,7 +9,7 @@ Unity 6.6 / URP arcade air-combat prototype. The accepted gameplay is in committ
 - `Assets/_Project/Scenes/Sandbox.unity` — legacy flight/missile comparison; **the only Build Settings scene**.
 - `Assets/_Project/Scenes/FrontierStrata.unity` — V17 environment art baseline. The other Frontier/bake scenes remain art references, not gameplay scenes.
 
-**Controls (WeaponLab + GroundAttackLab):** A/D steer, constant 70 cruise, W afterburner to 110, Q/E Break Turn, R reset, H diagnostics. S/Space unused. WeaponLab: 1 BURST, 2 GAUSS, 3 MISSILE, B enemy evasion. GroundAttackLab also has **4 BOMBS** (four gravity bombs, .25s spacing, 3s cooldown, nadir/height-only marker) and **5 NURS** (committed 2.5s climb, six physical rockets, 2.5s return, Q/E emergency abort). No NURS impact predictor; G4c adds aircraft-safe camera lead instead. Sandbox retains its original W/S + Space controls.
+**Controls (WeaponLab + GroundAttackLab):** A/D steer, constant 70 cruise, W afterburner to 140 (2.5s full tank), Q/E Break Turn, R reset, H diagnostics. S/Space unused. WeaponLab: 1 BURST, 2 GAUSS, 3 MISSILE, B enemy evasion. GroundAttackLab also has **4 BOMBS** (four gravity bombs, .25s spacing, 3s cooldown, nadir/height-only marker) and **5 NURS** (committed 2.5s climb, six physical rockets, 2.5s return, Q/E emergency abort). No NURS impact predictor; G4c adds aircraft-safe camera lead instead. Sandbox retains its original W/S + Space controls.
 
 ## Source ownership
 
