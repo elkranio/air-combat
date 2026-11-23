@@ -188,7 +188,7 @@ namespace AirCombat
             if (!showDiagnostics || !enabled || Event.current.type != EventType.Repaint) return;
             if (label == null)
                 label = new GUIStyle(GUI.skin.label) { fontSize = 14, normal = { textColor = Color.white } };
-            GUI.Box(new Rect(12, 12, 650, missileTower != null ? 188 : antiAircraft != null ? 164 : 140), GUIContent.none);
+            GUI.Box(new Rect(12, 12, 650, missileTower != null ? 212 : antiAircraft != null ? 164 : 140), GUIContent.none);
             GUI.Label(new Rect(22, 17, 620, 22), "GROUND ATTACK LAB G4b / BOMBS + CABRAGE NURS", label);
             GUI.Label(new Rect(22, 40, 620, 22), "A/D turn  W boost  Q/E break/abort  1/2/3/4/5 weapons  R reset  H HUD", label);
             GUI.Label(new Rect(22, 63, 620, 22),
@@ -204,7 +204,10 @@ namespace AirCombat
                     $"AA1: Player {playerHealth.Hp}/{playerHealth.MaxHp} HP   Turret {antiAircraft.Hp}/{antiAircraft.MaxHp} HP   Shots {antiAircraft.FiredCount}   Hits {antiAircraft.HitCount}", label);
             if (missileTower != null && playerHealth != null)
                 GUI.Label(new Rect(22, 155, 620, 22),
-                    $"SAM1b: {missileTower.StatusLabel}   Lock {missileTower.LockProgress01:P0}   Reload {missileTower.ReloadLeft:F1}s   Missiles {missileTower.LaunchedCount}   Site {missileTower.Hp}/{missileTower.MaxHp}", label);
+                    $"SAM1c: {missileTower.StatusLabel}   Lock {missileTower.LockProgress01:P0}   Reload {missileTower.ReloadLeft:F1}s   Missiles {missileTower.LaunchedCount}   Site {missileTower.Hp}/{missileTower.MaxHp}", label);
+            if (missileTower != null)
+                GUI.Label(new Rect(22, 178, 620, 22),
+                    "SAM last: " + missileTower.LastFlightReport, label);
         }
     }
 }

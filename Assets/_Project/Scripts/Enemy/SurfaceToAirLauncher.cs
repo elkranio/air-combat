@@ -32,6 +32,7 @@ namespace AirCombat
         public int MaxHp => maxHp;
         public bool IsDown => hp <= 0;
         public int LaunchedCount { get; private set; }
+        public string LastFlightReport { get; private set; } = "NO LAUNCH";
         public bool HasIncomingMissile => missile != null && missile.IsFlying;
         public float LockProgress01 => Mathf.Clamp01(lockProgress / Mathf.Max(.1f, lockSeconds));
         public float ReloadLeft => Mathf.Max(0f, nextLaunchAt - Time.time);
@@ -91,6 +92,7 @@ namespace AirCombat
             nextLaunchAt = Time.time;
             nextBeepAt = 0f;
             LaunchedCount = 0;
+            LastFlightReport = "NO LAUNCH";
         }
 
         private void LateUpdate()
@@ -130,10 +132,21 @@ namespace AirCombat
             nextLaunchAt = Time.time + reloadSeconds;
             // Force +Y ejection even when upgrading a legacy angled prefab.
             // The missile independently handles the pitch-over and pursuit.
-            missile = Instantiate(missilePrefab, launchSocket.position,
+            Vector3 launchPosition = launchSocket.position;
+            missile = Instantiate(missilePrefab, launchPosition,
                 Quaternion.LookRotation(Vector3.up, Vector3.forward));
-            missile.Launch(target, hitPoints, radar, transform);
+            missile.Launch(target, hitPoints, radar, transform, OnMissileFinished);
             LaunchedCount++;
+            LastFlightReport = $"SPAWNED #{LaunchedCount} at Y={launchPosition.y:F1}";
+            Debug.Log($"SAM1: {LastFlightReport}; target={target.position}", this);
+        }
+
+        private void OnMissileFinished(string report)
+        {
+            LastFlightReport = report;
+            // An immediate missile disappearance is invisible at gameplay zoom;
+            // report the actual reason instead of guessing from the warning beep.
+            if (report.StartsWith("BLOCKED")) Debug.LogWarning("SAM1: " + report, this);
         }
 
         private void WarningBeep(float interval)

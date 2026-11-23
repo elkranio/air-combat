@@ -35,6 +35,7 @@ namespace AirCombat
         private float age;
         private float remainingTurn;
         private bool flying;
+        private System.Action<string> onFinished;
         private static readonly RaycastHit[] HitBuffer = new RaycastHit[24];
         private static int lastPhysicsSyncFrame = -1;
 
@@ -53,12 +54,14 @@ namespace AirCombat
             impactMaterial = impact;
         }
 
-        public void Launch(Transform aircraft, PlayerHitPoints health, AircraftRadar sensor, Transform owner)
+        public void Launch(Transform aircraft, PlayerHitPoints health, AircraftRadar sensor,
+            Transform owner, System.Action<string> finished = null)
         {
             target = aircraft;
             hitPoints = health;
             radar = sensor;
             launchSite = owner;
+            onFinished = finished;
             previousTargetPosition = target != null ? target.position : transform.position;
             remainingTurn = totalTurnBudget;
             age = phaseElapsed = 0f;
@@ -140,7 +143,11 @@ namespace AirCombat
 
             float obstacleAt = float.PositiveInfinity;
             Vector3 obstaclePoint = default;
-            if (travel > .0001f)
+            string obstacleName = null;
+            // The first vertical ejection is a cold launch: collision isn't armed
+            // until the rocket clears the fixed silo. This prevents accidental
+            // launch-frame impacts on surrounding level geometry.
+            if (travel > .0001f && age >= verticalSeconds)
             {
                 int count = Physics.RaycastNonAlloc(from, (to - from) / travel,
                     HitBuffer, travel, ~0, QueryTriggerInteraction.Ignore);
@@ -152,29 +159,36 @@ namespace AirCombat
                         (hitPoints != null && hit.collider.GetComponentInParent<PlayerHitPoints>() == hitPoints))
                         continue;
                     float t = hit.distance / travel;
-                    if (t < obstacleAt) { obstacleAt = t; obstaclePoint = hit.point; }
+                    if (t < obstacleAt)
+                    {
+                        obstacleAt = t;
+                        obstaclePoint = hit.point;
+                        obstacleName = hit.collider.name;
+                    }
                 }
             }
             if (obstacleAt <= targetAt)
             {
-                Finish(obstaclePoint, true);
+                Finish(obstaclePoint, true, "BLOCKED " + obstacleName);
                 return;
             }
             if (!float.IsPositiveInfinity(targetAt))
             {
                 Vector3 at = Vector3.Lerp(from, to, targetAt);
                 if (hasTarget) hitPoints.ApplyDamage(at, damage);
-                Finish(at, true);
+                Finish(at, true, "HIT PLAYER");
                 return;
             }
             transform.position = to;
             age += dt;
-            if (age >= lifetime) Finish(transform.position, false);
+            if (age >= lifetime) Finish(transform.position, false, "EXPIRED");
         }
 
-        private void Finish(Vector3 position, bool impact)
+        private void Finish(Vector3 position, bool impact, string reason)
         {
             flying = false;
+            onFinished?.Invoke($"{reason} at {age:F2}s / {position}");
+            onFinished = null;
             radar?.Unregister(this);
             if (impact) MissileImpact.Spawn(position, impactMaterial);
             if (exhaust != null)
