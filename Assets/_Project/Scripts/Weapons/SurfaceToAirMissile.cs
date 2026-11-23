@@ -167,7 +167,9 @@ namespace AirCombat
                     }
                 }
             }
-            if (obstacleAt <= targetAt)
+            // Both values are +Infinity when nothing was hit. Without this guard,
+            // Infinity <= Infinity despawns every missile on its first frame.
+            if (!float.IsPositiveInfinity(obstacleAt) && obstacleAt <= targetAt)
             {
                 Finish(obstaclePoint, true, "BLOCKED " + obstacleName);
                 return;
