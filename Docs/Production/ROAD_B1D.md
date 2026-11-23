@@ -36,3 +36,7 @@ At Y78 the base should read as a **single established site**, not separate model
 4. On green, commit the **modified `E1_Terrain.asset` and `PreparedGround.png`**, plus patch changes and new Editor script/meta. The menu refuses second runs or unexpected/manual terrain layer configurations.
 
 Source `InstallBaseRoadB1D.cs` now uses the same color and masking for reproducible fresh B1d installations; do NOT rerun its old one-time installation on the current map.
+
+## B1d3 — optional hard-edge whole-base lot (latest A/B)
+
+The last design decision is stricter than B1d2: one visibly prepared **empty lot** (not three blurred foundation-shaped stamps), irregular but **hard** edges, and the ability to reject it without removing roads. Use [B1d3 setup and comparison](PREPARED_LOT_B1D3.md). It replaces the local terrain paint with a separately disableable mesh in the same scene. The B1d road/mark prefabs and all their GUIDs remain untouched.
