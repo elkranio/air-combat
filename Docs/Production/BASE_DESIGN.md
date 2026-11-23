@@ -1,6 +1,6 @@
 # B1 — first military base (working production plan)
 
-**Status:** B1a barracks scale and basic mass provisionally accepted; **B1b stylized roof/entry and scene-only shadow-direction pass is current (Unity Play Mode pending)**. Build on the existing `ArcadeDesertE1.unity`, use muted ground, current dark-contrast Kestrel, Y150 flight and the accepted C3 camera/light rig. **One reviewable atom at a time**. The base is for finding our art/scale language, not yet a fully functional combat mission. [First asset and install steps](BARRACKS_B1A.md).
+**Status:** the three stylized barracks are provisionally accepted; **B1c modular headquarters and courtyard** are ready for Unity visual review. Continue on the same `ArcadeDesertE1.unity`, default Y78 flight and accepted C3 camera. This is an incremental art/scale test, not a combat mission. [HQ asset and install instructions](HQ_B1C.md).
 
 ## Site concept
 
@@ -10,20 +10,20 @@ A small generic military airfield outpost with a believable approach: one asphal
 
 1. **B1a — three barracks v0 (placed):** one 32×12×6 m master in three instances, separate base sector, Y150 approach, accepted plateau unchanged. Scale and mass appear promising; shadows and character need improvement. [B1a source](BARRACKS_B1A.md).
 2. **B1b — stylized barracks and directional shadows (current):** preserve B1a prefabs and GUIDs, enlarge roof eaves, add one entrance canopy + two roof vents, stronger cool/warm material grouping; rotate the sun on the **main scene instance only**. No bake or installer. [Changes and visual gate](BARRACKS_B1B.md).
-3. **B1c — warehouse/maintenance hall:** use 2–3 references for proportions (low broad industrial mass, wide doors, roof slope/overhang, a loading/service side), then model one reusable building. Match accepted barracks proportions/material language. Simple faceted form, few matte materials, proper shadow/collider; no detailed bake initially.
-4. **B1d — motor pool:** parking slab, one boxy jeep/truck silhouette, then an APC/tank *only if size and shape read*. A second vehicle is a variation pass, not a forced asset dump.
+3. **B1c — modular headquarters and courtyard (current):** one two-height 29×19 m HQ, independent entry, concrete plaza, two planters and flagpole beside barracks. Spawn at Y78; no road or bake yet. [Current gate](HQ_B1C.md).
+4. **B1d — asphalt connection:** first connect the HQ plaza to the barracks with a short access road. Compare palette and silhouettes together before creating more asset types. Then add a warehouse/maintenance hall and motor pool in separate iterations.
 5. **B1e — utility and identity:** small generator/service building, flagpole, minimal fence/gate and selected markings. Use functionally clear, sparsely distributed pieces.
 6. **B1f — adjacent airstrip:** a simple appropriately scaled runway/apron connection and perhaps one hangar, matched to base proportions. No detailed airport before earlier pieces are accepted.
 7. **B1g — first combat-context test:** add existing AA1/SAM1 props and perhaps depot to the base via an isolated scene-composition atom; check gameplay readability. Do not modify the already-green lab prefabs just to decorate this scene.
 
 ## Material / shape checkpoints
 
-**Environment:** quiet `#B8A993` ground, neutral mid-light concrete/asphalt, low gloss. **Structures:** slightly more contrast and functional color zones than terrain, without saturated toy roofs. **Vehicles / aircraft / AA:** stronger color or silhouette contrast, modest exaggerated scale permitted for readable threats. Shadow and materials must look coherent with the enormous plateau and flying jet. Evaluate in motion at yaw -45°, pitch 50°, ortho 80 and Y150 before any bake.
+**Environment:** quiet `#B8A993` ground, neutral mid-light concrete/asphalt, low gloss. **Structures:** slightly more contrast and functional color zones than terrain, without saturated toy roofs. **Vehicles / aircraft / AA:** stronger color or silhouette contrast, modest exaggerated scale permitted for readable threats. Shadow and materials must look coherent with the enormous plateau and flying jet. Evaluate in motion at yaw -45°, pitch 50°, ortho 80 and **Y78** before any bake.
 
 ## Reference workflow
 
 For each new asset, gather a *small* set of real-world massing photos and optionally one strong stylized-game reference. Extract proportions, large shapes and distinct functional parts; do **not** copy another game's geometry. Block out first, then compare in Unity, then detail only if it helps. Source images belong in `Resources/References/` with source/licensing notes. Editable model in `Resources/Blender/`, export in `Assets/_Project/Art/Buildings/Base/`, prefab in scene-neutral reusable folder.
 
-## Gate for B1b green
+## Gate for B1c green
 
-From the Y150 approach, all three buildings should read as military utility barracks, not generic sheds or toy models. Roof silhouette, readable main entry, two rooftop vents and visible side-cast shadows should improve the scene without adding noise. Check plateau and aircraft lighting from the new angle. Do not confuse a plausible-looking shadow with proof of fixed shadow distance/culling. No baked sunlight or combat modifications.
+The repeated barracks and HQ should read as one military compound, not toy props or generic civilian houses. HQ feels more important but speaks the same material language; entry, plaza, planters and flag remain separate objects. Confirm dynamic URP shadows and readable ground contrast at Y78. If it fails, revise HQ, not the whole map.

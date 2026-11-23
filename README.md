@@ -16,7 +16,7 @@ Unity 6.6 / URP. **Stylized arcade air combat**, fixed-world oblique camera and 
 
 | Scene | Role |
 | --- | --- |
-| `Assets/_Project/Scenes/ArcadeDesertE1.unity` | **Main working map**: muted editable terrain, huge plateau, scene-specific jet paint, flight at Y150, `ArcadeCameraRig`, real 600-unit shadow candidate. Art/flight only for now. |
+| `Assets/_Project/Scenes/ArcadeDesertE1.unity` | **Main working map**: muted terrain, preserved plateau, three barracks and [B1c headquarters](Docs/Production/HQ_B1C.md), flight at Y78, `ArcadeCameraRig`, real 600-unit shadow candidate. Art/flight only for now. |
 | `Assets/_Project/Scenes/WeaponLab.unity` | **Regression only**: fighter and air weapons 1–3. |
 | `Assets/_Project/Scenes/GroundAttackLab.unity` | **Regression only**: ground weapons 4–6, AA/SAM, radar/HUD. |
 

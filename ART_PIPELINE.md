@@ -15,7 +15,7 @@ The current asset direction is [Stylized Arcade Military](Docs/Production/ART_DI
 
 ## Model handoff
 
-1. Find a few relevant geometry reference images (proportion/massing, not styling to copy), set object footprint in **world units** next to the actual aircraft at Y150.
+1. Find a few relevant geometry reference images (proportion/massing, not styling to copy), set object footprint in **world units** next to the actual aircraft at Y78.
 2. Block out an intentionally designed silhouette. Use a small number of large surfaces, clear side/roof separation, no procedural spikes or crowded bevels. Inspect from gameplay yaw -45°, pitch 50°, ortho 80.
 3. Assign 2–4 intentional flat/matte material colors. Give neutral buildings enough contrast from muted sand `#B8A993`; reserve saturated accents for aircraft, doors/markings, weapons and VFX.
 4. If the model reads with dynamic URP sunlight, **do not bake just because the tool exists**. If local concavity/structural seams need more read, author restrained AO/normal independently; never bake a directional sun/shadow into albedo.
