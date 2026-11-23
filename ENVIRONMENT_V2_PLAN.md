@@ -1,6 +1,6 @@
 # ENV V2 — Dry Frontier: visual production plan
 
-**Status:** working art direction / incremental playtest plan. **Not** a commitment to replace the current scenes. First atom: **V2A ground-only study**, Unity test pending.
+**Status:** working art direction / incremental playtest plan. **Not** a commitment to replace the current scenes. V2A terrain study **tested green and pushed** on 2026-11-23; V2A2 geological-definition comparison is the next isolated test.
 
 ## Target, not a promise
 
@@ -48,13 +48,29 @@ All pieces have predictable orientation, metric scales, pivots, colliders only i
 
 **Rule:** one atom → create isolated output → inspect at game camera → record **green / revise / reject** → only then proceed. Never rewrite accepted V17, GroundAttackLab, WeaponLab or Sandbox while testing this art direction.
 
-### V2A — Ground / macro composition (first implementation in this patch)
+### V2A — Ground / macro composition (green baseline)
 
 - New isolated scene `Assets/_Project/Scenes/FrontierV2Ground.unity`, **copied from V17 for its player/camera/light setup**; remove V17 environment only inside the new scene.
 - Author a **1200×1200** terrain mesh with broad basin, two long ridges, 2 accent shelves and one subtle dry gully, no decorative rocks or buildings. Deliberately cap terrain high below the visual flight plane.
 - Produce one **2048² albedo** from broad color zones + slope/height masks + restrained noise. URP Lit, genuine sun shadows, no baked sunlight, fog or heavy post. Mesh and image generated in `Assets/_Project/Generated/EnvironmentV2/`.
 - Use actual V17 ArtLab flight, camera pitch controls and ortho size 80. Make screenshots looking north, east and across the ridge at 90/75/65. **Acceptance:** ground looks geographically intentional even *without* props; jet readable; no repeated hill bumps, contour rings, obvious tiling, busy microtexture or floating ground gaps.
 - **If weak:** change shape proportions and macro color frequency *before* moving to prop work. This stage is disposable. Do not infer success from the reference image.
+
+### V2A2 — Geological definition (current art iteration)
+
+**Reason for the extra atom:** V2A was technically valid and pushed, but its Play Mode screenshot shows an almost uniformly blurred sandy surface. The terrain lacks readable drainage and shadows at actual flight height. A real-world aerial reference has broad directional washouts, banks and darker recesses. We want that **structure at gameplay scale**, not a photographic sharpness filter.
+
+- **Leave V2A green untouched.** Use a **new scene** `FrontierV2Geology.unity`, copied from `FrontierV2Ground.unity`; keep the original flight camera and sun identical. Original `V2A_Terrain.asset` and `V2A_GroundColor.png` remain the in-scene baseline comparison mode.
+- Author **two independent terrain mesh + albedo pairs** on the same 240×240-cell / 1200×1200 world: `Moderate` relief 0.75 and `Defined` relief 1.30. Low-frequency curving drainage lines, limited angled tributaries, erosion benches, larger slope contrast, and darker washed-out troughs; preserve the central flight basin and height-safe ridge tops. Texture resolution remains 2048², with compressed mips/trilinear sampling. No postprocess, baked directional sun or extra props.
+- **Setup:** with Unity in Edit Mode and scenes saved, run **Air Combat > Art V2 > V2A2 Create Geology Comparison** exactly once. Open `Assets/_Project/Scenes/FrontierV2Geology.unity` and Play. **B** cycles `original → moderate → defined` using *the same camera and sun*; **H** toggles labels. It swaps both mesh and color material, rather than using a sharpening filter on identical flat geometry.
+- **Acceptance:** from ortho size 80 and pitches 90/75/65, dry washes / banks / slopes must visibly define *where you could fly*, including near the initial spawn. The result should have structure but still leave clear ground for future roads and AA; no zebra stripes, procedural contour rings, brown AO blobs or distracting micro-speckle. If all modes remain blurry, inspect gameplay-scale shadow resolution / ground texel density next rather than blindly stacking contrast.
+- **Regression:** V2A, V17, GroundAttackLab, WeaponLab, Sandbox, lighting and existing art materials unchanged. The one-time menu refuses overwrite; commit the new scene, generated asset files and `.meta`s only after the Unity comparison is approved.
+
+### V2A3 — Correct the failed V2A2 stripes (current test)
+
+- V2A2 screenshot **failed visually**: broad parallel, block-stepped dark bands, not credible geology. The issue is the 240-cell 5m sampling plus parallel channel construction; more sharpening is not the fix.
+- New **isolated** `FrontierV2Erosion.unity` builds from green V2A, with 600 cells / 2m geometry, a single branching drainage network, and continuous slope coloration. **B** compares green V2A and V2A3 at fixed camera/lighting.
+- See [ENVIRONMENT_V2A3.md](ENVIRONMENT_V2A3.md) for the exact installer, test and decision gate. Keep the rejected V2A2 study available for diagnosis, but do not build roads on it.
 
 ### V2B — Roads, readable zones and negative space
 
@@ -97,7 +113,7 @@ All pieces have predictable orientation, metric scales, pivots, colliders only i
 ## Artifact policy and constraints
 
 - Reference: `Resources/References/` (optional image concept); sources `Resources/Blender/`; deterministic generators `Tools/Blender/`; Unity authoring menu commands `Assets/_Project/Editor/` (external helper scripts may live in `Tools/Unity/`); export/baked models `Assets/_Project/Art/Environment/`; disposable meshes/textures `Assets/_Project/Generated/EnvironmentV2/`; one isolated study scene in `Assets/_Project/Scenes/`.
-- **V2A first setup:** Unity **Edit Mode**, no unsaved scenes → **Air Combat > Art V2 > V2A Create Ground Study**. This is a **one-time creator** and refuses to overwrite an existing V2A scene. It does not alter V17. Commit Unity-created assets and `.meta` only after Play Mode screenshots are evaluated.
+- **V2A first setup (historical, already complete):** Unity **Edit Mode**, no unsaved scenes → **Air Combat > Art V2 > V2A Create Ground Study**. This is a **one-time creator** and refuses to overwrite an existing V2A scene. It does not alter V17. Commit Unity-created assets and `.meta` only after Play Mode screenshots are evaluated.
 - Prior art technical lessons remain authoritative: [ART_AUTHORING.md](ART_AUTHORING.md), [ART_PIPELINE.md](ART_PIPELINE.md). V20's preferred single-mesa normal style is a reference, *not* a mandatory all-rock material.
 - Every step records **date, same-camera screenshots, changes, observed failures, verdict, next action** here or in a short companion log; green only after the user plays and approves.
 
@@ -105,5 +121,7 @@ All pieces have predictable orientation, metric scales, pivots, colliders only i
 
 | Atom | Status | Decision / next test |
 | --- | --- | --- |
-| V2A ground / macro shapes | **Built in code, Unity playtest pending** | Inspect the first barren terrain before committing to roads/props |
-| V2B–V2G | Not started | Proceed only on V2A green or after a deliberate direction change |
+| V2A ground / macro shapes | **Green / pushed, 2026-11-23** | Ground-only study works but the sampled screenshot is nearly featureless/soft at flight height |
+| V2A2 geological definition | **Rejected visually, 2026-11-23** | Coarse 5-unit cells and long parallel trenches produced stepped/striped ground. Keep as diagnostic, not a source for V2B |
+| V2A3 watershed / denser terrain | **Built in code; Unity test pending** | See [ENVIRONMENT_V2A3.md](ENVIRONMENT_V2A3.md); compare green V2A vs V2A3 in a NEW scene, then green/revise/reject |
+| V2B–V2G | Not started | Roads follow only after geology reads clearly at gameplay distance |
