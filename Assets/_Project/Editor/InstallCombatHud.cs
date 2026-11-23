@@ -87,6 +87,9 @@ namespace AirCombat.Editor
                 radarRect.pivot = Vector2.one;
                 radarRect.sizeDelta = new Vector2(160f, 160f);
                 radarRect.anchoredPosition = new Vector2(-18f, -16f);
+                // Unlike ordinary rects, custom MaskableGraphic needs a
+                // CanvasRenderer in the saved prefab to be drawn.
+                radarRect.gameObject.AddComponent<CanvasRenderer>();
                 var radar = radarRect.gameObject.AddComponent<RadarHud>();
                 radar.raycastTarget = false;
                 radar.maskable = false;

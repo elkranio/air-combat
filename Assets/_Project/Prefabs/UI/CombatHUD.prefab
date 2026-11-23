@@ -412,6 +412,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 2865594701866542026}
+  - component: {fileID: 6240728909181739029}
   - component: {fileID: 5431093733910216030}
   m_Layer: 0
   m_Name: Radar
@@ -462,6 +463,14 @@ MonoBehaviour:
   screenHeightFraction: 0.15
   screenInset: {x: 18, y: 16}
   opacity: 0.82
+--- !u!222 &6240728909181739029
+CanvasRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6183311190111375484}
+  m_CullTransparentMesh: 1
 --- !u!1 &6329326610297523611
 GameObject:
   m_ObjectHideFlags: 0
