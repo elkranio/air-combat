@@ -1,6 +1,6 @@
 # Environment map direction — approved plan (2026-11-23)
 
-**Status:** stylized hybrid map direction approved; **C3 fixed-world 50° + heading look-ahead is green**. A persistent 2×2 km E1 map already exists. **E1b** is the current art upgrade: muted flat ground, three larger authored rock meshes, slightly raised jet, isolated aircraft paint and real shadows. See [E1b test](ARCADE_DESERT_E1B.md). Do not recreate the map. Older studies: V17/V19, V2A–V2A5, RockKitR1, BrokenVector, Unity Terrain T1.
+**Status:** C3 fixed-world 50° + forward lead **green**; existing persistent 2×2 km E1 map remains the active work area. E1b approved a **muted matte flat ground** but rejected its miniature-feeling rock chunks, pale jet paint and scale/shadow balance. **E1c scale reset in progress:** one huge low plateau, contrast jet and Y78/110/150 camera comparison. [E1c test](ARCADE_DESERT_E1C.md). No scene regeneration. Older studies: V17/V19, V2A–V2A5, RockKitR1, BrokenVector, Unity Terrain T1.
 
 ## Target
 
@@ -29,7 +29,7 @@ Build **one cohesive, expandable, low-altitude arcade air-combat map**, beginnin
 
 **E1a — archived decision:** preferred direction is flat-color ground, not noisy texture. The earlier `T` Original / Flat / Macro / Fine preview remains in C1b for diagnosis. See [original study](GROUND_STYLE_E1A.md).
 
-**E1 — current first-flight foundation:** create one **persistent, initially uncluttered 2×2 km editable native Terrain scene** with vivid flat-color fill (`#DDA44D`), 12 sparse groups of 3 simple stone shapes, current unchanged PlayerJet, fixed C3 camera and shared `CombatLightingRig`. **Fly first, evaluate palette/shadows/scale/shape before roads, industry or canyon.** This is the start of the larger map, not a throwaway demo. [Exact E1 contract](ARCADE_DESERT_E1.md), [style pillars](ARCADE_VISUAL_DIRECTION.md).
+**E1 — active persistent foundation / E1c gate:** continue the **existing 2×2 km editable native Terrain** with the approved muted `#B8A993` flat ground, real shared lighting, fixed C3 camera. Retire tiny-object scale tests; compare **one broad 430×275m / ~30m plateau**, isolated dark aircraft paint, and Y78/110/150 flight. Choose a coherent scene scale **before** roads, industry or a traversable canyon. [E1c details](ARCADE_DESERT_E1C.md), [style](ARCADE_VISUAL_DIRECTION.md).
 
 **E2 — aircraft art + ground coherence:** first compare paint variants on the **current jet**, then mild stylized silhouette options at the same gameplay camera. In parallel, if E1 passes, tune ground/rock palettes, transitions, material response and crispness. Only then sculpt larger hills/lowlands and extend the authored environment. No mandatory texture noise: the flat ground may remain intentional.
 

@@ -12,6 +12,7 @@ namespace AirCombat
         [SerializeField] private JetAssembly player;
         [SerializeField] private CombatCameraRig cameraRig;
         [SerializeField, Min(100f)] private float resetHalfExtent = 850f;
+        [SerializeField] private bool altitudeComparison; // E1c only, disabled in other scenes.
 
         private FlightController flight;
         private Afterburner boost;
@@ -28,6 +29,10 @@ namespace AirCombat
             cameraRig = rig;
             resetHalfExtent = boundary;
         }
+
+        // Editor-only scene authoring enables the three-height visual test.
+        // This never changes the shared FlightController or player prefab.
+        public void EnableAltitudeComparison() => altitudeComparison = true;
 
         private void Awake()
         {
@@ -61,11 +66,28 @@ namespace AirCombat
             if (!Application.isFocused) return;
             var keyboard = Keyboard.current;
             if (keyboard != null && keyboard.hKey.wasPressedThisFrame) showLegend = !showLegend;
+            if (altitudeComparison && keyboard != null)
+            {
+                // Direct A/B/C choices; no auto camera zoom, pitch or yaw changes.
+                if (keyboard.digit7Key.wasPressedThisFrame) ChangeAltitude(78f);
+                if (keyboard.digit8Key.wasPressedThisFrame) ChangeAltitude(110f);
+                if (keyboard.digit9Key.wasPressedThisFrame) ChangeAltitude(150f);
+            }
             bool manuallyReset = keyboard != null && keyboard.rKey.wasPressedThisFrame;
             var position = player.transform.position;
             if (manuallyReset || Mathf.Abs(position.x) >= resetHalfExtent ||
                 Mathf.Abs(position.z) >= resetHalfExtent)
                 ResetFlight();
+        }
+
+        private void ChangeAltitude(float altitude)
+        {
+            Vector3 p = player.transform.position;
+            p.y = altitude;
+            player.transform.position = p;
+            // R/bounds reset should retain whichever height is being tested.
+            spawnPosition.y = altitude;
+            studyCamera.SnapToAircraft(); // Prevent a large vertical camera sweep.
         }
 
         private void ResetFlight()
@@ -84,11 +106,15 @@ namespace AirCombat
                     fontSize = 14,
                     normal = { textColor = Color.white }
                 };
-            GUI.Box(new Rect(12f, 12f, 390f, 88f), GUIContent.none);
-            GUI.Label(new Rect(22f, 17f, 365f, 22f), "E1 / VIBRANT DESERT — FIRST FLIGHT", label);
+            GUI.Box(new Rect(12f, 12f, 390f, altitudeComparison ? 108f : 88f), GUIContent.none);
+            GUI.Label(new Rect(22f, 17f, 365f, 22f),
+                altitudeComparison ? "E1c / SCALE RESET — PLATEAU" : "E1 / MAP — FIRST FLIGHT", label);
             GUI.Label(new Rect(22f, 39f, 365f, 22f), "A/D turn  W boost  Q/E break  R reset  H hide", label);
             GUI.Label(new Rect(22f, 61f, 365f, 22f),
                 $"Speed {flight.CurrentSpeed:F0}   Boost {boost.Charge01:P0}   Terrain 2000 x 2000", label);
+            if (altitudeComparison)
+                GUI.Label(new Rect(22f, 83f, 365f, 22f),
+                    $"7 / 8 / 9 : Y78 / Y110 / Y150     Current Y {player.transform.position.y:F0}", label);
         }
     }
 }

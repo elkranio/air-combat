@@ -1,6 +1,6 @@
 # E1b — muted ground, authored chunky outcrops, higher flight and paint
 
-**Status: implementation delivered, Unity Game view verdict pending.** E1 scene already exists and is the permanent large-map work area; **do not rerun E1**. The map remains 2000×2000 and editable.
+**Status: playtested.** The **muted flat ground `#B8A993` was accepted**, but the 18 outcrops read like toy rocks beside the jet; pale wings merged with the ground and Y78/shadow scale felt wrong. **E1c supersedes the active rock/paint/altitude setup**: [scale reset and plateau](ARCADE_DESERT_E1C.md). This page remains the exact E1b historical record; never rerun the builder. The map remains 2000×2000 and editable.
 
 ## Install once
 
