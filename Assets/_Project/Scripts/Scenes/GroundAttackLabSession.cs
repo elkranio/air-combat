@@ -13,6 +13,7 @@ namespace AirCombat
         [SerializeField] private CombatCameraRig cameraRig;
         [SerializeField] private AntiAircraftTurret antiAircraft; // Optional scene instance (AA1).
         [SerializeField] private CombatHud combatHud; // Scene-linked reusable HUD prefab.
+        [SerializeField] private SurfaceToAirLauncher missileTower; // SAM1 scene instance.
 
         private FlightController flight;
         private Afterburner afterburner;
@@ -42,6 +43,11 @@ namespace AirCombat
         public void ConfigureAntiAircraft(AntiAircraftTurret turret)
         {
             antiAircraft = turret;
+        }
+
+        public void ConfigureMissileTower(SurfaceToAirLauncher tower)
+        {
+            missileTower = tower;
         }
 
         // Called by the one-time HUD authoring installer. No scene references
@@ -128,12 +134,12 @@ namespace AirCombat
 
             // GroundAttackLab-only incoming damage. Shared PlayerJet prefab,
             // WeaponLab and Sandbox receive no AA hitbox or health component.
-            if (antiAircraft != null)
+            if (antiAircraft != null || missileTower != null)
             {
                 playerHealth = jet.GetComponent<PlayerHitPoints>();
                 if (playerHealth == null) playerHealth = jet.AddComponent<PlayerHitPoints>();
                 playerHealth.InstallHitbox();
-                antiAircraft.BindTarget(jet.transform, playerHealth);
+                if (antiAircraft != null) antiAircraft.BindTarget(jet.transform, playerHealth);
             }
 
             // R1: radar belongs to this aircraft, with scene-registered contacts.
@@ -141,6 +147,11 @@ namespace AirCombat
             var radar = jet.GetComponent<AircraftRadar>();
             if (radar == null) radar = jet.AddComponent<AircraftRadar>();
             if (antiAircraft != null) radar.Register(antiAircraft);
+            if (missileTower != null)
+            {
+                radar.Register(missileTower);
+                missileTower.BindTarget(jet.transform, playerHealth, radar);
+            }
             if (combatHud != null) combatHud.Bind(cameraRig.ViewCamera, afterburner, playerHealth, radar);
             else RadarHud.Create(transform, radar); // Before the one-time prefab installation.
         }
@@ -169,6 +180,7 @@ namespace AirCombat
             cameraRig.Lock.ResetLock();
             playerHealth?.ResetHealth();
             antiAircraft?.ResetEncounter();
+            missileTower?.ResetEncounter();
         }
 
         private void OnGUI()
@@ -176,7 +188,7 @@ namespace AirCombat
             if (!showDiagnostics || !enabled || Event.current.type != EventType.Repaint) return;
             if (label == null)
                 label = new GUIStyle(GUI.skin.label) { fontSize = 14, normal = { textColor = Color.white } };
-            GUI.Box(new Rect(12, 12, 650, antiAircraft != null ? 164 : 140), GUIContent.none);
+            GUI.Box(new Rect(12, 12, 650, missileTower != null ? 188 : antiAircraft != null ? 164 : 140), GUIContent.none);
             GUI.Label(new Rect(22, 17, 620, 22), "GROUND ATTACK LAB G4b / BOMBS + CABRAGE NURS", label);
             GUI.Label(new Rect(22, 40, 620, 22), "A/D turn  W boost  Q/E break/abort  1/2/3/4/5 weapons  R reset  H HUD", label);
             GUI.Label(new Rect(22, 63, 620, 22),
@@ -190,6 +202,9 @@ namespace AirCombat
             if (antiAircraft != null && playerHealth != null)
                 GUI.Label(new Rect(22, 132, 620, 22),
                     $"AA1: Player {playerHealth.Hp}/{playerHealth.MaxHp} HP   Turret {antiAircraft.Hp}/{antiAircraft.MaxHp} HP   Shots {antiAircraft.FiredCount}   Hits {antiAircraft.HitCount}", label);
+            if (missileTower != null && playerHealth != null)
+                GUI.Label(new Rect(22, 155, 620, 22),
+                    $"SAM1: Site {missileTower.Hp}/{missileTower.MaxHp} HP   Lock {missileTower.LockProgress01:P0}   Missiles {missileTower.LaunchedCount}   Inbound {missileTower.HasIncomingMissile}", label);
         }
     }
 }

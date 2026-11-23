@@ -187,6 +187,74 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 18963f9f886843e0a94c3cf73b7be846, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::AirCombat.JetAssembly
+--- !u!1001 &212857572
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 0}
+    m_Modifications:
+    - target: {fileID: 442352650909928497, guid: 604928e6a434dac41807354aebeb3afc, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: -320
+      objectReference: {fileID: 0}
+    - target: {fileID: 442352650909928497, guid: 604928e6a434dac41807354aebeb3afc, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 442352650909928497, guid: 604928e6a434dac41807354aebeb3afc, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 215
+      objectReference: {fileID: 0}
+    - target: {fileID: 442352650909928497, guid: 604928e6a434dac41807354aebeb3afc, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 442352650909928497, guid: 604928e6a434dac41807354aebeb3afc, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 442352650909928497, guid: 604928e6a434dac41807354aebeb3afc, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 442352650909928497, guid: 604928e6a434dac41807354aebeb3afc, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 442352650909928497, guid: 604928e6a434dac41807354aebeb3afc, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 442352650909928497, guid: 604928e6a434dac41807354aebeb3afc, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 442352650909928497, guid: 604928e6a434dac41807354aebeb3afc, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5398315942929213194, guid: 604928e6a434dac41807354aebeb3afc, type: 3}
+      propertyPath: m_Name
+      value: SAM1Launcher
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 604928e6a434dac41807354aebeb3afc, type: 3}
+--- !u!114 &212857573 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 3887481590247213219, guid: 604928e6a434dac41807354aebeb3afc, type: 3}
+  m_PrefabInstance: {fileID: 212857572}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 36c5cfde3c4d43458bcb45ef9c32fb4b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::AirCombat.SurfaceToAirLauncher
 --- !u!1001 &225578844
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -514,6 +582,14 @@ PrefabInstance:
     - target: {fileID: 2816180994480941013, guid: 5522210661e69224e8dbad436a8a1b7b, type: 3}
       propertyPath: m_Name
       value: CombatHUD
+      objectReference: {fileID: 0}
+    - target: {fileID: 2865594701866542026, guid: 5522210661e69224e8dbad436a8a1b7b, type: 3}
+      propertyPath: m_SizeDelta.x
+      value: 112
+      objectReference: {fileID: 0}
+    - target: {fileID: 2865594701866542026, guid: 5522210661e69224e8dbad436a8a1b7b, type: 3}
+      propertyPath: m_SizeDelta.y
+      value: 112
       objectReference: {fileID: 0}
     - target: {fileID: 5764071564821117952, guid: 5522210661e69224e8dbad436a8a1b7b, type: 3}
       propertyPath: m_Pivot.x
@@ -1037,6 +1113,7 @@ MonoBehaviour:
   cameraRig: {fileID: 1507333505}
   antiAircraft: {fileID: 973228082}
   combatHud: {fileID: 1200156425}
+  missileTower: {fileID: 212857573}
 --- !u!4 &1921309799
 Transform:
   m_ObjectHideFlags: 0
@@ -1100,3 +1177,4 @@ SceneRoots:
   - {fileID: 1774015055}
   - {fileID: 973228081}
   - {fileID: 1200156424}
+  - {fileID: 212857572}

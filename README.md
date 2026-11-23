@@ -40,10 +40,11 @@ Keep `PlayerJet`, `CombatCameraRig`, and `CombatLightingRig` reusable; scene-spe
 - [GAMEPLAY_AA1.md](GAMEPLAY_AA1.md) — AA1 twin-barrel turret, physical tracer and tuning.
 - [GAMEPLAY_RADAR_R1.md](GAMEPLAY_RADAR_R1.md) — **R1 radar**, detection, UI, tuning and test checklist.
 - [GAMEPLAY_HUD_H1.md](GAMEPLAY_HUD_H1.md) — **H1 Combat HUD prefab**, install, runtime binding and playtest.
+- [GAMEPLAY_SAM_M1.md](GAMEPLAY_SAM_M1.md) — SAM1 installation, sound lock, separate inbound missile and radar checks.
 - [ART_PIPELINE.md](ART_PIPELINE.md), [ART_AUTHORING.md](ART_AUTHORING.md), [Tools/Unity/ARTLAB.md](Tools/Unity/ARTLAB.md) — art sources and pipeline.
 - [GAMEPLAY_CORE_G1.md](GAMEPLAY_CORE_G1.md), [GAMEPLAY_CORE_G2.md](GAMEPLAY_CORE_G2.md) — historical scene creation and depot bake/import.
 - [THIRD_PARTY_ASSETS.md](THIRD_PARTY_ASSETS.md) — licenses; [Docs/Archive](Docs/Archive) — old migration logs.
 
 ## Next
 
-**R1b north-up radar green. H1 shared Combat HUD pending Unity test and one-time scene installation.** Coordinated AA, railguns and armed enemy fighter behavior are not implemented. Keep other scenes unchanged.
+**SAM1 is pending Unity playtest**: one missile tower added to GroundAttackLab, with a separate ground-launched homing missile, audible lock and inbound-only radar contact. No countermeasures, coordinated sites or armed enemy fighter behavior yet.

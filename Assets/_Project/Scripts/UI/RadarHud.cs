@@ -103,14 +103,33 @@ namespace AirCombat
                     var contact = detected[i];
                     Vector2 at = center + contact.RelativePosition * scale;
                     float threatRadius = contact.ThreatRadius * scale;
-                    if (threatRadius > .1f)
+                    if (contact.Kind == RadarContactType.GroundDefense && threatRadius > .1f)
                         ClippedThreatRing(mesh, at, threatRadius, center, radius);
                 }
                 for (int i = 0; i < detected.Count; i++)
                 {
-                    Vector2 at = center + detected[i].RelativePosition * scale;
-                    Disk(mesh, at, 5.2f, new Color(1f, .22f, .15f, .20f));
-                    Disk(mesh, at, 2.65f, new Color(1f, .31f, .20f, .95f));
+                    var contact = detected[i];
+                    Vector2 at = center + contact.RelativePosition * scale;
+                    if (contact.Kind == RadarContactType.IncomingMissile)
+                    {
+                        // Inbound missile is visibly different from a ground-site dot.
+                        // Keep even its glow inside the radar boundary.
+                        Vector2 fromCenter = at - center;
+                        if (fromCenter.magnitude > radius - 7f)
+                            at = center + fromCenter.normalized * (radius - 7f);
+                        Disk(mesh, at, 6.6f, new Color(1f, .67f, .18f, .18f));
+                        Vector2 toward = center - at;
+                        toward = toward.sqrMagnitude > .0001f ? toward.normalized : Vector2.up;
+                        Vector2 missileRight = new Vector2(toward.y, -toward.x);
+                        Triangle(mesh, at + toward * 5.1f, at - toward * 3.4f - missileRight * 4.4f,
+                            at - toward * 3.4f + missileRight * 4.4f,
+                            new Color(1f, .82f, .31f, .98f));
+                    }
+                    else
+                    {
+                        Disk(mesh, at, 5.2f, new Color(1f, .22f, .15f, .20f));
+                        Disk(mesh, at, 2.65f, new Color(1f, .31f, .20f, .95f));
+                    }
                 }
             }
 

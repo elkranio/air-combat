@@ -53,6 +53,7 @@ namespace AirCombat
         public int MaxHp => maxHp;
         public bool IsDown => hp <= 0;
         public override CombatTargetDomain Domain => CombatTargetDomain.Ground;
+        public RadarContactType RadarKind => RadarContactType.GroundDefense;
         // The same firing range drives radar's danger ring: no duplicated balance constant.
         public Vector3 RadarPosition => transform.position;
         public float RadarThreatRadius => detectionRange;

@@ -1,11 +1,11 @@
 # Gameplay architecture — current
 
-Based on green AA1 and boosted PlayerJet (2026-11-23); R1 radar is pending Unity smoke test.
+Based on green AA1, boosted PlayerJet, R1 radar and H1 HUD; SAM1 is the current Unity-test-required atom (2026-11-23).
 
 ## Composition
 
 - `WeaponLab.unity`: `PlayerJet`, `EnemyJet`, `CombatCameraRig` and `CombatLightingRig` prefab instances. `WeaponLabSession` connects the player, fighter AI, missile lock and diagnostics.
-- `GroundAttackLab.unity`: the same player, camera and lighting prefabs, plus four `MilitaryDepot` instances and an AA1 turret. `GroundAttackLabSession` equips bombs/NURS, binds cabrage/camera, installs depot hit zones and equips the player-only R1 radar. AA1 gets its target through the scene binder.
+- `GroundAttackLab.unity`: the same player, camera and lighting prefabs, plus four `MilitaryDepot` instances and an AA1 turret. `GroundAttackLabSession` equips bombs/NURS, binds cabrage/camera, installs depot hit zones and equips the player-only R1 radar. AA1 and SAM1 get their target through the scene binder; the site and missile are independent prefabs.
 - `Sandbox.unity`: legacy input, missile and flat decorative shadow comparison. The only Build Settings scene; do not silently migrate it.
 - `FrontierStrata` and bake scenes are art baselines, not current combat levels.
 
@@ -15,8 +15,8 @@ Based on green AA1 and boosted PlayerJet (2026-11-23); R1 radar is pending Unity
 | --- | --- | --- |
 | `Aircraft` | `JetAssembly`, `JetChassis`, `CombatCameraRig`, `AircraftRadar`, `IRadarContact` | Role roots, sockets and detection/registered contacts; no serialized cross-scene targets |
 | `Flight` | `FlightController`, `AircraftMotor`, `Afterburner`, `BreakTurn`, `CabrageManeuver` | Movement and maneuvers; cabrage equipped by the ground lab |
-| `Enemy` | `EnemyFlightController`, `AntiAircraftTurret` | Flight pursuit and stationary AA tracking/firing; scene-neutral behaviors |
-| `Weapons` | `WeaponSelection`, `WeaponController`, air weapons, `BombRack`, `NursRocketRack`, `AntiAircraftProjectile`, projectiles/ballistics | Launch/cadence and physical flight; AA rounds are air-only |
+| `Enemy` | `EnemyFlightController`, `AntiAircraftTurret`, `SurfaceToAirLauncher` | Flight pursuit and stationary AA tracking/firing; scene-neutral behaviors |
+| `Weapons` | `WeaponSelection`, `WeaponController`, air weapons, `BombRack`, `NursRocketRack`, `AntiAircraftProjectile`, `SurfaceToAirMissile`, projectiles/ballistics | Launch/cadence and physical flight; AA rounds are air-only |
 | `Targeting` | `BoundedAim`, `TargetLock`, `ITargetLockEligibility` | Air lock and bounded gun aim |
 | `Combat` | `DamageableTarget`, `CombatTargetDomain`, `GroundBlastDamage`, `GroundDepotPart`, `GroundDepotTarget`, `PlayerHitPoints` | Shared domain-filtered blast; depot remains a lab-specific geometry adapter |
 | `Camera` | `TopDownCameraFollow`, `CameraLookAhead`, `NursCameraCue` | Common follow; bounded NURS lead only when the scene equips it |
@@ -26,7 +26,7 @@ Based on green AA1 and boosted PlayerJet (2026-11-23); R1 radar is pending Unity
 
 ## Physics, damage and shadows
 
-- AA1 incoming tracer rounds are **air-only** and collide with any solid world geometry; its stationary turret is a `Ground` damage receiver. `PlayerHitPoints` is attached to GroundAttackLab only.
+- AA1 incoming tracer rounds are **air-only** and collide with solid geometry; its stationary turret is a `Ground` damage receiver. SAM1 is a separate homing projectile, and the SAM launcher is also `Ground` damageable. `PlayerHitPoints` is attached to GroundAttackLab only.
 - Player guns/guided missile remain **air-only**. Bombs and NURS use separate physical integration and distinct blast radii (13 / 6). `GroundBlastDamage` applies each blast once per ground-domain damage receiver and returns actual hit count; it does not change projectile motion or target HP.
 - `GroundDepotTarget` temporarily deletes mesh triangles for destroyed zones using **runtime mesh clones**. These are not source meshes or authored breakable meshes. Current live clones replace older ones; original FBX remains immutable.
 - The `Prefabs/Environment/CombatLightingRig.prefab` is the **only combat sun/shadow authority**; it references the accepted shared URP asset. Aircraft/ordnance/depot meshes use real shadow maps. No extra procedural ground shadow for combat scenes.
@@ -42,4 +42,4 @@ Based on green AA1 and boosted PlayerJet (2026-11-23); R1 radar is pending Unity
 
 ## Rules
 
-Keep role, visual chassis and scene binding independent. Preserve `.meta` GUIDs when moving scripts; don't regenerate accepted scenes. R1 radar sensor owns range/visibility and registered contacts, while `RadarHud` only renders relative 2D positions and actual AA fire radius. No speculative contact database, AA coordination, mission router or universal HUD. Test WeaponLab, GroundAttackLab and Sandbox before green.
+Keep role, visual chassis and scene binding independent. Preserve `.meta` GUIDs when moving scripts; don't regenerate accepted scenes. R1 sensor owns range/visibility/registered contacts, while `RadarHud` renders ground-site dots/rings and incoming-missile arrows. `CombatHud` provides shared top-right radar and bottom HP/fuel strip. SAM1 sound and missile have no dependency on the player air-to-air missile. No speculative mission router or coordinated AA. Test WeaponLab, GroundAttackLab and Sandbox before green.
