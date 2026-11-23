@@ -18,6 +18,7 @@ namespace AirCombat
         private float muzzleVelocity;
         private float maxRange;
         private float tracerLength;
+        private int hitDamage = 1;
         private AudioSource[] voices;
         private Renderer[] flashes;
         private float[] flashUntil;
@@ -29,7 +30,7 @@ namespace AirCombat
         public void BindChassis(JetChassis visualChassis) { chassis = visualChassis; }
 
         public void Configure(Material tracer, AudioClip fallbackShot, AudioClip[] clips,
-            float volume, float velocity, float range, float length)
+            float volume, float velocity, float range, float length, int damage = 1)
         {
             if (configured) return; // Idempotent for future prefab/scene composition.
             configured = true;
@@ -40,6 +41,7 @@ namespace AirCombat
             muzzleVelocity = velocity;
             maxRange = range;
             tracerLength = length;
+            hitDamage = Mathf.Max(1, damage);
 
             // Original bounded voice pool, shot variation and muzzle positions.
             voices = new AudioSource[VoiceCount];
@@ -121,7 +123,7 @@ namespace AirCombat
                 halo.receiveShadows = false;
             }
             var projectile = round.AddComponent<BallisticProjectile>();
-            projectile.Configure(direction, muzzleVelocity, maxRange, tracerLength, line, halo, onHit);
+            projectile.Configure(direction, muzzleVelocity, maxRange, tracerLength, line, halo, onHit, hitDamage);
             flashUntil[barrel] = Time.time + .052f;
             flashes[barrel].enabled = true;
             var clip = soundVariants != null && soundVariants.Length == 4 && soundVariants[1] != null
