@@ -75,7 +75,7 @@ namespace AirCombat
             GUI.Label(new Rect(22, 16, 395, 22), string.IsNullOrEmpty(studyTitle) ? "ArtLab v10 / Landscape flight" : studyTitle, label);
             GUI.Label(new Rect(22, 38, 395, 22), "WASD: flight   Space: boost   R: recenter", label);
             GUI.Label(new Rect(22, 60, 395, 22), "1/2/3: camera 90/75/65 deg   H: hide", label);
-            GUI.Label(new Rect(22, 82, 395, 22), $"Speed {flight.CurrentSpeed:F0}   Boost {boost.Charge01:P0}   1200 x 1200", label);
+            GUI.Label(new Rect(22, 82, 395, 22), $"Speed {flight.CurrentSpeed:F0}   Boost {boost.Charge01:P0}   {halfMap * 2f:F0} x {halfMap * 2f:F0}", label);
         }
     }
 }
