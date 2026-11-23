@@ -1,5 +1,7 @@
 # Gameplay architecture — current contracts
 
+**Cleanup A migration:** production map camera uses `ArcadeCameraRig.prefab` / `ArcadeCameraFollow` (fixed yaw -45°, pitch 50°, ortho 80, smoothed 48+14 lead). `CombatCameraRig.BindPlayer` supports this or the legacy `TopDownCameraFollow` setup. `WeaponLab` and `GroundAttackLab` retain the latter until production combat is integrated. See [Cleanup A](Docs/Production/CLEANUP_A.md).
+
 This is the **live architecture**, not a change log. Implementation chronology is in [`Docs/Archive`](Docs/Archive/README.md); gameplay data and playtest notes are in [GAMEPLAY_COMBAT.md](GAMEPLAY_COMBAT.md).
 
 ## Scenes and ownership

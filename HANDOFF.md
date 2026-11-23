@@ -1,5 +1,7 @@
 # Air Combat — current handoff
 
+**Active Cleanup A (pending Unity verification):** migrate `ArcadeDesertE1` from scene-only `HeadingLockedObliqueCameraStudy` to production `ArcadeCameraFollow` on a new `ArcadeCameraRig.prefab`; old camera/combat labs stay intact. Run **Air Combat > Maintenance > Cleanup A - Extract Arcade Camera Prefab** exactly once and commit the prefab + changed scene + `.meta`. [Detailed migration / Cleanup B plan](Docs/Production/CLEANUP_A.md). No old art scenes/assets have been removed yet.
+
 Updated 2026-11-23 for E1 first-flight production and vivid stylized arcade art direction. **Read this file and [GAMEPLAY_COMBAT.md](GAMEPLAY_COMBAT.md) before modifying gameplay.** This cleanup does not change flight, ballistics, weapons, enemies, HUD, scene objects or gameplay prefabs.
 
 ## Current playable baseline

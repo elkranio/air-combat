@@ -4,9 +4,9 @@ using UnityEngine.UI;
 
 namespace AirCombat
 {
-    // Compact mesh-based radar. Ordinary labs are north-up. C2 projects all
-    // contacts and the jet icon into the study camera's actual horizontal axes,
-    // so it stays aligned with the viewport whether camera yaw rotates or not.
+    // Compact mesh-based radar. Ordinary labs remain north-up. Production
+    // oblique and historical C2 cameras use the actual view axes for both
+    // contacts and the jet, regardless of camera movement or fixed yaw.
     // Graphics are clipped to the disc; UI never intercepts the mouse.
     [DisallowMultipleComponent]
     public sealed class RadarHud : MaskableGraphic
@@ -21,14 +21,14 @@ namespace AirCombat
 
         private readonly List<RadarDetection> detected = new List<RadarDetection>(16);
         private AircraftRadar radar;
-        private HeadingLockedObliqueCameraStudy headingCamera;
+        private Camera presentationCamera;
 
         // Camera choice affects only presentation, never AircraftRadar samples.
-        // Existing calls without a study camera remain north-up.
-        public void Bind(AircraftRadar sensor, HeadingLockedObliqueCameraStudy cameraStudy = null)
+        // A null camera preserves north-up for legacy combat labs.
+        public void Bind(AircraftRadar sensor, Camera camera = null)
         {
             radar = sensor;
-            headingCamera = cameraStudy;
+            presentationCamera = camera;
             SetVerticesDirty();
         }
         private int lastScreenHeight = -1;
@@ -156,13 +156,13 @@ namespace AirCombat
         {
             right = Vector2.right;
             up = Vector2.up;
-            if (headingCamera == null) return; // Other labs stay north-up.
+            if (presentationCamera == null) return; // Other labs stay north-up.
 
             // Project the actual camera screen axes onto the horizontal X/Z
             // plane; normalize away pitch foreshortening for a readable 2D radar.
             // No guesswork about heading lock, smoothing or fixed yaw offset.
-            Vector3 cameraRight = headingCamera.transform.right;
-            Vector3 cameraUp = headingCamera.transform.up;
+            Vector3 cameraRight = presentationCamera.transform.right;
+            Vector3 cameraUp = presentationCamera.transform.up;
             right = new Vector2(cameraRight.x, cameraRight.z).normalized;
             up = new Vector2(cameraUp.x, cameraUp.z).normalized;
         }

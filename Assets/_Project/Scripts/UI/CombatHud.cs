@@ -25,10 +25,12 @@ namespace AirCombat
                 return;
             }
             statusBar.Bind(camera, boost, hitPoints);
-            // C2 uses the study camera axes for both the jet and world contacts.
-            // Existing combat labs have no study component: radar stays north-up.
-            radarDisplay.Bind(sensor, camera != null
-                ? camera.GetComponent<HeadingLockedObliqueCameraStudy>() : null);
+            // Only oblique cameras need camera-relative radar presentation.
+            // Legacy WeaponLab/GroundAttackLab stay north-up, unchanged.
+            bool oblique = camera != null &&
+                (camera.GetComponent<ArcadeCameraFollow>() != null ||
+                 camera.GetComponent<HeadingLockedObliqueCameraStudy>() != null);
+            radarDisplay.Bind(sensor, oblique ? camera : null);
         }
     }
 }

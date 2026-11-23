@@ -17,7 +17,8 @@ namespace AirCombat
         private FlightController flight;
         private Afterburner boost;
         private BreakTurn breakTurn;
-        private HeadingLockedObliqueCameraStudy studyCamera;
+        private ArcadeCameraFollow arcadeCamera;
+        private HeadingLockedObliqueCameraStudy legacyStudyCamera;
         private Vector3 spawnPosition;
         private Quaternion spawnRotation;
         private GUIStyle label;
@@ -45,10 +46,12 @@ namespace AirCombat
             flight = player.GetComponent<FlightController>();
             boost = player.GetComponent<Afterburner>();
             breakTurn = player.GetComponent<BreakTurn>();
-            studyCamera = cameraRig.GetComponent<HeadingLockedObliqueCameraStudy>();
-            if (flight == null || boost == null || breakTurn == null || studyCamera == null)
+            arcadeCamera = cameraRig.GetComponent<ArcadeCameraFollow>();
+            legacyStudyCamera = cameraRig.GetComponent<HeadingLockedObliqueCameraStudy>();
+            if (flight == null || boost == null || breakTurn == null ||
+                (arcadeCamera == null && legacyStudyCamera == null))
             {
-                Debug.LogError("E1: flight, boost, break-turn or C3 camera missing.", this);
+                Debug.LogError("E1: flight, boost, break-turn or camera missing.", this);
                 enabled = false;
                 return;
             }
@@ -87,14 +90,22 @@ namespace AirCombat
             player.transform.position = p;
             // R/bounds reset should retain whichever height is being tested.
             spawnPosition.y = altitude;
-            studyCamera.SnapToAircraft(); // Prevent a large vertical camera sweep.
+            SnapCamera(); // Prevent a large vertical camera sweep.
         }
 
         private void ResetFlight()
         {
             breakTurn.CancelBreak();
             player.transform.SetPositionAndRotation(spawnPosition, spawnRotation);
-            studyCamera.SnapToAircraft(); // No fast camera sweep across the 2 km map.
+            SnapCamera(); // No fast camera sweep across the 2 km map.
+        }
+
+        private void SnapCamera()
+        {
+            // Works before and after the one-time Cleanup A scene migration.
+            // Only one camera driver is present on the production prefab.
+            if (arcadeCamera != null) arcadeCamera.SnapToAircraft();
+            else if (legacyStudyCamera != null) legacyStudyCamera.SnapToAircraft();
         }
 
         private void OnGUI()

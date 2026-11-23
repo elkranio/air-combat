@@ -1,5 +1,7 @@
 # Air Combat
 
+**Active Cleanup A:** extract accepted C3 camera into `ArcadeCameraRig.prefab` without deleting historical scenes yet. [Migration and safe test](Docs/Production/CLEANUP_A.md). Cleanup B follows a green Unity test.
+
 Unity 6.6 / URP arcade air-combat prototype. **Committed scenes, prefabs and their Inspector values are the current source of truth.** The root documents describe the current game; dated implementation atoms are preserved in [`Docs/Archive`](Docs/Archive/README.md).
 
 ## Where to start

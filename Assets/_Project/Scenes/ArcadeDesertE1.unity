@@ -2692,126 +2692,6 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 955262866}
   m_Mesh: {fileID: 4300000, guid: b8a77177259144b4e8c489c8b9202bfc, type: 2}
---- !u!1001 &988900245
-PrefabInstance:
-  m_ObjectHideFlags: 0
-  serializedVersion: 2
-  m_Modification:
-    serializedVersion: 3
-    m_TransformParent: {fileID: 0}
-    m_Modifications:
-    - target: {fileID: 157511369589782980, guid: 3db85556e5308404690a9eb9d8e875ea, type: 3}
-      propertyPath: m_Enabled
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 754932287838579214, guid: 3db85556e5308404690a9eb9d8e875ea, type: 3}
-      propertyPath: m_Enabled
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 921941315435226252, guid: 3db85556e5308404690a9eb9d8e875ea, type: 3}
-      propertyPath: m_Enabled
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 6923859331041585384, guid: 3db85556e5308404690a9eb9d8e875ea, type: 3}
-      propertyPath: far clip plane
-      value: 700
-      objectReference: {fileID: 0}
-    - target: {fileID: 7491793541785533305, guid: 3db85556e5308404690a9eb9d8e875ea, type: 3}
-      propertyPath: m_Name
-      value: E1 / Main Camera
-      objectReference: {fileID: 0}
-    - target: {fileID: 7651755771131882321, guid: 3db85556e5308404690a9eb9d8e875ea, type: 3}
-      propertyPath: m_LocalPosition.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 7651755771131882321, guid: 3db85556e5308404690a9eb9d8e875ea, type: 3}
-      propertyPath: m_LocalPosition.y
-      value: 238
-      objectReference: {fileID: 0}
-    - target: {fileID: 7651755771131882321, guid: 3db85556e5308404690a9eb9d8e875ea, type: 3}
-      propertyPath: m_LocalPosition.z
-      value: -310
-      objectReference: {fileID: 0}
-    - target: {fileID: 7651755771131882321, guid: 3db85556e5308404690a9eb9d8e875ea, type: 3}
-      propertyPath: m_LocalRotation.w
-      value: 0.8373192
-      objectReference: {fileID: 0}
-    - target: {fileID: 7651755771131882321, guid: 3db85556e5308404690a9eb9d8e875ea, type: 3}
-      propertyPath: m_LocalRotation.x
-      value: 0.3904484
-      objectReference: {fileID: 0}
-    - target: {fileID: 7651755771131882321, guid: 3db85556e5308404690a9eb9d8e875ea, type: 3}
-      propertyPath: m_LocalRotation.y
-      value: -0.34682903
-      objectReference: {fileID: 0}
-    - target: {fileID: 7651755771131882321, guid: 3db85556e5308404690a9eb9d8e875ea, type: 3}
-      propertyPath: m_LocalRotation.z
-      value: 0.16172904
-      objectReference: {fileID: 0}
-    - target: {fileID: 7651755771131882321, guid: 3db85556e5308404690a9eb9d8e875ea, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 7651755771131882321, guid: 3db85556e5308404690a9eb9d8e875ea, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 7651755771131882321, guid: 3db85556e5308404690a9eb9d8e875ea, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.z
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 8326110243662320711, guid: 3db85556e5308404690a9eb9d8e875ea, type: 3}
-      propertyPath: m_Enabled
-      value: 0
-      objectReference: {fileID: 0}
-    m_RemovedComponents: []
-    m_RemovedGameObjects: []
-    m_AddedGameObjects: []
-    m_AddedComponents:
-    - targetCorrespondingSourceObject: {fileID: 7491793541785533305, guid: 3db85556e5308404690a9eb9d8e875ea, type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 988900248}
-  m_SourcePrefab: {fileID: 100100000, guid: 3db85556e5308404690a9eb9d8e875ea, type: 3}
---- !u!114 &988900246 stripped
-MonoBehaviour:
-  m_CorrespondingSourceObject: {fileID: 4040480315336089958, guid: 3db85556e5308404690a9eb9d8e875ea, type: 3}
-  m_PrefabInstance: {fileID: 988900245}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 988900247}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 003863439b0342cb9907ff6fbec70471, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::AirCombat.CombatCameraRig
---- !u!1 &988900247 stripped
-GameObject:
-  m_CorrespondingSourceObject: {fileID: 7491793541785533305, guid: 3db85556e5308404690a9eb9d8e875ea, type: 3}
-  m_PrefabInstance: {fileID: 988900245}
-  m_PrefabAsset: {fileID: 0}
---- !u!114 &988900248
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 988900247}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f5395d0852364ac593f9c029d81e7035, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::AirCombat.HeadingLockedObliqueCameraStudy
-  aircraft: {fileID: 1069913520}
-  obliquePitch: 50
-  forwardLead: 28
-  cruiseLead: 48
-  boostExtraLead: 14
-  leadTransitionSeconds: 0.42
-  aircraftViewportMargin: 0.2
-  positionSmoothTime: 0.12
-  rotationSmoothTime: 0.14
-  combatHotkeys: 1
-  fixedWorldOnly: 1
-  showHint: 0
 --- !u!1 &999659520
 GameObject:
   m_ObjectHideFlags: 0
@@ -3151,6 +3031,86 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1024762646}
   m_Mesh: {fileID: -2432090755550338912, guid: 65291905900596f4398b9e20b5a59de1, type: 3}
+--- !u!1001 &1027530357
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 0}
+    m_Modifications:
+    - target: {fileID: 520079079370042089, guid: 371922c97e367a140876da6ab486cf44, type: 3}
+      propertyPath: m_Enabled
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1939388830250070157, guid: 371922c97e367a140876da6ab486cf44, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1939388830250070157, guid: 371922c97e367a140876da6ab486cf44, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 238
+      objectReference: {fileID: 0}
+    - target: {fileID: 1939388830250070157, guid: 371922c97e367a140876da6ab486cf44, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: -310
+      objectReference: {fileID: 0}
+    - target: {fileID: 1939388830250070157, guid: 371922c97e367a140876da6ab486cf44, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 0.8373192
+      objectReference: {fileID: 0}
+    - target: {fileID: 1939388830250070157, guid: 371922c97e367a140876da6ab486cf44, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0.3904484
+      objectReference: {fileID: 0}
+    - target: {fileID: 1939388830250070157, guid: 371922c97e367a140876da6ab486cf44, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: -0.34682903
+      objectReference: {fileID: 0}
+    - target: {fileID: 1939388830250070157, guid: 371922c97e367a140876da6ab486cf44, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0.16172904
+      objectReference: {fileID: 0}
+    - target: {fileID: 1939388830250070157, guid: 371922c97e367a140876da6ab486cf44, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1939388830250070157, guid: 371922c97e367a140876da6ab486cf44, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1939388830250070157, guid: 371922c97e367a140876da6ab486cf44, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5155359099652887777, guid: 371922c97e367a140876da6ab486cf44, type: 3}
+      propertyPath: m_Name
+      value: E1 / Main Camera
+      objectReference: {fileID: 0}
+    - target: {fileID: 5299753384366365605, guid: 371922c97e367a140876da6ab486cf44, type: 3}
+      propertyPath: aircraft
+      value: 
+      objectReference: {fileID: 1069913520}
+    - target: {fileID: 8568083544143274404, guid: 371922c97e367a140876da6ab486cf44, type: 3}
+      propertyPath: m_Enabled
+      value: 0
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 371922c97e367a140876da6ab486cf44, type: 3}
+--- !u!114 &1027530358 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 5903919868008775733, guid: 371922c97e367a140876da6ab486cf44, type: 3}
+  m_PrefabInstance: {fileID: 1027530357}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 003863439b0342cb9907ff6fbec70471, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::AirCombat.CombatCameraRig
 --- !u!1 &1041008032
 GameObject:
   m_ObjectHideFlags: 0
@@ -5847,7 +5807,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::AirCombat.E1MapFlightSession
   player: {fileID: 1069913521}
-  cameraRig: {fileID: 988900246}
+  cameraRig: {fileID: 1027530358}
   resetHalfExtent: 850
   altitudeComparison: 1
 --- !u!4 &2020064467
@@ -5985,8 +5945,8 @@ SceneRoots:
   - {fileID: 1071449415}
   - {fileID: 1241238924}
   - {fileID: 1069913519}
-  - {fileID: 988900245}
   - {fileID: 1095948377}
   - {fileID: 2020064467}
   - {fileID: 737050967}
   - {fileID: 26969190}
+  - {fileID: 1027530357}
