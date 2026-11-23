@@ -311,7 +311,8 @@ namespace AirCombat
                 diffuseTexture = Require<Texture2D>(texturePath),
                 tileSize = new Vector2(22f, 22f),
                 metallic = 0f,
-                smoothness = .03f
+                smoothness = .03f,
+                smoothnessSource = TerrainLayerSmoothnessSource.ConstantOnly
             };
             AssetDatabase.CreateAsset(layer, Output + "/T1_" + label + ".terrainlayer");
             return layer;
