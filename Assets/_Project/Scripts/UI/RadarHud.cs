@@ -4,7 +4,8 @@ using UnityEngine.UI;
 
 namespace AirCombat
 {
-    // Compact, north-up, mesh-based radar. Everything is drawn within its own
+    // Compact mesh-based radar: north-up in normal labs; heading-up in C1b.
+    // Everything is drawn within its own
     // circular viewport; UI does not receive pointer events or affect the camera.
     [DisallowMultipleComponent]
     public sealed class RadarHud : MaskableGraphic
@@ -19,11 +20,14 @@ namespace AirCombat
 
         private readonly List<RadarDetection> detected = new List<RadarDetection>(16);
         private AircraftRadar radar;
+        private HeadingLockedObliqueCameraStudy headingCamera;
 
-        // Called by the owning HUD prefab; the sensor remains aircraft-owned.
-        public void Bind(AircraftRadar sensor)
+        // Camera choice affects only presentation, never AircraftRadar samples.
+        // Existing calls without a study camera remain north-up.
+        public void Bind(AircraftRadar sensor, HeadingLockedObliqueCameraStudy cameraStudy = null)
         {
             radar = sensor;
+            headingCamera = cameraStudy;
             SetVerticesDirty();
         }
         private int lastScreenHeight = -1;
@@ -98,10 +102,12 @@ namespace AirCombat
             if (radar != null)
             {
                 float scale = radius / radar.Range;
+                bool headingUp = headingCamera != null && headingCamera.HeadingLocked;
+                Vector2 aircraftHeading = radar.Heading;
                 for (int i = 0; i < detected.Count; i++)
                 {
                     var contact = detected[i];
-                    Vector2 at = center + contact.RelativePosition * scale;
+                    Vector2 at = center + RelativeOnDisplay(contact.RelativePosition, aircraftHeading, headingUp) * scale;
                     float threatRadius = contact.ThreatRadius * scale;
                     if (contact.Kind == RadarContactType.GroundDefense && threatRadius > .1f)
                         ClippedThreatRing(mesh, at, threatRadius, center, radius);
@@ -109,7 +115,7 @@ namespace AirCombat
                 for (int i = 0; i < detected.Count; i++)
                 {
                     var contact = detected[i];
-                    Vector2 at = center + contact.RelativePosition * scale;
+                    Vector2 at = center + RelativeOnDisplay(contact.RelativePosition, aircraftHeading, headingUp) * scale;
                     if (contact.Kind == RadarContactType.IncomingMissile)
                     {
                         // Inbound missile is visibly different from a ground-site dot.
@@ -133,12 +139,21 @@ namespace AirCombat
                 }
             }
 
-            // World north stays at the top; only the player triangle rotates.
-            Vector2 heading = radar != null ? radar.Heading : Vector2.up;
+            // In heading-up mode the jet is always up and the *world contacts*
+            // rotate around it. Press C (north-up) to recover the old behavior.
+            Vector2 heading = headingCamera != null && headingCamera.HeadingLocked
+                ? Vector2.up : radar != null ? radar.Heading : Vector2.up;
             Vector2 right = new Vector2(heading.y, -heading.x);
             Disk(mesh, center, 5.7f, new Color(.46f, .98f, .91f, .13f));
             Triangle(mesh, center + heading * 7f, center - heading * 5f - right * 4.2f,
                 center - heading * 5f + right * 4.2f, new Color(.68f, 1f, .94f, .98f));
+        }
+
+        private static Vector2 RelativeOnDisplay(Vector2 offset, Vector2 heading, bool headingUp)
+        {
+            if (!headingUp) return offset; // +X east / +Y world north.
+            Vector2 right = new Vector2(heading.y, -heading.x);
+            return new Vector2(Vector2.Dot(offset, right), Vector2.Dot(offset, heading));
         }
 
         private void ClippedThreatRing(VertexHelper mesh, Vector2 at, float threatRadius,

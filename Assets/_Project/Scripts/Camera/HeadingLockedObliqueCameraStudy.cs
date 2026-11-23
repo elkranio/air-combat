@@ -7,15 +7,16 @@ namespace AirCombat
     // FlightController and aircraft world heading are deliberately unchanged.
     [DisallowMultipleComponent]
     [RequireComponent(typeof(Camera))]
-    [DefaultExecutionOrder(200)]
+    [DefaultExecutionOrder(105)] // Before NursCameraCue (110) and TargetLock (200).
     public sealed class HeadingLockedObliqueCameraStudy : MonoBehaviour
     {
         [SerializeField] private Transform aircraft;
-        [SerializeField, Range(45f, 75f)] private float obliquePitch = 58f;
+        [SerializeField, Range(45f, 75f)] private float obliquePitch = 50f;
         [SerializeField, Min(0f)] private float forwardLead = 28f;
         [SerializeField, Min(0.01f)] private float positionSmoothTime = 0.12f;
         [SerializeField, Min(0.01f)] private float rotationSmoothTime = 0.14f;
 
+        [SerializeField] private bool combatHotkeys;
         private bool headingLocked = true;
         private bool showHint = true;
         private float cameraHeight;
@@ -27,7 +28,10 @@ namespace AirCombat
         private Vector3 focusVelocity;
         private GUIStyle style;
 
+        public bool HeadingLocked => headingLocked;
         public void Configure(Transform player) => aircraft = player;
+        public void SetPreferredPitch(float degrees) => obliquePitch = Mathf.Clamp(degrees, 45f, 75f);
+        public void SetCombatHotkeys(bool enabled) => combatHotkeys = enabled;
 
         private void OnEnable()
         {
@@ -50,9 +54,14 @@ namespace AirCombat
             if (keys == null || !Application.isFocused) return;
 
             if (keys.cKey.wasPressedThisFrame) headingLocked = !headingLocked;
-            if (keys.digit1Key.wasPressedThisFrame) obliquePitch = 50f;
-            if (keys.digit2Key.wasPressedThisFrame) obliquePitch = 58f;
-            if (keys.digit3Key.wasPressedThisFrame) obliquePitch = 65f;
+            // C1 art-only scene uses 1/2/3. C1b combat uses 1-6 for
+            // weapons, so switch pitch presets to J/K/L there.
+            if (combatHotkeys ? keys.jKey.wasPressedThisFrame : keys.digit1Key.wasPressedThisFrame)
+                obliquePitch = 50f;
+            if (combatHotkeys ? keys.kKey.wasPressedThisFrame : keys.digit2Key.wasPressedThisFrame)
+                obliquePitch = 58f;
+            if (combatHotkeys ? keys.lKey.wasPressedThisFrame : keys.digit3Key.wasPressedThisFrame)
+                obliquePitch = 65f;
             if (keys.hKey.wasPressedThisFrame) showHint = !showHint;
         }
 
@@ -114,7 +123,8 @@ namespace AirCombat
             GUI.Label(new Rect(22, y + 5, 395, 22),
                 headingLocked ? $"C1 / HEADING LOCKED 3/4   pitch {obliquePitch:F0}" : "C1 / ORIGINAL NORTH-UP 65", style);
             GUI.Label(new Rect(22, y + 28, 395, 22),
-                "C: toggle camera   1/2/3: 50/58/65   H: hide", style);
+                combatHotkeys ? "C: camera   J/K/L: 50/58/65   1-6: weapons   H: hide"
+                    : "C: toggle camera   1/2/3: 50/58/65   H: hide", style);
         }
     }
 }

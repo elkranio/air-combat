@@ -10354,7 +10354,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::AirCombat.HeadingLockedObliqueCameraStudy
   aircraft: {fileID: 1971567200}
-  obliquePitch: 58
+  obliquePitch: 50
   forwardLead: 28
   positionSmoothTime: 0.12
   rotationSmoothTime: 0.14

@@ -25,7 +25,10 @@ namespace AirCombat
                 return;
             }
             statusBar.Bind(camera, boost, hitPoints);
-            radarDisplay.Bind(sensor);
+            // C1b opts into heading-up only while its rotating camera is active.
+            // Existing labs have no study component, so their radar stays north-up.
+            radarDisplay.Bind(sensor, camera != null
+                ? camera.GetComponent<HeadingLockedObliqueCameraStudy>() : null);
         }
     }
 }
