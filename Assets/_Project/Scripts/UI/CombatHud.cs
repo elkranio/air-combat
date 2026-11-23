@@ -28,8 +28,7 @@ namespace AirCombat
             // Only oblique cameras need camera-relative radar presentation.
             // Legacy WeaponLab/GroundAttackLab stay north-up, unchanged.
             bool oblique = camera != null &&
-                (camera.GetComponent<ArcadeCameraFollow>() != null ||
-                 camera.GetComponent<HeadingLockedObliqueCameraStudy>() != null);
+                camera.GetComponent<ArcadeCameraFollow>() != null;
             radarDisplay.Bind(sensor, oblique ? camera : null);
         }
     }

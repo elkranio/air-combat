@@ -18,7 +18,6 @@ namespace AirCombat
         private Afterburner boost;
         private BreakTurn breakTurn;
         private ArcadeCameraFollow arcadeCamera;
-        private HeadingLockedObliqueCameraStudy legacyStudyCamera;
         private Vector3 spawnPosition;
         private Quaternion spawnRotation;
         private GUIStyle label;
@@ -47,9 +46,7 @@ namespace AirCombat
             boost = player.GetComponent<Afterburner>();
             breakTurn = player.GetComponent<BreakTurn>();
             arcadeCamera = cameraRig.GetComponent<ArcadeCameraFollow>();
-            legacyStudyCamera = cameraRig.GetComponent<HeadingLockedObliqueCameraStudy>();
-            if (flight == null || boost == null || breakTurn == null ||
-                (arcadeCamera == null && legacyStudyCamera == null))
+            if (flight == null || boost == null || breakTurn == null || arcadeCamera == null)
             {
                 Debug.LogError("E1: flight, boost, break-turn or camera missing.", this);
                 enabled = false;
@@ -102,10 +99,8 @@ namespace AirCombat
 
         private void SnapCamera()
         {
-            // Works before and after the one-time Cleanup A scene migration.
-            // Only one camera driver is present on the production prefab.
+            // Cleanup A made ArcadeCameraFollow the sole driver of the main map.
             if (arcadeCamera != null) arcadeCamera.SnapToAircraft();
-            else if (legacyStudyCamera != null) legacyStudyCamera.SnapToAircraft();
         }
 
         private void OnGUI()
