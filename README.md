@@ -8,7 +8,7 @@ Unity 6.6 / URP arcade air-combat prototype. **Committed scenes, prefabs and the
 2. [GAMEPLAY_COMBAT.md](GAMEPLAY_COMBAT.md) — controls, six weapon slots, ground threats, real gameplay numbers and tuning.
 3. [GAMEPLAY_ARCHITECTURE.md](GAMEPLAY_ARCHITECTURE.md) — ownership, scene wiring, prefab contracts and safe change boundaries.
 4. [ART_PIPELINE.md](ART_PIPELINE.md) / [ART_AUTHORING.md](ART_AUTHORING.md) — art assets and model/bake workflow; [LIGHTING_L1.md](LIGHTING_L1.md) — shared URP lighting; [THIRD_PARTY_ASSETS.md](THIRD_PARTY_ASSETS.md) — licenses.
-5. [Docs/Art/ENVIRONMENT_MAP_PLAN.md](Docs/Art/ENVIRONMENT_MAP_PLAN.md) — **approved hybrid map direction**. [Docs/Art/CAMERA_C1_COMBAT.md](Docs/Art/CAMERA_C1_COMBAT.md) — **C3 fixed-world 50° with forward look-ahead + boost extra**, after a green C2 combat test. [ENVIRONMENT_ART_RESTART.md](ENVIRONMENT_ART_RESTART.md) keeps earlier art experiments.
+5. [Docs/Art/ENVIRONMENT_MAP_PLAN.md](Docs/Art/ENVIRONMENT_MAP_PLAN.md) — **approved hybrid map direction**. [Docs/Art/CAMERA_C1_COMBAT.md](Docs/Art/CAMERA_C1_COMBAT.md) — **accepted C3 fixed-world 50° + forward look-ahead**. [Docs/Art/GROUND_STYLE_E1A.md](Docs/Art/GROUND_STYLE_E1A.md) — **active E1a ground-style comparison**. [ENVIRONMENT_ART_RESTART.md](ENVIRONMENT_ART_RESTART.md) keeps earlier art experiments.
 
 ## Playable/reference scenes
 
@@ -20,7 +20,7 @@ Unity 6.6 / URP arcade air-combat prototype. **Committed scenes, prefabs and the
 | `Assets/_Project/Scenes/FrontierStrata.unity` | V17 environmental art reference, not the combat regression |
 | `Assets/_Project/Scenes/FrontierPracticalBake.unity` | V19 reference for readable roads/industrial layout/rocks; old art lighting |
 | `Assets/_Project/Scenes/FrontierCameraC1.unity` | C1 camera experiment (visually promising; 50° preferred) |
-| `Assets/_Project/Scenes/FrontierCameraCombatC1.unity` | **C3 camera look-ahead test** on approved C2 fixed-world 50°: 48m forward, +14m boost, smooth and viewport-safe; six weapons, fighter lock, AA1/SAM1, camera-relative radar. C toggles older rotating mode. |
+| `Assets/_Project/Scenes/FrontierCameraCombatC1.unity` | **Accepted C3 fixed-world 50° + look-ahead** with six weapons, fighter, AA1/SAM1 and radar. `C` compares the rotating mode; `T` cycles E1a ground previews at runtime. |
 
 Controls in the two combat labs: **A/D** turn, **W** boost, **Q/E** emergency Break Turn, **R** reset, **H** diagnostics (hidden by default), **LMB** fire/commit. WeaponLab: **1–3**. GroundAttackLab: **1–6** (4 bombs, 5 cabrage rockets, 6 direct NURS). Sandbox retains its legacy W/S + Space controls.
 

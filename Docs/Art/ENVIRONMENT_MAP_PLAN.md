@@ -1,6 +1,6 @@
 # Environment map direction — approved plan (2026-11-23)
 
-**Status:** hybrid map direction approved. Rotating C1b 50° makes aiming harder and causes motion sickness; **fixed-world C2 50° is green**, preserving world depth with more comfortable combat. **C3 smooth forward-visibility/boost-lead pass is now being evaluated** before E1 map work. This document supersedes the next step in `ENVIRONMENT_ART_RESTART.md`, preserving that file as art-history context. Previous studies: V17/V19, V2A–V2A5, RockKitR1, BrokenVector, Unity Terrain T1.
+**Status:** hybrid map direction approved. The rotating 50° C1b view had stronger volume but harmed combat readability and caused mild motion sickness. **C3 fixed-world 50° with smoothed forward/boost lead is green. E1a ground-style comparison is active before E1 map construction.** Previous studies: V17/V19, V2A–V2A5, RockKitR1, BrokenVector, Unity Terrain T1.
 
 ## Target
 
@@ -25,7 +25,11 @@ Build **one cohesive, expandable, low-altitude arcade air-combat map**, beginnin
 
 **C1 — camera feel (visual green, combat usability problematic):** isolated copy of V19. Test a strong three-quarter *heading-locked* view, where the aircraft appears approximately upper-right on screen while turning rotates the camera/world. Compare against old north-up framing with a hotkey, same art and zoom. Keep or reject quickly, with a single Play Mode verdict. **C1b is a separate combat-validation atom, not a relighting/environment rebuild.** See below.
 
-**E1 — new map foundation, AFTER C3:** create a separate persistent environment scene; start from the useful V19 composition principles (road + one industrial area + crisp rocks), not by mutating V19. Bring it onto `CombatLightingRig.prefab` and evaluate ground color/contrast, airplane scale, real shadows and open-space proportions. One representative region is the **start of the larger map**, not a throwaway demo.
+**C2/C3 — accepted gameplay camera:** fixed-world yaw **-45°**, pitch **50°**, ortho 80, smoothed heading-based cruise lead **48** with **+14** on boost. Do not restore auto-rotating world just for visual depth.
+
+**E1a — ground-style comparison, BEFORE E1:** use the existing accepted C3 combat scene. `T` cycles Original / Flat / Macro / Fine ground-only preview treatments, without editing scenes or touching aircraft/weapons. Pick clean ground material language before building more geometry. See [ground-style study](GROUND_STYLE_E1A.md).
+
+**E1 — new map foundation, AFTER E1a:** create a separate persistent environment scene; start from the useful V19 composition principles (road + one industrial area + crisp rocks), not by mutating V19. Bring it onto `CombatLightingRig.prefab` and evaluate ground color/contrast, airplane scale, real shadows and open-space proportions. One representative region is the **start of the larger map**, not a throwaway demo.
 
 **E2 — ground/asset visual coherence:** improve ground surface definition, slope/surface transitions, ground-to-rock joins, compatible material roughness and texture detail at flight zoom. Compare to the V19 screenshot and reject mips/tiling that look like zoomed-up screenshots. Address shadow resolution/edge issues under controlled comparisons, not indiscriminate sharpening.
 
