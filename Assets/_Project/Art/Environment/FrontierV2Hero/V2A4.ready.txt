@@ -1,0 +1,4 @@
+V2A4_HERO_TERRAIN_1
+WestMassif: 1024 local Cycles AO (OPTIX)
+EastMassif: 1024 local Cycles AO (OPTIX)
+NorthSpine: 1024 local Cycles AO (OPTIX)
