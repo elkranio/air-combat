@@ -12,7 +12,7 @@ using Object = UnityEngine.Object;
 
 namespace AirCombat
 {
-    // B1d: one-time authoring of a *modular* road connection and softly painted
+    // B1d: one-time authoring of a *modular* road connection and painted
     // prepared ground. Saved meshes/prefabs and TerrainLayer are editable afterward.
     // No baked sun, fake shadows, runtime geometry or scene regeneration.
     public static class InstallBaseRoadB1D
@@ -341,16 +341,16 @@ namespace AirCombat
             var tex = new Texture2D(128, 128, TextureFormat.RGBA32, true, false);
             const float tau = Mathf.PI * 2f;
             Color baseColor;
-            if (!ColorUtility.TryParseHtmlString("#9D9384", out baseColor))
+            if (!ColorUtility.TryParseHtmlString("#A38B72", out baseColor))
                 throw new InvalidOperationException("Invalid prepared-ground color.");
             for (int y = 0; y < tex.height; y++)
             for (int x = 0; x < tex.width; x++)
             {
                 float u = x / (float)tex.width;
                 float v = y / (float)tex.height;
-                // Seamlessly tiled, ultra-low-contrast long-wave breakup; no gravel pixels.
-                float noise = .022f * Mathf.Sin(tau * u) * Mathf.Cos(tau * v)
-                            + .013f * Mathf.Cos(tau * 2f * u + .5f) * Mathf.Sin(tau * v);
+                // Almost-flat warm brown. No broad smeared color bands or granular noise.
+                float noise = .004f * Mathf.Sin(tau * u) * Mathf.Cos(tau * v)
+                            + .002f * Mathf.Cos(tau * 2f * u + .5f) * Mathf.Sin(tau * v);
                 tex.SetPixel(x, y, new Color(Mathf.Clamp01(baseColor.r + noise),
                     Mathf.Clamp01(baseColor.g + noise * .9f),
                     Mathf.Clamp01(baseColor.b + noise * .75f), 1f));
@@ -397,11 +397,11 @@ namespace AirCombat
                 float wx = terrain.transform.position.x + (minX+x+.5f) / data.alphamapWidth * data.size.x;
                 float wz = terrain.transform.position.z + (minZ+z+.5f) / data.alphamapHeight * data.size.z;
                 float mask = Mathf.Max(
-                    MaskRoundedRect(wx,wz,-485f,-269f,73f,47f,11f,13f),
-                    MaskRoundedRect(wx,wz,-422f,-331f,43f,54f,13f,12f),
-                    MaskRoundedRect(wx,wz,-453f,-373f,19f,71f,8f,11f));
-                float variation = .94f + .08f * Mathf.PerlinNoise(wx*.042f+10f, wz*.042f+20f);
-                float paint = Mathf.Clamp01(.82f * mask * variation);
+                    MaskRoundedRect(wx,wz,-485f,-269f,73f,47f,11f,1.8f),
+                    MaskRoundedRect(wx,wz,-422f,-331f,43f,54f,13f,1.8f),
+                    MaskRoundedRect(wx,wz,-453f,-373f,19f,71f,8f,1.8f));
+                // Nearly opaque so the site reads as ground, not an AO/shadow halo.
+                float paint = Mathf.Clamp01(.97f * mask);
                 for (int l = 0; l < oldLayers.Length; l++)
                     updated[z, x, l] = previous[z, x, l] * (1f - paint);
                 updated[z, x, oldLayers.Length] = paint;
@@ -429,7 +429,7 @@ namespace AirCombat
                                        Mathf.Max(0f,dz)*Mathf.Max(0f,dz));
             float sdf = outside + Mathf.Min(Mathf.Max(dx,dz), 0f) - radius;
             // Break the perfectly geometric boundary without noisy camouflage.
-            sdf += 2.1f * (Mathf.PerlinNoise(x*.043f+9f, z*.043f+3f)-.5f);
+            sdf += 1.4f * (Mathf.PerlinNoise(x*.043f+9f, z*.043f+3f)-.5f);
             return Mathf.SmoothStep(0f, 1f, Mathf.Clamp01((feather - sdf) / (2f*feather)));
         }
 

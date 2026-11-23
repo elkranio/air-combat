@@ -1,6 +1,6 @@
 # B1 — first military base (working production plan)
 
-**Status:** three B1b barracks and B1c headquarters look broadly acceptable in Game view; **B1d roads and prepared soil** now being evaluated. Continue on the same `ArcadeDesertE1.unity`, default Y78 flight and accepted C3 camera. This is an incremental art/scale test, not a combat mission. [HQ asset and install instructions](HQ_B1C.md).
+**Status:** three B1b barracks and B1c headquarters look broadly acceptable in Game view. **B1d roads** are in place; the original grey/blurred prepared ground was rejected and **B1d2** tests a warmer, crisper edge. Continue on the same `ArcadeDesertE1.unity`, default Y78 flight and accepted C3 camera. This is an incremental art/scale test, not a combat mission. [HQ asset and install instructions](HQ_B1C.md).
 
 ## Site concept
 
@@ -11,7 +11,7 @@ A small generic military airfield outpost with a believable approach: one asphal
 1. **B1a — three barracks v0 (placed):** one 32×12×6 m master in three instances, separate base sector, Y150 approach, accepted plateau unchanged. Scale and mass appear promising; shadows and character need improvement. [B1a source](BARRACKS_B1A.md).
 2. **B1b — stylized barracks and directional shadows (current):** preserve B1a prefabs and GUIDs, enlarge roof eaves, add one entrance canopy + two roof vents, stronger cool/warm material grouping; rotate the sun on the **main scene instance only**. No bake or installer. [Changes and visual gate](BARRACKS_B1B.md).
 3. **B1c — modular headquarters and courtyard (current):** one two-height 29×19 m HQ, independent entry, concrete plaza, two planters and flagpole beside barracks. Spawn at Y78; no road or bake yet. [Current gate](HQ_B1C.md).
-4. **B1d — road + ground preparation (current):** separate north-south approach, barracks service lane and HQ courtyard spur; subtle compacted soil painted into native Terrain with soft irregular boundary; sparse repair/skid meshes. No bake, no changes to approved architecture. [B1d visual gate](ROAD_B1D.md). Then a *separate* small variation pass on one existing building.
+4. **B1d/B1d2 — road + ground preparation (current):** separate north-south approach, barracks service lane and HQ courtyard spur; sparse repair/skid meshes. B1d2 corrects the prepared Terrain paint from shadow-like grey and 10–13m blur to warm brown `#A38B72`, near-solid fill and ~2m irregular edge. No bake or architectural changes. [Road and correction](ROAD_B1D.md). Then a *separate* small variation pass on one existing building.
 5. **B1e — utility and identity:** small generator/service building, flagpole, minimal fence/gate and selected markings. Use functionally clear, sparsely distributed pieces.
 6. **B1f — adjacent airstrip:** a simple appropriately scaled runway/apron connection and perhaps one hangar, matched to base proportions. No detailed airport before earlier pieces are accepted.
 7. **B1g — first combat-context test:** add existing AA1/SAM1 props and perhaps depot to the base via an isolated scene-composition atom; check gameplay readability. Do not modify the already-green lab prefabs just to decorate this scene.
