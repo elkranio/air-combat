@@ -13,9 +13,9 @@ The current asset direction is [Stylized Arcade Military](Docs/Production/ART_DI
 - `Assets/_Project/Settings/ArcadeCombat_URP.asset`: main-map candidate for 600-unit, four-cascade shadows. Compare its cost/quality to the current combat-lab profile before global adoption.
 - `Assets/ThirdParty/`: only protected dependencies after cleanup; attribution/license rules in [THIRD_PARTY_ASSETS.md](THIRD_PARTY_ASSETS.md).
 
-## B1d surface authoring
+## Base/airfield surface authoring — as built
 
-The B1d Unity Editor installer saves road/shoulder mesh assets and prefabs, and a compacted-ground `TerrainLayer` + diffuse PNG. The ground transition is painted **into the existing editable Terrain alphamap**, not glued on as a giant flat mesh. Roads/shoulders/repair marks remain separate editable objects. After installing once, edit the generated material/prefab and Terrain painting directly; do not rerun installers. The next pass can deliberately weather one building without imposing textures/bakes on every asset.
+B1d roads, shoulder meshes and sparse wear are **separate authored objects**. Its initial B1d/B1d2 compacted-ground TerrainLayer/alphamap experiment was superseded by **B1d3**, a separately toggleable ~183×226 m **sharp-edge prepared-lot mesh**. The B1d3 install cleared the old local prepared paint; the original editable Terrain and TerrainCollider remain. B1e runway/apron and B1f hangar trial occupy a different sector. **Do not rerun any one-time B1 installers on the accepted scene**. See [base](Docs/Production/BASE_DESIGN.md) and [airfield](Docs/Production/AIRFIELD_B1E.md).
 
 ## Model handoff
 

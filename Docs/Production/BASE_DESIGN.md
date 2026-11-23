@@ -1,30 +1,21 @@
-# B1 — first military base (working production plan)
+# B1 — first military base (as-built composition and deferred work)
 
-**Status:** B1d3 hard-edged prepared lot is the chosen base-soil candidate after user green; **B1e airfield** (runway, hangar, tower, two parked aircraft) is next to evaluate. Keep `ArcadeDesertE1.unity`, Y78, C3 camera and existing HQ/barracks. [B1d3](PREPARED_LOT_B1D3.md) / [B1e airfield](AIRFIELD_B1E.md).
+**Status at `645081ba`:** the **main scene is already assembled** through B1e and includes a separate B1f **arched hangar style trial**. This is not an instruction to reinstall B1a–B1f. Current gameplay priority is player fixed-forward autocannon → one Tiger dogfight → multiple enemies; base additions are **on hold**. See [handoff](../../HANDOFF.md).
 
-## Site concept
+## Existing authored objects
 
-A small generic military airfield outpost with a believable approach: one asphalt access road feeds a service/warehouse area, barracks and utility buildings; an open vehicle/motor pool sits beside it; an adjacent runway/apron belongs to the same compound. A flag and sparse perimeter hints can provide identity, but the game camera should read the **big massing and functional zoning** first. Place it in clear terrain, not on top of the accepted plateau. Leave broad flight corridors around it. Do not build a full 2 km compound or an airport-city.
+- **Terrain/map:** 2×2 km persistent `ArcadeDesertE1.unity`, muted sand `#B8A993`, one accepted ~430×275×30 m plateau. Y78 main flight altitude; fixed-world oblique camera. **Never regenerate the map**.
+- **B1b barracks:** three scene instances of `Barracks_B1a.prefab` (name/GUID retained after B1b style pass), each roughly 32×12 m. Enlarged gable eaves, entry canopy, two vents, flat cool-grey/blue materials, dynamic shadows. Live source: `Tools/Blender/generate_barracks_b1a.py`.
+- **B1c headquarters:** two-height ~29×19 m HQ near barracks, independent entry, ~38×22 m paved courtyard, two planters and flagpole. Live source: `Tools/Blender/generate_hq_b1c.py`. Do not confuse the HQ's own plaza with prepared dirt.
+- **B1d roads:** accepted asphalt access route, barracks lane and HQ spur, with editable shoulders and sparse wear marks. Separate prefabs/objects; don't rebuild from old installer. The original B1d/B1d2 painted Terrain compacted-soil experiment is superseded by B1d3.
+- **B1d3 ground:** **one continuous irregular hard-edged prepared-lot mesh** ~183×226 m, matte warm earth `#A38B72`. Toggle scene root `B1 / Prepared lot - DISABLE to compare` to see unpainted sand while retaining roads and buildings. Its surface is visual only; original TerrainCollider owns collision. Original B1d TerrainLayer assets remain as historical dependencies, not the active painted covering.
+- **B1e airfield:** runway/apron, original open-front hangar, control tower and two static Kestrels in a *separate* western aviation sector. **B1f arched hangar** sits near the B1e hangar for A/B and is a separate toggleable style trial. See [airfield as-built](AIRFIELD_B1E.md).
+- **D1 Tiger:** toggleable static **EF-01 Tiger D1** test chassis between parked Kestrels. **Not** an enemy yet; see [Tiger D1](TIGER_D1.md).
 
-## Production sequence
+## Design rules and optional later improvements
 
-1. **B1a — three barracks v0 (placed):** one 32×12×6 m master in three instances, separate base sector, Y150 approach, accepted plateau unchanged. Scale and mass appear promising; shadows and character need improvement. [B1a source](BARRACKS_B1A.md).
-2. **B1b — stylized barracks and directional shadows (current):** preserve B1a prefabs and GUIDs, enlarge roof eaves, add one entrance canopy + two roof vents, stronger cool/warm material grouping; rotate the sun on the **main scene instance only**. No bake or installer. [Changes and visual gate](BARRACKS_B1B.md).
-3. **B1c — modular headquarters and courtyard (current):** one two-height 29×19 m HQ, independent entry, concrete plaza, two planters and flagpole beside barracks. Spawn at Y78; no road or bake yet. [Current gate](HQ_B1C.md).
-4. **B1d/B1d2/B1d3 — road + prepared-lot test (current):** approved north-south approach, barracks lane and HQ spur, plus sparse repair/skid meshes. After rejected grey/blurred B1d ground, B1d2 supplied warm brown. B1d3 tests **one truly continuous clearing with an unblurred uneven boundary** on a separately disableable object. The old B1d alpha paint is removed locally without touching roads. No bake or architecture changes. [B1d roads](ROAD_B1D.md) / [B1d3 A/B](PREPARED_LOT_B1D3.md). Then consider a small variation pass on one existing building.
-5. **B1e — utility and identity:** small generator/service building, flagpole, minimal fence/gate and selected markings. Use functionally clear, sparsely distributed pieces.
-6. **B1e — separate airfield slice (new visual test):** 460×36m runway with clear asphalt, wide apron, one open-front faceted hangar, control tower, two stationary Kestrels. Put it west of the main compound and leave B1d3 dirt footprint alone. Review in flight **before** drawing the final connections. [Exact assets/gate](AIRFIELD_B1E.md).
-7. **B1f — final road connection:** hand-authored curved service-road links from the accepted compound to hangar/apron, integrated turns/junctions, restrained wear. No L-shaped tile snapping.
-8. **B1g — first combat-context test:** add existing AA1/SAM1 props and perhaps depot to the base via an isolated scene-composition atom; check gameplay readability. Do not modify the already-green lab prefabs just to decorate this scene.
+The base should read as a compact **used military outpost**, not a city, toy diorama or low-poly clutter field. Prioritize big functional shapes, large color areas, clean aircraft/target visibility and convincing dynamic shadows from gameplay height Y78. No painted fake sun, dense procedural debris or gratuitous AO.
 
-## Material / shape checkpoints
+Deferred, **not current priorities**: intentional curved service roads between HQ/barracks and runway/apron (not right-angle tiled joins), subtle building variation, a few utility/perimeter markers, and eventually AA1/SAM1/depot props wired into a real mission. Reuse existing gameplay prefabs; don't remodel the whole base to integrate combat. Previous B1a–B1d install instructions are retained in the corresponding atom docs as **history only**, not a next-step plan.
 
-**Environment:** quiet `#B8A993` ground, neutral mid-light concrete/asphalt, low gloss. **Structures:** slightly more contrast and functional color zones than terrain, without saturated toy roofs. **Vehicles / aircraft / AA:** stronger color or silhouette contrast, modest exaggerated scale permitted for readable threats. Shadow and materials must look coherent with the enormous plateau and flying jet. Evaluate in motion at yaw -45°, pitch 50°, ortho 80 and **Y78** before any bake.
-
-## Reference workflow
-
-For each new asset, gather a *small* set of real-world massing photos and optionally one strong stylized-game reference. Extract proportions, large shapes and distinct functional parts; do **not** copy another game's geometry. Block out first, then compare in Unity, then detail only if it helps. Source images belong in `Resources/References/` with source/licensing notes. Editable model in `Resources/Blender/`, export in `Assets/_Project/Art/Buildings/Base/`, prefab in scene-neutral reusable folder.
-
-## Gate for B1d green
-
-The HQ and row of barracks must now read as one compact *used* base with a believable service road and prepared soil, not scattered assets on uniformly colored sand or an overly clean diorama. Check dynamic URP shadows, moderate road width, subdued surface wear and a clearly cut but uneven prepared-lot boundary at Y78. A/B the lot root against plain sand. Reject over-dark asphalt, repetitive noise and any buried/skimming surfaces before further buildings.
+When future art work resumes, author one reusable model (editable `.blend` or documented generator → imported mesh → matte URP materials → prefab/meta), inspect it in moving Game view at yaw -45°, pitch 50°, ortho 80, Y78; then accept or revert that one model.

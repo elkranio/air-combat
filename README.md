@@ -1,27 +1,29 @@
 # Air Combat
 
-Unity 6.6 / URP. **Stylized arcade air combat**, fixed-world oblique camera and one growing 2×2 km map. This is a playable prototype, **not yet an integrated mission**.
+Unity 6.6 / URP. **Stylized arcade air combat**: strong aircraft silhouettes, direct weapons, overwhelming air/ground combat, loud sound and impactful destruction. Fun and readability take priority over flight simulation realism. Playable prototypes exist; the **main map is not yet a combined combat mission**.
 
-## Start here
+## Start here (current state)
 
-1. [HANDOFF.md](HANDOFF.md) — current green, remaining issues, next step.
-2. [Docs/Production/BASE_DESIGN.md](Docs/Production/BASE_DESIGN.md) — **active production plan**; [B1d road + prepared ground](Docs/Production/ROAD_B1D.md) is the current art atom after barracks and HQ.
-3. [Docs/Production/MAP_DESIGN.md](Docs/Production/MAP_DESIGN.md) — map size, elevation, flight/collision language.
-4. [Docs/Production/ART_DIRECTION.md](Docs/Production/ART_DIRECTION.md) — palette, geometry, scale, lighting and VFX direction.
-5. [ART_PIPELINE.md](ART_PIPELINE.md) / [ART_AUTHORING.md](ART_AUTHORING.md) — model/asset pipeline and bake discipline.
-6. [GAMEPLAY_COMBAT.md](GAMEPLAY_COMBAT.md) / [GAMEPLAY_ARCHITECTURE.md](GAMEPLAY_ARCHITECTURE.md) — gameplay rules and scene/prefab ownership.
-7. [LIGHTING_L1.md](LIGHTING_L1.md) / [THIRD_PARTY_ASSETS.md](THIRD_PARTY_ASSETS.md) — lighting and dependency licenses.
+1. [HANDOFF.md](HANDOFF.md) — authoritative current green, immediate next atom and regression rules.
+2. [GAMEPLAY_COMBAT.md](GAMEPLAY_COMBAT.md) / [GAMEPLAY_ARCHITECTURE.md](GAMEPLAY_ARCHITECTURE.md) — current weapons, controls, radar and scene ownership.
+3. [Docs/Production/TIGER_D1.md](Docs/Production/TIGER_D1.md) — EF-01 Tiger enemy visual chassis, status and intended integration.
+4. [Docs/Production/BASE_DESIGN.md](Docs/Production/BASE_DESIGN.md) / [Docs/Production/AIRFIELD_B1E.md](Docs/Production/AIRFIELD_B1E.md) — current base, airfield and B1f hangar.
+5. [Docs/Production/MAP_DESIGN.md](Docs/Production/MAP_DESIGN.md) / [Docs/Production/ART_DIRECTION.md](Docs/Production/ART_DIRECTION.md) — world scale, camera and look.
+6. [ART_PIPELINE.md](ART_PIPELINE.md) / [ART_AUTHORING.md](ART_AUTHORING.md) — safe asset authoring and Unity import.
+7. [LIGHTING_L1.md](LIGHTING_L1.md) / [THIRD_PARTY_ASSETS.md](THIRD_PARTY_ASSETS.md) — lighting caveats and licenses.
 
 ## Scenes
 
 | Scene | Role |
 | --- | --- |
-| `Assets/_Project/Scenes/ArcadeDesertE1.unity` | **Main working map**: muted terrain, preserved plateau, three barracks, [B1c headquarters](Docs/Production/HQ_B1C.md), and [B1d access roads/compacted soil](Docs/Production/ROAD_B1D.md), flight at Y78, `ArcadeCameraRig`, real 600-unit shadow candidate. Art/flight only for now. |
-| `Assets/_Project/Scenes/WeaponLab.unity` | **Regression only**: fighter and air weapons 1–3. |
-| `Assets/_Project/Scenes/GroundAttackLab.unity` | **Regression only**: ground weapons 4–6, AA/SAM, radar/HUD. |
+| `Assets/_Project/Scenes/ArcadeDesertE1.unity` | **Production map / flight only**: 2×2 km Terrain and plateau, B1 barracks/HQ/roads/prepared lot, B1e runway/apron/tower/original hangar, B1f arch-hangar style trial, parked Kestrels and static EF-01 Tiger trial. Y78 flight and fixed-world `ArcadeCameraRig`; no fight session yet. |
+| `Assets/_Project/Scenes/WeaponLab.unity` | **Regression lab**: enemy fighter, player air weapons 1–3 and legacy camera. |
+| `Assets/_Project/Scenes/GroundAttackLab.unity` | **Regression lab**: player ground weapons 4–6, AA/SAM, radar/HUD and legacy camera. |
 
-Build Settings starts from the main map; labs may be present as disabled entries. Combat labs stay until their behavior can be exercised on the main map. Do not resurrect retired one-time map builders or camera studies.
+## Current gameplay direction
 
-## Process
+**First** test the player's BURST/autocannon firing **straight along aircraft heading** on LMB, without mouse-directed angular aim. The existing bounded-aim behavior is the baseline to replace/test, **not yet a completed change**. Evaluate it with the **production camera** before committing to further targeting aids. Then build a single-Tiger dogfight with a minimal, useful radar contact; only after it is fun move to several enemy fighters. Keep land combat and full polish out of this immediate atom. Further 2–3-atom details will be decided after this documentation pass.
 
-One small atom → `.patch` → `git apply --check --verbose` → `git apply` → Unity Play Mode → green push. For an authored asset, preserve the source model, Unity import GUID, prefab and its `.meta` files. The main map is **hand-edited and persistent**: do not regenerate it from obsolete builders. Git history preserves removed experiments; no duplicate historical plans are maintained in-tree.
+## Working process
+
+One approved atom → `.patch` → `git apply --check --verbose` → `git apply` → Unity Play Mode → green push. Preserve `.meta` GUIDs and existing scene/prefab references. **Never regenerate the hand-authored main scene** or rerun obsolete installation experiments. Keep historical proposals in Git history; the current state lives in this index and `HANDOFF.md`.

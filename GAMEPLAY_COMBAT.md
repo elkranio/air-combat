@@ -29,8 +29,12 @@ Bomb ballistics: gravity **80**, drag **0.045**; boost worsens spread. Cabrage r
 
 Player HP in ground lab: **20**. `AircraftRadar` samples explicit `IRadarContact`s in **460** horizontal units. Radar renders threats and genuinely inbound hostile SAM missiles; player projectiles do not appear as hostile contacts. Aircraft target hits vs ground splash use distinct damage domains. SAM/AA projectiles already launched can remain active after the site is destroyed. No flares/decoys or large mission system yet.
 
+## Next weapon test — planned, not yet implemented
+
+**Player BURST/autocannon currently uses bounded mouse-angle aiming** (legacy top-down assumption). The next **first** gameplay atom will test firing **straight along the aircraft heading** on LMB, independent of mouse position, under the production fixed-world camera. Preserve burst timing/spread and existing weapon/domain semantics unless deliberately revisited; no automatic lead/assist is approved yet. GAUSS, missile and ground weapons are not part of that first change. A minimal radar for a **detected** enemy Tiger belongs to the following 1v1 slice, with specific detection/HUD rules to be agreed before coding.
+
 ## Quality and remaining work
 
-Current shots, impacts and destruction are *functional proof of concept*, not final feel. Future integrated pass will add better hit feedback, punchy SFX, smoke, sparks, debris, aircraft breakup and realistic-looking but stylized falling wreckage; plan alongside FPS/performance budget. Cabrage should remain a distinct high-commitment weapon. Ground depots currently use provisional mesh-cutting destruction. Keep all current playable labs untouched while finding the base visual style.
+Shots, impacts and destruction are *functional proofs of concept*, not final feel. Future integrated work needs hit feedback, punchy SFX, smoke, sparks, debris, aircraft breakup and falling wreckage with an explicit FPS budget. Cabrage remains high-commitment; ground depots still have provisional mesh-cutting destruction. Preserve all current playable labs while evolving the production camera combat.
 
-Regression: WeaponLab fighter, cannon, gauss, lock missile, boost and evasions. GroundAttackLab slots 1–6, target damage, AA/SAM dodgeability, radar/HUD and resets. Verify play mode separately after architecture changes.
+Regression: WeaponLab fighter/cannon/gauss/missile, boost and evasions; GroundAttackLab slots 1–6, targets, AA/SAM dodgeability, radar/HUD and reset. Verify both separately after architecture changes.

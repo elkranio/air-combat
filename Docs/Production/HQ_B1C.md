@@ -1,4 +1,8 @@
 # B1c — command headquarters + modular courtyard
+> **Historical atom — already installed (2026-11-24).** The HQ, courtyard and flags are present in the main map. Do not rerun the one-shot installer. Current state: [BASE_DESIGN.md](BASE_DESIGN.md).
+
+---
+
 
 **Status: authored first pass; Unity Play Mode visual approval pending.** Work in the existing `Assets/_Project/Scenes/ArcadeDesertE1.unity`, never regenerate the map. Keep the three accepted barracks at approximately X=-485/Z=-270 and the large plateau at X=110/Z=135. The HQ site is around **X=-422/Z=-320**, by the barracks but offset to leave space for a future connecting road. The main map and the two combat-regression scenes remain independent.
 

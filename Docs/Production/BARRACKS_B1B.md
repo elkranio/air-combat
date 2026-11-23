@@ -1,4 +1,8 @@
 # B1b — stylized barracks + side-shadow study
+> **Historical atom — already installed (2026-11-24).** B1b palette and silhouette changes belong to the current three barracks. The original installation/checklist below is archival; do not rerun it. Current state: [BASE_DESIGN.md](BASE_DESIGN.md).
+
+---
+
 
 Status: **assets authored; Unity Game-view visual verdict pending**. This is an in-place
 style pass on B1a, **not** a new barracks prefab, map or reinstallation command.

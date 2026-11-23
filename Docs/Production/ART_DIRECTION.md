@@ -1,4 +1,8 @@
 # Art direction — Stylized Arcade Military
+> **Current visual addendum (2026-11-24):** The authored B1f arched hangar is present alongside the original B1e hangar. The new EF-01 Tiger D1 is a matte, F-5-inspired, full-size first-wave enemy fighter chassis in static visual comparison; no AI yet. Art is reviewed at the production camera (Y78), and playable arcade readability matters more than realism.
+
+---
+
 
 Working visual target, 2026-11-23. **Arcade, graphic and punchy**, not milsim photorealism and not cute low-poly/mobile-casual.
 

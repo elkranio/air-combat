@@ -1,4 +1,8 @@
 # B1a — first base asset: three barracks
+> **Historical atom — not an active installation instruction (2026-11-24).** The three barracks already exist in the main map and were updated by B1b. Do not rerun B1a, or adopt its old Y150 startup instructions. Current state: [BASE_DESIGN.md](BASE_DESIGN.md).
+
+---
+
 
 **Status:** model sources and one-time scene installer prepared; actual Play Mode look **not yet approved**. This changes only the *existing* `ArcadeDesertE1.unity` when the installer is run. It is not a whole-base generator.
 

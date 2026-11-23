@@ -1,4 +1,8 @@
 # B1d3 — one prepared lot, hard irregular perimeter, easy A/B
+> **Historical atom — already installed (2026-11-24).** The hard-edged prepared lot is present in the scene and separately toggleable. Do not rerun its installer. Current state: [BASE_DESIGN.md](BASE_DESIGN.md).
+
+---
+
 
 **Status:** authored replacement for the installed B1d/B1d2 ground; **Unity visual verdict pending**. The roads, wear, barracks, HQ, plaza, plateau, camera and default flight Y78 are untouched. This is a follow-up to [B1d roads](ROAD_B1D.md), not a new road installer.
 

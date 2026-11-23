@@ -1,4 +1,8 @@
 # B1d — access road, barracks service lane and prepared ground
+> **Historical atom — already installed/superseded (2026-11-24).** B1d roads remain in the main map; the early soft-edged terrain painting is superseded by the independently toggleable hard-edged B1d3 lot. Do not rerun B1d/B1d2 installation instructions below. Current state: [BASE_DESIGN.md](BASE_DESIGN.md).
+
+---
+
 
 **Status:** B1d roads/marks accepted as a first composition pass; its original softly feathered grey soil looked like a blurred shadow. **B1d2 ground recolor/edge correction awaits Play Mode review.** Uses the *existing* `Assets/_Project/Scenes/ArcadeDesertE1.unity` with B1b barracks, B1c HQ courtyard and the preserved plateau. Start altitude remains **Y78**. No new buildings, vehicles, runway, flight mechanics or lighting changes.
 

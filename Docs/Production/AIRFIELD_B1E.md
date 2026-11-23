@@ -1,24 +1,21 @@
-# B1e — first airfield slice (runway, hangar, tower, static aircraft)
+# Airfield — B1e installed sector and B1f hangar trial
 
-**Status:** source meshes and one-time installation prepared, **Unity visual verdict pending**. Extend the *existing* `Assets/_Project/Scenes/ArcadeDesertE1.unity`. Keep the approved B1d3 prepared lot, the B1b barracks, B1c HQ, plateau, Y78 flight spawn, lighting and camera unchanged. Do not rebuild the map or manually overwrite old prefabs.
+**Status at `645081ba`:** B1e **exists in the persistent main scene**, including generated prefabs, materials and imported meshes. B1f **arched hangar** is a second, independently toggleable visual trial placed next to the original B1e hangar; it does **not** replace it. Neither trial implies final Game-view art approval. Keep camera, Y78, base HQ/barracks, prepared lot and legacy combat scenes unchanged. **Do not rerun B1e/B1f installers on the authored scene**.
 
-## Install once
+## B1e as built
 
-1. Apply patch, let Unity import seven `*.obj` meshes and compile the editor script. Exit Play Mode, save/discard any dirty scenes.
-2. Run **Air Combat > Art > B1e - Install Airfield: Runway + Hangar + Tower**. Once only, it refuses existing outputs. It does not generate a new scene or terrain.
-3. Play the **existing main map**, cruise Y78. Fly from barracks/HQ toward the new airfield to judge its scale and shadows. For a direct visual edit, select **`B1 / Airfield - runway hangar tower`** in Hierarchy; every asset underneath is independently movable.
-4. On green commit the modified `.unity` scene, generated prefabs (`B1e_Hangar`, `B1e_ControlTower`, `B1e_RunwayAndApron`), new 7 URP materials, unit-surface mesh and their Unity `.meta` files. The source `Tools/Blender/generate_airfield_b1e.py` reproduces all seven OBJ sections from Python 3 (`python3 Tools/Blender/generate_airfield_b1e.py` from project root). Their `.meta` GUIDs are stable; the installer itself should eventually be retired.
+- **Runway:** ~460×36 m, matte asphalt near X−770/Z−290 with grade/shoulder and sparse threshold/center/edge lines. **Apron:** ~120×102 m light concrete near X−678/Z−280, short runway taxi connection and two marked parking positions. No landing/takeoff mechanics.
+- **Original hangar:** `Assets/_Project/Prefabs/Environment/Base/B1e_Hangar.prefab`, approximately **48 m wide × 36 m deep × 14 m high**, pitched roof and large open portal near X−619/Z−280.
+- **Tower:** `Assets/_Project/Prefabs/Environment/Base/B1e_ControlTower.prefab`, ~22 m tall near X−603/Z−200; elevated dark-window cabin and open support legs.
+- **Two parked Kestrels:** static **chassis-only** copies; not enemies, not independently flyable. TerrainCollider is still authoritative. Hangar/tower solids have simple colliders but there is no flight crash system.
+- **Source:** `Tools/Blender/generate_airfield_b1e.py` → seven source OBJ parts, generated URP materials and `B1e_RunwayAndApron.prefab` plus hangar/tower prefabs. These are committed assets; do not reinstall to update them.
 
-## Composition
+## B1f arched hangar — additional visual candidate
 
-- **Do not extend the B1d3 prepared-lot surface to the runway.** The lot remains a hard-edged ground clearing under HQ/barracks. The airfield is a separate cleared aviation zone to the west; the final base-to-airfield service road comes later, after the two spatial zones have been tested in actual flight.
-- **Runway:** 460 × 36 world-metre dark matte asphalt around **X−770/Z−290**, north–south. 48m×474m flat grade/shoulder, very sparse pale center dashes, end thresholds and thin edge guides; not a full photoreal commercial runway. There is no takeoff/landing mechanic. At ortho size 80, seeing the **entire** 460m runway in one Game frame is neither expected nor necessary.
-- **Apron:** 120×102m light grey concrete, approximately **X−678/Z−280**; one short taxi connector to the runway, marked for two aircraft. A few separately toggleable, low-contrast surface scuffs only. No repeating road rectangles masquerading as complete road network.
-- **Hangar:** separate `B1e_Hangar.prefab`, around **36m deep × 48m wide × 14m high** near **X−619/Z−280**. Faceted pitched roof with a broad portal facing the apron/runway, an actual hollow entrance (side piers + beam), two deliberately large rooftop vents. Muted wall/roof colors reused from the approved B1b barracks; portal reads as its main distinctive functional detail. Dark internal floor is a real floor, not painted fake shadow. No bake.
-- **Tower:** separate `B1e_ControlTower.prefab`, around **22m high**, near **X−603/Z−200**. Open four-leg base, elevated control cabin, dark wide window band. No tiny repeating metal lattice clutter.
-- **Two parked aircraft:** **visual-only Kestrel chassis prefab instances** on two marked stands on the apron. No FlightController/weapons/enemy AI, no new plane meshes or shared aircraft prefab changes. They may be removed or recolored separately. Runtime flight remains with the *actual* player jet only.
-- **Terrain, camera, sun, weapons:** unchanged. New flat surfaces are visual and receive real URP shadows; TerrainCollider remains authoritative. Hangar/tower have simple box colliders, but gameplay aircraft crash handling is still separate future work.
+- `Assets/_Project/Prefabs/Environment/Base/B1f_ArchHangar.prefab`; source `Resources/Blender/ArchHangar_B1f.blend`, generated/imported sections at `Assets/_Project/Art/Buildings/Base/ArchHangar_B1f/`, reproducible geometry script `Tools/Blender/build_arch_hangar_b1f.py`.
+- Eight separately authored mesh groups (roof, walls, front portal, ribs, side annex, dark detail, roof vents, accent). Flat/matte colored materials. Installer `InstallArchHangarB1F.cs` places it in `B1 / B1f Arch hangar - STYLE TRIAL (toggle)` near the original B1e hangar **without** replacing or moving B1e objects.
+- **Visual verdict still separate:** compare shape, readability, dimensions and shadow at production Y78 camera, then retain/select/rework only the favored version. B1f is **hangar art**, not a name for final service roads.
 
-## Review gate
+## Deferred
 
-At **Y78** judge (1) hangar silhouette compared with existing barracks/HQ, (2) tower readability versus aircraft and terrain, (3) plausible runway/apron scale without competing with plateau, (4) real shadows on roof/concrete, (5) clear aviation-zone footprint beside the prepared ground, and (6) whether two parked jets feel too large/small. If the hangar reads generically, change **that model**, not the entire ground/camera. No final access roads from the old base in this atom. After this green, design **custom curved service-road geometry** and intentional intersections, not perpendicular tile snapping.
+Only after the combat-focused work and explicit visual decisions: add **hand-authored curved service roads** linking base and airfield, with intentional junctions rather than perpendicular tiles. No additional airfield installer, runway redesign or map-wide terrain pass is currently scheduled.
