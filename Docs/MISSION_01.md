@@ -70,6 +70,12 @@ Add two 20 x 7.6 single-storey barracks with gabled roofs, doors, windows and a 
 
 Base `6fee760`. Fix the face builder so correcting winding never reverses the reused input rings in place. For already generated barracks, open the mission and select **Air Combat > Missions > Repair Mission 01 Barracks Roofs**. The command rebuilds the shared roof subasset in place, preserving references and all layout/material settings. Save and commit the repaired `Mission01_BarracksPass.asset` and the mission scene if it was not saved previously. Do not rerun the C7 layout command on an already built scene. Fresh C7 generation uses the corrected geometry.
 
+## MISSION-01C8 — CQ01 single crew quarters (WIP)
+
+Base `1459a2f`. Replace the two C7 barracks (including their footpath) with one independent imported visual prefab. With the local C7 scene open, select **Air Combat > Missions > Install CQ01 Crew Quarters**. The old C7 group is disabled, not destroyed. The hangar, number, guide, tower, apron and aircraft are untouched. The building is 20 x 16 with a closed shallow gabled roof, 4-unit walls, 6-unit ridge, windows and an entry landing facing the apron. Reuse hangar materials; no new runtime or collision behavior. Save and commit the mission scene plus `CQ01_CrewQuarters.prefab` and its `.meta`.
+
+The OBJ files are generated from `Tools/Blender/build_cq01_crew_quarters.py`. Run `blender --background --factory-startup --python Tools/Blender/build_cq01_crew_quarters.py` to generate the editable source under `Resources/Blender/`. Each solid is checked for nondegenerate faces, consistent outward winding and closed edge topology. Unity import and appearance still require local verification.
+
 ## Next work (order flexible, all WIP)
 
 Current visual trial: [ART-CT-01 — Compact control tower](ART_CT_01.md).
