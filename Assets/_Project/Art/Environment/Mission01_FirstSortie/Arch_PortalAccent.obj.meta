@@ -1,0 +1,40 @@
+fileFormatVersion: 2
+guid: e77753acfd3843ef96a62f0d276daca1
+ModelImporter:
+  serializedVersion: 24600
+  internalIDToNameTable: []
+  externalObjects: {}
+  materials:
+    materialImportMode: 2
+    materialName: 0
+    materialSearch: 1
+    materialLocation: 1
+    searchTexturesGlobally: 0
+  animations:
+    isReadable: 0
+  meshes:
+    globalScale: 1
+    meshCompression: 0
+    addColliders: 0
+    sortHierarchyByName: 1
+    fileIdsGeneration: 2
+    swapUVChannels: 0
+    generateSecondaryUV: 0
+    useFileUnits: 1
+    keepQuads: 0
+    weldVertices: 1
+    bakeAxisConversion: 0
+    preserveHierarchy: 0
+    useFileScale: 1
+  tangentSpace:
+    normalSmoothAngle: 60
+    normalImportMode: 0
+    tangentImportMode: 3
+    normalCalculationMode: 4
+    normalSmoothingSource: 0
+  importAnimation: 0
+  animationType: 0
+  avatarSetup: 0
+  userData:
+  assetBundleName:
+  assetBundleVariant:
