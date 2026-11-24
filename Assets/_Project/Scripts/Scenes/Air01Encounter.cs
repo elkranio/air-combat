@@ -86,6 +86,8 @@ namespace AirCombat
         {
             if (!bound) return;
             if (playerTrigger != null) playerTrigger.enabled = false;
+            foreach (var gun in player.GetComponentsInChildren<AutocannonWeapon>())
+                gun.ResetContinuous(Time.time);
             ClearRounds(player.transform);
             RemoveAllFighters();
             encounterReady = false;

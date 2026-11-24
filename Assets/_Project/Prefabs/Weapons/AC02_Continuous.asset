@@ -1,0 +1,45 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a29153db98724168a1b2ad8aaf794a90, type: 3}
+  m_Name: AC02_Continuous
+  m_EditorClassIdentifier: Assembly-CSharp::AirCombat.AutocannonPreset
+  weaponId: AC-02 CONTINUOUS
+  roundsPerSecond: 14
+  burstSize: 4
+  burstCooldown: 0.45
+  continuous: 1
+  continuousCapacity: 56
+  continuousRefillSeconds: 2.5
+  emptyLockoutSeconds: 1
+  muzzleVelocity: 420
+  maxRange: 430
+  hitDamage: 1
+  tracerMaterial: {fileID: 2100000, guid: 925da85cab297e040b35d238acf3fbd4, type: 2}
+  tracerLength: 8
+  glowMaterial: {fileID: 2100000, guid: 989e3d1d906e4c2793d1185f54f6413a, type: 2}
+  arcadeCoreMaterial: {fileID: 2100000, guid: 6d26dc3d609a4e91bf92a56e7e0fa3a2, type: 2}
+  arcadeHeadMaterial: {fileID: 2100000, guid: a86c8cf0e6e34337bbfbf2c4b588713f, type: 2}
+  arcadeCoreWidth: 0.34
+  arcadeGlowWidth: 1.47
+  arcadeGlowAlpha: 0.9
+  arcadeOuterGlowWidth: 3.35
+  arcadeOuterGlowAlpha: 0.24
+  arcadeHeadSize: 0.5
+  arcadeImpactScale: 1
+  arcadeFlashSeconds: 0.085
+  fallbackShot: {fileID: 8300000, guid: d8c85a4fb6a14f1f9a2fe74286dc49d6, type: 3}
+  soundVariants:
+  - {fileID: 8300000, guid: 265cf78389497894e88d74c7b1d17e7c, type: 3}
+  - {fileID: 8300000, guid: 1477b8989b57255438e22ded9bece768, type: 3}
+  - {fileID: 8300000, guid: 578907bc28860d0428f613a08053077d, type: 3}
+  - {fileID: 8300000, guid: 98c9c3d1370f0cb489a5c685195045ca, type: 3}
+  soundVolume: 0.44

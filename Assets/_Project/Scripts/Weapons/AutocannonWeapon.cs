@@ -12,11 +12,14 @@ namespace AirCombat
 
         private JetAssembly aircraft;
         private Autocannon cadence;
+        private ContinuousCannon continuousCadence;
 
         public AutocannonPreset Preset => preset;
-        public string HudName => preset != null ? preset.WeaponId : "AUTOCANNON";
-        public float Readiness01(float now) => cadence != null && isActiveAndEnabled
-            ? cadence.Readiness01(now) : 0f;
+        public string HudName => (preset != null ? preset.WeaponId : "AUTOCANNON") +
+            (continuousCadence != null && continuousCadence.IsOverheated(Time.time) ? " / HOT" : "");
+        public float Readiness01(float now) => !isActiveAndEnabled ? 0f :
+            continuousCadence != null ? continuousCadence.Readiness01(now) :
+            cadence != null ? cadence.Readiness01(now) : 0f;
         public int FiredCount { get; private set; }
         public int HitCount { get; private set; }
         public bool HasPendingShots => cadence != null && cadence.HasPendingShots;
@@ -48,17 +51,30 @@ namespace AirCombat
             emitter.Configure(preset.TracerMaterial, preset.FallbackShot,
                 preset.SoundVariants, preset.SoundVolume, preset.MuzzleVelocity,
                 preset.MaxRange, preset.TracerLength, preset.HitDamage);
-            cadence = new Autocannon(preset.RoundsPerSecond, preset.BurstSize,
-                preset.BurstCooldown, FireRound);
+            if (preset.Continuous)
+                continuousCadence = new ContinuousCannon(preset.RoundsPerSecond,
+                    preset.ContinuousCapacity, preset.ContinuousRefillSeconds,
+                    preset.EmptyLockoutSeconds, FireRound, Time.time);
+            else
+                cadence = new Autocannon(preset.RoundsPerSecond, preset.BurstSize,
+                    preset.BurstCooldown, FireRound);
         }
 
         // A held LMB and an AI firing request enter here in exactly the same way.
         public void TickTrigger(bool held, float now)
         {
-            if (isActiveAndEnabled && cadence != null) cadence.Tick(held, now);
+            if (!isActiveAndEnabled) return;
+            if (continuousCadence != null) continuousCadence.Tick(held, now);
+            else cadence?.Tick(held, now);
         }
 
-        public void CeaseFire(float now) { cadence?.CancelBurst(now); }
+        public void CeaseFire(float now)
+        {
+            cadence?.CancelBurst(now);
+            continuousCadence?.Tick(false, now);
+        }
+
+        public void ResetContinuous(float now) { continuousCadence?.Reset(now); }
 
         private void LateUpdate() { emitter?.TickVisuals(); }
         private void OnDisable() { CeaseFire(Time.time); }

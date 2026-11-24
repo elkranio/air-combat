@@ -1,6 +1,6 @@
 # Air Combat — current handoff
 
-Updated 2026-11-24. **HUD-01 GREEN, GUN-01 forward AC-01 GREEN, GUN-02/c tracer juice GREEN.** Current atom: compact [HUD-02](Docs/Production/HUD_02.md) with real weapon cooldown and mouse-wheel selection. Next after visual check: discuss Tiger AI behavior; do not wire it yet.
+Updated 2026-11-24. Base `6ef7e67`: live [AIR-02b](Docs/Production/AIR_02.md) pair encounter, two Tigers at 5 HP. Current playtest atom: [GUN-03](Docs/Production/GUN_03.md) continuous AC-02 alongside AC-01. Next separate atom: desynchronize independent enemy attack passes and address overlap. Earlier HUD-02/flight-only notes below are historical, not the current scene state.
 
 ## Goal and immediate order
 

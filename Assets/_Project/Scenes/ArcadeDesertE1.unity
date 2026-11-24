@@ -719,6 +719,32 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c3215bd8686647ab8277203a058c1052, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::AirCombat.AutocannonWeapon
+--- !u!1001 &326134047
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 1069913520}
+    m_Modifications:
+    - target: {fileID: 3493876331751479155, guid: 9755d8578b00fae478d910b0e2dd0576, type: 3}
+      propertyPath: preset
+      value: 
+      objectReference: {fileID: 11400000, guid: 71c97a2db8e647999e039ed35655fa43, type: 2}
+    - target: {fileID: 8490194142230786097, guid: 9755d8578b00fae478d910b0e2dd0576, type: 3}
+      propertyPath: m_Name
+      value: AC02_Continuous
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 9755d8578b00fae478d910b0e2dd0576, type: 3}
+--- !u!4 &326134048 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 6928436169249835398, guid: 9755d8578b00fae478d910b0e2dd0576, type: 3}
+  m_PrefabInstance: {fileID: 326134047}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &369416500
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -1723,6 +1749,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 4252336086881465608, guid: 7946d0432f6b5a14e9abc025e7b963d1, type: 3}
       insertIndex: -1
       addedObject: {fileID: 326134045}
+    - targetCorrespondingSourceObject: {fileID: 4252336086881465608, guid: 7946d0432f6b5a14e9abc025e7b963d1, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 326134048}
     m_AddedComponents:
     - targetCorrespondingSourceObject: {fileID: 2842573960577416802, guid: 7946d0432f6b5a14e9abc025e7b963d1, type: 3}
       insertIndex: -1

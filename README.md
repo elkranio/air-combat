@@ -1,8 +1,10 @@
 # Air Combat
 
-Unity 6.6 / URP. **Stylized arcade air combat**: strong aircraft silhouettes, direct weapons, overwhelming air/ground combat, loud sound and impactful destruction. Fun and readability take priority over flight simulation realism. Playable prototypes exist; the **main map is not yet a combined combat mission**.
+Unity 6.6 / URP. **Stylized arcade air combat**: strong aircraft silhouettes, direct weapons, overwhelming air/ground combat, loud sound and impactful destruction. Fun and readability take priority over flight simulation realism. The main map has a live two-fighter encounter; combined air/ground missions are not yet integrated.
 
 ## Start here (current state)
+
+**Current playtest:** [GUN-03 — AC-02 continuous cannon](Docs/Production/GUN_03.md), following the [AIR-02b pair encounter](Docs/Production/AIR_02.md).
 
 1. [HANDOFF.md](HANDOFF.md) — authoritative current green, immediate next atom and regression rules.
 2. [GAMEPLAY_COMBAT.md](GAMEPLAY_COMBAT.md) / [GAMEPLAY_ARCHITECTURE.md](GAMEPLAY_ARCHITECTURE.md) — current weapons, controls, radar and scene ownership.
@@ -16,13 +18,13 @@ Unity 6.6 / URP. **Stylized arcade air combat**: strong aircraft silhouettes, di
 
 | Scene | Role |
 | --- | --- |
-| `Assets/_Project/Scenes/ArcadeDesertE1.unity` | **Production map / flight only**: 2×2 km Terrain and plateau, B1 barracks/HQ/roads/prepared lot, B1e runway/apron/tower/original hangar, B1f arch-hangar style trial, parked Kestrels and static EF-01 Tiger trial. Y78 flight and fixed-world `ArcadeCameraRig`; no fight session yet. |
+| `Assets/_Project/Scenes/ArcadeDesertE1.unity` | **Production map / live air combat**: 2×2 km Terrain and plateau, B1 barracks/HQ/roads/prepared lot, B1e runway/apron/tower/original hangar, B1f arch-hangar style trial, parked Kestrels and static EF-01 Tiger trial. Y78 flight and fixed-world `ArcadeCameraRig`; AIR-02b two live Tigers, player AC-01 and GUN-03 AC-02 playtest. |
 | `Assets/_Project/Scenes/WeaponLab.unity` | **Regression lab**: enemy fighter, player air weapons 1–3 and legacy camera. |
 | `Assets/_Project/Scenes/GroundAttackLab.unity` | **Regression lab**: player ground weapons 4–6, AA/SAM, radar/HUD and legacy camera. |
 
 ## Current gameplay direction
 
-**First** test the player's BURST/autocannon firing **straight along aircraft heading** on LMB, without mouse-directed angular aim. The existing bounded-aim behavior is the baseline to replace/test, **not yet a completed change**. Evaluate it with the **production camera** before committing to further targeting aids. Then build a single-Tiger dogfight with a minimal, useful radar contact; only after it is fun move to several enemy fighters. Keep land combat and full polish out of this immediate atom. Further 2–3-atom details will be decided after this documentation pass.
+Compare fixed-forward AC-01 BURST with AC-02 continuous fire in the live two-Tiger encounter. Wheel switches weapons; LMB fires the selected mount. Next separate atom: reduce synchronization and overlap between enemy pilots. Keep land combat and full polish out of this immediate atom.
 
 ## Working process
 

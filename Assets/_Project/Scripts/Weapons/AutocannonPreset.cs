@@ -12,6 +12,11 @@ namespace AirCombat
         [SerializeField, Min(1f)] private float roundsPerSecond = 14f;
         [SerializeField, Range(2, 8)] private int burstSize = 4;
         [SerializeField, Min(.05f)] private float burstCooldown = .45f;
+        [Header("Continuous (optional)")]
+        [SerializeField] private bool continuous;
+        [SerializeField, Min(1)] private int continuousCapacity = 56;
+        [SerializeField, Min(.1f)] private float continuousRefillSeconds = 2.5f;
+        [SerializeField, Min(0f)] private float emptyLockoutSeconds = 1f;
         [Header("Physical round")]
         [SerializeField, Min(1f)] private float muzzleVelocity = 420f;
         [SerializeField, Min(1f)] private float maxRange = 430f;
@@ -39,6 +44,10 @@ namespace AirCombat
         public float RoundsPerSecond => roundsPerSecond;
         public int BurstSize => burstSize;
         public float BurstCooldown => burstCooldown;
+        public bool Continuous => continuous;
+        public int ContinuousCapacity => continuousCapacity;
+        public float ContinuousRefillSeconds => continuousRefillSeconds;
+        public float EmptyLockoutSeconds => emptyLockoutSeconds;
         public float MuzzleVelocity => muzzleVelocity;
         public float MaxRange => maxRange;
         public int HitDamage => hitDamage;
