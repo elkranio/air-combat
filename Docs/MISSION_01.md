@@ -60,6 +60,12 @@ Base `c0d3a0c`. Open the saved mission scene and select **Air Combat > Missions 
 
 Save the scene and commit the new `Mission01_HangarPass.asset` and `.meta`. The old pavement remains disabled for comparison; no shared prefabs or flight logic change. Verify portal alignment, roof marking placement and appearance in Unity.
 
+## MISSION-01C7 — Offset hangar and pilot barracks (WIP)
+
+Base `76ba27b`. With the saved C6 mission scene open, select **Air Combat > Missions > Apply Mission 01 Barracks Pass**. The hangar and guide move 12 units along local +Z; hide the annex and its collider on this instance. Reproject the heavy `05` to a clear part of the camera-facing roof, avoiding ribs and vents. Keep the existing apron, runway, tower and parked aircraft unchanged.
+
+Add two 20 x 7.6 single-storey barracks with gabled roofs, doors, windows and a shared narrow footpath. They reuse existing hangar materials and are visual-only. Save the scene and commit `Mission01_BarracksPass.asset` and its `.meta`. No changes to flight or shared prefabs. Verify roof marking, spacing and building colors in Unity.
+
 ## Next work (order flexible, all WIP)
 
 Current visual trial: [ART-CT-01 — Compact control tower](ART_CT_01.md).

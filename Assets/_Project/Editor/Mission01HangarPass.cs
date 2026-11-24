@@ -169,7 +169,8 @@ namespace AirCombat
             return mesh;
         }
 
-        private static Mesh MakeRoofNumber(Transform hangar, Quaternion yaw)
+        private static Mesh MakeRoofNumber(Transform hangar, Quaternion yaw,
+            float unit = .75f, float x0 = -4.125f, float z0 = -12.625f)
         {
             var filter = Child(hangar, "Arch_Roof").GetComponentInChildren<MeshFilter>();
             if (filter == null || filter.sharedMesh == null)
@@ -183,7 +184,6 @@ namespace AirCombat
             // Heavy squared, continuous strokes (no stencil gaps). 8.25 x 5.25
             // footprint on the camera-facing slope; between the structural ribs.
             // Coordinates are in layout orientation, relative to the hangar center.
-            const float unit = .75f, x0 = -4.125f, z0 = -12.625f;
             var glyphs = new[] {
                 new Rect(0,0,1.35f,7), new Rect(3.65f,0,1.35f,7),
                 new Rect(1.35f,0,2.3f,1.35f), new Rect(1.35f,5.65f,2.3f,1.35f),
