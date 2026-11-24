@@ -199,8 +199,8 @@ MonoBehaviour:
   pitch: 50
   yaw: -45
   orthographicSize: 80
-  cruiseLead: 48
-  boostExtraLead: 14
+  cruiseLead: 57.6
+  boostExtraLead: 16.8
   leadTransitionSeconds: 0.42
   aircraftViewportMargin: 0.2
   positionSmoothTime: 0.12

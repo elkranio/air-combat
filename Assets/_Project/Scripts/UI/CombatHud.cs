@@ -30,11 +30,11 @@ namespace AirCombat
             }
             statusBar.Bind(camera, boost, hitPoints);
             if (weaponDisplay != null) weaponDisplay.Bind(weapons);
-            if (targetMarker != null) targetMarker.Bind(camera);
             // Only oblique cameras need camera-relative radar presentation.
             // Legacy WeaponLab/GroundAttackLab stay north-up, unchanged.
             bool oblique = camera != null &&
                 camera.GetComponent<ArcadeCameraFollow>() != null;
+            if (targetMarker != null) targetMarker.Bind(camera, oblique ? sensor : null);
             radarDisplay.Bind(sensor, oblique ? camera : null);
         }
     }

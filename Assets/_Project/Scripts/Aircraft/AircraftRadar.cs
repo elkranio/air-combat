@@ -29,15 +29,17 @@ namespace AirCombat
         public readonly RadarContactType Kind;
         public readonly Vector2 Heading;
         public readonly bool InRange;
+        public readonly Vector3 WorldPosition;
 
         public RadarDetection(Vector2 relativePosition, float threatRadius, RadarContactType kind,
-            Vector2 heading, bool inRange)
+            Vector2 heading, bool inRange, Vector3 worldPosition = default)
         {
             RelativePosition = relativePosition;
             ThreatRadius = threatRadius;
             Kind = kind;
             Heading = heading;
             InRange = inRange;
+            WorldPosition = worldPosition;
         }
     }
 
@@ -94,7 +96,7 @@ namespace AirCombat
                 }
                 results.Add(new RadarDetection(new Vector2(delta.x, delta.z),
                     Mathf.Max(0f, contact.RadarThreatRadius), contact.RadarKind,
-                    heading, inRange));
+                    heading, inRange, contact.RadarPosition));
             }
         }
     }

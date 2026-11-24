@@ -46,6 +46,9 @@ namespace AirCombat
 
         private Camera viewCamera;
         private Contact selected;
+        private AircraftRadar automaticRadar;
+        private readonly List<RadarDetection> detections = new List<RadarDetection>();
+        private readonly List<Vector2> arrowPositions = new List<Vector2>();
 
         protected override void Awake()
         {
@@ -53,10 +56,12 @@ namespace AirCombat
             raycastTarget = false; // Never intercept mouse clicks or other HUD controls.
         }
 
-        public void Bind(Camera camera)
+        public void Bind(Camera camera, AircraftRadar radar = null)
         {
             viewCamera = camera;
+            automaticRadar = radar;
             selected = null;
+            detections.Clear();
             SetVerticesDirty();
         }
 
@@ -66,6 +71,7 @@ namespace AirCombat
 
         private void Update()
         {
+            if (automaticRadar != null) return; // No RMB designation in production tracking test.
             if (selected != null && !Alive(selected))
             {
                 selected = null;
@@ -108,7 +114,12 @@ namespace AirCombat
 
         private void LateUpdate()
         {
-            if (selected != null) SetVerticesDirty(); // Camera and aircraft moved.
+            if (automaticRadar != null)
+            {
+                automaticRadar.Sample(detections);
+                SetVerticesDirty(); // Also clears arrows on kill, reset or range exit.
+            }
+            else if (selected != null) SetVerticesDirty(); // Camera and aircraft moved.
         }
 
         private bool TryGetBounds(Contact contact, out Rect screenBounds)
@@ -152,8 +163,23 @@ namespace AirCombat
         protected override void OnPopulateMesh(VertexHelper mesh)
         {
             mesh.Clear();
-            if (!Alive(selected) || viewCamera == null || Screen.width <= 0 || Screen.height <= 0)
+            if (viewCamera == null || Screen.width <= 0 || Screen.height <= 0) return;
+            if (automaticRadar != null)
+            {
+                arrowPositions.Clear();
+                foreach (var detection in detections)
+                {
+                    if (!detection.InRange || detection.Kind != RadarContactType.Aircraft) continue;
+                    Vector3 p = viewCamera.WorldToScreenPoint(detection.WorldPosition);
+                    Vector2 pixel = new Vector2(p.x, p.y);
+                    // No bracket, marker or lock for aircraft visible in the viewport.
+                    if (p.z > viewCamera.nearClipPlane && p.z < viewCamera.farClipPlane &&
+                        viewCamera.pixelRect.Contains(pixel)) continue;
+                    DrawTrackedArrow(mesh, pixel, p.z);
+                }
                 return;
+            }
+            if (!Alive(selected)) return;
 
             Vector3 projected = viewCamera.WorldToScreenPoint(selected.Health.transform.position);
             var screen = new Vector2(projected.x, projected.y);
@@ -182,6 +208,40 @@ namespace AirCombat
             float ty = Mathf.Abs(direction.y) > .0001f
                 ? halfY / Mathf.Abs(direction.y) : float.PositiveInfinity;
             Vector2 at = ScreenToLocal(viewport.center + direction * Mathf.Min(tx, ty));
+            Vector2 wing = new Vector2(-direction.y, direction.x);
+            var shadow = new Color(.07f, .09f, .11f, .68f);
+            var highlight = new Color(1f, .49f, .31f, .92f);
+            Triangle(mesh, at + direction * 10f, at - direction * 8f + wing * 8f,
+                at - direction * 8f - wing * 8f, shadow);
+            Triangle(mesh, at + direction * 7f, at - direction * 6f + wing * 5f,
+                at - direction * 6f - wing * 5f, highlight);
+        }
+
+        private void DrawTrackedArrow(VertexHelper mesh, Vector2 screen, float depth)
+        {
+            Rect viewport = viewCamera.pixelRect;
+            Vector2 direction = screen - viewport.center;
+            // Orthographic projection preserves the bearing even behind the camera.
+            if (!viewCamera.orthographic && depth <= viewCamera.nearClipPlane) direction = -direction;
+            if (direction.sqrMagnitude < .01f) direction = Vector2.down;
+            direction.Normalize();
+            float halfX = Mathf.Max(1f, viewport.width * .5f - edgeInsetPx);
+            float halfY = Mathf.Max(1f, viewport.height * .5f - edgeInsetPx);
+            float tx = Mathf.Abs(direction.x) > .0001f ? halfX / Mathf.Abs(direction.x) : float.PositiveInfinity;
+            float ty = Mathf.Abs(direction.y) > .0001f ? halfY / Mathf.Abs(direction.y) : float.PositiveInfinity;
+            Vector2 at = ScreenToLocal(viewport.center + direction * Mathf.Min(tx, ty));
+            Vector2 centre = ScreenToLocal(viewport.center);
+            Vector2 inward = (centre - at).normalized;
+            // Keep two nearly identical bearings readable without changing their direction.
+            for (int lane = 0; lane < arrowPositions.Count; lane++)
+            {
+                bool overlap = false;
+                foreach (var previous in arrowPositions)
+                    if ((at - previous).sqrMagnitude < 22f * 22f) { overlap = true; break; }
+                if (!overlap) break;
+                at += inward * 24f;
+            }
+            arrowPositions.Add(at);
             Vector2 wing = new Vector2(-direction.y, direction.x);
             var shadow = new Color(.07f, .09f, .11f, .68f);
             var highlight = new Color(1f, .49f, .31f, .92f);

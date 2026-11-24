@@ -1,6 +1,6 @@
 # Air Combat — current handoff
 
-Updated 2026-11-24. Base `c98335c`: [GUN-03](Docs/Production/GUN_03.md) accepted, continuous AC-02 alongside AC-01; live [AIR-02b](Docs/Production/AIR_02.md) pair encounter, two Tigers at 5 HP. Current playtest atom: [FLIGHT-01](Docs/Production/FLIGHT_01.md) fast 180-degree Q/E turn for half a boost tank, production map only. Next separate atom: desynchronize independent enemy attack passes and address overlap. Earlier HUD-02/flight-only notes below are historical, not the current scene state.
+Updated 2026-11-24. Base `a7b0fa5`: [GUN-03](Docs/Production/GUN_03.md) and [FLIGHT-01](Docs/Production/FLIGHT_01.md) accepted; live [AIR-02b](Docs/Production/AIR_02.md) pair encounter, two Tigers at 5 HP. Current playtest atom: [HUD-04](Docs/Production/HUD_04.md) +20% camera lead and automatic offscreen arrows for in-range radar aircraft, no manual designation. Next separate atom: desynchronize independent enemy attack passes and address overlap. Earlier HUD-02/flight-only notes below are historical, not the current scene state.
 
 ## Goal and immediate order
 
