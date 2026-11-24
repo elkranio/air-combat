@@ -88,6 +88,12 @@ Base `a8c38fe`. In the mission scene select **Air Combat > Missions > Simplify M
 
 Base `19856c5`. The guide was rejected after visual review. Open the mission scene and select **Air Combat > Missions > Remove Mission 01 Hangar Guide**. Disable the guide object (either the original three or revised two dashes), leaving its mesh available for reversal. Save and commit the scene. No other layout or asset changes.
 
+## MISSION-01D — Player Lynx free-flight preview (WIP)
+
+Base `7071ba6`. Open Mission01_FirstSortie and select **Air Combat > Missions > Install Player Lynx Preview**. Create a separate `PlayerLynx_Combat.prefab` from the Kestrel combat composition, replace only its chassis with the approved PF02 visual and authored sockets, and preserve flight, boost, HP, radar and weapon tuning. Adapt cosmetic launcher origins and chassis collision geometry only if the source has colliders. Keep Kestrel and PF02 visual prefabs unchanged.
+
+Replace the temporary airborne mission player at its current pose, rebind the flight session and camera, and leave firing disabled in this preview. The static runway Lynx remains until the ready-state atom. Save the scene, new player prefab and its .meta. Unity verification: Play, A/D steering, W boost and S tight turn with both exhausts aligned, R reset; check console and model orientation. No changes to the production combat scene or runtime scripts.
+
 ## Next work (order flexible, all WIP)
 
 Current visual trial: [ART-CT-01 — Compact control tower](ART_CT_01.md).
