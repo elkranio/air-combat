@@ -26,7 +26,7 @@ namespace AirCombat
         private AfterburnerVfx flames;
         private Vector3 runwayPosition;
         private Quaternion runwayRotation, visualRest;
-        private float elapsed;
+        private double elapsed;
         private bool handoverPending;
         private bool initialized;
 
@@ -88,7 +88,7 @@ namespace AirCombat
             }
             if (State == Phase.Ready && Application.isFocused && keyboard != null && keyboard.wKey.wasPressedThisFrame)
             {
-                elapsed = 0f;
+                elapsed = 0d;
                 handoverPending = false;
                 State = Phase.Takeoff;
                 // Existing straight twin plumes, independent of the gameplay tank.
@@ -102,10 +102,15 @@ namespace AirCombat
         {
             float roll = Mathf.Max(.1f, rollSeconds);
             float climb = Mathf.Max(.1f, climbSeconds);
-            elapsed = Mathf.Min(roll + climb, elapsed + Mathf.Max(0f, dt));
+            // Do not saturate a float timer and then compare it to a separately
+            // evaluated sum: 2.2f + 2.5f can round differently across runtimes.
+            // Advance in double precision; clamp only the trajectory sample.
+            elapsed += Mathf.Max(0f, dt);
+            double duration = (double)roll + climb;
+            bool finished = elapsed >= duration;
             float speed = flight.CruiseSpeed;
-            float t = Mathf.Min(elapsed, roll);
-            float airTime = Mathf.Max(0f, elapsed - roll);
+            float t = finished ? roll : Mathf.Min((float)elapsed, roll);
+            float airTime = finished ? climb : Mathf.Clamp((float)(elapsed - roll), 0f, climb);
             // Analytic integral of linear acceleration; deterministic at any FPS.
             float distance = .5f * speed * t * t / roll + speed * airTime;
             float u = Mathf.Clamp01(airTime / climb);
@@ -115,7 +120,7 @@ namespace AirCombat
             // Pitch the visual only. Limit pitch near the runway so the tail does not dip through it.
             float pitch = Mathf.Min(maxPitch * Mathf.Sin(Mathf.PI * u), Mathf.Atan2(rise, 7.5f) * Mathf.Rad2Deg);
             visual.localRotation = visualRest * Quaternion.Euler(-Mathf.Max(0f, pitch), 0f, 0f);
-            if (elapsed >= roll + climb) handoverPending = true;
+            if (finished) handoverPending = true;
         }
 
         private void LateUpdate()
@@ -128,13 +133,14 @@ namespace AirCombat
             flight.PrepareCruiseHandover();
             State = Phase.Flight;
             flight.enabled = true;
+            Debug.Log($"Mission01: flight handover at Y{aircraft.position.y:F1}, speed {flight.CurrentSpeed:F1}.", this);
             // Weapons stay disabled until the mission loadout/objective atom.
         }
 
         private void ResetToReady()
         {
             handoverPending = false;
-            elapsed = 0f;
+            elapsed = 0d;
             flight.enabled = false;
             weaponTrigger.enabled = false;
             flames.SetManeuverFlames(false);
