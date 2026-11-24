@@ -13,3 +13,9 @@ Base `58aaf4b` / JUICE-01b accepted. Production-only playtest; no damage, weapon
 2. Let enemy damage player to 8/4 HP; check the same states through A/D, W, S and sharp bank. Check that source moves with mesh and does not jump between hits; multiple R resets should vary anchors. Check low FPS / boost for gaps and 7/8/9 height changes for long streaks.
 3. R during smoke, R after defeat, map reset: no residual smoke or duplicated particle systems. Confirm both labs and all materials, prefab links and Console remain clean after model reimport.
 4. Evaluate readability and frame rate before JUICE-02b (burning falling wreck), JUICE-02c (terrain explosion/debris/sound/shake), JUICE-03 (wingtip trails), then missiles.
+
+## JUICE-02a-b — softer persistent trail
+
+Base `983784e`, procedural anchors accepted in Play Mode. Tune presentation only: smoke rate 36 -> 24/s, lifetime 1.2 -> 0.72s, size 3.1 -> 2.6, growth 0.8 -> 1.45 over lifetime. Lighter charcoal, lower alpha (0.38–0.58 critical / 0.46–0.66 severe), modest world-space drift, and a separate softer 128x128 mask for persistent smoke. Severe smoke retains a 1.25 rate and 1.12 size multiplier; fire is smaller, shorter and less opaque. Impact puffs retain their original mask and parameters. No changes to anchor selection, HP thresholds, reset, rendering quality assets or gameplay.
+
+Check both health thresholds at cruise, boost and tight turn; verify the trail remains readable without becoming a black rope or obscuring nearby aircraft. Compare at the same Game View resolution and MSAA settings. Then JUICE-02b (falling wreck).

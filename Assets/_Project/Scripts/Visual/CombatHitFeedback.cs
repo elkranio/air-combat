@@ -19,11 +19,11 @@ namespace AirCombat
         [Header("Persistent damage trail (JUICE-02a)")]
         [SerializeField, Range(.01f, 1f)] private float criticalHp = .4f;
         [SerializeField, Range(.01f, 1f)] private float severeHp = .2f;
-        [SerializeField, Min(1f)] private float trailSmokeRate = 36f;
-        [SerializeField, Min(.1f)] private float trailSmokeSize = 3.1f;
-        [SerializeField, Min(.1f)] private float trailSmokeLifetime = 1.2f;
-        [SerializeField, Min(1f)] private float trailFireRate = 28f;
-        [SerializeField, Min(.1f)] private float trailFireSize = 2.1f;
+        [SerializeField, Min(1f)] private float trailSmokeRate = 24f;
+        [SerializeField, Min(.1f)] private float trailSmokeSize = 2.6f;
+        [SerializeField, Min(.1f)] private float trailSmokeLifetime = .72f;
+        [SerializeField, Min(1f)] private float trailFireRate = 22f;
+        [SerializeField, Min(.1f)] private float trailFireSize = 1.8f;
         [Header("Camera impulse (world units / seconds)")]
         [SerializeField, Min(0f)] private float hitShake = .28f;
         [SerializeField, Min(0f)] private float hitShakeSeconds = .12f;
@@ -67,8 +67,8 @@ namespace AirCombat
         private Camera view;
         private ArcadeCameraFollow cameraFollow;
         private ParticleSystem sparks, debris, impactFlash, smoke, criticalSmoke, criticalFire;
-        private Material particleMaterial, puffMaterial;
-        private Texture2D puffMask;
+        private Material particleMaterial, puffMaterial, trailMaterial;
+        private Texture2D puffMask, trailMask;
         private AudioSource audioSource;
         private AudioClip hitClip, killClip;
         private Texture2D edgeTexture;
@@ -95,6 +95,12 @@ namespace AirCombat
                 smoke = MakePuffs("Enemy impact smoke", 192, true);
                 criticalSmoke = MakePuffs("Critical aircraft smoke", 768, true);
                 criticalFire = MakePuffs("Critical aircraft fire", 256, false);
+                // Keep the accepted impact puffs unchanged; only persistent trails
+                // get the softer, higher-resolution alpha mask.
+                trailMask = MakePuffMask(true);
+                trailMaterial = new Material(puffMaterial) { name = "Soft damage trail (runtime)" };
+                trailMaterial.SetTexture("_ParticleMask", trailMask);
+                criticalSmoke.GetComponent<ParticleSystemRenderer>().sharedMaterial = trailMaterial;
                 ConfigureDamageTrail();
             }
             else Debug.LogWarning("Combat hit particles: SandboxEffect shader missing.", this);
@@ -244,11 +250,11 @@ namespace AirCombat
             var fade = criticalSmoke.colorOverLifetime;
             var gradient = new Gradient();
             gradient.SetKeys(new[] { new GradientColorKey(Color.white, 0f), new GradientColorKey(Color.white, 1f) },
-                new[] { new GradientAlphaKey(.75f, 0f), new GradientAlphaKey(1f, .12f),
-                    new GradientAlphaKey(.65f, .62f), new GradientAlphaKey(0f, 1f) });
+                new[] { new GradientAlphaKey(.55f, 0f), new GradientAlphaKey(1f, .16f),
+                    new GradientAlphaKey(.48f, .55f), new GradientAlphaKey(0f, 1f) });
             fade.color = new ParticleSystem.MinMaxGradient(gradient);
             var size = criticalSmoke.sizeOverLifetime;
-            size.size = new ParticleSystem.MinMaxCurve(1f, AnimationCurve.Linear(0f, .7f, 1f, 1.9f));
+            size.size = new ParticleSystem.MinMaxCurve(1f, AnimationCurve.Linear(0f, .8f, 1f, 1.45f));
             var fireFade = criticalFire.colorOverLifetime;
             var fireGradient = new Gradient();
             fireGradient.SetKeys(new[] { new GradientColorKey(Color.white, 0f),
@@ -288,7 +294,7 @@ namespace AirCombat
             // Sample along the last movement segment so a fast plane does not leave
             // isolated puffs at low FPS. All particles then stay in world space.
             EmitDamageTrail(criticalSmoke, tracked.PreviousAnchor, point, dt,
-                trailSmokeRate * (severe ? 1.35f : 1f), ref tracked.SmokeDebt, false, severe);
+                trailSmokeRate * (severe ? 1.25f : 1f), ref tracked.SmokeDebt, false, severe);
             if (severe)
                 EmitDamageTrail(criticalFire, tracked.PreviousAnchor, point, dt,
                     trailFireRate, ref tracked.FireDebt, true, true);
@@ -311,12 +317,14 @@ namespace AirCombat
                 var p = new ParticleSystem.EmitParams
                 {
                     position = Vector3.Lerp(previous, current, t),
-                    velocity = Vector3.up * Range(fire ? .3f : .7f, fire ? 1.2f : 2.3f),
+                    // Drift starts after emission: the origin remains on the hull.
+                    velocity = fire ? Vector3.up * Range(.3f, 1.2f)
+                        : new Vector3(Range(-1.3f, 1.3f), Range(.8f, 2.8f), Range(-1.3f, 1.3f)),
                     startSize = fire ? trailFireSize * Range(.75f, 1.2f)
-                        : trailSmokeSize * Range(.8f, 1.2f) * (severe ? 1.25f : 1f),
-                    startLifetime = fire ? Range(.12f, .24f) : trailSmokeLifetime * Range(.8f, 1.15f),
-                    startColor = fire ? new Color(1f, .85f, .31f, .95f)
-                        : new Color(.075f, .07f, .065f, Range(.72f, .92f)),
+                        : trailSmokeSize * Range(.72f, 1.28f) * (severe ? 1.12f : 1f),
+                    startLifetime = fire ? Range(.10f, .19f) : trailSmokeLifetime * Range(.8f, 1.15f),
+                    startColor = fire ? new Color(1f, .85f, .31f, .85f)
+                        : new Color(.18f, .17f, .16f, severe ? Range(.46f, .66f) : Range(.38f, .58f)),
                     rotation = Range(0f, 360f)
                 };
                 system.Emit(p, 1);
@@ -387,13 +395,13 @@ namespace AirCombat
         }
 
         // Soft irregular silhouette, rather than an opaque billboard square.
-        // Generated once per encounter. All smoke and flash particles share it.
-        private static Texture2D MakePuffMask()
+        // Generated once per encounter; the persistent smoke gets a separate mask.
+        private static Texture2D MakePuffMask(bool softTrail = false)
         {
-            const int size = 64;
+            int size = softTrail ? 128 : 64;
             var texture = new Texture2D(size, size, TextureFormat.RGBA32, false)
             {
-                name = "Impact puff mask", wrapMode = TextureWrapMode.Clamp,
+                name = softTrail ? "Soft trail mask" : "Impact puff mask", wrapMode = TextureWrapMode.Clamp,
                 filterMode = FilterMode.Bilinear
             };
             var pixels = new Color32[size * size];
@@ -404,8 +412,10 @@ namespace AirCombat
                     (y + .5f) / size * 2f - 1f);
                 float radius = p.magnitude;
                 float noise = Mathf.PerlinNoise(p.x * 2.8f + 11f, p.y * 2.8f + 19f);
-                float edge = Mathf.Clamp01((.82f + (noise - .5f) * .32f - radius) / .34f);
-                float alpha = Mathf.SmoothStep(0f, 1f, edge) * Mathf.Lerp(.72f, 1f, noise);
+                float edge = softTrail
+                    ? Mathf.Clamp01((.88f + (noise - .5f) * .18f - radius) / .64f)
+                    : Mathf.Clamp01((.82f + (noise - .5f) * .32f - radius) / .34f);
+                float alpha = Mathf.SmoothStep(0f, 1f, edge) * Mathf.Lerp(softTrail ? .88f : .72f, 1f, noise);
                 pixels[y * size + x] = new Color32(255, 255, 255, (byte)Mathf.RoundToInt(alpha * 255f));
             }
             texture.SetPixels32(pixels);
@@ -564,6 +574,8 @@ namespace AirCombat
             if (criticalFire != null) Destroy(criticalFire.gameObject);
             if (puffMaterial != null) Destroy(puffMaterial);
             if (puffMask != null) Destroy(puffMask);
+            if (trailMaterial != null) Destroy(trailMaterial);
+            if (trailMask != null) Destroy(trailMask);
             if (particleMaterial != null) Destroy(particleMaterial);
             if (hitClip != null) Destroy(hitClip);
             if (killClip != null) Destroy(killClip);
