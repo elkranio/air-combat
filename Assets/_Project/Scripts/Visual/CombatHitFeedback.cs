@@ -78,7 +78,7 @@ namespace AirCombat
         private Camera view;
         private ArcadeCameraFollow cameraFollow;
         private ParticleSystem sparks, debris, impactFlash, smoke, criticalSmoke, criticalCloud, criticalFire;
-        private ParticleSystem missileSmoke, missileCloud;
+        private ParticleSystem missileSmoke, missileCloud, hostileSmoke, hostileCloud, hostileGlow;
         private Material particleMaterial, puffMaterial, trailMaterial, cloudMaterial;
         private Texture2D puffMask, trailMask, cloudMask;
         private AudioSource audioSource;
@@ -125,6 +125,14 @@ namespace AirCombat
                 missileCloud.GetComponent<ParticleSystemRenderer>().sharedMaterial = cloudMaterial;
                 ConfigureSmokeLayer(missileSmoke, false);
                 ConfigureSmokeLayer(missileCloud, true);
+                // Independent particle budgets keep dense enemy volleys from evicting player exhaust.
+                hostileSmoke = MakePuffs("Hostile AAM exhaust core", 1536, true);
+                hostileCloud = MakePuffs("Hostile AAM exhaust turbulence", 768, true);
+                hostileGlow = MakePuffs("Hostile AAM motor glow", 128, false);
+                hostileSmoke.GetComponent<ParticleSystemRenderer>().sharedMaterial = trailMaterial;
+                hostileCloud.GetComponent<ParticleSystemRenderer>().sharedMaterial = cloudMaterial;
+                ConfigureSmokeLayer(hostileSmoke, false);
+                ConfigureSmokeLayer(hostileCloud, true);
             }
             else Debug.LogWarning("Combat hit particles: SandboxEffect shader missing.", this);
             audioSource = gameObject.AddComponent<AudioSource>();
@@ -325,6 +333,9 @@ namespace AirCombat
             groundCrash?.Clear();
             if (missileSmoke != null) missileSmoke.Clear();
             if (missileCloud != null) missileCloud.Clear();
+            if (hostileSmoke != null) hostileSmoke.Clear();
+            if (hostileCloud != null) hostileCloud.Clear();
+            if (hostileGlow != null) hostileGlow.Clear();
             if (criticalSmoke != null) criticalSmoke.Clear();
             if (criticalCloud != null) criticalCloud.Clear();
             if (criticalFire != null) criticalFire.Clear();
@@ -432,15 +443,26 @@ namespace AirCombat
         // Same soft layered smoke as the accepted wreck trail, with a narrower,
         // lighter exhaust. Each missile owns its own distance accumulators.
         public void EmitMissileExhaust(Vector3 previous, Vector3 current,
-            ref float coreDebt, ref float cloudDebt)
+            ref float coreDebt, ref float cloudDebt, bool hostile = false)
         {
             if (!isActiveAndEnabled) return;
+            if (hostile)
+            {
+                EmitSmokeLayer(hostileSmoke, previous, current, .55f, ref coreDebt, false, false, 1f, true, true);
+                EmitSmokeLayer(hostileCloud, previous, current, 1.05f, ref cloudDebt, true, false, 1f, true, true);
+                if (hostileGlow != null)
+                    hostileGlow.Emit(new ParticleSystem.EmitParams {
+                        position = current, velocity = Vector3.zero, startSize = 2.4f,
+                        startLifetime = .045f, startColor = new Color(1f, .24f, .035f, 1f)
+                    }, 1);
+                return;
+            }
             EmitSmokeLayer(missileSmoke, previous, current, .55f, ref coreDebt, false, false, .72f, true);
             EmitSmokeLayer(missileCloud, previous, current, 1.05f, ref cloudDebt, true, false, .72f, true);
         }
 
         private void EmitSmokeLayer(ParticleSystem system, Vector3 previous, Vector3 current,
-            float spacing, ref float debt, bool cloud, bool severe, float intensity = 1f, bool missile = false)
+            float spacing, ref float debt, bool cloud, bool severe, float intensity = 1f, bool missile = false, bool hostile = false)
         {
             if (system == null) return;
             float before = debt;
@@ -458,6 +480,11 @@ namespace AirCombat
                 {
                     tone = cloud ? Range(.60f, .72f) : Range(.68f, .82f);
                     alpha *= 1.35f;
+                    if (hostile)
+                    {
+                        tone = cloud ? Range(.36f, .48f) : Range(.23f, .34f);
+                        alpha *= 1.25f;
+                    }
                 }
                 var p = new ParticleSystem.EmitParams
                 {
@@ -750,6 +777,9 @@ namespace AirCombat
             if (smoke != null) Destroy(smoke.gameObject);
             if (missileSmoke != null) Destroy(missileSmoke.gameObject);
             if (missileCloud != null) Destroy(missileCloud.gameObject);
+            if (hostileSmoke != null) Destroy(hostileSmoke.gameObject);
+            if (hostileCloud != null) Destroy(hostileCloud.gameObject);
+            if (hostileGlow != null) Destroy(hostileGlow.gameObject);
             if (criticalSmoke != null) Destroy(criticalSmoke.gameObject);
             if (criticalCloud != null) Destroy(criticalCloud.gameObject);
             if (criticalFire != null) Destroy(criticalFire.gameObject);

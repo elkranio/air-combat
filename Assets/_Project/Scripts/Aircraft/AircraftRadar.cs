@@ -22,6 +22,9 @@ namespace AirCombat
         Vector3 RadarForward { get; }
     }
 
+    // Explicit opt-in for incoming threats whose bearing is always known.
+    public interface IRadarBearingContact : IRadarContact { }
+
     public readonly struct RadarDetection
     {
         public readonly Vector2 RelativePosition;
@@ -69,8 +72,8 @@ namespace AirCombat
 
         public void Unregister(IRadarContact contact) { contacts.Remove(contact); }
 
-        // Only registered aircraft get an off-range bearing cue. Ground defenses
-        // and missiles remain sensor-limited, as in the original regression lab.
+        // Aircraft and explicitly opted-in inbound threats get off-range bearings.
+        // Ground defenses and legacy lab missiles remain sensor-limited.
         // X is world east (+X), Y is world north (+Z); presentation is separate.
         public void Sample(List<RadarDetection> results)
         {
@@ -86,7 +89,7 @@ namespace AirCombat
                 delta.y = 0f;
                 bool inRange = delta.sqrMagnitude <= rangeSquared;
                 var air = contact as IRadarAirContact;
-                if (!inRange && air == null) continue;
+                if (!inRange && air == null && !(contact is IRadarBearingContact)) continue;
 
                 Vector2 heading = Vector2.zero;
                 if (air != null)

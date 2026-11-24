@@ -33,10 +33,31 @@ namespace AirCombat
             public JetAssembly Aircraft;
             public float NextAttempt;
             public float LaunchAt = -1f;
+            public float WarningStarted;
         }
 
+        private sealed class MissileContact : IRadarBearingContact
+        {
+            public MissileProjectile Missile;
+            public Vector3 RadarPosition => Missile != null ? Missile.transform.position : Vector3.zero;
+            public float RadarThreatRadius => 0f;
+            public bool IsRadarVisible => Missile != null && Missile.IsInFlight;
+            public RadarContactType RadarKind => RadarContactType.IncomingMissile;
+        }
+
+        public readonly struct WarningCue
+        {
+            public readonly Vector3 Position;
+            public readonly float Started;
+            public WarningCue(Vector3 position, float started) { Position = position; Started = started; }
+        }
+
+        public const float WarningPulsePeriod = .18f;
+        public const float WarningPulseLength = .105f;
+        public const float WarningClipSeconds = .48f;
         private readonly List<Shooter> shooters = new List<Shooter>();
-        private readonly List<MissileProjectile> live = new List<MissileProjectile>();
+        private readonly List<MissileContact> live = new List<MissileContact>();
+        private AircraftRadar radar;
         private readonly System.Random random = new System.Random();
         private PlayerHitPoints target;
         private MissileProjectile prefab;
@@ -44,17 +65,18 @@ namespace AirCombat
         private Settings settings;
         private AudioSource warningSource;
         private AudioClip warningClip;
-        private float nextWarning;
+        private float nextWarning, lastWarningStarted;
         public int Launched { get; private set; }
         public int Hits { get; private set; }
         public int InFlight => live.Count;
 
         public void Bind(PlayerHitPoints player, MissileProjectile projectile,
-            CombatHitFeedback hitFeedback, Settings config)
+            CombatHitFeedback hitFeedback, Settings config, AircraftRadar sensor)
         {
             target = player;
             prefab = projectile;
             feedback = hitFeedback;
+            radar = sensor;
             settings = config ?? new Settings();
             warningSource = gameObject.AddComponent<AudioSource>();
             warningSource.playOnAwake = false;
@@ -77,7 +99,12 @@ namespace AirCombat
 
         public void Tick(float now)
         {
-            live.RemoveAll(m => m == null);
+            for (int i = live.Count - 1; i >= 0; i--)
+            {
+                if (live[i].IsRadarVisible) continue;
+                if (radar != null) radar.Unregister(live[i]);
+                live.RemoveAt(i);
+            }
             if (prefab == null || !WeaponLock.Alive(target)) return;
             foreach (var shooter in shooters)
             {
@@ -98,9 +125,24 @@ namespace AirCombat
                 if (now >= nextWarning && warningSource != null)
                 {
                     warningSource.PlayOneShot(warningClip, .65f);
-                    nextWarning = now + .2f;
+                    lastWarningStarted = now;
+                    nextWarning = now + WarningClipSeconds;
                 }
+                shooter.WarningStarted = lastWarningStarted;
             }
+        }
+
+        // Presentation samples only active threats; no scene discovery or input.
+        public void CollectThreats(List<WarningCue> warnings, List<Vector3> missiles)
+        {
+            warnings.Clear();
+            missiles.Clear();
+            if (!WeaponLock.Alive(target)) return;
+            foreach (var shooter in shooters)
+                if (shooter.LaunchAt >= 0f && WeaponLock.Alive(shooter.Health))
+                    warnings.Add(new WarningCue(shooter.Health.transform.position, shooter.WarningStarted));
+            foreach (var contact in live)
+                if (contact.IsRadarVisible) missiles.Add(contact.RadarPosition);
         }
 
         private bool CanAcquire(Transform owner)
@@ -126,23 +168,38 @@ namespace AirCombat
             missile.ConfigureArcade(target, settings.speed, settings.turnRate, settings.turnBudget,
                 settings.lifetime, settings.hitRadius, (from, to) =>
                 {
-                    if (feedback != null) feedback.EmitMissileExhaust(from, to, ref coreDebt, ref cloudDebt);
+                    if (feedback != null) feedback.EmitMissileExhaust(from, to, ref coreDebt, ref cloudDebt, true);
                 });
+            // Per-instance property overrides: the player's prefab/material stays unchanged.
+            var tint = new MaterialPropertyBlock();
+            foreach (var renderer in missile.GetComponentsInChildren<MeshRenderer>())
+            {
+                renderer.GetPropertyBlock(tint);
+                tint.SetColor("_BaseColor", new Color(.12f, .15f, .18f, 1f));
+                tint.SetFloat("_Smoothness", .12f);
+                renderer.SetPropertyBlock(tint);
+            }
             missile.Launch(target.transform, (hitPoint, hit) =>
             {
                 if (WeaponLock.Alive(target) && target.ApplyDamage(hitPoint, settings.damage)) Hits++;
             });
-            live.Add(missile);
+            var contact = new MissileContact { Missile = missile };
+            live.Add(contact);
+            if (radar != null) radar.Register(contact);
             Launched++;
         }
 
         public void StopTest()
         {
-            foreach (var missile in live) if (missile != null) missile.Cancel();
+            foreach (var contact in live)
+            {
+                if (radar != null) radar.Unregister(contact);
+                if (contact.Missile != null) contact.Missile.Cancel();
+            }
             live.Clear();
             shooters.Clear();
             if (warningSource != null) warningSource.Stop();
-            nextWarning = 0f;
+            nextWarning = lastWarningStarted = 0f;
         }
 
         public void ResetTest()
@@ -156,8 +213,8 @@ namespace AirCombat
         private static AudioClip MakeWarning()
         {
             const int rate = 22050;
-            const float pulsePeriod = .18f, pulseLength = .105f;
-            var samples = new float[Mathf.RoundToInt(rate * .48f)];
+            const float pulsePeriod = WarningPulsePeriod, pulseLength = WarningPulseLength;
+            var samples = new float[Mathf.RoundToInt(rate * WarningClipSeconds)];
             for (int i = 0; i < samples.Length; i++)
             {
                 float t = i / (float)rate;

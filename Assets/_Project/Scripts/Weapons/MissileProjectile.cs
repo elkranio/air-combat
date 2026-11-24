@@ -19,6 +19,7 @@ namespace AirCombat
         private float age;
         public float RemainingManeuverBudget { get; private set; }
         private bool launched;
+        public bool IsInFlight => launched && isActiveAndEnabled;
         private Action<Vector3, Vector3> arcadeExhaust;
         private PlayerHitPoints arcadeTarget;
         private Vector3 previousExhaust;

@@ -94,7 +94,8 @@ namespace AirCombat
             if (missilePrefab != null)
             {
                 missileStress = gameObject.AddComponent<EnemyMissileStressTest>();
-                missileStress.Bind(playerHealth, missilePrefab, hitFeedback, enemyMissiles);
+                missileStress.Bind(playerHealth, missilePrefab, hitFeedback, enemyMissiles, radar);
+                gameObject.AddComponent<EnemyMissileThreatHud>().Bind(view, missileStress);
             }
             playerFlight = player.GetComponent<FlightController>();
             playerTrigger = player.GetComponent<PlayerWeaponTrigger>();
