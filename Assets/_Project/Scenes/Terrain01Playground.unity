@@ -265,7 +265,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 1939388830250070157, guid: 371922c97e367a140876da6ab486cf44, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 166
+      value: 286
       objectReference: {fileID: 0}
     - target: {fileID: 1939388830250070157, guid: 371922c97e367a140876da6ab486cf44, type: 3}
       propertyPath: m_LocalPosition.z
@@ -298,6 +298,10 @@ PrefabInstance:
     - target: {fileID: 1939388830250070157, guid: 371922c97e367a140876da6ab486cf44, type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4603868502922278211, guid: 371922c97e367a140876da6ab486cf44, type: 3}
+      propertyPath: far clip plane
+      value: 600
       objectReference: {fileID: 0}
     - target: {fileID: 5155359099652887777, guid: 371922c97e367a140876da6ab486cf44, type: 3}
       propertyPath: m_Name
