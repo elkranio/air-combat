@@ -84,6 +84,10 @@ Base `dd63baf`. The orange mark visible on the CQ01 roof comes from the old B1f 
 
 Base `a8c38fe`. In the mission scene select **Air Combat > Missions > Simplify Mission 01 Hangar Guide**. Replace the three guide dashes with two of the same dimensions, farther from the portal (local X195 and X201). Keep the existing C7 Z offset and paint material. Save the scene and new `Mission01_HangarGuideTwoDashes.asset` with its .meta. No other layout changes.
 
+## MISSION-01C8c — Remove hangar guide
+
+Base `19856c5`. The guide was rejected after visual review. Open the mission scene and select **Air Combat > Missions > Remove Mission 01 Hangar Guide**. Disable the guide object (either the original three or revised two dashes), leaving its mesh available for reversal. Save and commit the scene. No other layout or asset changes.
+
 ## Next work (order flexible, all WIP)
 
 Current visual trial: [ART-CT-01 — Compact control tower](ART_CT_01.md).

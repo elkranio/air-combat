@@ -1547,12 +1547,12 @@ GameObject:
   - component: {fileID: 376583116}
   - component: {fileID: 376583115}
   m_Layer: 0
-  m_Name: Hangar guide - three dashes
+  m_Name: Hangar guide - two dashes
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &376583114
 Transform:
   m_ObjectHideFlags: 0
@@ -1624,7 +1624,7 @@ MeshFilter:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 376583113}
-  m_Mesh: {fileID: 7889795678222672936, guid: d5f31600498fabe4cb56d646824d6e9e, type: 2}
+  m_Mesh: {fileID: 4300000, guid: 43a5f3de0fc9bf44e9f41f5997676124, type: 2}
 --- !u!1 &379006503
 GameObject:
   m_ObjectHideFlags: 0
