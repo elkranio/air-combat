@@ -4,7 +4,7 @@ Unity 6.6 / URP. **Stylized arcade air combat**: strong aircraft silhouettes, di
 
 ## Start here (current state)
 
-**Current playtest:** [NURS-01a — world-surface footprint projection](Docs/Production/NURS_01.md#nurs-01a--project-the-footprint-on-visible-world-surfaces). LMB AC-01 BURST / RMB NURS; Tigers and AAM temporarily unequipped. Restore the accepted [AI-04a2](Docs/Production/AI_04A.md#ai-04a2--imperfect-aim-and-bounded-gun-pressure) combined air battle by unchecking Ground Nurs Test on Air01Encounter before Play. Missile evasion, Short Vector and [WEAPON-04](Docs/Production/WEAPON_04.md) preserved. Next stationary ground targets, moving convoy, then escort. Attack Intent, unified art direction and wingtip trails deferred.
+**Current playtest:** [AA-01a — Mantis visual trial](Docs/Production/AA_01A.md). [NURS-01a — world-surface footprint projection](Docs/Production/NURS_01.md#nurs-01a--project-the-footprint-on-visible-world-surfaces). LMB AC-01 BURST / RMB NURS; Tigers and AAM temporarily unequipped. Restore the accepted [AI-04a2](Docs/Production/AI_04A.md#ai-04a2--imperfect-aim-and-bounded-gun-pressure) combined air battle by unchecking Ground Nurs Test on Air01Encounter before Play. Missile evasion, Short Vector and [WEAPON-04](Docs/Production/WEAPON_04.md) preserved. Next Mantis movement, twin-stream AA and NURS damage, then convoy/escort. Attack Intent, unified art direction and wingtip trails deferred.
 
 1. [HANDOFF.md](HANDOFF.md) — authoritative current green, immediate next atom and regression rules.
 2. [GAMEPLAY_COMBAT.md](GAMEPLAY_COMBAT.md) / [GAMEPLAY_ARCHITECTURE.md](GAMEPLAY_ARCHITECTURE.md) — current weapons, controls, radar and scene ownership.

@@ -1118,6 +1118,38 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 762429172124412495, guid: 65a5ae05c6cb16e459d6c0455ae3835c, type: 3}
   m_PrefabInstance: {fileID: 700792396}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &805212926
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 805212927}
+  m_Layer: 0
+  m_Name: AA-01a / Mantis - VISUAL TRIAL
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &805212927
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 805212926}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0.21643962, z: 0, w: 0.976296}
+  m_LocalPosition: {x: -434.832, y: 9.35, z: -320.168}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children:
+  - {fileID: 916384967}
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &809140383
 GameObject:
   m_ObjectHideFlags: 0
@@ -1308,6 +1340,68 @@ PrefabInstance:
 Transform:
   m_CorrespondingSourceObject: {fileID: 1077358848297990050, guid: ebda953aac57ed549a6a8562071b1053, type: 3}
   m_PrefabInstance: {fileID: 911974837}
+  m_PrefabAsset: {fileID: 0}
+--- !u!1001 &916384966
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 805212927}
+    m_Modifications:
+    - target: {fileID: 1943945715340380848, guid: fb953cbf99b48a04582a3ae1238c5a61, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1943945715340380848, guid: fb953cbf99b48a04582a3ae1238c5a61, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1943945715340380848, guid: fb953cbf99b48a04582a3ae1238c5a61, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1943945715340380848, guid: fb953cbf99b48a04582a3ae1238c5a61, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 1943945715340380848, guid: fb953cbf99b48a04582a3ae1238c5a61, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1943945715340380848, guid: fb953cbf99b48a04582a3ae1238c5a61, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1943945715340380848, guid: fb953cbf99b48a04582a3ae1238c5a61, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1943945715340380848, guid: fb953cbf99b48a04582a3ae1238c5a61, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1943945715340380848, guid: fb953cbf99b48a04582a3ae1238c5a61, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1943945715340380848, guid: fb953cbf99b48a04582a3ae1238c5a61, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4469017319246520012, guid: fb953cbf99b48a04582a3ae1238c5a61, type: 3}
+      propertyPath: m_Name
+      value: AA02_Mantis
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: fb953cbf99b48a04582a3ae1238c5a61, type: 3}
+--- !u!4 &916384967 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 1943945715340380848, guid: fb953cbf99b48a04582a3ae1238c5a61, type: 3}
+  m_PrefabInstance: {fileID: 916384966}
   m_PrefabAsset: {fileID: 0}
 --- !u!1001 &947176516
 PrefabInstance:
@@ -1716,20 +1810,20 @@ PrefabInstance:
       value: 
       objectReference: {fileID: 2100000, guid: bd1ab699467949d43808136288a2c115, type: 2}
     - target: {fileID: 7591061402932717815, guid: 7946d0432f6b5a14e9abc025e7b963d1, type: 3}
-      propertyPath: burstDuration
-      value: 0.45
+      propertyPath: turnAngle
+      value: 180
       objectReference: {fileID: 0}
     - target: {fileID: 7591061402932717815, guid: 7946d0432f6b5a14e9abc025e7b963d1, type: 3}
       propertyPath: fuelCost01
       value: 0.5
       objectReference: {fileID: 0}
     - target: {fileID: 7591061402932717815, guid: 7946d0432f6b5a14e9abc025e7b963d1, type: 3}
-      propertyPath: turnAngle
-      value: 180
-      objectReference: {fileID: 0}
-    - target: {fileID: 7591061402932717815, guid: 7946d0432f6b5a14e9abc025e7b963d1, type: 3}
       propertyPath: turnDuration
       value: 0.4
+      objectReference: {fileID: 0}
+    - target: {fileID: 7591061402932717815, guid: 7946d0432f6b5a14e9abc025e7b963d1, type: 3}
+      propertyPath: burstDuration
+      value: 0.45
       objectReference: {fileID: 0}
     - target: {fileID: 7607778465145469315, guid: 7946d0432f6b5a14e9abc025e7b963d1, type: 3}
       propertyPath: 'm_Materials.Array.data[0]'
@@ -2457,6 +2551,10 @@ MonoBehaviour:
   - {fileID: 474682792}
   resetHalfExtent: 850
   altitudeComparison: 1
+  tightTurnSpeed: 35
+  boostTurnMultiplier: 0.6
+  tightTurnMultiplier: 2
+  maneuverResponse: 140
 --- !u!4 &2020064467
 Transform:
   m_ObjectHideFlags: 0
@@ -2487,7 +2585,47 @@ MonoBehaviour:
   enemyPrefab: {fileID: 36626630230575987, guid: e59bcec657b57044ea9bbfbb12121973, type: 3}
   missilePrefab: {fileID: 1166229602950883390, guid: 22d60401b2f22264a94c1483e5f97a30, type: 3}
   spawnRadius: 550
-  initialBoostSeconds: 0.8
+  pairSpacing: 45
+  attack:
+    attackDistance: 170
+    fireDistance: 125
+    fireHalfAngle: 6
+    attackSeconds: 3.2
+    closeApproachSeconds: 3
+    passDistance: 23
+    exitDistance: 150
+    exitMinSeconds: 1.3
+    exitMaxSeconds: 2.7
+    catchUpDistance: 240
+    exitBoostSeconds: 0.7
+    aimLeadFraction: 0.75
+    burstAimError: 15
+    aimDelayMin: 0.15
+    aimDelayMax: 0.25
+    minBurstsPerPass: 2
+    maxBurstsPerPass: 3
+    maxGunPressureSeconds: 4
+    tightTurnDistance: 200
+    tightEnterAngle: 40
+    tightExitAngle: 20
+    fuelResume: 0.4
+    fuelReserve: 0.08
+    separationRadius: 50
+    separationTurnDegrees: 55
+  enemyMissiles:
+    minInterval: 2
+    maxInterval: 3.2
+    warningSeconds: 0.8
+    minLaunchRange: 90
+    maxLaunchRange: 300
+    acquisitionHalfAngle: 75
+    speed: 140
+    turnRate: 95
+    turnBudget: 120
+    lifetime: 4
+    hitRadius: 5
+    damage: 6
+  groundNursTest: 1
 --- !u!1001 &2025167888
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -2787,3 +2925,4 @@ SceneRoots:
   - {fileID: 809140384}
   - {fileID: 474682791}
   - {fileID: 1691306171}
+  - {fileID: 805212927}
