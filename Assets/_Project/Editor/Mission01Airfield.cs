@@ -117,6 +117,133 @@ namespace AirCombat
             }
         }
 
+        [MenuItem("Air Combat/Missions/Apply Compact Airfield A")]
+        private static void ApplyCompactA()
+        {
+            if (EditorApplication.isPlayingOrWillChangePlaymode) return;
+            Scene scene = SceneManager.GetActiveScene();
+            if (scene.path != ScenePath)
+            {
+                Debug.LogWarning("MISSION-01C2A: open Mission01_FirstSortie first.");
+                return;
+            }
+            var anchor = scene.GetRootGameObjects().SingleOrDefault(g => g.name == "Mission01 / Airfield");
+            var layout = anchor != null ? anchor.transform.Cast<Transform>()
+                .SingleOrDefault(t => t.name == "Airfield v0 - editable layout") : null;
+            if (layout == null)
+            {
+                Debug.LogWarning("MISSION-01C2A: expected the existing v0 layout; nothing changed.");
+                return;
+            }
+
+            // Modify only the authored v0 scene instance. Keep buildings fixed in world space.
+            Transform runway, apron, taxiway, markings, approach, parked, start;
+            Transform[] runwayParts, standLines, aircraft;
+            try
+            {
+                runway = Child(layout, "Runway and apron");
+                apron = Child(runway, "03 / Apron - aircraft and hangar");
+                taxiway = Child(runway, "04 / Taxiway runway-to-apron");
+                markings = Child(layout, "Apron connections and markings");
+                approach = Child(markings, "Hangar approach");
+                parked = Child(layout, "Parked aircraft - visuals only");
+                start = Child(layout, "Takeoff start - visual placeholder");
+                runwayParts = runway.Cast<Transform>().Where(t =>
+                    t.name.StartsWith("01 / Graded runway", StringComparison.Ordinal) ||
+                    t.name.StartsWith("02 / Asphalt runway", StringComparison.Ordinal) ||
+                    t.name.StartsWith("Runway edge", StringComparison.Ordinal) ||
+                    t.name.StartsWith("Runway center dash", StringComparison.Ordinal) ||
+                    t.name.StartsWith("Threshold", StringComparison.Ordinal)).ToArray();
+                if (runwayParts.Length != 25 ||
+                    !Mathf.Approximately(Child(runway, "02 / Asphalt runway 460x36").localScale.z, 460f))
+                    throw new InvalidOperationException("Unexpected v0 runway geometry.");
+                standLines = Enumerable.Range(1, 3).SelectMany(i => new[] {
+                    Child(markings, "Stand " + i + " left"),
+                    Child(markings, "Stand " + i + " right"),
+                    Child(markings, "Stand " + i + " front") }).ToArray();
+                aircraft = new[] { Child(parked, "Kestrel 01"), Child(parked, "Kestrel 02"), Child(parked, "Lynx 03") };
+            }
+            catch (Exception ex)
+            {
+                Debug.LogError("MISSION-01C2A: unexpected layout; nothing changed. " + ex.Message);
+                return;
+            }
+
+            const string undo = "Apply compact airfield A";
+            Undo.IncrementCurrentGroup();
+            int undoGroup = Undo.GetCurrentGroup();
+            Undo.SetCurrentGroupName(undo);
+            var changed = new[] { runway, apron, taxiway, approach, start }
+                .Concat(runwayParts).Concat(standLines).Concat(aircraft).ToArray();
+            Undo.RecordObjects(changed.Cast<UnityEngine.Object>().ToArray(), undo);
+            Undo.RecordObjects(new UnityEngine.Object[] { layout.gameObject, aircraft[2].gameObject }, undo);
+            try
+            {
+                const float runwayX = 85f;
+                const float widthRatio = 26f / 36f;
+                const float lengthRatio = 300f / 460f;
+                // Rescale each pavement/marking child, not the root: apron and taxiway
+                // must keep their independent dimensions and rotation.
+                runway.localPosition = new Vector3(runwayX, runway.localPosition.y, 0f);
+                foreach (Transform part in runwayParts)
+                {
+                    Vector3 p = part.localPosition, s = part.localScale;
+                    part.localPosition = new Vector3(p.x * widthRatio, p.y, p.z * lengthRatio);
+                    part.localScale = new Vector3(s.x * widthRatio, s.y, s.z * lengthRatio);
+                }
+                SetSurface(apron, 160f - runwayX, -75f, 90f, 70f);
+                // Short angled connection from the left apron edge to the runway,
+                // pointing along +Z (takeoff direction) when leaving the apron.
+                Vector3 a = new Vector3(122f - runwayX, 0f, -80f);
+                Vector3 b = new Vector3(95f - runwayX, 0f, -50f);
+                Vector3 delta = b - a;
+                Vector3 center = (a + b) * .5f;
+                SetSurface(taxiway, center.x, center.z, 18f, delta.magnitude);
+                taxiway.localRotation = Quaternion.LookRotation(delta, Vector3.up);
+                // Existing hangar still opens at approximately X240.
+                SetSurface(approach, 222.5f, -75f, 35f, 36f);
+
+                Quaternion standYaw = Quaternion.Euler(0f, -75f, 0f);
+                for (int i = 0; i < 3; i++)
+                {
+                    Vector3 c = new Vector3(174f, .078f, -97f + i * 22f);
+                    SetStandLine(standLines[i * 3], c, standYaw, -9f, 0f, .65f, 22f);
+                    SetStandLine(standLines[i * 3 + 1], c, standYaw, 9f, 0f, .65f, 22f);
+                    // Close the tail end; the nose end stays open towards the taxi lane.
+                    SetStandLine(standLines[i * 3 + 2], c, standYaw, 0f, -11f, 18.65f, .65f);
+                    Transform jet = aircraft[i];
+                    jet.localPosition = new Vector3(c.x, jet.localPosition.y, c.z);
+                    jet.localRotation = standYaw;
+                }
+                // Our Lynx is already on the runway. Keep its bay empty; retain the
+                // parked prefab disabled so later iterations can restore it if needed.
+                aircraft[2].gameObject.SetActive(false);
+                PrefabUtility.RecordPrefabInstancePropertyModifications(aircraft[2].gameObject);
+                start.localPosition = new Vector3(runwayX, start.localPosition.y, -115f);
+                layout.gameObject.name = "Airfield A - editable layout";
+                foreach (Transform t in changed)
+                    if (PrefabUtility.IsPartOfPrefabInstance(t))
+                        PrefabUtility.RecordPrefabInstancePropertyModifications(t);
+                Undo.CollapseUndoOperations(undoGroup);
+                EditorSceneManager.MarkSceneDirty(scene);
+                Selection.activeGameObject = layout.gameObject;
+                Debug.Log("MISSION-01C2A: compact layout A applied. Review and save the scene.");
+            }
+            catch (Exception ex)
+            {
+                Undo.RevertAllDownToGroup(undoGroup);
+                Debug.LogError("MISSION-01C2A: layout change reverted. " + ex);
+            }
+        }
+
+        private static void SetStandLine(Transform line, Vector3 center, Quaternion yaw,
+            float x, float z, float width, float length)
+        {
+            line.localPosition = center + yaw * new Vector3(x, 0f, z);
+            line.localRotation = yaw;
+            line.localScale = new Vector3(width, line.localScale.y, length);
+        }
+
         private static Transform Group(Transform parent, string name)
         {
             var go = new GameObject(name);

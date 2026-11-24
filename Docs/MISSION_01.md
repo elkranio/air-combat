@@ -22,6 +22,15 @@ Base `86f7331`. The player approved the schematic: one runway, a connecting taxi
 - Two visual-only Kestrels reuse the combat prefab's painted chassis meshes (no flight, weapons, scripts or colliders); one parked Lynx uses the approved visual prefab. Another static Lynx marks the future runway start, to be removed when the real player is integrated.
 - No change to the temporary airborne player, camera, terrain, flight logic, mission flow, existing prefabs or other scenes. No new runtime code. Unity compile/Play Mode verification remains local.
 
+## MISSION-01C2A — Compact airfield A (WIP)
+
+Base `7f6911d`. In the existing mission scene, select **Air Combat > Missions > Apply Compact Airfield A** once. This adjusts the existing editable v0 layout in place (Undo supported), without changing shared prefabs, terrain, flight or the buildings. Save the scene after review. The v0 layout is preserved in the prior green commit.
+
+- Runway 300 x 26, with proportional shoulders and markings; shift its center 85 units towards the apron. Keep the static takeoff Lynx aligned with the new runway.
+- Apron 90 x 70, three 18 x 22 stands facing the taxi lane; two Kestrels parked and the Lynx bay empty (disabled parked visual). A short 18-wide diagonal taxi connection leads towards the runway's takeoff direction.
+- Hangar and tower stay at their exact v0 transforms. Adapt the hangar approach to meet the smaller apron. Temporary airborne player unchanged.
+- Compare A from the game camera, then try a separate, even more compact B. No final art or gameplay decision yet. Unity verification is local.
+
 ## Next work (order flexible, all WIP)
 
 1. Review the airfield layout in the actual game camera; adjust roads, spacing and model missing pieces only if needed.
