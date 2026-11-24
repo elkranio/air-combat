@@ -1,6 +1,6 @@
 # Air Combat — current handoff
 
-Updated 2026-11-24. Base `c750941`: Short Vector and enemy missile evasion tuning accepted. Current playtest [MISSILE-04](Docs/Production/MISSILE_03B.md#missile-04--combined-air-combat): two Tigers use AC-01 and unlimited AAM, independent randomized 3–8 s cooldowns, no global cap. Short Vector only; no production AAM cast shadows. Radar and warning timing retained. WEAPON-04 accepted; LMB AC-01 BURST / RMB AAM, 150 ms lock, dual HUD. Next test combined combat pressure. Q/E reserved for future per-slot weapon cycling. Unified art direction and JUICE-03 deferred. Earlier HUD-02/flight-only notes below are historical.
+Updated 2026-11-24. Base `9fb4b05`: Short Vector and enemy missile evasion tuning accepted. Current playtest [MISSILE-04b](Docs/Production/MISSILE_03B.md#missile-04b--combined-combat-pacing): two Tigers use AC-01 and unlimited AAM, independent randomized 8–15 s cooldowns, no global cap. Removed the missile-only gate; H displays per-pilot AC hits/fired. Short Vector only; no production AAM cast shadows. Radar and warning timing retained. WEAPON-04 accepted; LMB AC-01 BURST / RMB AAM, 150 ms lock, dual HUD. Next test combined combat pressure. Q/E reserved for future per-slot weapon cycling. Unified art direction and JUICE-03 deferred. Earlier HUD-02/flight-only notes below are historical.
 
 ## Goal and immediate order
 

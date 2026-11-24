@@ -4,7 +4,7 @@ Unity 6.6 / URP. **Stylized arcade air combat**: strong aircraft silhouettes, di
 
 ## Start here (current state)
 
-**Current playtest:** [MISSILE-04 — combined air combat](Docs/Production/MISSILE_03B.md#missile-04--combined-air-combat). Short Vector and existing missile evasion tuning accepted; Tigers fire AC-01 and unlimited AAM with independent 3–8 s cooldowns. Production missile shadows disabled. [WEAPON-04 — dual weapon slots](Docs/Production/WEAPON_04.md), [MISSILE-02](Docs/Production/MISSILE_02.md) 150 ms lock and [JUICE-02c](Docs/Production/JUICE_02C.md) retained. Next combined combat playtest. Unified art direction and wingtip trails deferred.
+**Current playtest:** [MISSILE-04b — combined combat pacing](Docs/Production/MISSILE_03B.md#missile-04b--combined-combat-pacing). Short Vector and existing missile evasion tuning accepted; Tigers fire AC-01 and unlimited AAM with independent 8–15 s cooldowns; missile-only mode removed. Production missile shadows disabled. [WEAPON-04 — dual weapon slots](Docs/Production/WEAPON_04.md), [MISSILE-02](Docs/Production/MISSILE_02.md) 150 ms lock and [JUICE-02c](Docs/Production/JUICE_02C.md) retained. Next combined combat playtest. Unified art direction and wingtip trails deferred.
 
 1. [HANDOFF.md](HANDOFF.md) — authoritative current green, immediate next atom and regression rules.
 2. [GAMEPLAY_COMBAT.md](GAMEPLAY_COMBAT.md) / [GAMEPLAY_ARCHITECTURE.md](GAMEPLAY_ARCHITECTURE.md) — current weapons, controls, radar and scene ownership.

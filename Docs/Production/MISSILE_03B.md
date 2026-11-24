@@ -50,3 +50,9 @@ Play Mode: compare all three styles on the same encounter, especially on sunlit 
 Base `c750941`: Short Vector selected after all three comparisons; remove the two unused warning styles. Accepted evasion tuning stays unchanged. Both Tigers now use their existing AC-01 attack passes and unlimited AAM; missile-only remains an optional Inspector test mode, off by default. Each fighter rolls an independent 3–8 s cooldown at registration and after each launch. Once ready it waits for the existing acquisition geometry, then plays the unchanged warning before launch. No global cap or shared attack cooldown. Production player and hostile AAM no longer cast shadows; aircraft shadows, missile geometry, exhaust, radar, damage, guidance, player weapons and legacy lab settings unchanged.
 
 Play Mode: fight both Tigers normally. Check independent gun bursts and missile warnings, simultaneous or staggered launches, Short Vector only, no missile ground shadows, radar tracking, restart and defeat cleanup. Assess combined pressure before changing balance. Final presentation remains deferred to the unified art-direction pass.
+
+## MISSILE-04b — combined combat pacing
+
+Base `9fb4b05`. Independently roll 8–15 s cooldowns at registration and after every AAM launch. Remove the obsolete missile-only test switch and always tick the existing AC-01 attack logic for each live Tiger, regardless of missile state. H shows live pilot phase and AC hits/fired alongside AAM counts. No changes to cannon range, aim threshold, burst cadence, guidance, damage or player controls.
+
+Play Mode: confirm AC fired counts increase during attack passes, observe tracers and missile warnings, verify independent missile intervals and restart. If AC counts stay at zero, investigate attack geometry and gun trigger conditions before further balance changes.

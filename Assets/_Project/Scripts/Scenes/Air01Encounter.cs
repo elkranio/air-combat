@@ -15,7 +15,7 @@ namespace AirCombat
         [SerializeField, Min(20f)] private float pairSpacing = 45f;
         [SerializeField] private ArcadeFighterPilot.Settings attack = new ArcadeFighterPilot.Settings();
 
-        [Header("MISSILE-03a / temporary evasion stress test")]
+        [Header("Enemy AAM / independent attack cooldown")]
         [SerializeField] private EnemyMissileStressTest.Settings enemyMissiles = new EnemyMissileStressTest.Settings();
         private EnemyMissileStressTest missileStress;
 
@@ -59,12 +59,12 @@ namespace AirCombat
                     return missileStress != null ? $"{result} | AAM {missileStress.Hits}/{missileStress.Launched} hits/fired" : result;
                 }
                 if (fighters.Count == 0) return "NO ENEMY";
-                if (missileStress != null)
-                    return $"Tigers {fighters.Count}/{FighterCount} | AAM {missileStress.InFlight} live | {missileStress.Hits}/{missileStress.Launched} hits/fired";
-                // Both independent pilots remain visible on the H debug overlay.
+                // Show actual gun shots per live pilot alongside the AAM totals.
                 string status = $"Tigers {fighters.Count}/{FighterCount}";
+                if (missileStress != null)
+                    status += $" | AAM {missileStress.InFlight} live {missileStress.Hits}/{missileStress.Launched} hits/fired";
                 foreach (var fighter in fighters)
-                    status += $" | {(fighter.Index == 0 ? "A" : "B")}:{fighter.Health.Hp}HP {fighter.Pilot.State}";
+                    status += $" | {(fighter.Index == 0 ? "A" : "B")}:{fighter.Pilot.State} AC {fighter.Pilot.HitCount}/{fighter.Pilot.FiredCount}";
                 return status;
             }
         }
@@ -270,11 +270,10 @@ namespace AirCombat
         {
             if (!bound || !encounterReady || defeated || victory || !playerHealth.IsAlive) return;
             if (missileStress != null) missileStress.Tick(Time.time);
-            // Isolate missile evasion during this temporary test; uncheck to
-            // combine the original cannon attack passes with the missile pressure.
-            if (missileStress == null || enemyMissiles == null || !enemyMissiles.missileOnly)
-                foreach (var fighter in fighters)
-                    if (fighter.Health.IsAlive) fighter.Pilot.TickFire(Time.time);
+            // Combined combat: gun requests tick independently of AAM readiness,
+            // pending launch warnings and the number of missiles in flight.
+            foreach (var fighter in fighters)
+                if (fighter.Health.IsAlive) fighter.Pilot.TickFire(Time.time);
         }
 
         private void OnGUI()

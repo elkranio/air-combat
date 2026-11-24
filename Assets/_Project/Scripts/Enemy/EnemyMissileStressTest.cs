@@ -12,9 +12,8 @@ namespace AirCombat
         [Serializable]
         public sealed class Settings
         {
-            public bool missileOnly = false;
-            [Min(.1f)] public float minInterval = 3f;
-            [Min(.1f)] public float maxInterval = 8f;
+            [Min(.1f)] public float minInterval = 8f;
+            [Min(.1f)] public float maxInterval = 15f;
             [Min(.1f)] public float warningSeconds = .8f;
             [Min(0f)] public float minLaunchRange = 90f;
             [Min(1f)] public float maxLaunchRange = 300f;
