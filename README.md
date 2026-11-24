@@ -20,6 +20,10 @@ Tiger behavior settings live on `Assets/_Project/Prefabs/Aircraft/EF01_Tiger_Fig
 
 - [TERRAIN-01](Docs/TERRAIN_01.md) — create/open the isolated faceted-terrain flight playground via the Air Combat editor menu.
 
+## Campaign development (WIP)
+
+- [MISSION-01 — First Sortie](Docs/MISSION_01.md) — independent first mission, starting with the flat map and airfield layout.
+
 ## Current documentation
 
 - [HANDOFF.md](HANDOFF.md) — current baseline, next atoms, regression gates.

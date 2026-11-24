@@ -412,7 +412,7 @@ namespace AirCombat
             return heights;
         }
 
-        private static void FillMesh(Mesh mesh, TerrainData data, int cells)
+        internal static void FillMesh(Mesh mesh, TerrainData data, int cells)
         {
             Vector3 size = data.size;
             float dx = size.x / cells, dz = size.z / cells;
