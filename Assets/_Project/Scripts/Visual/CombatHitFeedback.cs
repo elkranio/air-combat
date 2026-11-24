@@ -16,6 +16,14 @@ namespace AirCombat
         [SerializeField, Min(.1f)] private float impactFlashSize = 3.5f;
         [SerializeField, Min(.1f)] private float smokeSize = 3.2f;
         [SerializeField, Min(.1f)] private float smokeLifetime = .72f;
+        [Header("Persistent damage trail (JUICE-02a)")]
+        [SerializeField, Range(.01f, 1f)] private float criticalHp = .4f;
+        [SerializeField, Range(.01f, 1f)] private float severeHp = .2f;
+        [SerializeField, Min(1f)] private float trailSmokeRate = 36f;
+        [SerializeField, Min(.1f)] private float trailSmokeSize = 3.1f;
+        [SerializeField, Min(.1f)] private float trailSmokeLifetime = 1.2f;
+        [SerializeField, Min(1f)] private float trailFireRate = 28f;
+        [SerializeField, Min(.1f)] private float trailFireSize = 2.1f;
         [Header("Camera impulse (world units / seconds)")]
         [SerializeField, Min(0f)] private float hitShake = .28f;
         [SerializeField, Min(0f)] private float hitShakeSeconds = .12f;
@@ -44,6 +52,12 @@ namespace AirCombat
             public bool IsPlayer;
             public bool Flashing;
             public float FlashUntil;
+            public Transform Visual;
+            public MeshFilter[] HullMeshes;
+            public DamageSurfaceAnchor DamageAnchor;
+            public bool AnchorAttempted, TrailActive;
+            public Vector3 PreviousAnchor;
+            public float SmokeDebt, FireDebt;
             public readonly List<Slot> Slots = new List<Slot>();
         }
         private readonly Dictionary<PlayerHitPoints, Tracked> targets =
@@ -52,7 +66,7 @@ namespace AirCombat
         private readonly System.Random random = new System.Random(8153);
         private Camera view;
         private ArcadeCameraFollow cameraFollow;
-        private ParticleSystem sparks, debris, impactFlash, smoke;
+        private ParticleSystem sparks, debris, impactFlash, smoke, criticalSmoke, criticalFire;
         private Material particleMaterial, puffMaterial;
         private Texture2D puffMask;
         private AudioSource audioSource;
@@ -79,6 +93,9 @@ namespace AirCombat
                 puffMaterial.SetTexture("_ParticleMask", puffMask);
                 impactFlash = MakePuffs("Enemy impact flash", 48, false);
                 smoke = MakePuffs("Enemy impact smoke", 192, true);
+                criticalSmoke = MakePuffs("Critical aircraft smoke", 768, true);
+                criticalFire = MakePuffs("Critical aircraft fire", 256, false);
+                ConfigureDamageTrail();
             }
             else Debug.LogWarning("Combat hit particles: SandboxEffect shader missing.", this);
             audioSource = gameObject.AddComponent<AudioSource>();
@@ -96,6 +113,17 @@ namespace AirCombat
             var jet = health.GetComponent<JetAssembly>();
             if (jet != null && jet.VisualRoot != null)
             {
+                tracked.Visual = jet.VisualRoot;
+                // Capture only the active authored hull at registration, not runtime
+                // flashes or exhaust which might be visible at the critical hit.
+                var filters = new List<MeshFilter>();
+                foreach (var filter in tracked.Visual.GetComponentsInChildren<MeshFilter>(false))
+                {
+                    var renderer = filter.GetComponent<MeshRenderer>();
+                    if (renderer != null && renderer.enabled && filter.sharedMesh != null && filter.sharedMesh.isReadable)
+                        filters.Add(filter);
+                }
+                tracked.HullMeshes = filters.ToArray();
                 foreach (var renderer in jet.VisualRoot.GetComponentsInChildren<Renderer>(true))
                 {
                     if (renderer == null || !renderer.enabled || !renderer.gameObject.activeInHierarchy ||
@@ -178,13 +206,23 @@ namespace AirCombat
 
         private void LateUpdate()
         {
-            foreach (var tracked in targets.Values)
+            foreach (var pair in targets)
+            {
+                var tracked = pair.Value;
                 if (tracked.Flashing && Time.time >= tracked.FlashUntil) Restore(tracked);
+                TickDamageTrail(pair.Key, tracked, Time.deltaTime);
+            }
         }
 
         public void ResetEffects()
         {
-            foreach (var tracked in targets.Values) Restore(tracked);
+            foreach (var tracked in targets.Values)
+            {
+                Restore(tracked);
+                ResetTrail(tracked);
+            }
+            if (criticalSmoke != null) criticalSmoke.Clear();
+            if (criticalFire != null) criticalFire.Clear();
             if (sparks != null) sparks.Clear();
             if (debris != null) debris.Clear();
             if (impactFlash != null) impactFlash.Clear();
@@ -192,6 +230,97 @@ namespace AirCombat
             if (audioSource != null) audioSource.Stop();
             if (cameraFollow != null) cameraFollow.ClearHitShake();
             edgeUntil = nextHitSound = 0f;
+        }
+
+        private static void ResetTrail(Tracked tracked)
+        {
+            tracked.DamageAnchor = default;
+            tracked.AnchorAttempted = tracked.TrailActive = false;
+            tracked.SmokeDebt = tracked.FireDebt = 0f;
+        }
+
+        private void ConfigureDamageTrail()
+        {
+            var fade = criticalSmoke.colorOverLifetime;
+            var gradient = new Gradient();
+            gradient.SetKeys(new[] { new GradientColorKey(Color.white, 0f), new GradientColorKey(Color.white, 1f) },
+                new[] { new GradientAlphaKey(.75f, 0f), new GradientAlphaKey(1f, .12f),
+                    new GradientAlphaKey(.65f, .62f), new GradientAlphaKey(0f, 1f) });
+            fade.color = new ParticleSystem.MinMaxGradient(gradient);
+            var size = criticalSmoke.sizeOverLifetime;
+            size.size = new ParticleSystem.MinMaxCurve(1f, AnimationCurve.Linear(0f, .7f, 1f, 1.9f));
+            var fireFade = criticalFire.colorOverLifetime;
+            var fireGradient = new Gradient();
+            fireGradient.SetKeys(new[] { new GradientColorKey(Color.white, 0f),
+                new GradientColorKey(new Color(1f, .34f, .08f), .55f),
+                new GradientColorKey(new Color(.75f, .14f, .03f), 1f) },
+                new[] { new GradientAlphaKey(1f, 0f), new GradientAlphaKey(.85f, .35f), new GradientAlphaKey(0f, 1f) });
+            fireFade.color = new ParticleSystem.MinMaxGradient(fireGradient);
+        }
+
+        private void TickDamageTrail(PlayerHitPoints health, Tracked tracked, float dt)
+        {
+            if (criticalSmoke == null || health == null || !health.isActiveAndEnabled || !health.IsAlive)
+            {
+                tracked.TrailActive = false;
+                return;
+            }
+            float hp = health.Hp / (float)Mathf.Max(1, health.MaxHp);
+            if (hp > criticalHp) { ResetTrail(tracked); return; }
+            if (!tracked.AnchorAttempted)
+            {
+                tracked.AnchorAttempted = true;
+                tracked.DamageAnchor = DamageSurfaceAnchor.Choose(tracked.Visual, tracked.HullMeshes, random);
+                if (!tracked.DamageAnchor.IsValid)
+                    Debug.LogWarning("Critical smoke needs readable hull geometry or authored DamageSockets.", health);
+            }
+            // Never emit from a fabricated point when no valid surface is available.
+            if (!tracked.DamageAnchor.IsValid) return;
+            Vector3 point = tracked.DamageAnchor.WorldPosition;
+            bool severe = hp <= Mathf.Min(criticalHp, severeHp);
+            if (!tracked.TrailActive || (point - tracked.PreviousAnchor).sqrMagnitude > 30f * 30f)
+            {
+                tracked.PreviousAnchor = point;
+                tracked.SmokeDebt = 1f; // Visible immediately on the critical hit.
+                tracked.FireDebt = severe ? 1f : 0f;
+            }
+            tracked.TrailActive = true;
+            // Sample along the last movement segment so a fast plane does not leave
+            // isolated puffs at low FPS. All particles then stay in world space.
+            EmitDamageTrail(criticalSmoke, tracked.PreviousAnchor, point, dt,
+                trailSmokeRate * (severe ? 1.35f : 1f), ref tracked.SmokeDebt, false, severe);
+            if (severe)
+                EmitDamageTrail(criticalFire, tracked.PreviousAnchor, point, dt,
+                    trailFireRate, ref tracked.FireDebt, true, true);
+            else tracked.FireDebt = 0f;
+            tracked.PreviousAnchor = point;
+        }
+
+        private void EmitDamageTrail(ParticleSystem system, Vector3 previous, Vector3 current,
+            float dt, float rate, ref float debt, bool fire, bool severe)
+        {
+            if (system == null || dt <= 0f) return;
+            float before = debt;
+            float amount = Mathf.Max(0f, dt * rate);
+            float total = before + amount;
+            int count = Mathf.Min(12, Mathf.FloorToInt(total));
+            debt = total - Mathf.Floor(total); // Drop hitch backlog, keep fractional time.
+            for (int i = 0; i < count; i++)
+            {
+                float t = amount > 0f ? Mathf.Clamp01((i + 1f - before) / amount) : 1f;
+                var p = new ParticleSystem.EmitParams
+                {
+                    position = Vector3.Lerp(previous, current, t),
+                    velocity = Vector3.up * Range(fire ? .3f : .7f, fire ? 1.2f : 2.3f),
+                    startSize = fire ? trailFireSize * Range(.75f, 1.2f)
+                        : trailSmokeSize * Range(.8f, 1.2f) * (severe ? 1.25f : 1f),
+                    startLifetime = fire ? Range(.12f, .24f) : trailSmokeLifetime * Range(.8f, 1.15f),
+                    startColor = fire ? new Color(1f, .85f, .31f, .95f)
+                        : new Color(.075f, .07f, .065f, Range(.72f, .92f)),
+                    rotation = Range(0f, 360f)
+                };
+                system.Emit(p, 1);
+            }
         }
 
         private ParticleSystem MakeParticles(string objectName, bool stretch, int capacity)
@@ -431,6 +560,8 @@ namespace AirCombat
             if (audioSource != null) Destroy(audioSource);
             if (impactFlash != null) Destroy(impactFlash.gameObject);
             if (smoke != null) Destroy(smoke.gameObject);
+            if (criticalSmoke != null) Destroy(criticalSmoke.gameObject);
+            if (criticalFire != null) Destroy(criticalFire.gameObject);
             if (puffMaterial != null) Destroy(puffMaterial);
             if (puffMask != null) Destroy(puffMask);
             if (particleMaterial != null) Destroy(particleMaterial);

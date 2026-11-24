@@ -4,7 +4,7 @@ Unity 6.6 / URP. **Stylized arcade air combat**: strong aircraft silhouettes, di
 
 ## Start here (current state)
 
-**Current playtest:** [JUICE-01b — stronger hit pop and smoke](Docs/Production/JUICE_01.md#juice-01b--impact-pop-and-stationary-smoke). JUICE-01 accepted. [FLIGHT-03b](Docs/Production/FLIGHT_03.md#flight-03b--visibility-tuning) accepted. [AIR-03](Docs/Production/AIR_03.md), [FLIGHT-02](Docs/Production/FLIGHT_02.md), [HUD-04](Docs/Production/HUD_04.md) and [GUN-03](Docs/Production/GUN_03.md) accepted for continued testing.
+**Current playtest:** [JUICE-02a — critical damage smoke and fire](Docs/Production/JUICE_02A.md). [JUICE-01/01b](Docs/Production/JUICE_01.md) accepted. [FLIGHT-03b](Docs/Production/FLIGHT_03.md#flight-03b--visibility-tuning) accepted. [AIR-03](Docs/Production/AIR_03.md), [FLIGHT-02](Docs/Production/FLIGHT_02.md), [HUD-04](Docs/Production/HUD_04.md) and [GUN-03](Docs/Production/GUN_03.md) accepted for continued testing.
 
 1. [HANDOFF.md](HANDOFF.md) — authoritative current green, immediate next atom and regression rules.
 2. [GAMEPLAY_COMBAT.md](GAMEPLAY_COMBAT.md) / [GAMEPLAY_ARCHITECTURE.md](GAMEPLAY_ARCHITECTURE.md) — current weapons, controls, radar and scene ownership.
@@ -24,7 +24,7 @@ Unity 6.6 / URP. **Stylized arcade air combat**: strong aircraft silhouettes, di
 
 ## Current gameplay direction
 
-FLIGHT-02 continuous W/S control and AIR-03 independent Tiger attack passes are accepted. AC-01 BURST works as the baseline; retain AC-02 continuous for future loadouts. Wheel switches weapons; LMB fires the selected mount. FLIGHT-03 retires production Q/E and adds tight-turn ignition and small angled plumes. JUICE-01 hit feedback accepted; testing JUICE-01b impact pop and stationary fading smoke. Next: JUICE-02 wreck/smoke/ground impact; JUICE-03 wingtip trails. Missiles follow the juice pass.
+FLIGHT-02 continuous W/S control and AIR-03 independent Tiger attack passes are accepted. AC-01 BURST works as the baseline; retain AC-02 continuous for future loadouts. Wheel switches weapons; LMB fires the selected mount. FLIGHT-03 retires production Q/E and adds tight-turn ignition and small angled plumes. JUICE-01/01b hit feedback and impact puffs accepted; testing JUICE-02a critical smoke/fire. Next: JUICE-02b falling wreck, JUICE-02c terrain explosion, JUICE-03 wingtip trails. Missiles follow the juice pass.
 
 ## Working process
 

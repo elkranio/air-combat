@@ -1,0 +1,15 @@
+# JUICE-02a — critical aircraft damage trail
+
+Base `58aaf4b` / JUICE-01b accepted. Production-only playtest; no damage, weapon, AI, camera or flight changes. Falling wreck and terrain impact are separate follow-up atoms.
+
+- `DamageSurfaceAnchor` selects a fixed model-local point. Optional authored `DamageSockets` group (direct children are candidate positions) takes precedence. Otherwise select an area-weighted random triangle from active readable rigid hull meshes captured on registration, and sample inside that triangle. The point follows the actual mesh transform and bank. No bounding-box fallback; missing geometry logs once and suppresses the trail. No per-frame mesh sampling, collider changes, or Unity gameplay RNG consumption.
+- Kestrel FBX and Tiger fuselage/main wings/engines/tail OBJ imports now have Read/Write enabled. Their GUIDs and all other settings remain untouched. This costs a CPU-side mesh copy; keep it limited to eligible low-poly hull meshes. Future models can supply sockets instead of readable meshes.
+- Both player and enemies use percentage HP: at <=40% persistent charcoal smoke, at <=20% denser smoke plus short orange fire. Tiger: 2/1 HP; player (20 HP): 8/4. The point stays fixed until reset/recovery. World-space particles are emitted along the movement segment; no inherited aircraft velocity, no smoke shadows, dynamic lights or physics.
+- Two shared bounded particle systems (768 smoke / 256 fire) reuse JUICE-01b's procedural puff mask; impact puffs are unchanged. Parameters live in runtime `CombatHitFeedback` on the encounter, with persistent defaults in its script. R clears particles and anchors; killed/untracked targets stop emission and their existing particles fade. Player defeat also stops the trail. Legacy labs do not bind these effects.
+
+## Play Mode gate
+
+1. Open ArcadeDesertE1, Play. Damage Tiger to 2 HP: a continuous dark trail should start on an actual hull surface; at 1 HP see a denser trail and fire. Kill it: emission stops, existing particles fade. Impact puff is still distinct.
+2. Let enemy damage player to 8/4 HP; check the same states through A/D, W, S and sharp bank. Check that source moves with mesh and does not jump between hits; multiple R resets should vary anchors. Check low FPS / boost for gaps and 7/8/9 height changes for long streaks.
+3. R during smoke, R after defeat, map reset: no residual smoke or duplicated particle systems. Confirm both labs and all materials, prefab links and Console remain clean after model reimport.
+4. Evaluate readability and frame rate before JUICE-02b (burning falling wreck), JUICE-02c (terrain explosion/debris/sound/shake), JUICE-03 (wingtip trails), then missiles.

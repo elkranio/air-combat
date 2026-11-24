@@ -1,6 +1,6 @@
 # Air Combat — current handoff
 
-Updated 2026-11-24. Base `d1b8044`: JUICE-01 accepted; FLIGHT-03b, WASD shared fuel, AC-01 BURST baseline / AC-02 optional, two independent 5 HP Tigers (AIR-03) retained. Current playtest: [JUICE-01b](Docs/Production/JUICE_01.md#juice-01b--impact-pop-and-stationary-smoke), stronger enemy impact flash, sparks and world-space fading smoke. Next after green: JUICE-02 critical smoke, falling wreck and ground impact; then JUICE-03 wingtip trails, then missiles. Earlier HUD-02/flight-only notes below are historical, not the current scene state.
+Updated 2026-11-24. Base `58aaf4b`: JUICE-01/01b accepted, FLIGHT-03b, WASD shared fuel, AC-01 BURST baseline / AC-02 optional, two independent 5 HP Tigers (AIR-03). Current playtest: [JUICE-02a](Docs/Production/JUICE_02A.md), model-local procedural damage anchor and critical smoke/fire for both sides. Next JUICE-02b falling wreck, JUICE-02c terrain explosion and debris, JUICE-03 wingtip trails, then missiles. Earlier HUD-02/flight-only notes below are historical, not the current scene state.
 
 ## Goal and immediate order
 
