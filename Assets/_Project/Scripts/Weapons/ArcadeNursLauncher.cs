@@ -52,7 +52,7 @@ namespace AirCombat
             loadout.isActiveAndEnabled && (ReferenceEquals(loadout.SecondaryHudStatus, this) ||
             ReferenceEquals(loadout.PrimaryHudStatus, this));
 
-        public void Bind(FlightController controller, Afterburner fuel, PlayerWeaponTrigger trigger)
+        public void Bind(FlightController controller, Afterburner fuel, PlayerWeaponTrigger trigger, Camera view)
         {
             flight = controller;
             boost = fuel;
@@ -77,7 +77,7 @@ namespace AirCombat
             launchSound = MakeSound(false);
             impactSound = MakeSound(true);
             configured = true;
-            gameObject.AddComponent<NursImpactMarker>().Bind(this, effect);
+            gameObject.AddComponent<NursImpactMarker>().Bind(this, view);
         }
 
         public void TickTrigger(bool held, float now)

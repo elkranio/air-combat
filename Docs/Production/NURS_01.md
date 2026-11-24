@@ -14,3 +14,9 @@ Base `42a6ee1`. Preserve accepted AI-04a2 strong Tiger encounter and MISSILE-04b
 3. R during salvo/flight/rearm: no old projectiles, effects or pending shots. Check H fired/impact counts and HUD. Confirm LMB works independently. Uncheck Ground Nurs Test before Play to restore AI-04a2 dogfight; regression WeaponLab and GroundAttackLab.
 
 Next: NURS-02 stationary destructible ground targets; NURS-03 moving convoy; NURS-04 escort. AC-02 is strong (not rejected for poor feel); explore prolonged depletion/rearm tradeoff later. Distinct equipped weapons own their own marker. No E cycling yet.
+
+## NURS-01a — project the footprint on visible world surfaces
+
+Base `9b7cf9c`. The plateau is a separate mesh and buildings occluded the Terrain-only ring. Replace the lifted ring mesh with an opaque-depth projected world-XZ ellipse and ticks. The actual visible terrain, mesh slope and opaque roof receive the marking regardless of collider setup. Exclude sky and aircraft-height surfaces, retain the amber colour and dimming, render before other transparent effects. Request the URP depth texture only on the ground-test view; dedicated shader is loaded from Resources. No changes to the ballistic footprint calculation, spread, damage, launch or cooldown. This is still a projection of the bare-terrain predicted area; elevated surfaces can intercept rockets earlier. Geometry-aware prediction is a separate follow-up if needed.
+
+Play Mode: fly across the plateau edge and over the barracks; ring must appear on the visible slope, roof and lower ground rather than disappear behind them. Check camera movement, W/S, rearm, flat sand and R. No markings on the jet or sky. If the ring vanishes entirely, inspect URP depth texture and shader Console messages.

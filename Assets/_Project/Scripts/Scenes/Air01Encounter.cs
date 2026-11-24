@@ -120,7 +120,7 @@ namespace AirCombat
                     var mount = new GameObject("NURS / launcher");
                     mount.transform.SetParent(player.transform, false);
                     nursLauncher = mount.AddComponent<ArcadeNursLauncher>();
-                    nursLauncher.Bind(playerFlight, player.GetComponent<Afterburner>(), playerTrigger);
+                    nursLauncher.Bind(playerFlight, player.GetComponent<Afterburner>(), playerTrigger, view);
                     playerTrigger.ConfigureDualSlots(nursLauncher);
                 }
                 else if (missilePrefab != null)
