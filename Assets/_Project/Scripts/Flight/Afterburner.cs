@@ -16,6 +16,7 @@ namespace AirCombat
         public float BoostAcceleration => boostAcceleration;
         public float Charge01 => Mathf.Clamp01(charge / Mathf.Max(0.01f, capacitySeconds));
         public bool IsActive { get; private set; }
+        public bool IsManeuvering { get; private set; }
         private float charge;
         private float delayRemaining;
         private bool wasHeld;
@@ -26,9 +27,10 @@ namespace AirCombat
             delayRemaining = 0f;
             wasHeld = false;
             IsActive = false;
+            IsManeuvering = false;
         }
 
-        private void OnDisable() { IsActive = false; }
+        private void OnDisable() { IsActive = false; IsManeuvering = false; }
 
         // Legacy full-tank maneuver retains its original boost restriction.
         public bool TryConsumeFullCharge()
@@ -47,13 +49,15 @@ namespace AirCombat
             delayRemaining = rechargeDelay;
             wasHeld = false;
             IsActive = false;
+            IsManeuvering = false;
             return true;
         }
 
         public bool Tick(bool held, float deltaTime) => TickResource(held, held, deltaTime);
 
         // Both powered flight modes use the same tank. IsActive specifically
-        // means thrust, for existing flames, sound and camera consumers.
+        // means thrust, for existing camera consumers. IsManeuvering is the
+        // other powered mode, for presentation only.
         public bool TickResource(bool held, bool thrust, float deltaTime)
         {
             if (!isActiveAndEnabled) return false;
@@ -62,6 +66,7 @@ namespace AirCombat
             float dt = Mathf.Max(0f, deltaTime);
             bool powered = held && charge > 0f;
             IsActive = powered && thrust;
+            IsManeuvering = powered && !thrust;
             if (held)
             {
                 if (powered) charge = Mathf.Max(0f, charge - dt);

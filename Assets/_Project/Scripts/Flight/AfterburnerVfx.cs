@@ -15,11 +15,17 @@ namespace AirCombat
         [SerializeField, Min(0.1f)] private float flameLength = 7f;
         [SerializeField] private bool playIgnitionSound;
         [SerializeField, Range(0f, 1f)] private float ignitionVolume = 0.18f;
+        [Header("Tight turn feedback")]
+        [SerializeField, Range(.1f, 1f)] private float maneuverLengthScale = .42f;
+        [SerializeField, Range(.1f, 1f)] private float maneuverWidthScale = .65f;
+        [SerializeField, Range(0f, 60f)] private float maneuverYaw = 25f;
         private Transform[] plumes;
         private Mesh flameMesh;
+        private Mesh maneuverMesh;
         private AudioSource source;
         private AudioClip ignition;
         private bool wasActive;
+        private bool wasManeuvering;
         private bool maneuverFlames;
 
         // Optional maneuver visual override; never changes boost fuel or thrust.
@@ -58,18 +64,41 @@ namespace AirCombat
         private void LateUpdate()
         {
             if (plumes == null) return;
-            bool active = maneuverFlames || (afterburner != null && afterburner.IsActive);
-            if (active && !wasActive && source != null) source.PlayOneShot(ignition, ignitionVolume);
+            // Only an actual powered S request, not the key itself, drives these
+            // smaller jets. Legacy Q/E retains the original straight boost effect.
+            bool tight = !maneuverFlames && afterburner != null && afterburner.IsManeuvering;
+            bool active = tight || maneuverFlames || (afterburner != null && afterburner.IsActive);
+            if (active && (!wasActive || tight != wasManeuvering) && source != null)
+                source.PlayOneShot(ignition, ignitionVolume);
+            if (tight && maneuverMesh == null)
+            {
+                maneuverMesh = Instantiate(flameMesh);
+                maneuverMesh.name = "Tight turn flame";
+                Color[] colors = maneuverMesh.colors;
+                for (int i = 0; i < colors.Length; i++) colors[i].a *= .65f;
+                maneuverMesh.colors = colors;
+            }
             for (int i = 0; i < plumes.Length; i++)
             {
                 var plume = plumes[i];
                 if (plume.gameObject.activeSelf != active) plume.gameObject.SetActive(active);
+                if (tight != wasManeuvering)
+                {
+                    plume.GetComponent<MeshFilter>().sharedMesh = tight ? maneuverMesh : flameMesh;
+                    // Mesh extends along local -Z: positive yaw deflects left.
+                    plume.localRotation = tight
+                        ? Quaternion.Euler(0f, (i % 2 == 0 ? 1f : -1f) * maneuverYaw, 0f)
+                        : Quaternion.identity;
+                }
                 if (!active) continue;
                 float t = Time.time * 36f + i * 1.7f;
                 float width = flameRadius * (1f + 0.08f * Mathf.Sin(t * 1.3f));
-                plume.localScale = new Vector3(width, width, flameLength * (1f + 0.14f * Mathf.Sin(t)));
+                if (tight) width *= maneuverWidthScale;
+                float length = flameLength * (tight ? maneuverLengthScale : 1f);
+                plume.localScale = new Vector3(width, width, length * (1f + 0.14f * Mathf.Sin(t)));
             }
             wasActive = active;
+            wasManeuvering = tight;
         }
 
         private void OnDisable()
@@ -78,7 +107,14 @@ namespace AirCombat
             wasActive = false;
             if (source != null) source.Stop();
             if (plumes != null)
-                foreach (var plume in plumes) if (plume != null) plume.gameObject.SetActive(false);
+                foreach (var plume in plumes)
+                {
+                    if (plume == null) continue;
+                    plume.gameObject.SetActive(false);
+                    plume.localRotation = Quaternion.identity;
+                    plume.GetComponent<MeshFilter>().sharedMesh = flameMesh;
+                }
+            wasManeuvering = false;
         }
 
         private void OnDestroy()
@@ -86,6 +122,7 @@ namespace AirCombat
             if (plumes != null)
                 foreach (var plume in plumes) if (plume != null) Destroy(plume.gameObject);
             if (flameMesh != null) Destroy(flameMesh);
+            if (maneuverMesh != null) Destroy(maneuverMesh);
             if (ignition != null) Destroy(ignition);
             if (source != null) Destroy(source);
         }

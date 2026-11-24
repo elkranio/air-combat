@@ -17,7 +17,6 @@ namespace AirCombat
         [SerializeField] private bool altitudeComparison; // E1c only, disabled in other scenes.
 
         [Header("FLIGHT-02 / Variable maneuverability")]
-        [SerializeField] private bool variableManeuverability = true;
         [SerializeField, Min(.1f)] private float tightTurnSpeed = 35f;
         [SerializeField, Range(.1f, 1f)] private float boostTurnMultiplier = .6f;
         [SerializeField, Min(1f)] private float tightTurnMultiplier = 2f;
@@ -26,7 +25,6 @@ namespace AirCombat
         private Air01Encounter encounter;
         private FlightController flight;
         private Afterburner boost;
-        private BreakTurn breakTurn;
         private ArcadeCameraFollow arcadeCamera;
         private Vector3 spawnPosition;
         private Quaternion spawnRotation;
@@ -62,22 +60,23 @@ namespace AirCombat
             }
             flight = player.GetComponent<FlightController>();
             boost = player.GetComponent<Afterburner>();
-            breakTurn = player.GetComponent<BreakTurn>();
+            var legacyBreak = player.GetComponent<BreakTurn>();
             arcadeCamera = cameraRig.GetComponent<ArcadeCameraFollow>();
-            if (flight == null || boost == null || breakTurn == null || arcadeCamera == null)
+            if (flight == null || boost == null || arcadeCamera == null)
             {
-                Debug.LogError("E1: flight, boost, break-turn or camera missing.", this);
+                Debug.LogError("E1: flight, boost or camera missing.", this);
                 enabled = false;
                 return;
             }
 
             spawnPosition = player.transform.position;
             spawnRotation = player.transform.rotation;
-            breakTurn.Configure(boost, flight.Visual);
-            flight.ConfigureBreakTurn(breakTurn);
-            if (variableManeuverability)
-                flight.ConfigureVariableManeuverability(tightTurnSpeed, boostTurnMultiplier,
-                    tightTurnMultiplier, maneuverResponse);
+            // Production flight is always WASD now. Leave the shared legacy
+            // component available to the labs, but do not equip it on this map.
+            if (legacyBreak != null) legacyBreak.enabled = false;
+            flight.ConfigureBreakTurn(null);
+            flight.ConfigureVariableManeuverability(tightTurnSpeed, boostTurnMultiplier,
+                tightTurnMultiplier, maneuverResponse);
             cameraRig.BindPlayer(player.transform, boost, false);
             cameraRig.BindLockTarget(null, 1f, .5f);
 
@@ -132,7 +131,6 @@ namespace AirCombat
 
         private void ResetFlight()
         {
-            breakTurn.CancelBreak();
             player.transform.SetPositionAndRotation(spawnPosition, spawnRotation);
             SnapCamera(); // No fast camera sweep across the 2 km map.
             encounter?.Restart();
@@ -156,9 +154,8 @@ namespace AirCombat
             GUI.Box(new Rect(12f, 12f, 390f, (altitudeComparison ? 108f : 88f) + (encounter != null ? 22f : 0f)), GUIContent.none);
             GUI.Label(new Rect(22f, 17f, 365f, 22f),
                 altitudeComparison ? "B1a / BARRACKS APPROACH" : "E1 / MAP — FIRST FLIGHT", label);
-            GUI.Label(new Rect(22f, 39f, 365f, 22f), variableManeuverability
-                ? "A/D turn  W boost  S tight  R reset  H hide"
-                : "A/D turn  W boost  Q/E break  R reset  H hide", label);
+            GUI.Label(new Rect(22f, 39f, 365f, 22f),
+                "A/D turn  W boost  S tight  R reset  H hide", label);
             GUI.Label(new Rect(22f, 61f, 365f, 22f),
                 $"Speed {flight.CurrentSpeed:F0}   Boost {boost.Charge01:P0}   Terrain 2000 x 2000", label);
             if (altitudeComparison)

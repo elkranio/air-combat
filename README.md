@@ -4,7 +4,7 @@ Unity 6.6 / URP. **Stylized arcade air combat**: strong aircraft silhouettes, di
 
 ## Start here (current state)
 
-**Current playtest:** [AIR-03 — independent Tiger attack passes](Docs/Production/AIR_03.md). [FLIGHT-02 — variable maneuverability](Docs/Production/FLIGHT_02.md), [HUD-04](Docs/Production/HUD_04.md) and [GUN-03 — AC-02 continuous cannon](Docs/Production/GUN_03.md) accepted for continued testing.
+**Current playtest:** [FLIGHT-03 — tight turn feedback](Docs/Production/FLIGHT_03.md). [AIR-03](Docs/Production/AIR_03.md), [FLIGHT-02](Docs/Production/FLIGHT_02.md), [HUD-04](Docs/Production/HUD_04.md) and [GUN-03](Docs/Production/GUN_03.md) accepted for continued testing.
 
 1. [HANDOFF.md](HANDOFF.md) — authoritative current green, immediate next atom and regression rules.
 2. [GAMEPLAY_COMBAT.md](GAMEPLAY_COMBAT.md) / [GAMEPLAY_ARCHITECTURE.md](GAMEPLAY_ARCHITECTURE.md) — current weapons, controls, radar and scene ownership.
@@ -24,7 +24,7 @@ Unity 6.6 / URP. **Stylized arcade air combat**: strong aircraft silhouettes, di
 
 ## Current gameplay direction
 
-AC-02 continuous fire and FLIGHT-02 continuous W/S control improved the dogfight. Wheel switches weapons; LMB fires the selected mount. AIR-03 tests reduced synchronization and overlap between the two Tigers without changing their flight or weapon stats. Next after green: discuss missiles. Fuel-use audio and full combat polish are deferred.
+FLIGHT-02 continuous W/S control and AIR-03 independent Tiger attack passes are accepted. AC-01 BURST works as the baseline; retain AC-02 continuous for future loadouts. Wheel switches weapons; LMB fires the selected mount. FLIGHT-03 retires production Q/E and adds tight-turn ignition and small angled plumes. Next after green: discuss missiles. Full combat polish is deferred.
 
 ## Working process
 
