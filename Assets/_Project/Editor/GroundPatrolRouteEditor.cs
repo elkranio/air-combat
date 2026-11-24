@@ -259,9 +259,13 @@ namespace AirCombat
             EditorGUI.BeginChangeCheck();
             DrawDefaultInspector();
             bool changed = EditorGUI.EndChangeCheck();
-            if (!PatrolAuthoringState.CanEdit || motor == null || EditorUtility.IsPersistent(motor) || motor.Route == null) return;
-            if (changed && motor.transform.parent == motor.Route.transform)
-                GroundPatrolRouteEditor.SnapPreview(motor, true);
+            if (!PatrolAuthoringState.CanEdit || motor == null || EditorUtility.IsPersistent(motor)) return;
+            if (motor.Route == null)
+            {
+                EditorGUILayout.HelpBox("No route: the unit stays stationary. Assign a scene Patrol Route here to enable movement.", MessageType.Info);
+                return;
+            }
+            if (changed) GroundPatrolRouteEditor.SnapPreview(motor, true);
             if (GUILayout.Button("Snap to Start Point")) GroundPatrolRouteEditor.SnapPreview(motor, true);
             if (motor.transform.parent != motor.Route.transform && GUILayout.Button("Group with assigned route"))
             {

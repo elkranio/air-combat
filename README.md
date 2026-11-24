@@ -8,6 +8,8 @@ Open `Assets/_Project/Scenes/ArcadeDesertE1.unity` and press Play. The current g
 
 A/D steer, W boost, S tight turn, LMB/RMB fire, R reset, H debug. Q/E reserved for future per-slot weapon selection.
 
+To add another mobile AA, drag `Assets/_Project/Prefabs/Ground/AA02_Mantis_Combat.prefab` into the main scene and assign a scene route in its `GroundPatrolMotor` Inspector. See [authoring instructions](GAMEPLAY_ARCHITECTURE.md#add-mobile-aa-to-the-main-map).
+
 ## Current documentation
 
 - [HANDOFF.md](HANDOFF.md) — current baseline, next atoms, regression gates.

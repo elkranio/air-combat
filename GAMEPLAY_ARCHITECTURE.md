@@ -22,7 +22,11 @@ Only the main map is enabled in the build. `E1MapFlightSession` configures varia
 
 `Air Combat > Mission > Create Patrol Route` is the persistent mission tool. Group/point editing, obstacle check and start preview are in the Inspector. A route anchor is independent of the moving child; place and yaw the group, edit waypoints, do not scale the vehicle. Terrain-only path projection; no pathfinding. The old one-time installers are no longer active editor code.
 
-Existing `Prefabs/Aircraft` (including Tiger fighter and chassis), `Prefabs/Ground/AA02_Mantis`, `Prefabs/Camera`, `Prefabs/UI` and environment prefabs are retained. The Mantis prefab is still a visual chassis; the scene wrapper carries the motor and combat component. CLEANUP-02 will formalize reusable battle-ready prefab composition without putting scene references in prefab assets. All labs, their prefabs, and raw art sources stay available. See [asset policy](ART_PIPELINE.md).
+Existing `Prefabs/Aircraft` (including Tiger fighter and chassis), `Prefabs/Camera`, `Prefabs/UI` and environment prefabs are retained. `Prefabs/Ground/AA02_Mantis_Combat.prefab` is the battle-ready unit: root motor and launcher, nested `AA02_Mantis` visual-only prefab, internal visual mount references, no scene route in the asset. The main-map instance retains its route as an override. `Air01Encounter` discovers scene-authored Mantis units in Ground Nurs Test and binds each to player health and radar; no installer or registration list is required. The temporary launch canister remains runtime-only until ART-AA-01. All labs, their prefabs, and raw art sources stay available. See [asset policy](ART_PIPELINE.md).
+
+### Add mobile AA to the main map
+
+Drag `AA02_Mantis_Combat.prefab` into the scene. Create a route with `Air Combat > Mission > Create Patrol Route` or use an existing route. Assign it in the unit’s `GroundPatrolMotor` Inspector; the start pose previews immediately. Use `Group with assigned route` to move the route and child as one group. Different units may use independent routes or different start points on a shared route. Without a route the unit stays where placed. Tune the individual motor and launcher via prefab instance overrides; Play in Ground Nurs Test. Do not apply scene route references to the prefab asset.
 
 ## Future boundary
 
