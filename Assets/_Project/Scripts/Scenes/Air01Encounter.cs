@@ -103,8 +103,9 @@ namespace AirCombat
             }
             // Small opposite yaw offsets preserve a readable two-plane arrival,
             // without forcing the pair to fly as a coordinated formation.
-            if (!SpawnFighter(0, first, heading * Quaternion.Euler(0f, -3f, 0f)) ||
-                !SpawnFighter(1, second, heading * Quaternion.Euler(0f, 3f, 0f)))
+            bool firstLater = Random.value < .5f;
+            if (!SpawnFighter(0, first, heading * Quaternion.Euler(0f, -3f, 0f), firstLater) ||
+                !SpawnFighter(1, second, heading * Quaternion.Euler(0f, 3f, 0f), !firstLater))
             {
                 RemoveAllFighters();
                 return;
@@ -112,10 +113,10 @@ namespace AirCombat
             encounterReady = true;
         }
 
-        private bool SpawnFighter(int index, Vector3 position, Quaternion rotation)
+        private bool SpawnFighter(int index, Vector3 position, Quaternion rotation, bool later)
         {
             GameObject root = Instantiate(enemyPrefab, position, rotation);
-            root.name = index == 0 ? "EF-01 Tiger Alpha / AIR-02b" : "EF-01 Tiger Bravo / AIR-02b";
+            root.name = index == 0 ? "EF-01 Tiger Alpha / AIR-03" : "EF-01 Tiger Bravo / AIR-03";
             var flight = root.GetComponent<CombatAircraftFlight>();
             var health = root.GetComponent<PlayerHitPoints>();
             var contact = root.GetComponent<RadarAirContact>();
@@ -139,7 +140,8 @@ namespace AirCombat
                 Health = health,
                 Contact = contact,
                 Pilot = new ArcadeFighterPilot(flight, boost, gun, player.transform,
-                    playerFlight, boundary, attack)
+                    playerFlight, boundary, (attack ?? new ArcadeFighterPilot.Settings()).CreateVariant(later),
+                    index == 0 ? -1f : 1f)
             };
             fighters.Add(fighter);
             radar.Register(contact);
@@ -196,11 +198,16 @@ namespace AirCombat
 
             for (int i = fighters.Count - 1; i >= 0; i--)
             {
-                Fighter fighter = fighters[i];
-                if (!fighter.Health.IsAlive) RemoveFighterAt(i);
-                else fighter.Pilot.TickFlight(Time.time);
+                if (!fighters[i].Health.IsAlive) RemoveFighterAt(i);
             }
             if (fighters.Count == 0) victory = true;
+            for (int i = 0; i < fighters.Count; i++)
+            {
+                // Both pilots sample the same pre-movement positions. A killed
+                // wingman has already been removed, so the survivor flies normally.
+                Transform wingman = fighters.Count == 2 ? fighters[1 - i].Root.transform : null;
+                fighters[i].Pilot.TickFlight(Time.time, wingman);
+            }
         }
 
         private void LateUpdate()

@@ -1,6 +1,6 @@
 # Air Combat — current handoff
 
-Updated 2026-11-24. Base `10808ba`: [GUN-03](Docs/Production/GUN_03.md), [FLIGHT-01](Docs/Production/FLIGHT_01.md) and [HUD-04](Docs/Production/HUD_04.md) accepted for continued testing; live [AIR-02b](Docs/Production/AIR_02.md) pair encounter. Current playtest: [FLIGHT-02](Docs/Production/FLIGHT_02.md) continuous W/S speed and turn-rate control, shared fuel, Q/E temporarily disabled on the main map. Next separate atom: desynchronize enemy pilots. Earlier HUD-02/flight-only notes below are historical, not the current scene state.
+Updated 2026-11-24. Base `e48636f`: [FLIGHT-02](Docs/Production/FLIGHT_02.md) accepted; W/S continuous speed/turn control stays, Q/E remains disabled on the main map. [GUN-03](Docs/Production/GUN_03.md) and [HUD-04](Docs/Production/HUD_04.md) retained. Current playtest: [AIR-03](Docs/Production/AIR_03.md), individual Tiger phase timings and soft separation, retaining two 5 HP fighters and their existing flight/weapon tuning. Next after green: discuss missiles. Fuel-use audio and combat juice deferred. Earlier HUD-02/flight-only notes below are historical, not the current scene state.
 
 ## Goal and immediate order
 

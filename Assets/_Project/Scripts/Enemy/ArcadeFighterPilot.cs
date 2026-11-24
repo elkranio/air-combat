@@ -24,6 +24,30 @@ namespace AirCombat
             [Min(1f)] public float catchUpDistance = 240f;
             [Min(0f)] public float exitBoostSeconds = .7f;
             [Range(0f, 1f)] public float aimLeadFraction = .75f;
+            [Header("Wingman separation")]
+            [Min(0f)] public float separationRadius = 50f;
+            [Range(0f, 90f)] public float separationTurnDegrees = 55f;
+            [NonSerialized] public float attackReactionSeconds;
+
+            // Keep the authored baseline untouched. Two non-overlapping tempo
+            // bands guarantee some variety, with the assignments swapped each sortie.
+            public Settings CreateVariant(bool later)
+            {
+                var variant = (Settings)MemberwiseClone();
+                variant.attackReactionSeconds = later
+                    ? UnityEngine.Random.Range(.35f, .6f) : UnityEngine.Random.Range(.05f, .2f);
+                variant.attackDistance *= later
+                    ? UnityEngine.Random.Range(.88f, .98f) : UnityEngine.Random.Range(1.04f, 1.12f);
+                float exitTempo = later
+                    ? UnityEngine.Random.Range(1.1f, 1.25f) : UnityEngine.Random.Range(.8f, .95f);
+                variant.exitMinSeconds *= exitTempo;
+                variant.exitMaxSeconds *= exitTempo;
+                variant.closeApproachSeconds *= UnityEngine.Random.Range(.9f, 1.1f);
+                variant.exitDistance *= UnityEngine.Random.Range(.9f, 1.1f);
+                variant.catchUpDistance *= UnityEngine.Random.Range(.9f, 1.1f);
+                variant.exitBoostSeconds *= UnityEngine.Random.Range(.85f, 1.15f);
+                return variant;
+            }
         }
 
         private readonly CombatAircraftFlight flight;
@@ -36,6 +60,10 @@ namespace AirCombat
         private readonly float boundary;
         private float phaseStarted;
         private float closeSince = -1f;
+        private float linedUpSince = -1f;
+        private readonly float fallbackSeparationSide;
+        private float separationSide;
+        private Transform wingman;
         private bool catchUpBoost;
         private Vector3 exitHeading;
 
@@ -46,7 +74,7 @@ namespace AirCombat
 
         public ArcadeFighterPilot(CombatAircraftFlight flight, Afterburner boost,
             AutocannonWeapon gun, Transform target, FlightController targetFlight,
-            float boundary, Settings settings)
+            float boundary, Settings settings, float fallbackSeparationSide = 1f)
         {
             this.flight = flight;
             this.boost = boost;
@@ -56,12 +84,15 @@ namespace AirCombat
             this.targetFlight = targetFlight;
             this.boundary = boundary;
             this.settings = settings ?? new Settings();
+            this.fallbackSeparationSide = fallbackSeparationSide < 0f ? -1f : 1f;
             phaseStarted = Time.time;
         }
 
         // Called before CombatAircraftFlight.Update. No direct transform changes.
-        public void TickFlight(float now)
+        public void TickFlight(float now, Transform liveWingman = null)
         {
+            wingman = liveWingman;
+            if (wingman == null) separationSide = 0f;
             Vector3 position = flight.transform.position;
             float extent = Mathf.Max(Mathf.Abs(position.x), Mathf.Abs(position.z));
             if (State != Phase.ReturnToMap && extent > boundary - 150f)
@@ -86,12 +117,20 @@ namespace AirCombat
 
             if (State == Phase.Approach)
             {
-                if (distance > attackRange) closeSince = -1f;
+                if (distance > attackRange)
+                {
+                    closeSince = -1f;
+                    linedUpSince = -1f;
+                }
                 else
                 {
                     if (closeSince < 0f) closeSince = now;
-                    if (distance > settings.passDistance &&
-                        Mathf.Abs(HeadingError(AimVector(delta, distance))) <= 50f)
+                    bool linedUp = distance > settings.passDistance &&
+                        Mathf.Abs(HeadingError(AimVector(delta, distance))) <= 50f;
+                    if (!linedUp) linedUpSince = -1f;
+                    else if (linedUpSince < 0f) linedUpSince = now;
+                    // Delay the phase decision, never the actual steering input.
+                    if (linedUp && now - linedUpSince >= settings.attackReactionSeconds)
                     {
                         Enter(Phase.Attack, now);
                         AttackPasses++;
@@ -169,6 +208,7 @@ namespace AirCombat
             State = next;
             phaseStarted = now;
             closeSince = -1f;
+            linedUpSince = -1f;
         }
 
         private Vector3 AimVector(Vector3 delta, float distance)
@@ -182,7 +222,47 @@ namespace AirCombat
 
         private void SteerTo(Vector3 direction, bool wantsBoost)
         {
+            if (State != Phase.ReturnToMap)
+                direction = WithSeparation(direction);
+            else separationSide = 0f;
             flight.SetPilotCommand(Mathf.Clamp(HeadingError(direction) / 30f, -1f, 1f), wantsBoost);
+        }
+
+        private Vector3 WithSeparation(Vector3 direction)
+        {
+            float radius = settings.separationRadius;
+            if (wingman == null || radius <= 0f || settings.separationTurnDegrees <= 0f)
+            {
+                separationSide = 0f;
+                return direction;
+            }
+            Vector3 away = Flat(flight.transform.position - wingman.position);
+            float distance = away.magnitude;
+            if (distance >= radius)
+            {
+                separationSide = 0f;
+                return direction;
+            }
+            Vector3 heading = Flat(direction).normalized;
+            if (heading.sqrMagnitude < .0001f) heading = Flat(flight.transform.forward).normalized;
+            Vector3 right = Vector3.Cross(Vector3.up, heading);
+            float lateral = distance > .001f ? Vector3.Dot(right, away / distance) : 0f;
+            // Commit to a side for this close encounter, rather than oscillating
+            // left/right at the moment the two aircraft cross or overlap.
+            if (separationSide == 0f)
+            {
+                if (Mathf.Abs(lateral) > .15f) separationSide = Mathf.Sign(lateral);
+                else
+                {
+                    // On a head-on encounter both turn to their own right;
+                    // for a same-heading stack the two indices choose opposite sides.
+                    bool headOn = Vector3.Dot(heading, Flat(wingman.forward).normalized) < -.5f;
+                    separationSide = headOn ? 1f : fallbackSeparationSide;
+                }
+            }
+            float strength = 1f - Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(radius * .35f, radius, distance));
+            return Quaternion.AngleAxis(separationSide * settings.separationTurnDegrees * strength,
+                Vector3.up) * heading;
         }
 
         private float HeadingError(Vector3 direction) => direction.sqrMagnitude > .0001f
