@@ -4,40 +4,52 @@ using UnityEngine.Rendering;
 
 namespace AirCombat
 {
-    // Arcade three-phase projectile. Only the committed horizontal flight is
+    // Arcade cold-launch projectile. Only the committed horizontal flight is
     // damaging. Once the heading is captured it never reads target position again.
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(190)]
     public sealed class MantisVerticalRocket : MonoBehaviour
     {
-        private enum Phase { Rise, Align, Flight, Puff }
+        private enum Phase { Ejection, Align, Ignition, Flight, Puff }
         private static readonly RaycastHit[] Hits = new RaycastHit[64];
         private static int syncedFrame = -1;
         private Phase phase;
         private Transform owner;
         private PlayerHitPoints target;
         private Transform body;
-        private LineRenderer exhaust, glow;
+        private LineRenderer exhaust, glow, ejectSmoke, jetFront, jetRear;
         private TrailRenderer trail;
-        private AudioSource audioSource;
-        private AudioClip ignition, burst;
-        private float height, riseSpeed, alignSeconds, speed, remaining, age, volume;
+        private float height, ejectSeconds, alignSeconds, ignitionSeconds, speed, remaining, age;
+        private float riseDistance, riseEndSpeed, riseStartSpeed, coastSpeed, flightAge;
+        private Vector3 launchPoint, horizontalAim;
         private int damage;
         private Vector3 heading;
         private Action onHit;
         private bool launched;
 
-        public void Launch(Transform shooter, PlayerHitPoints player, float climbSpeed, float alignmentTime,
-            float cruiseSpeed, float range, int hitDamage, Material hull, Material effects,
-            AudioClip launchSound, AudioClip blastSound, float soundVolume, Action hitCallback)
+        public void Launch(Transform shooter, PlayerHitPoints player, float ejectionTime, float alignmentTime,
+            float accelerationTime, float cruiseSpeed, float range, int hitDamage,
+            Material hull, Material effects, Action hitCallback)
         {
             owner = shooter; target = player; height = player.transform.position.y;
-            riseSpeed = Mathf.Max(1f, climbSpeed); alignSeconds = Mathf.Max(.05f, alignmentTime);
+            ejectSeconds = Mathf.Max(.1f, ejectionTime);
+            alignSeconds = Mathf.Max(.1f, alignmentTime);
+            ignitionSeconds = Mathf.Max(.05f, accelerationTime);
             speed = Mathf.Max(1f, cruiseSpeed); remaining = Mathf.Max(1f, range);
-            damage = hitDamage; onHit = hitCallback; volume = soundVolume;
-            ignition = launchSound; burst = blastSound;
+            damage = hitDamage; onHit = hitCallback;
+            launchPoint = transform.position;
+            height = Mathf.Max(launchPoint.y, height);
+            float climb = height - launchPoint.y;
+            // Two continuous velocity segments. The final part of the climb
+            // overlaps the attitude turn, rather than stopping at the plane.
+            float turnRise = Mathf.Min(climb * .10f, climb * alignSeconds / (2f * ejectSeconds + alignSeconds));
+            riseDistance = climb - turnRise;
+            riseEndSpeed = 2f * turnRise / alignSeconds;
+            riseStartSpeed = 2f * riseDistance / ejectSeconds - riseEndSpeed;
+            coastSpeed = speed * .08f;
             heading = Vector3.up;
-            phase = Phase.Rise;
+            horizontalAim = Vector3.forward;
+            phase = Phase.Ejection;
             var model = GameObject.CreatePrimitive(PrimitiveType.Capsule);
             model.name = "Rocket body";
             model.transform.SetParent(transform, false);
@@ -51,6 +63,9 @@ namespace AirCombat
             body = model.transform;
             exhaust = MakeLine("Motor core", effects, 1.1f);
             glow = MakeLine("Motor glow", effects, 2.3f);
+            ejectSmoke = MakeLine("Cold ejection smoke", effects, 3f);
+            jetFront = MakeLine("Attitude jet / nose", effects, .65f);
+            jetRear = MakeLine("Attitude jet / tail", effects, .65f);
             var trailObject = new GameObject("Rocket smoke");
             trailObject.transform.SetParent(transform, false);
             trail = trailObject.AddComponent<TrailRenderer>();
@@ -62,12 +77,8 @@ namespace AirCombat
             trail.endColor = new Color(.55f,.57f,.54f,0f);
             trail.shadowCastingMode = ShadowCastingMode.Off;
             trail.receiveShadows = false;
-            trail.Clear(); trail.emitting = true;
-            audioSource = gameObject.AddComponent<AudioSource>();
-            audioSource.playOnAwake = false;
-            audioSource.spatialBlend = .25f;
-            audioSource.minDistance = 30f; audioSource.maxDistance = 350f;
-            if (ignition != null) audioSource.PlayOneShot(ignition, volume * .65f);
+            trail.Clear(); trail.emitting = false;
+            // Cold-launch experiment intentionally silent. Never reuse Flak audio.
             launched = true;
             DrawMotor();
         }
@@ -95,33 +106,69 @@ namespace AirCombat
                 if (age >= .55f) { Destroy(gameObject); return; }
                 DrawPuff(); return;
             }
-            if (phase == Phase.Rise)
+            // Carry leftover frame time across phase boundaries. The launch is
+            // a continuous trajectory even at low frame rates.
+            while (dt > .000001f && phase != Phase.Puff)
             {
-                Vector3 p = transform.position;
-                p.y = Mathf.MoveTowards(p.y, height, riseSpeed * dt);
-                transform.position = p;
-                if (Mathf.Abs(p.y - height) < .001f) { phase = Phase.Align; age = 0f; }
-                DrawMotor(); return;
-            }
-            if (phase == Phase.Align)
-            {
-                if (target == null || !target.IsAlive) { BeginPuff(transform.position); return; }
-                age += dt;
-                Vector3 delta = target.transform.position - transform.position;
-                delta.y = 0f;
-                // Aim at the CURRENT position, never at a predicted intercept.
-                Vector3 aim = delta.sqrMagnitude > .0001f ? delta.normalized : Vector3.forward;
-                heading = Vector3.Slerp(Vector3.up, aim, Mathf.Clamp01(age / alignSeconds)).normalized;
-                if (age >= alignSeconds)
+                if (phase == Phase.Ejection)
                 {
-                    heading = aim; // one final snapshot; immutable thereafter
-                    phase = Phase.Flight; age = 0f;
-                    if (ignition != null) audioSource.PlayOneShot(ignition, volume);
+                    float slice = Mathf.Min(dt, ejectSeconds - age);
+                    age += slice; dt -= slice;
+                    Vector3 p = launchPoint;
+                    p.y += riseStartSpeed * age + .5f * (riseEndSpeed - riseStartSpeed) / ejectSeconds * age * age;
+                    transform.position = p;
+                    if (age >= ejectSeconds - .000001f)
+                    { phase = Phase.Align; age = 0f; }
+                    continue;
                 }
-                DrawMotor(); return;
+                if (phase == Phase.Align)
+                {
+                    if (target == null || !target.IsAlive) { BeginPuff(transform.position); return; }
+                    float slice = Mathf.Min(dt, alignSeconds - age);
+                    float before = age / alignSeconds;
+                    age += slice; dt -= slice;
+                    float t = Mathf.Clamp01(age / alignSeconds);
+                    Vector3 delta = target.transform.position - transform.position;
+                    delta.y = 0f;
+                    if (delta.sqrMagnitude > .0001f) horizontalAim = delta.normalized;
+                    // Decelerate the vertical ejection to zero while adding a
+                    // small sideways drift; main engine is not active yet.
+                    Vector3 p = transform.position + horizontalAim * (coastSpeed * alignSeconds * .5f * (t*t - before*before));
+                    p.y = launchPoint.y + riseDistance + riseEndSpeed * alignSeconds * (t - .5f*t*t);
+                    transform.position = p;
+                    heading = Vector3.Slerp(Vector3.up, horizontalAim, Mathf.SmoothStep(0f, 1f, t)).normalized;
+                    if (age >= alignSeconds - .000001f)
+                    {
+                        delta = target.transform.position - transform.position; delta.y = 0f;
+                        if (delta.sqrMagnitude > .0001f) horizontalAim = delta.normalized;
+                        heading = horizontalAim; // last live aim sample; no lead or correction afterwards
+                        p.y = height; transform.position = p;
+                        phase = Phase.Ignition; age = 0f; flightAge = 0f;
+                        trail.Clear(); trail.emitting = true;
+                    }
+                    continue;
+                }
+                if (phase == Phase.Ignition)
+                {
+                    float slice = Mathf.Min(dt, ignitionSeconds - age);
+                    float a = age; age += slice; dt -= slice;
+                    float distance = coastSpeed * slice + .5f * (speed - coastSpeed) / ignitionSeconds * (age*age - a*a);
+                    flightAge += slice;
+                    if (!MoveCommitted(distance)) return;
+                    if (age >= ignitionSeconds - .000001f) { phase = Phase.Flight; age = 0f; }
+                    continue;
+                }
+                flightAge += dt;
+                if (!MoveCommitted(speed * dt)) return;
+                dt = 0f;
             }
+            DrawMotor();
+        }
+
+        private bool MoveCommitted(float distance)
+        {
             if (syncedFrame != Time.frameCount) { Physics.SyncTransforms(); syncedFrame = Time.frameCount; }
-            float step = Mathf.Min(remaining, speed * dt);
+            float step = Mathf.Min(remaining, distance);
             Vector3 start = transform.position;
             if (step > .0001f)
             {
@@ -139,31 +186,54 @@ namespace AirCombat
                 {
                     if (target != null && closest.collider.GetComponentInParent<PlayerHitPoints>() == target &&
                         target.ApplyDamage(closest.point, damage)) onHit?.Invoke();
-                    BeginPuff(closest.point); return;
+                    BeginPuff(closest.point); return false;
                 }
             }
             transform.position = start + heading * step;
             remaining -= step;
-            age += dt;
-            if (remaining <= .001f) { BeginPuff(transform.position); return; }
-            DrawMotor();
+            if (remaining <= .001f) { BeginPuff(transform.position); return false; }
+            return true;
         }
 
         private void DrawMotor()
         {
             body.rotation = Quaternion.FromToRotation(Vector3.up, heading);
+            bool powered = phase == Phase.Ignition || phase == Phase.Flight;
+            exhaust.enabled = glow.enabled = powered;
+            jetFront.enabled = jetRear.enabled = phase == Phase.Align;
+            float sinceLaunch = phase == Phase.Ejection ? age : ejectSeconds + age;
+            ejectSmoke.enabled = phase == Phase.Ejection || (phase == Phase.Align && sinceLaunch < .64f);
+            if (ejectSmoke.enabled)
+            {
+                float t = Mathf.Clamp01(sinceLaunch / .64f);
+                Vector3 p = launchPoint + Vector3.up * (t * 1.5f);
+                SetLine(ejectSmoke, p - Vector3.right * (1f+t*2f), p + Vector3.right * (1f+t*2f),
+                    Mathf.Lerp(3f, 8f, t), new Color(.65f,.64f,.59f,.55f*(1f-t)));
+            }
+            if (phase == Phase.Align)
+            {
+                Vector3 axis = Vector3.Cross(Vector3.up, horizontalAim).normalized;
+                Vector3 tangent = Vector3.Cross(axis, heading).normalized;
+                Vector3 front = transform.position + heading * 1.5f;
+                Vector3 rear = transform.position - heading * 1.5f;
+                float pulse = .65f + .35f * Mathf.Abs(Mathf.Sin(age * 65f));
+                Color hot = new Color(1f,.77f,.35f,.9f);
+                SetLine(jetFront, front - tangent*.55f, front - tangent*(.55f+3.5f*pulse), .9f, hot);
+                SetLine(jetRear, rear + tangent*.55f, rear + tangent*(.55f+3.5f*pulse), .9f, hot);
+            }
+            if (!powered) return;
             Vector3 nozzle = transform.position - heading * 2.4f;
-            float length = phase == Phase.Flight ? Mathf.Lerp(13f, 6f, Mathf.Clamp01(age / .18f)) :
-                phase == Phase.Align ? 1.8f : 4f;
-            SetLine(exhaust, nozzle - heading * length, nozzle, 1.05f, new Color(1f,.91f,.55f,1f));
-            SetLine(glow, nozzle - heading * length, nozzle, 2.4f, new Color(1f,.43f,.10f,.45f));
+            float length = Mathf.Lerp(16f, 7f, Mathf.Clamp01(flightAge / .24f));
+            SetLine(exhaust, nozzle - heading * length, nozzle, 1.15f, new Color(1f,.91f,.55f,1f));
+            SetLine(glow, nozzle - heading * length, nozzle, 2.7f, new Color(1f,.43f,.10f,.50f));
         }
 
         private void BeginPuff(Vector3 p)
         {
             transform.position = p; phase = Phase.Puff; age = 0f;
             body.gameObject.SetActive(false); trail.emitting = false;
-            if (burst != null) audioSource.PlayOneShot(burst, volume * .65f);
+            ejectSmoke.enabled = jetFront.enabled = jetRear.enabled = false;
+            exhaust.enabled = glow.enabled = true;
             DrawPuff();
         }
 

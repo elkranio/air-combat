@@ -10,12 +10,12 @@ namespace AirCombat
     public sealed class MantisGun : MonoBehaviour, IRadarContact
     {
         public enum AttackMode { Flak, Tracers, VerticalUnguided }
-        [Header("Attack mode (AA-01e)")]
+        [Header("Attack mode (AA-01e1)")]
         [SerializeField] private AttackMode attackMode = AttackMode.VerticalUnguided;
-        [Header("Vertical unguided pair")]
-        [SerializeField, Min(.02f)] private float verticalShotInterval = .35f;
-        [SerializeField, Min(1f)] private float verticalRiseSpeed = 180f;
-        [SerializeField, Min(.05f)] private float verticalAlignSeconds = .16f;
+        [Header("Vertical unguided / cold launch")]
+        [SerializeField, Min(.1f)] private float verticalEjectionSeconds = .48f;
+        [SerializeField, Min(.1f)] private float verticalTurnSeconds = .32f;
+        [SerializeField, Min(.05f)] private float verticalIgnitionSeconds = .22f;
         [SerializeField, Min(1f)] private float verticalCruiseSpeed = 240f;
         [SerializeField, Min(1f)] private float verticalRange = 310f;
         [SerializeField, Min(.1f)] private float verticalPause = 2.5f;
@@ -58,7 +58,7 @@ namespace AirCombat
         private readonly List<MantisFlakCharge> flakCharges = new List<MantisFlakCharge>();
         private readonly List<MantisVerticalRocket> verticalRockets = new List<MantisVerticalRocket>();
         private GameObject verticalPod;
-        private Transform verticalLeft, verticalRight;
+        private Transform verticalSocket;
         private Renderer[] barrelRenderers;
         private bool[] barrelVisibility;
         private Material rocketHull;
@@ -238,8 +238,7 @@ namespace AirCombat
                 rocketHull.SetFloat("_Smoothness", .08f);
                 verticalPod = new GameObject("AA-01e / temporary vertical pod");
                 verticalPod.transform.SetParent(turretYaw, false);
-                verticalLeft = BuildTube(-1.05f);
-                verticalRight = BuildTube(1.05f);
+                verticalSocket = BuildTube(0f);
             }
             if (verticalPod != null) verticalPod.SetActive(visible);
             if (verticalPod != null && barrelRenderers != null)
@@ -257,7 +256,7 @@ namespace AirCombat
             var collider = tube.GetComponent<Collider>();
             collider.enabled = false; Destroy(collider);
             tube.GetComponent<MeshRenderer>().sharedMaterial = rocketHull;
-            var socket = new GameObject(x < 0 ? "Vertical L" : "Vertical R").transform;
+            var socket = new GameObject("Vertical launch socket").transform;
             socket.SetParent(verticalPod.transform, false);
             socket.localPosition = new Vector3(x, 3.05f, 1.0f);
             return socket;
@@ -265,31 +264,19 @@ namespace AirCombat
 
         private void TickVertical(bool inRange)
         {
-            if (verticalLeft == null || verticalRight == null) return;
-            if (pending > 0)
-            {
-                if (Time.time < nextPair) return;
-                FireVertical(verticalRight);
-                pending = 0;
-                nextBurst = Time.time + verticalPause;
-                return;
-            }
-            if (!inRange || Time.time < nextBurst) return;
-            FireVertical(verticalLeft);
-            pending = 1;
-            nextPair = Time.time + verticalShotInterval;
+            if (verticalSocket == null || !inRange || Time.time < nextBurst) return;
+            FireVertical(verticalSocket);
+            nextBurst = Time.time + verticalPause;
         }
 
         private void FireVertical(Transform socket)
         {
-            if (flakBlastClip == null) flakBlastClip = MantisFlakCharge.MakeSound(false);
-            if (flakShotClip == null) flakShotClip = MantisFlakCharge.MakeSound(true);
-            var go = new GameObject("Mantis / vertical unguided rocket");
+            var go = new GameObject("Mantis / cold-launch unguided rocket");
             go.transform.position = socket.position;
             var rocket = go.AddComponent<MantisVerticalRocket>();
-            rocket.Launch(transform, target, verticalRiseSpeed, verticalAlignSeconds,
-                verticalCruiseSpeed, verticalRange, verticalDamage, rocketHull, tracer,
-                flakShotClip, flakBlastClip, flakSoundVolume, () => HitCount++);
+            rocket.Launch(transform, target, verticalEjectionSeconds, verticalTurnSeconds,
+                verticalIgnitionSeconds, verticalCruiseSpeed, verticalRange,
+                verticalDamage, rocketHull, tracer, () => HitCount++);
             verticalRockets.Add(rocket);
             FiredCount++;
         }

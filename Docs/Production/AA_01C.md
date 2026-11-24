@@ -1,6 +1,13 @@
 # AA-01c — Mantis combat
 
-## AA-01e — vertical unguided experiment (current)
+## AA-01e1 — cold launch (current)
+
+Base `f24ee9a`. Keep Attack Mode = Vertical Unguided; no scene migration. One centered temporary canister, one rocket per 2.5s cycle. Flak and Tracers unchanged. New Inspector timings replace old rise speed and alignment fields (no stale serialized .16s alignment): ejection .48s, turn .32s, ignition acceleration .22s. Fixed launch-time flight plane, 240 units/s final speed, 310 range, 3 HP physical hit. Silent until dedicated rocket audio pass.
+
+- Ejection decelerates vertically with a short launch smoke puff, no sustained main exhaust. The turn completes the climb while the body rotates with visible side jets and a small horizontal drift. Ignition snapshots current player XZ, accelerates smoothly along that course, and enables the main exhaust/smoke. No further tracking, no lead, no damage before ignition, no splash damage.
+- Play gate: inspect continuity at climb/turn/ignition, one launch per cycle, no Flak audio, fixed straight heading after ignition, range expiry, reset and mode switching. Compare multiple independently placed units after the single-unit read is accepted. NURS, radar and patrol unaffected.
+
+## AA-01e — vertical unguided experiment (historical)
 
 Base `53f907f`. Flak was mechanically playable but the stationary airborne markers read as ground objects under the oblique camera. Preserve Flak and Tracers; in Edit Mode select the existing Mantis vehicle wrapper (MantisGun), set **Attack Mode = Vertical Unguided**, save and Play. No installer or scene migration. New components default to Vertical Unguided; existing serialized mode is deliberately preserved until changed. Runtime-only twin vertical pod replaces the gun meshes in this mode; no art/prefab changes.
 
