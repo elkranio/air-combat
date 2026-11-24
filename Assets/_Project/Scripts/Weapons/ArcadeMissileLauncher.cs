@@ -7,7 +7,7 @@ namespace AirCombat
     [DisallowMultipleComponent]
     public sealed class ArcadeMissileLauncher : MonoBehaviour, ITriggeredWeapon, IWeaponHudStatus
     {
-        [SerializeField, Min(.01f)] private float acquireSeconds = .5f;
+        [SerializeField, Min(.01f)] private float acquireSeconds = .15f;
         [SerializeField, Min(0f)] private float partialGraceSeconds = .5f;
         [SerializeField, Min(0f)] private float lockedGraceSeconds = 1f;
         [SerializeField, Min(.1f)] private float reloadSeconds = 20f;
