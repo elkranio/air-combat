@@ -30,13 +30,20 @@ namespace AirCombat
 
         private void OnDisable() { IsActive = false; }
 
-        // Optional instant full-tank maneuver, used only by Weapon Lab rolls.
-        // No separate cooldown: recharge and the normal boost meter are the price.
+        // Legacy full-tank maneuver retains its original boost restriction.
         public bool TryConsumeFullCharge()
         {
+            return !IsActive && TryConsumeCharge(1f);
+        }
+
+        // Atomic fractional tank cost; the maneuver can take over from active boost.
+        // No extra cooldown beyond the existing resource recharge delay.
+        public bool TryConsumeCharge(float fraction)
+        {
             float capacity = Mathf.Max(0.01f, capacitySeconds);
-            if (!isActiveAndEnabled || IsActive || charge < capacity - 0.0001f) return false;
-            charge = 0f;
+            float cost = capacity * Mathf.Clamp01(fraction);
+            if (!isActiveAndEnabled || charge < cost - 0.0001f) return false;
+            charge = Mathf.Max(0f, charge - cost);
             delayRemaining = rechargeDelay;
             wasHeld = false;
             IsActive = false;

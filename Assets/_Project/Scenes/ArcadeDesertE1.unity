@@ -1715,6 +1715,22 @@ PrefabInstance:
       propertyPath: 'm_Materials.Array.data[0]'
       value: 
       objectReference: {fileID: 2100000, guid: bd1ab699467949d43808136288a2c115, type: 2}
+    - target: {fileID: 7591061402932717815, guid: 7946d0432f6b5a14e9abc025e7b963d1, type: 3}
+      propertyPath: burstDuration
+      value: 0.45
+      objectReference: {fileID: 0}
+    - target: {fileID: 7591061402932717815, guid: 7946d0432f6b5a14e9abc025e7b963d1, type: 3}
+      propertyPath: fuelCost01
+      value: 0.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 7591061402932717815, guid: 7946d0432f6b5a14e9abc025e7b963d1, type: 3}
+      propertyPath: turnAngle
+      value: 180
+      objectReference: {fileID: 0}
+    - target: {fileID: 7591061402932717815, guid: 7946d0432f6b5a14e9abc025e7b963d1, type: 3}
+      propertyPath: turnDuration
+      value: 0.4
+      objectReference: {fileID: 0}
     - target: {fileID: 7607778465145469315, guid: 7946d0432f6b5a14e9abc025e7b963d1, type: 3}
       propertyPath: 'm_Materials.Array.data[0]'
       value: 

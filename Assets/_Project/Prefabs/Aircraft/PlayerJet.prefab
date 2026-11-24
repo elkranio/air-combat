@@ -169,6 +169,7 @@ MonoBehaviour:
   burstDuration: 1
   breakBankAngle: 70
   turnAngle: 90
+  fuelCost01: 1
 --- !u!114 &4501855048515277846
 MonoBehaviour:
   m_ObjectHideFlags: 0

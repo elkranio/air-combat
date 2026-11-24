@@ -82,7 +82,7 @@ namespace AirCombat
                 Time.deltaTime, out breakSteer, out breakTurnRate);
             if (breaking) { steer = breakSteer; actualTurnRate = breakTurnRate; }
 
-            // Break turn already paid the entire tank. No extra charge drain or
+            // Break turn already paid its configured fuel cost. No extra charge drain or
             // held boost during the maneuver; grant the motor a short powered burst.
             bool boostHeld = keyboard != null && Application.isFocused &&
                 (useFixedCruiseWBoost ? keyboard.wKey.isPressed : keyboard.spaceKey.isPressed);

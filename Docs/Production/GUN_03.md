@@ -1,6 +1,6 @@
 # GUN-03 — AC-02 continuous cannon (playtest)
 
-Base: `6ef7e67` (AIR-02b pair encounter). Not GREEN until Unity playtest.
+Base: `6ef7e67` (AIR-02b pair encounter). Continuous fire accepted in playtest at `c98335c`.
 
 - AC-02 is equipped only on the main map Kestrel, alongside unchanged AC-01.
   Mouse wheel selects either; LMB fires nose-forward. Tiger and both labs retain their guns.

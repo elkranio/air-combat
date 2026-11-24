@@ -4,7 +4,7 @@ Unity 6.6 / URP. **Stylized arcade air combat**: strong aircraft silhouettes, di
 
 ## Start here (current state)
 
-**Current playtest:** [GUN-03 — AC-02 continuous cannon](Docs/Production/GUN_03.md), following the [AIR-02b pair encounter](Docs/Production/AIR_02.md).
+**Current playtest:** [FLIGHT-01 — 180-degree half-tank Break Turn](Docs/Production/FLIGHT_01.md). [GUN-03 — AC-02 continuous cannon](Docs/Production/GUN_03.md) accepted; [AIR-02b pair encounter](Docs/Production/AIR_02.md) retained.
 
 1. [HANDOFF.md](HANDOFF.md) — authoritative current green, immediate next atom and regression rules.
 2. [GAMEPLAY_COMBAT.md](GAMEPLAY_COMBAT.md) / [GAMEPLAY_ARCHITECTURE.md](GAMEPLAY_ARCHITECTURE.md) — current weapons, controls, radar and scene ownership.
@@ -24,7 +24,7 @@ Unity 6.6 / URP. **Stylized arcade air combat**: strong aircraft silhouettes, di
 
 ## Current gameplay direction
 
-Compare fixed-forward AC-01 BURST with AC-02 continuous fire in the live two-Tiger encounter. Wheel switches weapons; LMB fires the selected mount. Next separate atom: reduce synchronization and overlap between enemy pilots. Keep land combat and full polish out of this immediate atom.
+AC-02 continuous fire improved the dogfight. Test a fast 180-degree Q/E reversal for half a boost tank before changing enemies. Wheel switches weapons; LMB fires the selected mount. Next separate atom: reduce synchronization and overlap between enemy pilots. Keep land combat and full polish out of this immediate atom.
 
 ## Working process
 
