@@ -1,0 +1,192 @@
+using System.Collections.Generic;
+using UnityEngine;
+
+namespace AirCombat
+{
+    // Mobile arcade AA: quick servos between bursts, a committed world-space
+    // firing corridor during each burst. Independent of the patrol motor.
+    [DisallowMultipleComponent]
+    [DefaultExecutionOrder(180)]
+    public sealed class MantisGun : MonoBehaviour, IRadarContact
+    {
+        [Header("Tracking")]
+        [SerializeField] private Transform turretYaw, gunPitch, muzzleL, muzzleR;
+        [SerializeField, Min(1f)] private float detectionRange = 210f;
+        [SerializeField, Min(1f)] private float yawSpeed = 240f;
+        [SerializeField, Min(1f)] private float pitchSpeed = 180f;
+        [SerializeField, Range(1f, 30f)] private float firingTolerance = 5f;
+        [SerializeField, Range(1f, 89f)] private float maxElevation = 85f;
+        [Header("Paired bursts")]
+        [SerializeField, Range(1, 20)] private int pairsPerBurst = 7;
+        [SerializeField, Min(.02f)] private float pairInterval = .085f;
+        [SerializeField, Min(.1f)] private float pauseMin = 1.25f;
+        [SerializeField, Min(.1f)] private float pauseMax = 1.8f;
+        [SerializeField, Range(0f, 10f)] private float burstDrift = 3f;
+        [SerializeField, Range(0f, 5f)] private float roundSpread = .65f;
+        [Header("Arcade projectile")]
+        [SerializeField, Min(1f)] private float projectileSpeed = 190f;
+        [SerializeField, Min(1f)] private float projectileRange = 340f;
+        [SerializeField, Min(1f)] private float tracerLength = 13f;
+        [SerializeField, Min(1f)] private float dangerHeight = 13f;
+        [SerializeField, Min(3f)] private float airPuffAbove = 5f;
+        [SerializeField, Min(1)] private int damage = 1;
+
+        private PlayerHitPoints target;
+        private AircraftRadar radar;
+        private Material tracer;
+        private readonly List<MantisRound> rounds = new List<MantisRound>();
+        private Vector3 previousPosition, targetVelocity, burstDirection;
+        private bool sampled, bound;
+        private int pending;
+        private float nextPair, nextBurst, driftYaw, driftPitch;
+        public int FiredCount { get; private set; }
+        public int HitCount { get; private set; }
+        public bool IsBursting => pending > 0;
+        public RadarContactType RadarKind => RadarContactType.GroundDefense;
+        public Vector3 RadarPosition => transform.position;
+        public float RadarThreatRadius => detectionRange;
+        public bool IsRadarVisible => bound && isActiveAndEnabled;
+
+        public void ConfigureArt(Transform yaw, Transform pitch, Transform left, Transform right)
+        { turretYaw = yaw; gunPitch = pitch; muzzleL = left; muzzleR = right; }
+
+        public void Bind(PlayerHitPoints player, AircraftRadar sensor)
+        {
+            Unbind();
+            if (player == null || sensor == null || turretYaw == null || gunPitch == null || muzzleL == null || muzzleR == null)
+            { Debug.LogError("Mantis: missing player, radar or gun sockets.", this); return; }
+            var shader = Shader.Find("AirCombat/SandboxEffect");
+            if (shader == null) { Debug.LogError("Mantis: tracer shader missing.", this); return; }
+            if (tracer == null) tracer = new Material(shader) { name = "Mantis tracer / runtime" };
+            target = player;
+            radar = sensor;
+            bound = true;
+            if (isActiveAndEnabled) radar.Register(this);
+            ResetCombat();
+        }
+
+        public void ResetCombat()
+        {
+            ClearRounds();
+            pending = 0;
+            sampled = false;
+            targetVelocity = Vector3.zero;
+            FiredCount = HitCount = 0;
+            nextBurst = Time.time + .5f;
+            if (turretYaw != null) turretYaw.localRotation = Quaternion.identity;
+            if (gunPitch != null) gunPitch.localRotation = Quaternion.Euler(-18f, 0f, 0f);
+        }
+
+        public void Unbind()
+        {
+            if (radar != null) radar.Unregister(this);
+            ClearRounds();
+            pending = 0;
+            bound = false;
+            target = null;
+            radar = null;
+        }
+
+        private void OnEnable() { if (bound && radar != null) radar.Register(this); }
+        private void OnDisable() { if (radar != null) radar.Unregister(this); pending = 0; ClearRounds(); }
+        private void OnDestroy() { Unbind(); if (tracer != null) Destroy(tracer); }
+
+        private void ClearRounds()
+        {
+            foreach (var round in rounds)
+                if (round != null) { round.gameObject.SetActive(false); Destroy(round.gameObject); }
+            rounds.Clear();
+        }
+
+        private void LateUpdate()
+        {
+            if (!bound || target == null) return;
+            rounds.RemoveAll(r => r == null);
+            if (!target.IsAlive) { pending = 0; return; }
+            float dt = Time.deltaTime;
+            Vector3 pos = target.transform.position;
+            if (sampled && dt > 0f)
+            {
+                Vector3 measured = (pos - previousPosition) / dt;
+                targetVelocity = measured.sqrMagnitude > 250f * 250f ? Vector3.zero :
+                    Vector3.Lerp(targetVelocity, measured, 1f - Mathf.Exp(-12f * dt));
+            }
+            previousPosition = pos;
+            sampled = true;
+            Vector3 horizontal = pos - transform.position;
+            horizontal.y = 0f;
+            bool inRange = horizontal.sqrMagnitude <= detectionRange * detectionRange;
+            if (!inRange && pending == 0) return;
+
+            Vector3 origin = (muzzleL.position + muzzleR.position) * .5f;
+            // Short constant-velocity arcade prediction; never update a round after launch.
+            Vector3 delta = pos - origin;
+            float t = delta.magnitude / projectileSpeed;
+            for (int i = 0; i < 4; i++)
+                t = Mathf.Min(projectileRange / projectileSpeed, (delta + targetVelocity * t).magnitude / projectileSpeed);
+            Vector3 aim = delta + targetVelocity * t;
+            if (aim.sqrMagnitude < .001f) return;
+            aim.Normalize();
+            bool continuing = pending > 0;
+            if (continuing)
+            {
+                float phase = (pairsPerBurst - pending) / (float)Mathf.Max(1, pairsPerBurst - 1);
+                Vector3 right = Vector3.Cross(Vector3.up, burstDirection).normalized;
+                aim = Quaternion.AngleAxis(driftYaw * phase, Vector3.up) *
+                    (Quaternion.AngleAxis(driftPitch * phase, right) * burstDirection);
+            }
+            AimServos(aim, dt);
+            if (!continuing)
+            {
+                if (!inRange || Time.time < nextBurst ||
+                    Vector3.Angle(muzzleL.forward, aim) > firingTolerance ||
+                    Vector3.Angle(muzzleR.forward, aim) > firingTolerance) return;
+                // Snapshot the actual barrel axis, not the live target direction.
+                burstDirection = (muzzleL.forward + muzzleR.forward).normalized;
+                driftYaw = Random.Range(-burstDrift, burstDrift);
+                driftPitch = Random.Range(-burstDrift * .35f, burstDrift * .35f);
+                pending = pairsPerBurst;
+                nextPair = Time.time;
+            }
+            if (Time.time < nextPair) return;
+            // No catch-up cluster after a frame hitch. A rotating chassis can
+            // briefly delay a pair rather than fling it far outside its corridor.
+            if (Vector3.Angle(muzzleL.forward, burstDirection) > burstDrift + firingTolerance + 3f ||
+                Vector3.Angle(muzzleR.forward, burstDirection) > burstDrift + firingTolerance + 3f)
+            { pending = 0; SchedulePause(); return; }
+            Fire(muzzleL);
+            Fire(muzzleR);
+            pending--;
+            nextPair = Time.time + pairInterval;
+            if (pending == 0) SchedulePause();
+        }
+
+        private void SchedulePause() => nextBurst = Time.time + Random.Range(pauseMin, Mathf.Max(pauseMin, pauseMax));
+
+        private void AimServos(Vector3 aim, float dt)
+        {
+            Vector3 local = turretYaw.parent.InverseTransformDirection(aim);
+            float yaw = Mathf.Atan2(local.x, local.z) * Mathf.Rad2Deg;
+            float y = Mathf.MoveTowardsAngle(turretYaw.localEulerAngles.y, yaw, yawSpeed * dt);
+            turretYaw.localRotation = Quaternion.Euler(0f, y, 0f);
+            local = turretYaw.InverseTransformDirection(aim);
+            float elevation = Mathf.Atan2(local.y, new Vector2(local.x, local.z).magnitude) * Mathf.Rad2Deg;
+            elevation = Mathf.Clamp(elevation, -10f, maxElevation);
+            float pitch = Mathf.MoveTowardsAngle(gunPitch.localEulerAngles.x, -elevation, pitchSpeed * dt);
+            gunPitch.localRotation = Quaternion.Euler(pitch, 0f, 0f);
+        }
+
+        private void Fire(Transform muzzle)
+        {
+            Vector3 direction = Quaternion.AngleAxis(Random.Range(-roundSpread, roundSpread), muzzle.up) *
+                (Quaternion.AngleAxis(Random.Range(-roundSpread, roundSpread), muzzle.right) * muzzle.forward);
+            var go = new GameObject("Mantis / AA tracer");
+            go.transform.position = muzzle.position;
+            var round = go.AddComponent<MantisRound>();
+            round.Launch(transform, target, direction, projectileSpeed, projectileRange, tracerLength,
+                dangerHeight, airPuffAbove, damage, tracer, () => HitCount++);
+            rounds.Add(round);
+            FiredCount++;
+        }
+    }
+}

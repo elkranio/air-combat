@@ -7,6 +7,26 @@ using UnityEngine.SceneManagement;
 
 namespace AirCombat
 {
+    // Editor update callbacks can still run during play-mode transitions.
+    // In particular isPlayingOrWillChangePlaymode alone is not sufficient
+    // when leaving Play Mode. Never move units or dirty scenes in that window.
+    [InitializeOnLoad]
+    internal static class PatrolAuthoringState
+    {
+        private static bool blocked;
+
+        static PatrolAuthoringState()
+        {
+            blocked = Application.isPlaying || EditorApplication.isPlaying ||
+                EditorApplication.isPlayingOrWillChangePlaymode;
+            EditorApplication.playModeStateChanged += state =>
+                blocked = state != PlayModeStateChange.EnteredEditMode;
+        }
+
+        internal static bool CanEdit => !blocked && !Application.isPlaying &&
+            !EditorApplication.isPlaying && !EditorApplication.isPlayingOrWillChangePlaymode;
+    }
+
     [CustomEditor(typeof(GroundPatrolRoute))]
     public sealed class GroundPatrolRouteEditor : Editor
     {
@@ -15,7 +35,7 @@ namespace AirCombat
 
         private void RefreshSelected()
         {
-            if (EditorApplication.isPlayingOrWillChangePlaymode || target == null) return;
+            if (!PatrolAuthoringState.CanEdit || target == null) return;
             var route = (GroundPatrolRoute)target;
             if (Selection.activeGameObject != route.gameObject || EditorUtility.IsPersistent(route)) return;
             // Derived authoring pose: parent translation, rotation, and undo are
@@ -26,12 +46,13 @@ namespace AirCombat
         public override void OnInspectorGUI()
         {
             EditorGUI.BeginChangeCheck();
-            DrawDefaultInspector();
+            using (new EditorGUI.DisabledScope(!PatrolAuthoringState.CanEdit))
+                DrawDefaultInspector();
             bool changed = EditorGUI.EndChangeCheck();
             var route = (GroundPatrolRoute)target;
-            if (changed && !Application.isPlaying) Changed(route);
+            if (changed && PatrolAuthoringState.CanEdit) Changed(route);
             EditorGUILayout.HelpBox("Move or yaw this group with the normal Transform tools. Drag numbered square handles to edit its shape. Corner Radius rounds the actual driven path; waypoint handles remain the sharp control points. The child previews the start corner exit. Do not scale a group containing a vehicle; edit the points instead.", MessageType.Info);
-            using (new EditorGUI.DisabledScope(Application.isPlaying))
+            using (new EditorGUI.DisabledScope(!PatrolAuthoringState.CanEdit))
             {
                 if ((route.transform.localScale - Vector3.one).sqrMagnitude > .000001f && OwnedMotors(route).Any())
                 {
@@ -58,7 +79,7 @@ namespace AirCombat
 
         private void OnSceneGUI()
         {
-            if (Application.isPlaying) return;
+            if (!PatrolAuthoringState.CanEdit) return;
             var route = (GroundPatrolRoute)target;
             Color before = Handles.color;
             var starts = OwnedMotors(route).Select(x => x.StartPoint).ToArray();
@@ -82,6 +103,7 @@ namespace AirCombat
 
         private static void Changed(GroundPatrolRoute route)
         {
+            if (!PatrolAuthoringState.CanEdit || route == null) return;
             EditorUtility.SetDirty(route);
             PrefabUtility.RecordPrefabInstancePropertyModifications(route);
             EditorSceneManager.MarkSceneDirty(route.gameObject.scene);
@@ -95,12 +117,13 @@ namespace AirCombat
 
         private static void RefreshOwnedPreview(GroundPatrolRoute route)
         {
+            if (!PatrolAuthoringState.CanEdit || route == null) return;
             foreach (var motor in OwnedMotors(route)) SnapPreview(motor, false);
         }
 
         internal static void SnapPreview(GroundPatrolMotor motor, bool recordUndo)
         {
-            if (EditorApplication.isPlayingOrWillChangePlaymode || EditorUtility.IsPersistent(motor) ||
+            if (!PatrolAuthoringState.CanEdit || motor == null || EditorUtility.IsPersistent(motor) ||
                 !motor.gameObject.scene.IsValid() || !motor.TryGetStartPose(out Vector3 position, out Quaternion rotation)) return;
             Transform t = motor.transform;
             if ((t.position - position).sqrMagnitude < .000001f && Quaternion.Angle(t.rotation, rotation) < .05f) return;
@@ -127,6 +150,7 @@ namespace AirCombat
 
         internal static bool GroupUnit(GroundPatrolMotor motor)
         {
+            if (!PatrolAuthoringState.CanEdit || motor == null) return false;
             var route = motor.Route;
             if (route == null || route.transform == motor.transform || route.gameObject.scene != motor.gameObject.scene ||
                 EditorUtility.IsPersistent(route) || EditorUtility.IsPersistent(motor)) return false;
@@ -192,7 +216,7 @@ namespace AirCombat
         [MenuItem("Air Combat/Mission/Create Patrol Route")]
         private static void CreateRoute()
         {
-            if (EditorApplication.isPlayingOrWillChangePlaymode) return;
+            if (!PatrolAuthoringState.CanEdit) return;
             Scene scene = SceneManager.GetActiveScene();
             Terrain terrain = FindTerrain(scene);
             if (terrain == null) { Debug.LogError("Patrol: active scene needs a Terrain."); return; }
@@ -205,7 +229,7 @@ namespace AirCombat
         [MenuItem("Air Combat/Mission/AA-01b - Install Mantis patrol trial")]
         private static void InstallTrial()
         {
-            if (EditorApplication.isPlayingOrWillChangePlaymode) return;
+            if (!PatrolAuthoringState.CanEdit) return;
             Scene scene = SceneManager.GetSceneByPath("Assets/_Project/Scenes/ArcadeDesertE1.unity");
             if (!scene.IsValid() || !scene.isLoaded) { Debug.LogError("Open ArcadeDesertE1 first."); return; }
             GameObject trial = scene.GetRootGameObjects().SelectMany(x => x.GetComponentsInChildren<Transform>(true))
@@ -270,7 +294,7 @@ namespace AirCombat
             EditorGUI.BeginChangeCheck();
             DrawDefaultInspector();
             bool changed = EditorGUI.EndChangeCheck();
-            if (EditorApplication.isPlayingOrWillChangePlaymode || EditorUtility.IsPersistent(motor) || motor.Route == null) return;
+            if (!PatrolAuthoringState.CanEdit || motor == null || EditorUtility.IsPersistent(motor) || motor.Route == null) return;
             if (changed && motor.transform.parent == motor.Route.transform)
                 GroundPatrolRouteEditor.SnapPreview(motor, true);
             if (GUILayout.Button("Snap to Start Point")) GroundPatrolRouteEditor.SnapPreview(motor, true);

@@ -22,6 +22,7 @@ namespace AirCombat
         [SerializeField] private bool groundNursTest = true;
         private bool groundMode;
         private ArcadeNursLauncher nursLauncher;
+        private readonly List<MantisGun> groundGuns = new List<MantisGun>();
 
         private sealed class Fighter
         {
@@ -57,7 +58,14 @@ namespace AirCombat
         {
             get
             {
-                if (groundMode) return nursLauncher != null ? nursLauncher.DebugStatus : "NURS UNAVAILABLE";
+                if (groundMode)
+                {
+                    string groundStatus = nursLauncher != null ? nursLauncher.DebugStatus : "NURS UNAVAILABLE";
+                    int fired = 0, hits = 0, active = 0;
+                    foreach (var gun in groundGuns)
+                        if (gun != null) { fired += gun.FiredCount; hits += gun.HitCount; if (gun.IsBursting) active++; }
+                    return $"{groundStatus} | AA {hits}/{fired} hit/fired B{active}";
+                }
                 if (defeated || victory)
                 {
                     string result = defeated ? "DEFEAT" : "VICTORY";
@@ -92,6 +100,15 @@ namespace AirCombat
             if (team == null) team = player.gameObject.AddComponent<AircraftTeam>();
             team.SetSide(AircraftSide.Player);
             playerHealth.InstallHitbox();
+            if (groundMode)
+            {
+                foreach (var gun in FindObjectsByType<MantisGun>(FindObjectsInactive.Include, FindObjectsSortMode.None))
+                {
+                    if (gun.gameObject.scene != gameObject.scene) continue;
+                    groundGuns.Add(gun);
+                    gun.Bind(playerHealth, radar);
+                }
+            }
             // Production scene opt-in; legacy labs have no hit-feedback listener.
             hitFeedback = GetComponent<CombatHitFeedback>();
             if (hitFeedback == null) hitFeedback = gameObject.AddComponent<CombatHitFeedback>();
@@ -157,7 +174,17 @@ namespace AirCombat
             if (playerFlight != null) playerFlight.enabled = true;
             if (playerTrigger != null) playerTrigger.enabled = true;
             defeated = victory = false;
-            if (groundMode) return; // Isolated flight/ground ordnance test: no Tigers or victory overlay.
+            if (groundMode)
+            {
+                foreach (var gun in groundGuns)
+                {
+                    if (gun == null) continue;
+                    var motor = gun.GetComponent<GroundPatrolMotor>();
+                    if (motor != null) motor.RestartPatrol();
+                    gun.ResetCombat();
+                }
+                return; // No Tigers or ground victory yet.
+            }
 
             if (!TrySpawnPair(out Vector3 first, out Vector3 second, out Quaternion heading))
             {
@@ -250,11 +277,12 @@ namespace AirCombat
 
         private void Update()
         {
-            if (!bound || !encounterReady || defeated || victory) return;
+            if (!bound || (!encounterReady && !groundMode) || defeated || victory) return;
             if (!playerHealth.IsAlive)
             {
                 defeated = true;
                 if (missileStress != null) missileStress.StopTest();
+                if (nursLauncher != null) nursLauncher.CeaseFire(Time.time);
                 if (missileLauncher != null) missileLauncher.CancelMissiles();
                 if (playerTrigger != null) playerTrigger.enabled = false;
                 if (hitFeedback != null)
@@ -268,6 +296,7 @@ namespace AirCombat
                 return;
             }
 
+            if (groundMode) return;
             for (int i = fighters.Count - 1; i >= 0; i--)
             {
                 if (!fighters[i].Health.IsAlive) RemoveFighterAt(i, true);
@@ -362,6 +391,8 @@ namespace AirCombat
 
         private void OnDestroy()
         {
+            foreach (var gun in groundGuns) if (gun != null) gun.Unbind();
+            groundGuns.Clear();
             if (missileStress != null) { missileStress.ResetTest(); Destroy(missileStress); }
             RemoveAllFighters();
             if (nursLauncher != null)
