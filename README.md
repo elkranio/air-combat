@@ -16,6 +16,10 @@ Player health, radar and weapon module settings live on `Assets/_Project/Prefabs
 
 Tiger behavior settings live on `Assets/_Project/Prefabs/Aircraft/EF01_Tiger_Fighter.prefab` (`ArcadeFighterUnit`), not on the scene encounter. The current air test still spawns two Tigers automatically.
 
+## Separate visual trials
+
+- [TERRAIN-01](Docs/TERRAIN_01.md) — create/open the isolated faceted-terrain flight playground via the Air Combat editor menu.
+
 ## Current documentation
 
 - [HANDOFF.md](HANDOFF.md) — current baseline, next atoms, regression gates.
