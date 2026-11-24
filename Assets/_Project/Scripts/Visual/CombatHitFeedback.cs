@@ -12,6 +12,10 @@ namespace AirCombat
     {
         [Header("Hull flash")]
         [SerializeField, Min(.01f)] private float flashSeconds = .09f;
+        [Header("Enemy impact puff")]
+        [SerializeField, Min(.1f)] private float impactFlashSize = 3.5f;
+        [SerializeField, Min(.1f)] private float smokeSize = 3.2f;
+        [SerializeField, Min(.1f)] private float smokeLifetime = .72f;
         [Header("Camera impulse (world units / seconds)")]
         [SerializeField, Min(0f)] private float hitShake = .28f;
         [SerializeField, Min(0f)] private float hitShakeSeconds = .12f;
@@ -48,8 +52,9 @@ namespace AirCombat
         private readonly System.Random random = new System.Random(8153);
         private Camera view;
         private ArcadeCameraFollow cameraFollow;
-        private ParticleSystem sparks, debris;
-        private Material particleMaterial;
+        private ParticleSystem sparks, debris, impactFlash, smoke;
+        private Material particleMaterial, puffMaterial;
+        private Texture2D puffMask;
         private AudioSource audioSource;
         private AudioClip hitClip, killClip;
         private Texture2D edgeTexture;
@@ -62,13 +67,18 @@ namespace AirCombat
             cameraFollow = camera != null ? camera.GetComponent<ArcadeCameraFollow>() : null;
             if (audioSource != null) return;
             // The existing sandbox effect shader reads vertex/particle colors.
-            // No new shader, textures, lights, physics or material edits.
+            // The optional white-default mask is used only by the impact puffs.
             Shader shader = Shader.Find("AirCombat/SandboxEffect");
             if (shader != null)
             {
                 particleMaterial = new Material(shader) { name = "Combat hit particles (runtime)" };
                 sparks = MakeParticles("Hit sparks", true, 192);
                 debris = MakeParticles("Hit debris", false, 128);
+                puffMask = MakePuffMask();
+                puffMaterial = new Material(particleMaterial) { name = "Impact puff (runtime)" };
+                puffMaterial.SetTexture("_ParticleMask", puffMask);
+                impactFlash = MakePuffs("Enemy impact flash", 48, false);
+                smoke = MakePuffs("Enemy impact smoke", 192, true);
             }
             else Debug.LogWarning("Combat hit particles: SandboxEffect shader missing.", this);
             audioSource = gameObject.AddComponent<AudioSource>();
@@ -117,7 +127,8 @@ namespace AirCombat
             if (!isActiveAndEnabled || !targets.TryGetValue(health, out var tracked)) return;
             bool killed = !health.IsAlive;
             Flash(tracked);
-            EmitBurst(point, health.transform.forward, killed);
+            EmitBurst(point, health.transform.forward, killed, !tracked.IsPlayer);
+            if (!tracked.IsPlayer) EmitPuffs(point, killed);
             if (cameraFollow != null)
             {
                 if (killed) cameraFollow.AddHitShake(killShake, killShakeSeconds);
@@ -176,6 +187,8 @@ namespace AirCombat
             foreach (var tracked in targets.Values) Restore(tracked);
             if (sparks != null) sparks.Clear();
             if (debris != null) debris.Clear();
+            if (impactFlash != null) impactFlash.Clear();
+            if (smoke != null) smoke.Clear();
             if (audioSource != null) audioSource.Stop();
             if (cameraFollow != null) cameraFollow.ClearHitShake();
             edgeUntil = nextHitSound = 0f;
@@ -216,15 +229,107 @@ namespace AirCombat
             return ps;
         }
 
+        private ParticleSystem MakePuffs(string objectName, int capacity, bool isSmoke)
+        {
+            var ps = MakeParticles(objectName, false, capacity);
+            var main = ps.main;
+            main.gravityModifier = 0f;
+            var renderer = ps.GetComponent<ParticleSystemRenderer>();
+            renderer.sharedMaterial = puffMaterial;
+            renderer.SetActiveVertexStreams(new List<ParticleSystemVertexStream>
+            {
+                ParticleSystemVertexStream.Position, ParticleSystemVertexStream.Color,
+                ParticleSystemVertexStream.UV
+            });
+            var fade = ps.colorOverLifetime;
+            var gradient = new Gradient();
+            gradient.SetKeys(new[] { new GradientColorKey(Color.white, 0f), new GradientColorKey(Color.white, 1f) },
+                isSmoke ? new[] { new GradientAlphaKey(0f, 0f), new GradientAlphaKey(1f, .12f),
+                    new GradientAlphaKey(.55f, .60f), new GradientAlphaKey(0f, 1f) }
+                : new[] { new GradientAlphaKey(1f, 0f), new GradientAlphaKey(.8f, .18f),
+                    new GradientAlphaKey(0f, 1f) });
+            fade.color = new ParticleSystem.MinMaxGradient(gradient);
+            var size = ps.sizeOverLifetime;
+            size.enabled = true;
+            size.size = new ParticleSystem.MinMaxCurve(1f, isSmoke
+                ? AnimationCurve.Linear(0f, .65f, 1f, 1.8f)
+                : AnimationCurve.Linear(0f, 1f, 1f, 1.25f));
+            return ps;
+        }
+
+        // Soft irregular silhouette, rather than an opaque billboard square.
+        // Generated once per encounter. All smoke and flash particles share it.
+        private static Texture2D MakePuffMask()
+        {
+            const int size = 64;
+            var texture = new Texture2D(size, size, TextureFormat.RGBA32, false)
+            {
+                name = "Impact puff mask", wrapMode = TextureWrapMode.Clamp,
+                filterMode = FilterMode.Bilinear
+            };
+            var pixels = new Color32[size * size];
+            for (int y = 0; y < size; y++)
+            for (int x = 0; x < size; x++)
+            {
+                Vector2 p = new Vector2((x + .5f) / size * 2f - 1f,
+                    (y + .5f) / size * 2f - 1f);
+                float radius = p.magnitude;
+                float noise = Mathf.PerlinNoise(p.x * 2.8f + 11f, p.y * 2.8f + 19f);
+                float edge = Mathf.Clamp01((.82f + (noise - .5f) * .32f - radius) / .34f);
+                float alpha = Mathf.SmoothStep(0f, 1f, edge) * Mathf.Lerp(.72f, 1f, noise);
+                pixels[y * size + x] = new Color32(255, 255, 255, (byte)Mathf.RoundToInt(alpha * 255f));
+            }
+            texture.SetPixels32(pixels);
+            texture.Apply(false, true);
+            return texture;
+        }
+
+        private void EmitPuffs(Vector3 point, bool killed)
+        {
+            // World-space positions: no aircraft attachment or inherited speed.
+            // A hot pop first, then a dark spreading cloud left in the sky.
+            if (impactFlash != null)
+            {
+                var flash = new ParticleSystem.EmitParams
+                {
+                    position = point, velocity = Vector3.zero,
+                    startSize = impactFlashSize * (killed ? 1.7f : 1f),
+                    startLifetime = killed ? .14f : .085f,
+                    startColor = new Color(1f, .87f, .48f, .95f),
+                    rotation = Range(0f, 360f)
+                };
+                impactFlash.Emit(flash, 1);
+            }
+            if (smoke == null) return;
+            Vector3 right = view != null ? view.transform.right : Vector3.right;
+            Vector3 up = view != null ? view.transform.up : Vector3.up;
+            int count = killed ? 5 : 3;
+            for (int i = 0; i < count; i++)
+            {
+                float angle = (i + Range(-.3f, .3f)) * Mathf.PI * 2f / count;
+                Vector3 drift = Mathf.Cos(angle) * right + Mathf.Sin(angle) * up;
+                var puff = new ParticleSystem.EmitParams
+                {
+                    position = point + drift * Range(.15f, .75f),
+                    velocity = drift * Range(.35f, 1.6f) + Vector3.up * .3f,
+                    startSize = smokeSize * Range(.75f, 1.2f) * (killed ? 1.4f : 1f),
+                    startLifetime = smokeLifetime * Range(.8f, 1.2f),
+                    startColor = new Color(.12f, .11f, .10f, Range(.58f, .78f)),
+                    rotation = Range(0f, 360f)
+                };
+                smoke.Emit(puff, 1);
+            }
+        }
+
         private float Range(float min, float max) => min + (max - min) * (float)random.NextDouble();
 
-        private void EmitBurst(Vector3 point, Vector3 forward, bool killed)
+        private void EmitBurst(Vector3 point, Vector3 forward, bool killed, bool enemyHit)
         {
             Vector3 right = view != null ? view.transform.right : Vector3.right;
             Vector3 up = view != null ? view.transform.up : Vector3.up;
             // Existing AC-01/02 impact streaks remain; add fast bright fragments
             // and slower dark debris at the exact accepted damage point.
-            int count = killed ? 16 : 7;
+            int count = killed ? 16 : enemyHit ? 11 : 7;
             for (int i = 0; i < count; i++)
             {
                 float angle = (i + Range(-.25f, .25f)) * Mathf.PI * 2f / count;
@@ -234,9 +339,9 @@ namespace AirCombat
                     var p = new ParticleSystem.EmitParams
                     {
                         position = point + direction * .25f,
-                        velocity = direction * Range(12f, killed ? 42f : 27f) + forward * 5f,
-                        startSize = Range(.22f, killed ? .75f : .48f),
-                        startLifetime = Range(.10f, killed ? .31f : .20f),
+                        velocity = direction * Range(12f, killed ? 42f : enemyHit ? 32f : 27f) + forward * 5f,
+                        startSize = Range(enemyHit ? .35f : .22f, killed ? .85f : enemyHit ? .75f : .48f),
+                        startLifetime = Range(.10f, killed ? .31f : enemyHit ? .24f : .20f),
                         startColor = i % 3 == 0 ? new Color(1f, 1f, .82f) : new Color(1f, .67f, .15f)
                     };
                     sparks.Emit(p, 1);
@@ -324,6 +429,10 @@ namespace AirCombat
             if (sparks != null) Destroy(sparks.gameObject);
             if (debris != null) Destroy(debris.gameObject);
             if (audioSource != null) Destroy(audioSource);
+            if (impactFlash != null) Destroy(impactFlash.gameObject);
+            if (smoke != null) Destroy(smoke.gameObject);
+            if (puffMaterial != null) Destroy(puffMaterial);
+            if (puffMask != null) Destroy(puffMask);
             if (particleMaterial != null) Destroy(particleMaterial);
             if (hitClip != null) Destroy(hitClip);
             if (killClip != null) Destroy(killClip);

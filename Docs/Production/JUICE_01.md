@@ -15,3 +15,11 @@ Base `71192e7` / FLIGHT-03b green. Authored for the next Unity Play Mode check; 
 4. Compare WeaponLab and GroundAttackLab with baseline; confirm no new feedback or camera changes there. Check Console and frame rate under sustained fire.
 
 Next JUICE-02: critical HP smoke, detached noncombat wreck, burning tumble/fall and ground explosion; strong destruction shake is already available. JUICE-03: short wingtip trails during hard turns. Then missiles.
+
+## JUICE-01b — impact pop and stationary smoke
+
+JUICE-01 accepted at `d1b8044`. User requests stronger enemy hit readability and a small dark puff that stays behind at the impact, not a damage trail attached to the aircraft.
+
+- Every confirmed enemy hit: a warm 3.5-unit flash for 0.085s, 11 larger sparks (was 7), and three dark irregular puffs (five on a kill). Smoke begins nearly transparent, expands from 65% to 180% of its initial size and fades completely in approximately 0.58–0.86s. It drifts slowly outward in world space, with no inherited aircraft velocity. Fatal pop is larger; existing camera impulse and sound remain unchanged.
+- Two shared bounded world-space particle systems (48 flash / 192 smoke particles), procedural 64px soft alpha mask, existing SandboxEffect shader with a white-default optional mask. Existing unmasked effects retain their color/alpha. Reset clears both pools; teardown destroys material and texture. No persistent per-aircraft smoke yet, no new asset imports or changes to damage/flight/AI.
+- Test sustained BURST and continuous fire on Tiger: clear hot pop followed by a small dark cloud left in the air, no opaque square quads, smoke fades without obscuring the next approach. Verify kill, R reset, player damage, W/S flames and legacy lab particles. Tune `impactFlashSize`, `smokeSize`, `smokeLifetime` on runtime feedback or script defaults. Next: JUICE-02 critical smoke and wreck, then trails and missiles.
