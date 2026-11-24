@@ -7,8 +7,8 @@ from math import cos, sin, pi
 
 ROOT = Path(__file__).resolve().parents[2]
 OUT = ROOT / 'Assets/_Project/Art/Aircraft/PF02_Lynx'
-COLORS = {'Hull': (.52,.56,.59), 'Wing': (.37,.43,.47),
-          'Glass': (.075,.16,.22), 'Dark': (.105,.12,.135), 'Mark': (.85,.52,.12)}
+COLORS = {'Hull': (.06,.48,.68), 'Wing': (.66,.83,.88),
+          'Glass': (.08,.70,.80), 'Dark': (.105,.12,.135), 'Mark': (.99,.43,.09)}
 MESH = {k: [] for k in COLORS}
 
 def mean(points):
