@@ -56,6 +56,9 @@ Base `4087039`. Keep the C4 parking layout and add the two outer separators at l
 
 ## Next work (order flexible, all WIP)
 
+Current visual trial: [ART-CT-01 — Compact control tower](ART_CT_01.md).
+Install the new tower in the mission only, then compare at gameplay zoom.
+
 1. Review the airfield layout in the actual game camera; adjust roads, spacing and model missing pieces only if needed.
 2. Integrate the approved Lynx visual into a player aircraft prefab without retuning the existing flight/weapon logic. Keep Kestrel available.
 3. Mission intro/ready state with room for a later cutscene or dialogue; W initiates automatic takeoff.
