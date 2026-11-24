@@ -5,7 +5,7 @@ using UnityEngine.Rendering;
 namespace AirCombat
 {
     // Arcade cold-launch projectile. Only the committed horizontal flight is
-    // damaging. Once the heading is captured it never reads target position again.
+    // damaging. Powered flight permits a small, finite horizontal correction.
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(190)]
     public sealed class MantisVerticalRocket : MonoBehaviour
@@ -21,6 +21,7 @@ namespace AirCombat
         private TrailRenderer trail;
         private float height, ejectSeconds, alignSeconds, ignitionSeconds, speed, remaining, age;
         private float riseDistance, riseEndSpeed, riseStartSpeed, coastSpeed, flightAge;
+        private float correctionRate, correctionRemaining, steering;
         private Vector3 launchPoint, horizontalAim;
         private int damage;
         private Vector3 heading;
@@ -29,7 +30,7 @@ namespace AirCombat
 
         public void Launch(Transform shooter, PlayerHitPoints player, float ejectionTime, float alignmentTime,
             float accelerationTime, float cruiseSpeed, float range, int hitDamage,
-            Material hull, Material effects, Action hitCallback)
+            float turnRate, float turnBudget, Material hull, Material effects, Action hitCallback)
         {
             owner = shooter; target = player; height = player.transform.position.y;
             ejectSeconds = Mathf.Max(.1f, ejectionTime);
@@ -37,6 +38,8 @@ namespace AirCombat
             ignitionSeconds = Mathf.Max(.05f, accelerationTime);
             speed = Mathf.Max(1f, cruiseSpeed); remaining = Mathf.Max(1f, range);
             damage = hitDamage; onHit = hitCallback;
+            correctionRate = Mathf.Max(0f, turnRate);
+            correctionRemaining = Mathf.Max(0f, turnBudget);
             launchPoint = transform.position;
             height = Mathf.Max(launchPoint.y, height);
             float climb = height - launchPoint.y;
@@ -141,7 +144,7 @@ namespace AirCombat
                     {
                         delta = target.transform.position - transform.position; delta.y = 0f;
                         if (delta.sqrMagnitude > .0001f) horizontalAim = delta.normalized;
-                        heading = horizontalAim; // last live aim sample; no lead or correction afterwards
+                        heading = horizontalAim; // initial powered heading; no predictive lead
                         p.y = height; transform.position = p;
                         phase = Phase.Ignition; age = 0f; flightAge = 0f;
                         trail.Clear(); trail.emitting = true;
@@ -154,19 +157,36 @@ namespace AirCombat
                     float a = age; age += slice; dt -= slice;
                     float distance = coastSpeed * slice + .5f * (speed - coastSpeed) / ignitionSeconds * (age*age - a*a);
                     flightAge += slice;
-                    if (!MoveCommitted(distance)) return;
+                    if (!MoveCommitted(distance, slice)) return;
                     if (age >= ignitionSeconds - .000001f) { phase = Phase.Flight; age = 0f; }
                     continue;
                 }
                 flightAge += dt;
-                if (!MoveCommitted(speed * dt)) return;
+                if (!MoveCommitted(speed * dt, dt)) return;
                 dt = 0f;
             }
             DrawMotor();
         }
 
-        private bool MoveCommitted(float distance)
+        private bool MoveCommitted(float distance, float dt)
         {
+            // No change in flight height, no lead, no unlimited pursuit. Once
+            // the total angular budget is spent the rocket flies straight.
+            steering = 0f;
+            if (target != null && target.IsAlive && correctionRate > 0f && correctionRemaining > .001f && dt > 0f)
+            {
+                Vector3 delta = target.transform.position - transform.position;
+                delta.y = 0f;
+                if (delta.sqrMagnitude > .0001f)
+                {
+                    float error = Vector3.SignedAngle(heading, delta, Vector3.up);
+                    float limit = Mathf.Min(correctionRemaining, correctionRate * dt);
+                    float turn = Mathf.Clamp(error, -limit, limit);
+                    heading = (Quaternion.AngleAxis(turn, Vector3.up) * heading).normalized;
+                    correctionRemaining = Mathf.Max(0f, correctionRemaining - Mathf.Abs(turn));
+                    steering = turn / (correctionRate * dt);
+                }
+            }
             if (syncedFrame != Time.frameCount) { Physics.SyncTransforms(); syncedFrame = Time.frameCount; }
             float step = Mathf.Min(remaining, distance);
             Vector3 start = transform.position;
@@ -200,7 +220,7 @@ namespace AirCombat
             body.rotation = Quaternion.FromToRotation(Vector3.up, heading);
             bool powered = phase == Phase.Ignition || phase == Phase.Flight;
             exhaust.enabled = glow.enabled = powered;
-            jetFront.enabled = jetRear.enabled = phase == Phase.Align;
+            jetFront.enabled = jetRear.enabled = phase == Phase.Align || (powered && Mathf.Abs(steering) > .02f);
             float sinceLaunch = phase == Phase.Ejection ? age : ejectSeconds + age;
             ejectSmoke.enabled = phase == Phase.Ejection || (phase == Phase.Align && sinceLaunch < .64f);
             if (ejectSmoke.enabled)
@@ -222,6 +242,16 @@ namespace AirCombat
                 SetLine(jetRear, rear + tangent*.55f, rear + tangent*(.55f+3.5f*pulse), .9f, hot);
             }
             if (!powered) return;
+            if (jetFront.enabled)
+            {
+                Vector3 side = Vector3.Cross(Vector3.up, heading).normalized * Mathf.Sign(steering);
+                Vector3 front = transform.position + heading * 1.5f;
+                Vector3 rear = transform.position - heading * 1.5f;
+                float jetLength = Mathf.Lerp(.5f, 2.3f, Mathf.Abs(steering));
+                Color hot = new Color(1f, .77f, .35f, .8f);
+                SetLine(jetFront, front - side * .55f, front - side * (.55f + jetLength), .65f, hot);
+                SetLine(jetRear, rear + side * .55f, rear + side * (.55f + jetLength), .65f, hot);
+            }
             Vector3 nozzle = transform.position - heading * 2.4f;
             float length = Mathf.Lerp(16f, 7f, Mathf.Clamp01(flightAge / .24f));
             SetLine(exhaust, nozzle - heading * length, nozzle, 1.15f, new Color(1f,.91f,.55f,1f));

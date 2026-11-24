@@ -10,14 +10,16 @@ namespace AirCombat
     public sealed class MantisGun : MonoBehaviour, IRadarContact
     {
         public enum AttackMode { Flak, Tracers, VerticalUnguided }
-        [Header("Attack mode (AA-01e1)")]
+        [Header("Attack mode (AA-01e2)")]
         [SerializeField] private AttackMode attackMode = AttackMode.VerticalUnguided;
-        [Header("Vertical unguided / cold launch")]
+        [Header("Vertical rocket / cold launch")]
         [SerializeField, Min(.1f)] private float verticalEjectionSeconds = .48f;
         [SerializeField, Min(.1f)] private float verticalTurnSeconds = .32f;
         [SerializeField, Min(.05f)] private float verticalIgnitionSeconds = .22f;
         [SerializeField, Min(1f)] private float verticalCruiseSpeed = 240f;
         [SerializeField, Min(1f)] private float verticalRange = 310f;
+        [SerializeField, Range(0f, 90f)] private float verticalCorrectionRate = 25f;
+        [SerializeField, Range(0f, 90f)] private float verticalCorrectionBudget = 20f;
         [SerializeField, Min(.1f)] private float verticalPause = 2.5f;
         [SerializeField, Min(1)] private int verticalDamage = 3;
         [Header("Flak experiment")]
@@ -276,7 +278,7 @@ namespace AirCombat
             var rocket = go.AddComponent<MantisVerticalRocket>();
             rocket.Launch(transform, target, verticalEjectionSeconds, verticalTurnSeconds,
                 verticalIgnitionSeconds, verticalCruiseSpeed, verticalRange,
-                verticalDamage, rocketHull, tracer, () => HitCount++);
+                verticalDamage, verticalCorrectionRate, verticalCorrectionBudget, rocketHull, tracer, () => HitCount++);
             verticalRockets.Add(rocket);
             FiredCount++;
         }

@@ -1,6 +1,10 @@
 # AA-01c — Mantis combat
 
-## AA-01e1 — cold launch (current)
+## AA-01e2 — limited course correction (current)
+
+Base `b2491c8`. Existing Vertical Unguided mode keeps the single silent cold-launch rocket. During ignition and powered flight, the rocket may turn toward current player XZ by at most 25 degrees/s and 20 degrees total; the turn budget never regenerates. After exhaustion it flies straight. Both values live on MantisGun; zero in either field restores the previous straight flight. Small side jets show actual correction. No lead, altitude tracking, changes to range, damage, cadence, camera or other weapons. Test whether the slightly curved flight is more threatening but still readable; the offscreen vertical launch remains a separate visibility issue.
+
+## AA-01e1 — cold launch (historical)
 
 Base `f24ee9a`. Keep Attack Mode = Vertical Unguided; no scene migration. One centered temporary canister, one rocket per 2.5s cycle. Flak and Tracers unchanged. New Inspector timings replace old rise speed and alignment fields (no stale serialized .16s alignment): ejection .48s, turn .32s, ignition acceleration .22s. Fixed launch-time flight plane, 240 units/s final speed, 310 range, 3 HP physical hit. Silent until dedicated rocket audio pass.
 
