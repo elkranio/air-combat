@@ -17,3 +17,7 @@ Base `7ea99d1`. Replace the pale blue Wing material with saturated orange (RGB 0
 ## ART-PF-02D — Kestrel orange (trial)
 
 Base `5cd5176`. Match Wing and Mark base colors to the existing E1C_Kestrel_Panels material (RGB 224, 121, 64; #E07940). Both wings and tips use the same orange for a clean palette comparison. Hull, canopy, dark details, geometry and prefab unchanged. Blender generator palette synchronized.
+
+## ART-PF-02E — Kestrel blue (trial)
+
+Base `b74bd9a`. Match only the Hull base color to E1C_Kestrel_Hull (RGB 49, 83, 107; #31536B), not the darker Upper material. Keep the matte shader settings, Kestrel orange wings and tips, canopy, dark details, geometry and prefab unchanged. Blender generator palette synchronized. Compare at gameplay zoom.

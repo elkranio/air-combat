@@ -7,7 +7,7 @@ from math import cos, sin, pi
 
 ROOT = Path(__file__).resolve().parents[2]
 OUT = ROOT / 'Assets/_Project/Art/Aircraft/PF02_Lynx'
-COLORS = {'Hull': (.06,.48,.68), 'Wing': (.8784314,.4745098,.2509804),
+COLORS = {'Hull': (.19215687,.3254902,.41960785), 'Wing': (.8784314,.4745098,.2509804),
           'Glass': (.08,.70,.80), 'Dark': (.105,.12,.135), 'Mark': (.8784314,.4745098,.2509804)}
 MESH = {k: [] for k in COLORS}
 
