@@ -3,8 +3,8 @@ using UnityEngine;
 
 namespace AirCombat
 {
-    // A temporary pre-launch bearing vector, never a projectile tracking aid.
-    // Both ends follow their actual world positions through the moving camera.
+    // A compact player-local pre-launch bearing vector, never a projectile tracking aid.
+    // Its direction follows the shooter through the moving camera.
     [DisallowMultipleComponent]
     public sealed class EnemyMissileThreatHud : MonoBehaviour
     {
@@ -13,7 +13,11 @@ namespace AirCombat
         private Camera view;
         private EnemyMissileStressTest threats;
         private Texture2D missileIcon;
-        private static readonly Color Threat = new Color(.38f, .96f, .58f, 1f);
+        [Header("Short vector / reference pixels at 720p")]
+        [SerializeField, Min(0f)] private float hullGap = 38f;
+        [SerializeField, Min(25f)] private float vectorLength = 64f;
+        [SerializeField, Min(0f)] private float pulseTravel = 6f;
+        private static readonly Color Threat = new Color(.56f, .91f, .47f, 1f);
 
         public void Bind(Camera camera, EnemyMissileStressTest source)
         {
@@ -45,7 +49,7 @@ namespace AirCombat
                     ? Mathf.Clamp01(1f - phase / EnemyMissileStressTest.WarningPulseLength) : 0f;
                 float alpha = Mathf.Lerp(.24f, .92f, pulse);
                 Project(cue.Position, rect, out Vector2 source);
-                DrawVector(rect, source, player, scale, alpha);
+                DrawVector(rect, source, player, scale, alpha, pulse);
             }
             GUI.matrix = oldMatrix;
             GUI.color = oldColor;
@@ -60,42 +64,55 @@ namespace AirCombat
             return screen.z > view.nearClipPlane && screen.z < view.farClipPlane;
         }
 
-        private void DrawVector(Rect rect, Vector2 source, Vector2 player, float s, float alpha)
+        private void DrawVector(Rect rect, Vector2 source, Vector2 player, float s, float alpha, float pulse)
         {
             Vector2 delta = source - player;
             float distance = delta.magnitude;
             if (distance < 1f) return;
             Vector2 outward = delta / distance;
-            // Intersect the ray from the PLAYER, not the screen centre. Camera
-            // lead must not shift the displayed bearing to a different edge.
-            float tx = outward.x > .0001f ? (rect.xMax - player.x) / outward.x :
-                outward.x < -.0001f ? (rect.xMin - player.x) / outward.x : float.PositiveInfinity;
-            float ty = outward.y > .0001f ? (rect.yMax - player.y) / outward.y :
-                outward.y < -.0001f ? (rect.yMin - player.y) / outward.y : float.PositiveInfinity;
+            // Player-relative bearing, independent of camera lead. Fit the whole
+            // cue inside the viewport and do not extend beyond a nearby shooter.
+            Rect inset = Rect.MinMaxRect(rect.xMin + 8f * s, rect.yMin + 8f * s,
+                rect.xMax - 8f * s, rect.yMax - 8f * s);
+            if (!inset.Contains(player)) return;
+            float tx = outward.x > .0001f ? (inset.xMax - player.x) / outward.x :
+                outward.x < -.0001f ? (inset.xMin - player.x) / outward.x : float.PositiveInfinity;
+            float ty = outward.y > .0001f ? (inset.yMax - player.y) / outward.y :
+                outward.y < -.0001f ? (inset.yMin - player.y) / outward.y : float.PositiveInfinity;
             float visibleDistance = Mathf.Min(distance, Mathf.Min(tx, ty));
-            const float gap = 38f;
-            const float iconLength = 25f;
-            float span = visibleDistance - gap * s;
-            if (span < (iconLength + 3f) * s) return; // Never overlap the player's hull.
-            Vector2 start = player + outward * visibleDistance;
+            // Each audible pulse starts farther out, then slides toward the hull.
+            float gap = (hullGap + pulseTravel * pulse) * s;
+            float span = Mathf.Min(vectorLength * s, visibleDistance - gap);
+            float iconLength = 20f * s;
+            if (span < iconLength) return;
+            Vector2 start = player + outward * (gap + span);
             Vector2 inward = -outward;
-            float length = iconLength * s;
-            float width = 1.8f * s;
-            float height = length * .5f;
+            float width = 1.5f * s;
+            float height = iconLength * .5f;
+            float lineLength = span - iconLength;
+            Color ink = new Color(Threat.r, Threat.g, Threat.b, alpha);
+            Color backing = new Color(.025f, .065f, .035f, alpha * .8f);
 
             Matrix4x4 before = GUI.matrix;
             GUIUtility.RotateAroundPivot(Mathf.Atan2(inward.y, inward.x) * Mathf.Rad2Deg, start);
-            // A narrow dark backing preserves contrast over sunlit sand.
-            GUI.color = new Color(.025f, .065f, .035f, alpha * .65f);
-            GUI.DrawTexture(new Rect(start.x, start.y - width, span - length + 2f * s, width * 2f), Texture2D.whiteTexture);
-            GUI.color = new Color(Threat.r, Threat.g, Threat.b, alpha);
-            GUI.DrawTexture(new Rect(start.x, start.y - width * .5f, span - length + 2f * s, width), Texture2D.whiteTexture);
-            // The icon points inward and its nose stops short of the aircraft.
-            GUI.DrawTexture(new Rect(start.x + span - length, start.y - height * .5f, length, height), missileIcon);
+            // Short dashes rather than a solid beam across the combat view.
+            for (float x = 0f; x < lineLength; x += 10f * s)
+            {
+                float dash = Mathf.Min(6f * s, lineLength - x);
+                GUI.color = backing;
+                GUI.DrawTexture(new Rect(start.x + x, start.y - width, dash, width * 2f), Texture2D.whiteTexture);
+                GUI.color = ink;
+                GUI.DrawTexture(new Rect(start.x + x, start.y - width * .5f, dash, width), Texture2D.whiteTexture);
+            }
+            Rect icon = new Rect(start.x + lineLength, start.y - height * .5f, iconLength, height);
+            GUI.color = backing;
+            GUI.DrawTexture(new Rect(icon.x - s, icon.y - s, icon.width + 2f * s, icon.height + 2f * s), missileIcon);
+            GUI.color = ink;
+            GUI.DrawTexture(icon, missileIcon);
             GUI.matrix = before;
         }
 
-        // Small antialiased silhouette: pointed nose, long body, swept tail fins.
+        // Antialiased contour: pointed nose, long body, swept tail fins.
         // One generated texture for the HUD lifetime, no asset or shader changes.
         private static Texture2D MakeMissileIcon()
         {
@@ -116,14 +133,18 @@ namespace AirCombat
                 {
                     float px = (x + (sx + .5f) / samples) / w;
                     float py = (y + (sy + .5f) / samples) / h;
-                    bool inside = false;
+                    // Measure in texture pixels to keep the stroke isotropic.
+                    Vector2 point = new Vector2(px * w, py * h);
                     for (int i = 0, j = outline.Length - 1; i < outline.Length; j = i++)
                     {
-                        Vector2 a = outline[i], b = outline[j];
-                        if ((a.y > py) != (b.y > py) && px < (b.x - a.x) * (py - a.y) / (b.y - a.y) + a.x)
-                            inside = !inside;
+                        Vector2 a = new Vector2(outline[j].x * w, outline[j].y * h);
+                        Vector2 b = new Vector2(outline[i].x * w, outline[i].y * h);
+                        Vector2 ab = b - a;
+                        float t = Mathf.Clamp01(Vector2.Dot(point - a, ab) / ab.sqrMagnitude);
+                        if ((point - (a + t * ab)).sqrMagnitude > 2.4f * 2.4f) continue;
+                        covered++;
+                        break;
                     }
-                    if (inside) covered++;
                 }
                 pixels[y * w + x] = new Color32(255, 255, 255, (byte)(255 * covered / (samples * samples)));
             }

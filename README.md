@@ -4,7 +4,7 @@ Unity 6.6 / URP. **Stylized arcade air combat**: strong aircraft silhouettes, di
 
 ## Start here (current state)
 
-**Current playtest:** [MISSILE-03b2 — pre-launch threat vector](Docs/Production/MISSILE_03B.md#missile-03b2--pre-launch-threat-vector). [MISSILE-03a](Docs/Production/MISSILE_03A.md) stress-test tuning retained. [WEAPON-04 — dual weapon slots](Docs/Production/WEAPON_04.md) accepted. [MISSILE-02](Docs/Production/MISSILE_02.md) player AAM and 150 ms lock accepted; [JUICE-02c](Docs/Production/JUICE_02C.md) terrain crash, layered smoke and hit feedback retained. Next evasion tuning and normal attack pacing. Wingtip trails deferred.
+**Current playtest:** [MISSILE-03b3 — Short Vector](Docs/Production/MISSILE_03B.md#missile-03b3--short-vector-comparison). [MISSILE-03a](Docs/Production/MISSILE_03A.md) stress-test tuning retained. [WEAPON-04 — dual weapon slots](Docs/Production/WEAPON_04.md) accepted. [MISSILE-02](Docs/Production/MISSILE_02.md) player AAM and 150 ms lock accepted; [JUICE-02c](Docs/Production/JUICE_02C.md) terrain crash, layered smoke and hit feedback retained. Next compare Threat Arc / Radar Sweep, then evasion tuning and normal attack pacing. Wingtip trails deferred.
 
 1. [HANDOFF.md](HANDOFF.md) — authoritative current green, immediate next atom and regression rules.
 2. [GAMEPLAY_COMBAT.md](GAMEPLAY_COMBAT.md) / [GAMEPLAY_ARCHITECTURE.md](GAMEPLAY_ARCHITECTURE.md) — current weapons, controls, radar and scene ownership.

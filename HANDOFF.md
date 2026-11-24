@@ -1,6 +1,6 @@
 # Air Combat — current handoff
 
-Updated 2026-11-24. Base `2a5949a`: MISSILE-03b1 visual cleanup retained; current playtest [MISSILE-03b2](Docs/Production/MISSILE_03B.md#missile-03b2--pre-launch-threat-vector) pulsing green pre-launch bearing line and missile glyph, no in-flight screen markers; radar retained. No balance or warning timing changes. WEAPON-04 accepted; LMB AC-01 BURST / RMB AAM, 150 ms lock, dual HUD. Next evasion tuning and normal encounter pacing. Q/E reserved for future per-slot weapon cycling. JUICE-03 deferred. Earlier HUD-02/flight-only notes below are historical.
+Updated 2026-11-24. Base `f55be1c`: MISSILE-03b2 direction readability accepted; current playtest [MISSILE-03b3](Docs/Production/MISSILE_03B.md#missile-03b3--short-vector-comparison), compact player-local dashed bearing with contour missile glyph. Radar retained, no in-flight screen markers or balance changes. Next compare Threat Arc / Radar Sweep sequentially, then evasion tuning and normal encounter pacing. WEAPON-04 accepted; LMB AC-01 BURST / RMB AAM, 150 ms lock, dual HUD. Q/E reserved for future per-slot weapon cycling. JUICE-03 deferred. Earlier HUD-02/flight-only notes below are historical.
 
 ## Goal and immediate order
 
