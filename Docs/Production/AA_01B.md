@@ -1,8 +1,19 @@
 # AA-01b — scene-authored ground patrol route
 
+## AA-01b1 — movable patrol group (current)
+
+Base `8b0057b`. In Edit Mode, rerun **Air Combat > Mission > AA-01b - Install Mantis patrol trial** to migrate the existing scene without recreating its points. The existing route becomes `Mantis / Patrol Group`; its vehicle wrapper (with motor and original visual prefab) becomes a child. World waypoints are preserved, including the existing route scale, which is baked into the point data. No scene YAML rewrite, duplicate model or route. Save the migrated scene with the green.
+
+- Select `Mantis / Patrol Group` and use the normal Move or Rotate tool (yaw). The route and vehicle travel together. Drag waypoint handles to edit the shape. The vehicle previews its actual start point and terrain orientation, not the group pivot; the pivot can be in the middle of a loop. Start-point labels reflect the assigned child motor. Play uses the same start-pose computation and moves only the child; the route remains fixed.
+- Change `Start Point` (zero-based) on the motor; `Snap to Start Point` and `Select patrol group` are available. Do not manually reset or move the visual child. Do not scale the group to resize a route: use waypoint handles or `Bake group scale into waypoints`, which preserves world points and restores unit scale.
+- `Check route for obstacles` samples the path against non-Terrain colliders and reports the first potential blockage or off-terrain segment in Console. It is an approximate authoring check, not avoidance or pathfinding. Buildings without colliders are not detected; avoid mesh plateaus and inspect the whole route visually.
+- Dedicated root routes and root units can also be grouped via `Group with assigned route` on any motor. Independent shared routes still work as before and are not automatically reparented. The visual installer recognizes the nested Mantis to avoid duplicates.
+
+Play Mode gate: migrate, verify original route shape and size, move/yaw group, move start waypoint, change start index, check obstacles, save/reopen, Play and verify the route does not follow the driving vehicle. Undo migration and transforms. No changes to weapon logic.
+
 Base `9c3d29c`. Mantis model/prefab and installed visual trial retained. First test of reusable mission authoring, not combat AI: independently authored waypoint route and terrain-following motor. No turret tracking, shooting, radar or damage in this atom. NURS and the optional air encounter are unchanged.
 
-## First test
+## Original AA-01b test (historical; installation now creates a group)
 
 1. Open `ArcadeDesertE1` in Edit Mode. Use **Air Combat > Mission > AA-01b - Install Mantis patrol trial**. This creates a separate four-point loop near the existing AA-01a model, adds `GroundPatrolMotor` to its scene wrapper and selects the route. It does not regenerate or automatically save the scene. Repeating the command selects the already assigned route instead of overwriting it.
 2. In Scene view (Gizmos on), the route is visible as a cyan line with directional arrows and waypoint rings. Select the route to see numbered draggable XZ handles. Move the points to clear terrain, avoiding buildings and separately modeled plateaus. `Frame route` focuses the view; `Add point at Scene view pivot` appends one; the Inspector list permits removal/reordering. Undo supported.

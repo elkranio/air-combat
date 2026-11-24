@@ -38,7 +38,8 @@ namespace AirCombat
             var scene = SceneManager.GetSceneByPath(ScenePath);
             if (!scene.IsValid() || !scene.isLoaded || scene.isDirty)
                 throw new InvalidOperationException("Open and save ArcadeDesertE1 first.");
-            var existing = scene.GetRootGameObjects().FirstOrDefault(x => x.name == Trial);
+            var existing = scene.GetRootGameObjects().SelectMany(x => x.GetComponentsInChildren<Transform>(true))
+                .FirstOrDefault(x => x.name == Trial)?.gameObject;
             if (existing != null) { Selection.activeGameObject = existing; return; }
             var session = scene.GetRootGameObjects().SelectMany(x => x.GetComponentsInChildren<E1MapFlightSession>(true)).FirstOrDefault();
             var player = session != null ? new SerializedObject(session).FindProperty("player").objectReferenceValue as JetAssembly : null;

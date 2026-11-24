@@ -10,13 +10,35 @@ namespace AirCombat
     [CustomEditor(typeof(GroundPatrolRoute))]
     public sealed class GroundPatrolRouteEditor : Editor
     {
+        private void OnEnable() => EditorApplication.update += RefreshSelected;
+        private void OnDisable() => EditorApplication.update -= RefreshSelected;
+
+        private void RefreshSelected()
+        {
+            if (EditorApplication.isPlayingOrWillChangePlaymode || target == null) return;
+            var route = (GroundPatrolRoute)target;
+            if (Selection.activeGameObject != route.gameObject || EditorUtility.IsPersistent(route)) return;
+            // Derived authoring pose: parent translation, rotation, and undo are
+            // reflected even when the Transform inspector (not the route) changed.
+            RefreshOwnedPreview(route);
+        }
+
         public override void OnInspectorGUI()
         {
+            EditorGUI.BeginChangeCheck();
             DrawDefaultInspector();
+            bool changed = EditorGUI.EndChangeCheck();
             var route = (GroundPatrolRoute)target;
-            EditorGUILayout.HelpBox("Drag numbered square handles in Scene view (XZ). The route hugs its assigned Terrain. Edit the point list to reorder or remove waypoints. Avoid buildings and non-Terrain plateau meshes for this first test.", MessageType.Info);
+            if (changed && !Application.isPlaying) Changed(route);
+            EditorGUILayout.HelpBox("Move or yaw this group with the normal Transform tools. Drag numbered square handles to edit its shape. The child unit previews its actual start waypoint. Do not scale a group containing a vehicle; edit the points instead.", MessageType.Info);
             using (new EditorGUI.DisabledScope(Application.isPlaying))
             {
+                if ((route.transform.localScale - Vector3.one).sqrMagnitude > .000001f && OwnedMotors(route).Any())
+                {
+                    EditorGUILayout.HelpBox("Group scale also scales the vehicle. Bake scale into the route points to keep the model at normal size.", MessageType.Warning);
+                    if (GUILayout.Button("Bake group scale into waypoints")) BakeScale(route);
+                }
+                if (GUILayout.Button("Check route for obstacles")) CheckClearance(route);
                 if (GUILayout.Button("Add point at Scene view pivot"))
                 {
                     Vector3 position = SceneView.lastActiveSceneView != null
@@ -39,12 +61,14 @@ namespace AirCombat
             if (Application.isPlaying) return;
             var route = (GroundPatrolRoute)target;
             Color before = Handles.color;
+            var starts = OwnedMotors(route).Select(x => x.StartPoint).ToArray();
             for (int i = 0; i < route.Count; i++)
             {
                 Vector3 p = route.GetPoint(i) + Vector3.up * .6f;
                 float size = HandleUtility.GetHandleSize(p) * .075f;
-                Handles.color = i == 0 ? Color.yellow : Color.cyan;
-                Handles.Label(p + Vector3.up * size * 2f, $"{i + 1:00}{(i == 0 ? " START" : "")}");
+                bool isStart = starts.Length == 0 ? i == 0 : starts.Contains(i);
+                Handles.color = isStart ? Color.yellow : Color.cyan;
+                Handles.Label(p + Vector3.up * size * 2f, $"{i + 1:00}{(isStart ? " START" : "")}");
                 EditorGUI.BeginChangeCheck();
                 Vector3 moved = Handles.Slider2D(p, Vector3.up, Vector3.right, Vector3.forward,
                     size, Handles.RectangleHandleCap, Vector2.zero);
@@ -61,7 +85,108 @@ namespace AirCombat
             EditorUtility.SetDirty(route);
             PrefabUtility.RecordPrefabInstancePropertyModifications(route);
             EditorSceneManager.MarkSceneDirty(route.gameObject.scene);
+            RefreshOwnedPreview(route);
             SceneView.RepaintAll();
+        }
+
+        private static GroundPatrolMotor[] OwnedMotors(GroundPatrolRoute route) => route
+            .GetComponentsInChildren<GroundPatrolMotor>(true)
+            .Where(m => m.Route == route && m.transform.parent == route.transform).ToArray();
+
+        private static void RefreshOwnedPreview(GroundPatrolRoute route)
+        {
+            foreach (var motor in OwnedMotors(route)) SnapPreview(motor, false);
+        }
+
+        internal static void SnapPreview(GroundPatrolMotor motor, bool recordUndo)
+        {
+            if (EditorApplication.isPlayingOrWillChangePlaymode || EditorUtility.IsPersistent(motor) ||
+                !motor.gameObject.scene.IsValid() || !motor.TryGetStartPose(out Vector3 position, out Quaternion rotation)) return;
+            Transform t = motor.transform;
+            if ((t.position - position).sqrMagnitude < .000001f && Quaternion.Angle(t.rotation, rotation) < .05f) return;
+            if (recordUndo) Undo.RecordObject(t, "Snap patrol start");
+            t.SetPositionAndRotation(position, rotation);
+            // This is a derived preview, not a separate user edit / undo step.
+            PrefabUtility.RecordPrefabInstancePropertyModifications(t);
+            EditorSceneManager.MarkSceneDirty(t.gameObject.scene);
+            SceneView.RepaintAll();
+        }
+
+        private static void BakeScale(GroundPatrolRoute route)
+        {
+            Vector3[] points = Enumerable.Range(0, route.Count).Select(route.GetPoint).ToArray();
+            var motors = OwnedMotors(route);
+            Undo.RecordObject(route.transform, "Bake route scale");
+            Undo.RecordObject(route, "Bake route scale");
+            foreach (var motor in motors) Undo.RecordObject(motor.transform, "Bake route scale");
+            route.transform.localScale = Vector3.one;
+            route.ConfigureAuthoring(route.Surface, points);
+            foreach (var motor in motors) motor.transform.localScale = Vector3.one;
+            Changed(route);
+        }
+
+        internal static bool GroupUnit(GroundPatrolMotor motor)
+        {
+            var route = motor.Route;
+            if (route == null || route.transform == motor.transform || route.gameObject.scene != motor.gameObject.scene ||
+                EditorUtility.IsPersistent(route) || EditorUtility.IsPersistent(motor)) return false;
+            if (motor.transform.parent == route.transform) { SnapPreview(motor, true); return true; }
+            // A standalone shared route is still valid. Do not silently move it
+            // into one unit's group or change the placement of other consumers.
+            bool shared = route.gameObject.scene.GetRootGameObjects()
+                .SelectMany(x => x.GetComponentsInChildren<GroundPatrolMotor>(true))
+                .Any(x => x != motor && x.Route == route);
+            if (shared || route.transform.parent != null || motor.transform.parent != null)
+            {
+                Debug.LogWarning("Patrol: grouping requires a dedicated root route and root vehicle. Shared routes remain independent.", motor);
+                return false;
+            }
+            Undo.IncrementCurrentGroup();
+            int group = Undo.GetCurrentGroup();
+            Undo.SetCurrentGroupName("Group patrol unit and route");
+            // Preserve world waypoints, including any existing non-uniform scale.
+            BakeScale(route);
+            Undo.SetTransformParent(motor.transform, route.transform, "Group patrol unit and route");
+            SnapPreview(motor, true);
+            Undo.RecordObject(route.gameObject, "Name patrol group");
+            route.gameObject.name = motor.gameObject.name.Contains("Mantis") ? "Mantis / Patrol Group" : motor.gameObject.name + " / Patrol Group";
+            EditorUtility.SetDirty(route.gameObject);
+            EditorSceneManager.MarkSceneDirty(route.gameObject.scene);
+            Undo.CollapseUndoOperations(group);
+            return true;
+        }
+
+        private static void CheckClearance(GroundPatrolRoute route)
+        {
+            if (route.Count == 0 || route.Surface == null)
+            {
+                Debug.LogWarning("Patrol: assign a Terrain and at least one waypoint.", route);
+                return;
+            }
+            Physics.SyncTransforms();
+            int legs = route.Mode == GroundPatrolRoute.Traversal.Loop && route.Count > 1 ? route.Count : Mathf.Max(1, route.Count - 1);
+            Vector3 origin = route.Surface.transform.position;
+            Vector3 size = route.Surface.terrainData.size;
+            for (int i = 0; i < legs; i++)
+            {
+                Vector3 a = route.GetPoint(i);
+                Vector3 b = route.GetPoint((i + 1) % route.Count);
+                int samples = Mathf.Max(1, Mathf.CeilToInt(Vector3.Distance(a, b) / 3f));
+                for (int j = 0; j <= samples; j++)
+                {
+                    Vector3 p = route.Project(Vector3.Lerp(a, b, j / (float)samples), out _);
+                    if (p.x < origin.x || p.z < origin.z || p.x > origin.x + size.x || p.z > origin.z + size.z)
+                    { Debug.LogWarning($"Patrol: leg {i + 1} leaves Terrain near {p}.", route); return; }
+                    // Approximate vehicle envelope; exclude Terrain and the patrol
+                    // group itself. This is a warning, not navigation or physics.
+                    var hit = Physics.OverlapSphere(p + Vector3.up * 1.5f, 4f, ~0, QueryTriggerInteraction.Ignore)
+                        .FirstOrDefault(c => c.gameObject.scene == route.gameObject.scene && !(c is TerrainCollider) &&
+                            !c.transform.IsChildOf(route.transform));
+                    if (hit != null)
+                    { Debug.LogWarning($"Patrol: possible obstacle on leg {i + 1}: {hit.name} near {p}.", hit); return; }
+                }
+            }
+            Debug.Log("Patrol: sampled route clear of non-Terrain colliders (approximate check).", route);
         }
 
         [MenuItem("Air Combat/Mission/Create Patrol Route")]
@@ -83,7 +208,8 @@ namespace AirCombat
             if (EditorApplication.isPlayingOrWillChangePlaymode) return;
             Scene scene = SceneManager.GetSceneByPath("Assets/_Project/Scenes/ArcadeDesertE1.unity");
             if (!scene.IsValid() || !scene.isLoaded) { Debug.LogError("Open ArcadeDesertE1 first."); return; }
-            GameObject trial = scene.GetRootGameObjects().FirstOrDefault(x => x.name == "AA-01a / Mantis - VISUAL TRIAL");
+            GameObject trial = scene.GetRootGameObjects().SelectMany(x => x.GetComponentsInChildren<Transform>(true))
+                .FirstOrDefault(x => x.name == "AA-01a / Mantis - VISUAL TRIAL")?.gameObject;
             Terrain terrain = FindTerrain(scene);
             if (trial == null || terrain == null)
             {
@@ -93,7 +219,7 @@ namespace AirCombat
             var motor = trial.GetComponent<GroundPatrolMotor>();
             if (motor != null && motor.Route != null)
             {
-                Selection.activeGameObject = motor.Route.gameObject;
+                if (GroupUnit(motor)) Selection.activeGameObject = motor.Route.gameObject;
                 return;
             }
             Undo.IncrementCurrentGroup();
@@ -106,8 +232,9 @@ namespace AirCombat
             EditorUtility.SetDirty(motor);
             EditorSceneManager.MarkSceneDirty(scene);
             Undo.CollapseUndoOperations(group);
+            GroupUnit(motor);
             Selection.activeGameObject = route.gameObject;
-            Debug.Log("AA-01b: route installed. Drag the points onto clear terrain, save the scene, and enter Play Mode.", route);
+            Debug.Log("AA-01b1: patrol group installed. Move the group or edit its points, save and Play.", route);
         }
 
         private static Terrain FindTerrain(Scene scene) => Terrain.activeTerrains.FirstOrDefault(x => x.gameObject.scene == scene);
@@ -131,6 +258,28 @@ namespace AirCombat
                 point + Vector3.right * width + Vector3.forward * length, point + Vector3.forward * length });
             Changed(route);
             return route;
+        }
+    }
+
+    [CustomEditor(typeof(GroundPatrolMotor))]
+    public sealed class GroundPatrolMotorEditor : Editor
+    {
+        public override void OnInspectorGUI()
+        {
+            var motor = (GroundPatrolMotor)target;
+            EditorGUI.BeginChangeCheck();
+            DrawDefaultInspector();
+            bool changed = EditorGUI.EndChangeCheck();
+            if (EditorApplication.isPlayingOrWillChangePlaymode || EditorUtility.IsPersistent(motor) || motor.Route == null) return;
+            if (changed && motor.transform.parent == motor.Route.transform)
+                GroundPatrolRouteEditor.SnapPreview(motor, true);
+            if (GUILayout.Button("Snap to Start Point")) GroundPatrolRouteEditor.SnapPreview(motor, true);
+            if (motor.transform.parent != motor.Route.transform && GUILayout.Button("Group with assigned route"))
+            {
+                if (GroundPatrolRouteEditor.GroupUnit(motor)) Selection.activeGameObject = motor.Route.gameObject;
+            }
+            if (motor.transform.parent == motor.Route.transform && GUILayout.Button("Select patrol group"))
+                Selection.activeGameObject = motor.Route.gameObject;
         }
     }
 }

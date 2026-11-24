@@ -18,6 +18,8 @@ namespace AirCombat
         private bool finished;
 
         public GroundPatrolRoute Route => route;
+        public int StartPoint => route != null && route.Count > 0
+            ? Mathf.Clamp(startPoint, 0, route.Count - 1) : 0;
         public int NextPoint => nextPoint;
         public bool Finished => finished;
 
@@ -33,19 +35,50 @@ namespace AirCombat
         public void RestartPatrol()
         {
             if (route == null || route.Count == 0) { finished = true; return; }
-            nextPoint = Mathf.Clamp(startPoint, 0, route.Count - 1);
+            nextPoint = StartPoint;
             direction = 1;
             finished = false;
-            heading = transform.eulerAngles.y;
             Vector3 start = route.GetPoint(nextPoint);
             Advance();
-            if (!finished)
-            {
-                Vector3 delta = route.GetPoint(nextPoint) - start;
-                if (new Vector2(delta.x, delta.z).sqrMagnitude > .001f)
-                    heading = Mathf.Atan2(delta.x, delta.z) * Mathf.Rad2Deg;
-            }
+            heading = GetStartHeading();
             Place(start);
+        }
+
+        // One shared start-pose calculation for the editor preview and Play Mode.
+        // The route anchor never moves when its child vehicle drives.
+        public bool TryGetStartPose(out Vector3 position, out Quaternion rotation)
+        {
+            position = transform.position;
+            rotation = transform.rotation;
+            if (route == null || route.Count == 0) return false;
+            GetSurfacePose(route.GetPoint(StartPoint), GetStartHeading(), out position, out rotation);
+            return true;
+        }
+
+        private float GetStartHeading()
+        {
+            int start = StartPoint;
+            int next = start + 1;
+            if (next >= route.Count)
+            {
+                if (route.Mode == GroundPatrolRoute.Traversal.Loop) next = 0;
+                else if (route.Mode == GroundPatrolRoute.Traversal.PingPong) next = start - 1;
+                else next = start;
+            }
+            if (next >= 0 && next < route.Count)
+            {
+                Vector3 delta = route.GetPoint(next) - route.GetPoint(start);
+                if (new Vector2(delta.x, delta.z).sqrMagnitude > .001f)
+                    return Mathf.Atan2(delta.x, delta.z) * Mathf.Rad2Deg;
+            }
+            if (start > 0)
+            {
+                Vector3 delta = route.GetPoint(start) - route.GetPoint(start - 1);
+                if (new Vector2(delta.x, delta.z).sqrMagnitude > .001f)
+                    return Mathf.Atan2(delta.x, delta.z) * Mathf.Rad2Deg;
+            }
+            Vector3 forward = route.transform.forward;
+            return Mathf.Atan2(forward.x, forward.z) * Mathf.Rad2Deg;
         }
 
         private void Update()
@@ -76,12 +109,18 @@ namespace AirCombat
 
         private void Place(Vector3 point)
         {
+            GetSurfacePose(point, heading, out Vector3 position, out Quaternion rotation);
+            transform.SetPositionAndRotation(position, rotation);
+        }
+
+        private void GetSurfacePose(Vector3 point, float yaw, out Vector3 position, out Quaternion rotation)
+        {
             Vector3 surface = route.Project(point, out Vector3 normal);
-            Vector3 forward = Quaternion.Euler(0f, heading, 0f) * Vector3.forward;
+            Vector3 forward = Quaternion.Euler(0f, yaw, 0f) * Vector3.forward;
             forward = Vector3.ProjectOnPlane(forward, normal).normalized;
             if (forward.sqrMagnitude < .001f) forward = Vector3.forward;
-            transform.SetPositionAndRotation(surface + Vector3.up * groundClearance,
-                Quaternion.LookRotation(forward, normal));
+            position = surface + Vector3.up * groundClearance;
+            rotation = Quaternion.LookRotation(forward, normal);
         }
 
         private void Advance()
