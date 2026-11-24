@@ -30,7 +30,7 @@ namespace AirCombat
             bool changed = EditorGUI.EndChangeCheck();
             var route = (GroundPatrolRoute)target;
             if (changed && !Application.isPlaying) Changed(route);
-            EditorGUILayout.HelpBox("Move or yaw this group with the normal Transform tools. Drag numbered square handles to edit its shape. The child unit previews its actual start waypoint. Do not scale a group containing a vehicle; edit the points instead.", MessageType.Info);
+            EditorGUILayout.HelpBox("Move or yaw this group with the normal Transform tools. Drag numbered square handles to edit its shape. Corner Radius rounds the actual driven path; waypoint handles remain the sharp control points. The child previews the start corner exit. Do not scale a group containing a vehicle; edit the points instead.", MessageType.Info);
             using (new EditorGUI.DisabledScope(Application.isPlaying))
             {
                 if ((route.transform.localScale - Vector3.one).sqrMagnitude > .000001f && OwnedMotors(route).Any())
@@ -164,26 +164,26 @@ namespace AirCombat
                 return;
             }
             Physics.SyncTransforms();
-            int legs = route.Mode == GroundPatrolRoute.Traversal.Loop && route.Count > 1 ? route.Count : Mathf.Max(1, route.Count - 1);
+            var path = route.BuildPath();
+            int legs = Mathf.Max(1, path.Count);
             Vector3 origin = route.Surface.transform.position;
             Vector3 size = route.Surface.terrainData.size;
             for (int i = 0; i < legs; i++)
             {
-                Vector3 a = route.GetPoint(i);
-                Vector3 b = route.GetPoint((i + 1) % route.Count);
-                int samples = Mathf.Max(1, Mathf.CeilToInt(Vector3.Distance(a, b) / 3f));
+                var segment = path.Count > 0 ? path.Segments[i] : default;
+                int samples = Mathf.Max(1, Mathf.CeilToInt(segment.Length / 2f));
                 for (int j = 0; j <= samples; j++)
                 {
-                    Vector3 p = route.Project(Vector3.Lerp(a, b, j / (float)samples), out _);
+                    Vector3 p = route.Project(path.Count > 0 ? segment.Position(j / (float)samples) : route.GetPoint(0), out _);
                     if (p.x < origin.x || p.z < origin.z || p.x > origin.x + size.x || p.z > origin.z + size.z)
-                    { Debug.LogWarning($"Patrol: leg {i + 1} leaves Terrain near {p}.", route); return; }
+                    { Debug.LogWarning($"Patrol: path segment {i + 1} leaves Terrain near {p}.", route); return; }
                     // Approximate vehicle envelope; exclude Terrain and the patrol
                     // group itself. This is a warning, not navigation or physics.
                     var hit = Physics.OverlapSphere(p + Vector3.up * 1.5f, 4f, ~0, QueryTriggerInteraction.Ignore)
                         .FirstOrDefault(c => c.gameObject.scene == route.gameObject.scene && !(c is TerrainCollider) &&
                             !c.transform.IsChildOf(route.transform));
                     if (hit != null)
-                    { Debug.LogWarning($"Patrol: possible obstacle on leg {i + 1}: {hit.name} near {p}.", hit); return; }
+                    { Debug.LogWarning($"Patrol: possible obstacle on path segment {i + 1}: {hit.name} near {p}.", hit); return; }
                 }
             }
             Debug.Log("Patrol: sampled route clear of non-Terrain colliders (approximate check).", route);

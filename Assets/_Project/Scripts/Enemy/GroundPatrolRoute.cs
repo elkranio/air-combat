@@ -13,12 +13,16 @@ namespace AirCombat
         [SerializeField] private Terrain terrain;
         [SerializeField] private Traversal traversal = Traversal.Loop;
         [SerializeField] private List<Vector3> localPoints = new List<Vector3>();
+        [SerializeField, Min(0f), Tooltip("Desired turn radius in world units. Short legs clamp the radius; zero restores sharp corners.")]
+        private float cornerRadius = 9f;
         [SerializeField] private bool showRoute = true;
         [SerializeField] private Color routeColor = new Color(.25f, .9f, .95f, 1f);
 
         public int Count => localPoints.Count;
         public Traversal Mode => traversal;
         public Terrain Surface => terrain;
+        public float CornerRadius => Mathf.Max(0f, cornerRadius);
+        public GroundPatrolPath BuildPath() => new GroundPatrolPath(this);
 
         public Vector3 GetPoint(int index) => Project(transform.TransformPoint(localPoints[index]), out _);
 
@@ -57,29 +61,25 @@ namespace AirCombat
             {
                 Vector3 point = GetPoint(i) + Vector3.up * .6f;
                 Gizmos.DrawWireSphere(point, 2.5f);
-                if (i < Count - 1) DrawLeg(GetPoint(i), GetPoint(i + 1));
             }
-            if (traversal == Traversal.Loop && Count > 2) DrawLeg(GetPoint(Count - 1), GetPoint(0));
+            foreach (var segment in BuildPath().Segments) DrawSegment(segment);
         }
 
-        private void DrawLeg(Vector3 from, Vector3 to)
+        private void DrawSegment(GroundPatrolPath.Segment segment)
         {
-            Vector3 horizontal = to - from;
-            horizontal.y = 0f;
-            if (horizontal.sqrMagnitude < .01f) return;
-            int steps = Mathf.Clamp(Mathf.CeilToInt(horizontal.magnitude / 4f), 1, 512);
-            Vector3 previous = Project(from, out _) + Vector3.up * .6f;
+            int steps = Mathf.Clamp(Mathf.CeilToInt(segment.Length / (segment.Radius > 0f ? 1f : 4f)), 1, 512);
+            Vector3 previous = Project(segment.Start, out _) + Vector3.up * .6f;
             for (int i = 1; i <= steps; i++)
             {
-                Vector3 point = Project(Vector3.Lerp(from, to, i / (float)steps), out _) + Vector3.up * .6f;
+                Vector3 point = Project(segment.Position(i / (float)steps), out _) + Vector3.up * .6f;
                 Gizmos.DrawLine(previous, point);
                 previous = point;
             }
-            Vector3 direction = horizontal.normalized;
-            float arrowSize = Mathf.Min(3f, horizontal.magnitude * .15f);
-            DrawArrow(Vector3.Lerp(from, to, .6f), direction, arrowSize);
-            if (traversal == Traversal.PingPong || (traversal == Traversal.Loop && Count == 2))
-                DrawArrow(Vector3.Lerp(from, to, .35f), -direction, arrowSize);
+            if (segment.Radius > 0f) return;
+            Vector3 direction = Quaternion.Euler(0f, segment.Heading(.6f), 0f) * Vector3.forward;
+            float arrowSize = Mathf.Min(3f, segment.Length * .15f);
+            DrawArrow(segment.Position(.6f), direction, arrowSize);
+            if (traversal == Traversal.PingPong) DrawArrow(segment.Position(.35f), -direction, arrowSize);
         }
 
         private void DrawArrow(Vector3 arrow, Vector3 direction, float size)

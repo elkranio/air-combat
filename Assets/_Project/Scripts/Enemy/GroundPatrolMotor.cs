@@ -2,8 +2,7 @@ using UnityEngine;
 
 namespace AirCombat
 {
-    // Ground locomotion only. No targeting, radar, damage, or weapon decisions.
-    // Tracked vehicles turn toward the next point before moving into a new leg.
+    // Ground locomotion only. Drive along the same rounded path drawn in the editor.
     [DisallowMultipleComponent]
     public sealed class GroundPatrolMotor : MonoBehaviour
     {
@@ -12,15 +11,19 @@ namespace AirCombat
         [SerializeField, Min(1f)] private float turnRate = 95f;
         [SerializeField, Min(0)] private int startPoint;
         [SerializeField, Min(0f)] private float groundClearance;
-        private int nextPoint;
+        private GroundPatrolPath path;
+        private int segmentIndex;
         private int direction = 1;
+        private float progress;
         private float heading;
         private bool finished;
 
         public GroundPatrolRoute Route => route;
         public int StartPoint => route != null && route.Count > 0
             ? Mathf.Clamp(startPoint, 0, route.Count - 1) : 0;
-        public int NextPoint => nextPoint;
+        public int NextPoint => path != null && segmentIndex >= 0 && segmentIndex < path.Count
+            ? (direction > 0 ? path.Segments[segmentIndex].ToWaypoint : path.Segments[segmentIndex].FromWaypoint)
+            : StartPoint;
         public bool Finished => finished;
 
         private void OnEnable() => RestartPatrol();
@@ -34,77 +37,83 @@ namespace AirCombat
 
         public void RestartPatrol()
         {
-            if (route == null || route.Count == 0) { finished = true; return; }
-            nextPoint = StartPoint;
-            direction = 1;
-            finished = false;
-            Vector3 start = route.GetPoint(nextPoint);
-            Advance();
-            heading = GetStartHeading();
-            Place(start);
+            if (route == null || route.Count == 0) { finished = true; path = null; return; }
+            path = route.BuildPath();
+            GetStart(path, out segmentIndex, out direction, out progress, out heading, out finished);
+            Place(path.StartPosition(StartPoint));
         }
 
-        // One shared start-pose calculation for the editor preview and Play Mode.
-        // The route anchor never moves when its child vehicle drives.
+        // Shared calculation for the edit-time unit preview and Play Mode.
         public bool TryGetStartPose(out Vector3 position, out Quaternion rotation)
         {
             position = transform.position;
             rotation = transform.rotation;
             if (route == null || route.Count == 0) return false;
-            GetSurfacePose(route.GetPoint(StartPoint), GetStartHeading(), out position, out rotation);
+            var preview = route.BuildPath();
+            GetStart(preview, out _, out _, out _, out float yaw, out _);
+            GetSurfacePose(preview.StartPosition(StartPoint), yaw, out position, out rotation);
             return true;
         }
 
-        private float GetStartHeading()
+        private void GetStart(GroundPatrolPath built, out int segment, out int travel,
+            out float distance, out float yaw, out bool done)
         {
-            int start = StartPoint;
-            int next = start + 1;
-            if (next >= route.Count)
+            segment = built.StartSegment(StartPoint);
+            travel = 1;
+            distance = 0f;
+            done = built.Count == 0;
+            if (!done && segment >= built.Count)
             {
-                if (route.Mode == GroundPatrolRoute.Traversal.Loop) next = 0;
-                else if (route.Mode == GroundPatrolRoute.Traversal.PingPong) next = start - 1;
-                else next = start;
+                if (route.Mode == GroundPatrolRoute.Traversal.Loop) segment = 0;
+                else
+                {
+                    segment = built.Count - 1;
+                    distance = built.Segments[segment].Length;
+                    if (route.Mode == GroundPatrolRoute.Traversal.PingPong) travel = -1;
+                    else done = true;
+                }
             }
-            if (next >= 0 && next < route.Count)
-            {
-                Vector3 delta = route.GetPoint(next) - route.GetPoint(start);
-                if (new Vector2(delta.x, delta.z).sqrMagnitude > .001f)
-                    return Mathf.Atan2(delta.x, delta.z) * Mathf.Rad2Deg;
-            }
-            if (start > 0)
-            {
-                Vector3 delta = route.GetPoint(start) - route.GetPoint(start - 1);
-                if (new Vector2(delta.x, delta.z).sqrMagnitude > .001f)
-                    return Mathf.Atan2(delta.x, delta.z) * Mathf.Rad2Deg;
-            }
-            Vector3 forward = route.transform.forward;
-            return Mathf.Atan2(forward.x, forward.z) * Mathf.Rad2Deg;
+            yaw = built.Count > 0
+                ? built.Segments[segment].Heading(distance / built.Segments[segment].Length, travel)
+                : route.transform.eulerAngles.y;
         }
 
         private void Update()
         {
-            if (finished || route == null || route.Count == 0) return;
-            if (nextPoint < 0 || nextPoint >= route.Count) { RestartPatrol(); return; }
-            Vector3 current = transform.position;
-            Vector3 goal = route.GetPoint(nextPoint);
-            Vector3 delta = goal - current;
-            delta.y = 0f;
-            float distance = delta.magnitude;
-            if (distance <= .01f) { Place(goal); Advance(); return; }
-            float desired = Mathf.Atan2(delta.x, delta.z) * Mathf.Rad2Deg;
-            heading = Mathf.MoveTowardsAngle(heading, desired, turnRate * Time.deltaTime);
-            // Turn on the spot instead of sliding sideways around sharp corners.
-            if (Mathf.Abs(Mathf.DeltaAngle(heading, desired)) <= 4f)
+            if (finished || route == null || path == null || path.Count == 0) return;
+            float timeLeft = Time.deltaTime;
+            // Carry unused frame time across tangent joins, so a normal 90-degree
+            // corner never incurs a one-frame stop. Bound loops for tiny routes.
+            for (int i = 0; i < 128 && timeLeft > .00001f && !finished; i++)
             {
-                heading = desired;
-                float step = Mathf.Min(distance, speed * Time.deltaTime);
-                current += delta * (step / distance);
-                // Interpolate fallback height for non-terrain routes.
-                current.y = Mathf.Lerp(current.y - groundClearance, goal.y, step / distance);
-                Place(current);
-                if (step >= distance) Advance();
+                var segment = path.Segments[segmentIndex];
+                float desired = segment.Heading(progress / segment.Length, direction);
+                float turnTime = Mathf.Abs(Mathf.DeltaAngle(heading, desired)) / Mathf.Max(1f, turnRate);
+                if (turnTime > .0001f)
+                {
+                    // Only hard corners (radius zero, duplicates, U-turns and
+                    // PingPong reversals) need an in-place rotation.
+                    float used = Mathf.Min(timeLeft, turnTime);
+                    heading = Mathf.MoveTowardsAngle(heading, desired, turnRate * used);
+                    Place(segment.Position(progress / segment.Length));
+                    timeLeft -= used;
+                    if (used < turnTime) return;
+                }
+                // Angular rate = speed / radius. Tight curves automatically slow
+                // down instead of skating sideways or exceeding the motor yaw limit.
+                float velocity = Mathf.Max(.1f, speed);
+                if (segment.Radius > 0f)
+                    velocity = Mathf.Min(velocity, Mathf.Max(1f, turnRate) * Mathf.Deg2Rad * segment.Radius);
+                float left = direction > 0 ? segment.Length - progress : progress;
+                float step = Mathf.Min(left, velocity * timeLeft);
+                progress = Mathf.Clamp(progress + step * direction, 0f, segment.Length);
+                float t = progress / segment.Length;
+                heading = segment.Heading(t, direction);
+                Place(segment.Position(t));
+                timeLeft -= step / velocity;
+                if (left - step <= .00001f) Advance();
+                else return;
             }
-            else Place(current - Vector3.up * groundClearance);
         }
 
         private void Place(Vector3 point)
@@ -125,22 +134,12 @@ namespace AirCombat
 
         private void Advance()
         {
-            if (route.Count < 2) { finished = true; return; }
-            int candidate = nextPoint + direction;
-            if (candidate >= 0 && candidate < route.Count) { nextPoint = candidate; return; }
-            switch (route.Mode)
-            {
-                case GroundPatrolRoute.Traversal.Loop:
-                    nextPoint = candidate >= route.Count ? 0 : route.Count - 1;
-                    break;
-                case GroundPatrolRoute.Traversal.PingPong:
-                    direction = -direction;
-                    nextPoint += direction;
-                    break;
-                default:
-                    finished = true;
-                    break;
-            }
+            int candidate = segmentIndex + direction;
+            if (candidate >= 0 && candidate < path.Count) segmentIndex = candidate;
+            else if (route.Mode == GroundPatrolRoute.Traversal.Loop) segmentIndex = direction > 0 ? 0 : path.Count - 1;
+            else if (route.Mode == GroundPatrolRoute.Traversal.PingPong) direction = -direction;
+            else { finished = true; return; }
+            progress = direction > 0 ? 0f : path.Segments[segmentIndex].Length;
         }
     }
 }

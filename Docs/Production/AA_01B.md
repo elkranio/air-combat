@@ -1,6 +1,14 @@
 # AA-01b — scene-authored ground patrol route
 
-## AA-01b1 — movable patrol group (current)
+## AA-01b2 — rounded moving turns (current)
+
+Base `c3ffd79`. No scene migration or reinstallation. `Corner Radius` on the existing `GroundPatrolRoute` defaults to 9 world units. The authored points remain unchanged: straight legs are joined with tangent circular arcs, trimmed to at most 45% of either neighboring leg. The cyan gizmo and obstacle checker use the same rounded path as the motor. Radius zero restores hard corners. Inspect the arc clearance before driving around buildings; no automatic obstacle avoidance.
+
+The motor advances by distance along each straight/arc and keeps its forward axis tangent, with terrain height and normal sampled at the actual position. It limits speed on a tight arc to the configured yaw rate. A normal 90-degree turn at the default 12 units/s and 9-unit radius does not stop. Exact reversals (including PingPong endpoints), unrounded sharp corners and degenerate point configurations may still use an in-place turn. Loop joins are rounded too. Once still stops at its last point. The editor start preview and runtime start use the selected corner's outgoing tangent point (or the exact waypoint when unrounded); a loop no longer starts outside the rounded path. Path geometry is rebuilt at `RestartPatrol()` / `SetRoute()`, not every runtime frame.
+
+Play Mode gate: inspect the existing loop, verify continuous 90-degree turns, no lateral sliding, adjust radius, check route clearance, verify the closing corner, terrain alignment, group move/yaw, and Once/PingPong endpoints. No changes to turret, weapons or scene YAML.
+
+## AA-01b1 — movable patrol group (previous)
 
 Base `8b0057b`. In Edit Mode, rerun **Air Combat > Mission > AA-01b - Install Mantis patrol trial** to migrate the existing scene without recreating its points. The existing route becomes `Mantis / Patrol Group`; its vehicle wrapper (with motor and original visual prefab) becomes a child. World waypoints are preserved, including the existing route scale, which is baked into the point data. No scene YAML rewrite, duplicate model or route. Save the migrated scene with the green.
 
