@@ -1,0 +1,333 @@
+using System.Collections.Generic;
+using UnityEngine;
+using UnityEngine.Rendering;
+
+namespace AirCombat
+{
+    // Production encounter presentation. Observes confirmed HP damage, never
+    // modifies damage, hitboxes, weapon cadence or flight. One bounded FX/audio
+    // set for the whole encounter; no scene discovery in the hit path.
+    [DisallowMultipleComponent]
+    public sealed class CombatHitFeedback : MonoBehaviour
+    {
+        [Header("Hull flash")]
+        [SerializeField, Min(.01f)] private float flashSeconds = .09f;
+        [Header("Camera impulse (world units / seconds)")]
+        [SerializeField, Min(0f)] private float hitShake = .28f;
+        [SerializeField, Min(0f)] private float hitShakeSeconds = .12f;
+        [SerializeField, Min(0f)] private float receivedShake = .65f;
+        [SerializeField, Min(0f)] private float receivedShakeSeconds = .19f;
+        [SerializeField, Min(0f)] private float killShake = 2.1f;
+        [SerializeField, Min(0f)] private float killShakeSeconds = .38f;
+        [Header("Sound / incoming damage")]
+        [SerializeField, Range(0f, 1f)] private float hitVolume = .35f;
+        [SerializeField, Range(0f, 1f)] private float killVolume = .60f;
+        [SerializeField, Range(0f, 1f)] private float damageEdgeAlpha = .55f;
+        [SerializeField, Min(.01f)] private float damageEdgeSeconds = .22f;
+
+        private static readonly int BaseColor = Shader.PropertyToID("_BaseColor");
+        private static readonly int EmissionColor = Shader.PropertyToID("_EmissionColor");
+        private sealed class Slot
+        {
+            public Renderer Renderer;
+            public int Index;
+            public MaterialPropertyBlock Before = new MaterialPropertyBlock();
+            public MaterialPropertyBlock Flash = new MaterialPropertyBlock();
+            public bool HasEmission;
+        }
+        private sealed class Tracked
+        {
+            public bool IsPlayer;
+            public bool Flashing;
+            public float FlashUntil;
+            public readonly List<Slot> Slots = new List<Slot>();
+        }
+        private readonly Dictionary<PlayerHitPoints, Tracked> targets =
+            new Dictionary<PlayerHitPoints, Tracked>();
+        // Separate random stream: presentation cannot change enemy spawn/AI RNG.
+        private readonly System.Random random = new System.Random(8153);
+        private Camera view;
+        private ArcadeCameraFollow cameraFollow;
+        private ParticleSystem sparks, debris;
+        private Material particleMaterial;
+        private AudioSource audioSource;
+        private AudioClip hitClip, killClip;
+        private Texture2D edgeTexture;
+        private float edgeUntil;
+        private float nextHitSound;
+
+        public void Bind(Camera camera)
+        {
+            view = camera;
+            cameraFollow = camera != null ? camera.GetComponent<ArcadeCameraFollow>() : null;
+            if (audioSource != null) return;
+            // The existing sandbox effect shader reads vertex/particle colors.
+            // No new shader, textures, lights, physics or material edits.
+            Shader shader = Shader.Find("AirCombat/SandboxEffect");
+            if (shader != null)
+            {
+                particleMaterial = new Material(shader) { name = "Combat hit particles (runtime)" };
+                sparks = MakeParticles("Hit sparks", true, 192);
+                debris = MakeParticles("Hit debris", false, 128);
+            }
+            else Debug.LogWarning("Combat hit particles: SandboxEffect shader missing.", this);
+            audioSource = gameObject.AddComponent<AudioSource>();
+            audioSource.playOnAwake = false;
+            audioSource.spatialBlend = 0f;
+            hitClip = MakeHitClip(false);
+            killClip = MakeHitClip(true);
+            edgeTexture = MakeEdgeTexture();
+        }
+
+        public void Track(PlayerHitPoints health, bool isPlayer)
+        {
+            if (health == null || targets.ContainsKey(health)) return;
+            var tracked = new Tracked { IsPlayer = isPlayer };
+            var jet = health.GetComponent<JetAssembly>();
+            if (jet != null && jet.VisualRoot != null)
+            {
+                foreach (var renderer in jet.VisualRoot.GetComponentsInChildren<Renderer>(true))
+                {
+                    if (renderer == null || !renderer.enabled || !renderer.gameObject.activeInHierarchy ||
+                        !(renderer is MeshRenderer || renderer is SkinnedMeshRenderer)) continue;
+                    var materials = renderer.sharedMaterials;
+                    for (int i = 0; i < materials.Length; i++)
+                    {
+                        var material = materials[i];
+                        if (material == null || !material.HasProperty(BaseColor)) continue;
+                        tracked.Slots.Add(new Slot { Renderer = renderer, Index = i,
+                            HasEmission = material.HasProperty(EmissionColor) });
+                    }
+                }
+            }
+            targets.Add(health, tracked);
+            health.Damaged += OnDamage;
+        }
+
+        public void Untrack(PlayerHitPoints health)
+        {
+            if (health == null || !targets.TryGetValue(health, out var tracked)) return;
+            health.Damaged -= OnDamage;
+            Restore(tracked);
+            targets.Remove(health);
+        }
+
+        private void OnDamage(PlayerHitPoints health, Vector3 point)
+        {
+            if (!isActiveAndEnabled || !targets.TryGetValue(health, out var tracked)) return;
+            bool killed = !health.IsAlive;
+            Flash(tracked);
+            EmitBurst(point, health.transform.forward, killed);
+            if (cameraFollow != null)
+            {
+                if (killed) cameraFollow.AddHitShake(killShake, killShakeSeconds);
+                else if (tracked.IsPlayer) cameraFollow.AddHitShake(receivedShake, receivedShakeSeconds);
+                else cameraFollow.AddHitShake(hitShake, hitShakeSeconds);
+            }
+            if (tracked.IsPlayer) edgeUntil = Time.time + damageEdgeSeconds;
+            if (audioSource == null) return;
+            if (killed)
+            {
+                audioSource.PlayOneShot(killClip, killVolume);
+                nextHitSound = Time.time + .08f;
+            }
+            else if (Time.time >= nextHitSound)
+            {
+                audioSource.PlayOneShot(hitClip, hitVolume * (tracked.IsPlayer ? 1f : .85f));
+                nextHitSound = Time.time + .055f;
+            }
+        }
+
+        private void Flash(Tracked tracked)
+        {
+            tracked.FlashUntil = Time.time + flashSeconds;
+            if (tracked.Flashing) return;
+            tracked.Flashing = true;
+            foreach (var slot in tracked.Slots)
+            {
+                if (slot.Renderer == null) continue;
+                slot.Renderer.GetPropertyBlock(slot.Before, slot.Index);
+                slot.Renderer.GetPropertyBlock(slot.Flash, slot.Index);
+                // Preserve any renderer-level overrides if no per-slot block exists.
+                if (slot.Flash.isEmpty) slot.Renderer.GetPropertyBlock(slot.Flash);
+                slot.Flash.SetColor(BaseColor, new Color(1f, .94f, .70f, 1f));
+                if (slot.HasEmission) slot.Flash.SetColor(EmissionColor, new Color(1.8f, 1.2f, .48f, 1f));
+                slot.Renderer.SetPropertyBlock(slot.Flash, slot.Index);
+            }
+        }
+
+        private static void Restore(Tracked tracked)
+        {
+            if (!tracked.Flashing) return;
+            foreach (var slot in tracked.Slots)
+                if (slot.Renderer != null)
+                    slot.Renderer.SetPropertyBlock(slot.Before.isEmpty ? null : slot.Before, slot.Index);
+            tracked.Flashing = false;
+        }
+
+        private void LateUpdate()
+        {
+            foreach (var tracked in targets.Values)
+                if (tracked.Flashing && Time.time >= tracked.FlashUntil) Restore(tracked);
+        }
+
+        public void ResetEffects()
+        {
+            foreach (var tracked in targets.Values) Restore(tracked);
+            if (sparks != null) sparks.Clear();
+            if (debris != null) debris.Clear();
+            if (audioSource != null) audioSource.Stop();
+            if (cameraFollow != null) cameraFollow.ClearHitShake();
+            edgeUntil = nextHitSound = 0f;
+        }
+
+        private ParticleSystem MakeParticles(string objectName, bool stretch, int capacity)
+        {
+            var go = new GameObject(objectName);
+            go.transform.SetParent(transform, false);
+            var ps = go.AddComponent<ParticleSystem>();
+            ps.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
+            var main = ps.main;
+            main.playOnAwake = false;
+            main.loop = true;
+            main.simulationSpace = ParticleSystemSimulationSpace.World;
+            main.maxParticles = capacity;
+            main.gravityModifier = stretch ? 0f : 1.3f;
+            main.cullingMode = ParticleSystemCullingMode.AlwaysSimulate;
+            var emission = ps.emission;
+            emission.enabled = false;
+            var shape = ps.shape;
+            shape.enabled = false;
+            var fade = ps.colorOverLifetime;
+            fade.enabled = true;
+            var gradient = new Gradient();
+            gradient.SetKeys(new[] { new GradientColorKey(Color.white, 0f), new GradientColorKey(Color.white, 1f) },
+                new[] { new GradientAlphaKey(1f, 0f), new GradientAlphaKey(.9f, .25f), new GradientAlphaKey(0f, 1f) });
+            fade.color = new ParticleSystem.MinMaxGradient(gradient);
+            var renderer = ps.GetComponent<ParticleSystemRenderer>();
+            renderer.sharedMaterial = particleMaterial;
+            renderer.renderMode = stretch ? ParticleSystemRenderMode.Stretch : ParticleSystemRenderMode.Billboard;
+            renderer.lengthScale = stretch ? 2f : 1f;
+            renderer.velocityScale = stretch ? .07f : 0f;
+            renderer.cameraVelocityScale = 0f;
+            renderer.shadowCastingMode = ShadowCastingMode.Off;
+            renderer.receiveShadows = false;
+            ps.Play();
+            return ps;
+        }
+
+        private float Range(float min, float max) => min + (max - min) * (float)random.NextDouble();
+
+        private void EmitBurst(Vector3 point, Vector3 forward, bool killed)
+        {
+            Vector3 right = view != null ? view.transform.right : Vector3.right;
+            Vector3 up = view != null ? view.transform.up : Vector3.up;
+            // Existing AC-01/02 impact streaks remain; add fast bright fragments
+            // and slower dark debris at the exact accepted damage point.
+            int count = killed ? 16 : 7;
+            for (int i = 0; i < count; i++)
+            {
+                float angle = (i + Range(-.25f, .25f)) * Mathf.PI * 2f / count;
+                Vector3 direction = Mathf.Cos(angle) * right + Mathf.Sin(angle) * up;
+                if (sparks != null)
+                {
+                    var p = new ParticleSystem.EmitParams
+                    {
+                        position = point + direction * .25f,
+                        velocity = direction * Range(12f, killed ? 42f : 27f) + forward * 5f,
+                        startSize = Range(.22f, killed ? .75f : .48f),
+                        startLifetime = Range(.10f, killed ? .31f : .20f),
+                        startColor = i % 3 == 0 ? new Color(1f, 1f, .82f) : new Color(1f, .67f, .15f)
+                    };
+                    sparks.Emit(p, 1);
+                }
+                if (debris != null && i < (killed ? 10 : 4))
+                {
+                    var p = new ParticleSystem.EmitParams
+                    {
+                        position = point,
+                        velocity = direction * Range(6f, 17f) + forward * 12f,
+                        startSize = Range(.22f, killed ? .80f : .50f),
+                        startLifetime = Range(.25f, killed ? .65f : .40f),
+                        startColor = new Color(.19f, .16f, .13f),
+                        rotation = Range(0f, 360f)
+                    };
+                    debris.Emit(p, 1);
+                }
+            }
+        }
+
+        private static AudioClip MakeHitClip(bool killed)
+        {
+            const int rate = 22050;
+            var data = new float[Mathf.RoundToInt(rate * (killed ? .32f : .15f))];
+            var rng = new System.Random(killed ? 157 : 83);
+            float low = 0f;
+            for (int i = 0; i < data.Length; i++)
+            {
+                float t = i / (float)rate;
+                float noise = (float)rng.NextDouble() * 2f - 1f;
+                low = Mathf.Lerp(low, noise, killed ? .08f : .28f);
+                float attack = Mathf.Clamp01(t / .003f);
+                float body = Mathf.Sin(2f * Mathf.PI * (killed ? 85f : 230f) * t) * Mathf.Exp(-t * (killed ? 14f : 37f));
+                float crack = (noise - low) * Mathf.Exp(-t * 65f);
+                float tail = low * Mathf.Exp(-t * (killed ? 11f : 30f));
+                float fade = Mathf.Clamp01((data.Length - 1 - i) / (rate * .02f));
+                data[i] = Mathf.Clamp((body * .38f + crack * .45f + tail * .65f) * attack * fade, -1f, 1f);
+            }
+            var clip = AudioClip.Create(killed ? "Aircraft fatal impact" : "Aircraft hit", data.Length, 1, rate, false);
+            clip.SetData(data, 0);
+            return clip;
+        }
+
+        private static Texture2D MakeEdgeTexture()
+        {
+            const int size = 64;
+            var tex = new Texture2D(size, size, TextureFormat.RGBA32, false) { name = "Damage edge", wrapMode = TextureWrapMode.Clamp, filterMode = FilterMode.Bilinear };
+            var pixels = new Color32[size * size];
+            for (int y = 0; y < size; y++)
+            for (int x = 0; x < size; x++)
+            {
+                float edge = Mathf.Min(Mathf.Min(x, size - 1 - x), Mathf.Min(y, size - 1 - y));
+                float a = 1f - Mathf.Clamp01(edge / 9f);
+                pixels[y * size + x] = new Color32(255, 34, 16, (byte)Mathf.RoundToInt(255f * a * a));
+            }
+            tex.SetPixels32(pixels);
+            tex.Apply(false, true);
+            return tex;
+        }
+
+        private void OnGUI()
+        {
+            if (Event.current.type != EventType.Repaint || edgeTexture == null || view == null || Time.time >= edgeUntil) return;
+            float fade = Mathf.Clamp01((edgeUntil - Time.time) / damageEdgeSeconds);
+            var previous = GUI.color;
+            int previousDepth = GUI.depth;
+            GUI.depth = 10;
+            GUI.color = new Color(1f, 1f, 1f, damageEdgeAlpha * fade * fade);
+            Rect pixels = view.pixelRect;
+            GUI.DrawTexture(new Rect(pixels.x, Screen.height - pixels.yMax, pixels.width, pixels.height), edgeTexture);
+            GUI.color = previous;
+            GUI.depth = previousDepth;
+        }
+
+        private void OnDisable() { ResetEffects(); }
+
+        private void OnDestroy()
+        {
+            foreach (var pair in targets)
+            {
+                if (pair.Key != null) pair.Key.Damaged -= OnDamage;
+                Restore(pair.Value);
+            }
+            targets.Clear();
+            if (sparks != null) Destroy(sparks.gameObject);
+            if (debris != null) Destroy(debris.gameObject);
+            if (audioSource != null) Destroy(audioSource);
+            if (particleMaterial != null) Destroy(particleMaterial);
+            if (hitClip != null) Destroy(hitClip);
+            if (killClip != null) Destroy(killClip);
+            if (edgeTexture != null) Destroy(edgeTexture);
+        }
+    }
+}

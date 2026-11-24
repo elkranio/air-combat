@@ -28,6 +28,7 @@ namespace AirCombat
         private readonly List<Fighter> fighters = new List<Fighter>(FighterCount);
         private JetAssembly player;
         private Camera view;
+        private CombatHitFeedback hitFeedback;
         private AircraftRadar radar;
         private PlayerHitPoints playerHealth;
         private float boundary;
@@ -73,6 +74,11 @@ namespace AirCombat
             if (team == null) team = player.gameObject.AddComponent<AircraftTeam>();
             team.SetSide(AircraftSide.Player);
             playerHealth.InstallHitbox();
+            // Production scene opt-in; legacy labs have no hit-feedback listener.
+            hitFeedback = GetComponent<CombatHitFeedback>();
+            if (hitFeedback == null) hitFeedback = gameObject.AddComponent<CombatHitFeedback>();
+            hitFeedback.Bind(view);
+            hitFeedback.Track(playerHealth, true);
             playerFlight = player.GetComponent<FlightController>();
             playerTrigger = player.GetComponent<PlayerWeaponTrigger>();
             playerBoost = player.GetComponent<Afterburner>();
@@ -85,6 +91,7 @@ namespace AirCombat
         public void Restart()
         {
             if (!bound) return;
+            if (hitFeedback != null) hitFeedback.ResetEffects();
             if (playerTrigger != null) playerTrigger.enabled = false;
             foreach (var gun in player.GetComponentsInChildren<AutocannonWeapon>())
                 gun.ResetContinuous(Time.time);
@@ -132,6 +139,7 @@ namespace AirCombat
             }
 
             health.InstallHitbox();
+            if (hitFeedback != null) hitFeedback.Track(health, false);
             var fighter = new Fighter
             {
                 Index = index,
@@ -258,6 +266,7 @@ namespace AirCombat
         private void RemoveFighterAt(int index)
         {
             Fighter fighter = fighters[index];
+            if (hitFeedback != null) hitFeedback.Untrack(fighter.Health);
             if (radar != null && fighter.Contact != null) radar.Unregister(fighter.Contact);
             if (fighter.Root != null)
             {

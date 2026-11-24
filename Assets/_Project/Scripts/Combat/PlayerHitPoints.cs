@@ -10,6 +10,9 @@ namespace AirCombat
         [SerializeField, Min(1)] private int maxHp = 20;
         private BoxCollider hitbox;
 
+        // Only accepted damage is published, after HP has been updated.
+        public event System.Action<PlayerHitPoints, Vector3> Damaged;
+
         public int Hp { get; private set; }
         public int MaxHp => maxHp;
         public int HitCount { get; private set; }
@@ -40,6 +43,7 @@ namespace AirCombat
             Hp = Mathf.Max(0, Hp - damage);
             HitCount++;
             LastHitTime = Time.time;
+            Damaged?.Invoke(this, point);
             return true;
         }
     }

@@ -30,6 +30,24 @@ namespace AirCombat
         private Vector3 lead;
         private Vector3 leadVelocity;
         private bool initialized;
+        private float shakeStarted, shakeDuration, shakeAmplitude;
+
+        // Translation only, in screen axes; never feeds back into follow smoothing.
+        // A lesser hit cannot cut short an active stronger kill/received-hit impulse.
+        public void AddHitShake(float amplitude, float duration)
+        {
+            if (amplitude <= 0f || duration <= 0f) return;
+            if (Time.time < shakeStarted + shakeDuration && amplitude < shakeAmplitude) return;
+            shakeStarted = Time.time;
+            shakeDuration = duration;
+            shakeAmplitude = amplitude;
+        }
+
+        public void ClearHitShake()
+        {
+            shakeDuration = 0f;
+            shakeAmplitude = 0f;
+        }
 
         // Called by CombatCameraRig, never by a global search for Player objects.
         public void Configure(Transform player, Afterburner boost)
@@ -68,6 +86,7 @@ namespace AirCombat
         public void SnapToAircraft()
         {
             if (!Application.isPlaying || aircraft == null) return;
+            ClearHitShake();
             if (!initialized) { Initialize(); return; }
             focus = aircraft.position;
             lead = DesiredLead();
@@ -102,6 +121,15 @@ namespace AirCombat
             float distance = cameraHeight / Mathf.Sin(pitch * Mathf.Deg2Rad);
             transform.SetPositionAndRotation(focus - rotation * Vector3.forward * distance, rotation);
             transform.position += lead * SafeLeadFraction(lead);
+            float elapsed = Time.time - shakeStarted;
+            if (shakeDuration > 0f && elapsed < shakeDuration)
+            {
+                float fade = 1f - Mathf.Clamp01(elapsed / shakeDuration);
+                float strength = shakeAmplitude * fade * fade;
+                float phase = elapsed * 2f * Mathf.PI;
+                transform.position += rotation * new Vector3(
+                    Mathf.Cos(phase * 23f), .75f * Mathf.Sin(phase * 19f + .8f), 0f) * strength;
+            }
         }
 
         private float SafeLeadFraction(Vector3 extra)
