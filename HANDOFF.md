@@ -1,6 +1,6 @@
 # Air Combat — current handoff
 
-Updated 2026-11-24. Base `54b0d90`: MISSILE-03b warning/radar retained; current playtest [MISSILE-03b1](Docs/Production/MISSILE_03B.md#missile-03b1--hostile-missile-visual-cleanup) hostile missile visual cleanup (lighter hull, compact two-tone motor, shorter smoke). No motion, damage, warning or pacing changes. WEAPON-04 accepted; LMB AC-01 BURST / RMB AAM, 150 ms lock, dual HUD. Next launch marker refinement, then evasion tuning and normal encounter pacing. Q/E reserved for future per-slot weapon cycling. JUICE-03 deferred. Earlier HUD-02/flight-only notes below are historical.
+Updated 2026-11-24. Base `2a5949a`: MISSILE-03b1 visual cleanup retained; current playtest [MISSILE-03b2](Docs/Production/MISSILE_03B.md#missile-03b2--pre-launch-threat-vector) pulsing green pre-launch bearing line and missile glyph, no in-flight screen markers; radar retained. No balance or warning timing changes. WEAPON-04 accepted; LMB AC-01 BURST / RMB AAM, 150 ms lock, dual HUD. Next evasion tuning and normal encounter pacing. Q/E reserved for future per-slot weapon cycling. JUICE-03 deferred. Earlier HUD-02/flight-only notes below are historical.
 
 ## Goal and immediate order
 

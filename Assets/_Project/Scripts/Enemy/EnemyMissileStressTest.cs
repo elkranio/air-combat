@@ -132,17 +132,18 @@ namespace AirCombat
             }
         }
 
-        // Presentation samples only active threats; no scene discovery or input.
-        public void CollectThreats(List<WarningCue> warnings, List<Vector3> missiles)
+        // World positions for the pre-launch overlay only. In-flight missiles
+        // remain registered on the radar, not in the screen-space warning HUD.
+        public bool CollectWarnings(List<WarningCue> warnings, out Vector3 playerPosition)
         {
             warnings.Clear();
-            missiles.Clear();
-            if (!WeaponLock.Alive(target)) return;
+            playerPosition = default;
+            if (!WeaponLock.Alive(target)) return false;
+            playerPosition = target.transform.position;
             foreach (var shooter in shooters)
                 if (shooter.LaunchAt >= 0f && WeaponLock.Alive(shooter.Health))
                     warnings.Add(new WarningCue(shooter.Health.transform.position, shooter.WarningStarted));
-            foreach (var contact in live)
-                if (contact.IsRadarVisible) missiles.Add(contact.RadarPosition);
+            return warnings.Count > 0;
         }
 
         private bool CanAcquire(Transform owner)
