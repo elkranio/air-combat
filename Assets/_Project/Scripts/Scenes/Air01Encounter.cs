@@ -34,6 +34,8 @@ namespace AirCombat
         private float boundary;
         private FlightController playerFlight;
         private PlayerWeaponTrigger playerTrigger;
+        private TargetingCursor targetingCursor;
+        private MissileLockPreview missilePreview;
         private Afterburner playerBoost;
         private BreakTurn playerBreak;
         private bool bound;
@@ -81,6 +83,17 @@ namespace AirCombat
             hitFeedback.Track(playerHealth, true);
             playerFlight = player.GetComponent<FlightController>();
             playerTrigger = player.GetComponent<PlayerWeaponTrigger>();
+            if (playerTrigger != null && view != null)
+            {
+                targetingCursor = view.gameObject.AddComponent<TargetingCursor>();
+                targetingCursor.Bind(view);
+                // Last child keeps the two existing cannon slots ahead of the preview.
+                var mount = new GameObject("AAM / lock preview");
+                mount.transform.SetParent(player.transform, false);
+                missilePreview = mount.AddComponent<MissileLockPreview>();
+                missilePreview.Bind(view, targetingCursor);
+                playerTrigger.RefreshWeapons();
+            }
             playerBoost = player.GetComponent<Afterburner>();
             playerBreak = player.GetComponent<BreakTurn>();
             bound = true;
@@ -140,6 +153,7 @@ namespace AirCombat
 
             health.InstallHitbox();
             if (hitFeedback != null) hitFeedback.Track(health, false);
+            if (missilePreview != null) missilePreview.Register(health);
             var fighter = new Fighter
             {
                 Index = index,
@@ -269,6 +283,7 @@ namespace AirCombat
         private void RemoveFighterAt(int index, bool destroyed = false)
         {
             Fighter fighter = fighters[index];
+            if (missilePreview != null) missilePreview.Unregister(fighter.Health);
             if (hitFeedback != null)
             {
                 if (destroyed) hitFeedback.SpawnWreck(fighter.Health, fighter.Flight.CurrentSpeed);
@@ -290,6 +305,21 @@ namespace AirCombat
             for (int i = fighters.Count - 1; i >= 0; i--) RemoveFighterAt(i);
         }
 
-        private void OnDestroy() { RemoveAllFighters(); }
+        private void OnDestroy()
+        {
+            RemoveAllFighters();
+            if (missilePreview != null)
+            {
+                missilePreview.CeaseFire(Time.time);
+                missilePreview.gameObject.SetActive(false);
+                if (playerTrigger != null) playerTrigger.RefreshWeapons();
+                Destroy(missilePreview.gameObject);
+            }
+            if (targetingCursor != null)
+            {
+                targetingCursor.enabled = false;
+                Destroy(targetingCursor);
+            }
+        }
     }
 }

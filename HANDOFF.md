@@ -1,6 +1,6 @@
 # Air Combat — current handoff
 
-Updated 2026-11-24. Base `9ebb841`: JUICE-02b falling wrecks accepted; JUICE-02a-c layered smoke, procedural anchors and JUICE-01/01b hit feedback retained. WASD shared fuel, AC-01 BURST baseline / AC-02 optional, two independent 5 HP Tigers (AIR-03). Current playtest: [JUICE-02c](Docs/Production/JUICE_02C.md), visual-only ground crash explosion, dust, fragments, sound and distance-sensitive shake. Next JUICE-03 wingtip trails, then missiles. Earlier HUD-02/flight-only notes below are historical, not the current scene state.
+Updated 2026-11-24. Base `ddfbd3c`: JUICE-02c ground crash present; current playtest [MISSILE-01a](Docs/Production/MISSILE_01A.md), mouse designation and selectable AAM lock-only preview. Next MISSILE-01b polished lock HUD/audio, MISSILE-02 physical fire-and-forget missile. JUICE-03 wingtip trails deferred. WASD shared fuel, AC-01 baseline / AC-02 optional, two independent 5 HP Tigers, impact feedback, layered smoke and falling wrecks retained. Earlier HUD-02/flight-only notes below are historical.
 
 ## Goal and immediate order
 

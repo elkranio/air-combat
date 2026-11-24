@@ -4,7 +4,7 @@ Unity 6.6 / URP. **Stylized arcade air combat**: strong aircraft silhouettes, di
 
 ## Start here (current state)
 
-**Current playtest:** [JUICE-02c — ground crash explosion](Docs/Production/JUICE_02C.md). [JUICE-02b — burning falling aircraft](Docs/Production/JUICE_02B.md) accepted. [JUICE-02a-c — continuous layered smoke](Docs/Production/JUICE_02A.md#juice-02a-c--continuous-layered-smoke) accepted for prototype. [JUICE-01/01b](Docs/Production/JUICE_01.md) accepted. [FLIGHT-03b](Docs/Production/FLIGHT_03.md#flight-03b--visibility-tuning) accepted. [AIR-03](Docs/Production/AIR_03.md), [FLIGHT-02](Docs/Production/FLIGHT_02.md), [HUD-04](Docs/Production/HUD_04.md) and [GUN-03](Docs/Production/GUN_03.md) accepted for continued testing.
+**Current playtest:** [MISSILE-01a — mouse cursor and target acquisition](Docs/Production/MISSILE_01A.md). [JUICE-02c](Docs/Production/JUICE_02C.md) terrain crash, [JUICE-02b](Docs/Production/JUICE_02B.md) falling wrecks, layered smoke and hit feedback retained. Next MISSILE-01b lock presentation/audio, then MISSILE-02 guided projectile. Wingtip trails deferred.
 
 1. [HANDOFF.md](HANDOFF.md) — authoritative current green, immediate next atom and regression rules.
 2. [GAMEPLAY_COMBAT.md](GAMEPLAY_COMBAT.md) / [GAMEPLAY_ARCHITECTURE.md](GAMEPLAY_ARCHITECTURE.md) — current weapons, controls, radar and scene ownership.
@@ -24,7 +24,7 @@ Unity 6.6 / URP. **Stylized arcade air combat**: strong aircraft silhouettes, di
 
 ## Current gameplay direction
 
-FLIGHT-02 continuous W/S control and AIR-03 independent Tiger attack passes are accepted. AC-01 BURST works as the baseline; retain AC-02 continuous for future loadouts. Wheel switches weapons; LMB fires the selected mount. FLIGHT-03 retires production Q/E and adds tight-turn ignition and small angled plumes. JUICE-01/01b hit feedback and impact puffs accepted; JUICE-02a procedural anchors and layered smoke accepted; JUICE-02b falling wrecks accepted; testing JUICE-02c terrain explosion. Next: JUICE-03 wingtip trails. Missiles follow the juice pass.
+FLIGHT-02 W/S control and AIR-03 independent Tigers are accepted. Wheel selects AC-01 BURST, AC-02 continuous or the AAM lock preview; LMB fires cannons or consumes a completed test lock. No missile launches yet. JUICE-01/02 effects retained.
 
 ## Working process
 
