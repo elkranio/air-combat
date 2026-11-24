@@ -80,6 +80,10 @@ The OBJ files are generated from `Tools/Blender/build_cq01_crew_quarters.py`. Ru
 
 Base `dd63baf`. The orange mark visible on the CQ01 roof comes from the old B1f service-annex door stripe in `Arch_Accent.obj`, not CQ01. With the C7/C8 mission scene open, select **Air Combat > Missions > Clean Up Mission 01 Hangar Accent**. Replace only this mission instance's accent mesh with the original portal stripe geometry (12 triangles instead of 24); the annex stripe is omitted. Keep the original shared hangar prefab, accent material, CQ01 and all transforms unchanged. Save and commit the mission scene. The command is safe to repeat; verify appearance in Unity.
 
+## MISSION-01C8b — Simplified hangar guide
+
+Base `a8c38fe`. In the mission scene select **Air Combat > Missions > Simplify Mission 01 Hangar Guide**. Replace the three guide dashes with two of the same dimensions, farther from the portal (local X195 and X201). Keep the existing C7 Z offset and paint material. Save the scene and new `Mission01_HangarGuideTwoDashes.asset` with its .meta. No other layout changes.
+
 ## Next work (order flexible, all WIP)
 
 Current visual trial: [ART-CT-01 — Compact control tower](ART_CT_01.md).
