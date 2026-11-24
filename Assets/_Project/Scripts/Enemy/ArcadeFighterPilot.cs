@@ -14,16 +14,23 @@ namespace AirCombat
         {
             [Min(1f)] public float attackDistance = 170f;
             [Min(1f)] public float fireDistance = 125f;
-            [Range(1f, 30f)] public float fireHalfAngle = 6f;
-            [Min(.1f)] public float attackSeconds = 3.2f;
+            [Range(1f, 30f)] public float fireHalfAngle = 10f;
+            // Timeout without actual gunfire, not a fixed duration of a successful attack.
+            [Min(.1f)] public float attackSeconds = 5.5f;
             [Min(.1f)] public float closeApproachSeconds = 3f;
             [Min(1f)] public float passDistance = 23f;
             [Min(1f)] public float exitDistance = 150f;
             [Min(.1f)] public float exitMinSeconds = 1.3f;
             [Min(.1f)] public float exitMaxSeconds = 2.7f;
-            [Min(1f)] public float catchUpDistance = 240f;
+            [Min(1f)] public float catchUpDistance = 100f;
             [Min(0f)] public float exitBoostSeconds = .7f;
             [Range(0f, 1f)] public float aimLeadFraction = .75f;
+            [Header("Powered pursuit")]
+            [Min(1f)] public float tightTurnDistance = 200f;
+            [Range(10f, 90f)] public float tightEnterAngle = 40f;
+            [Range(1f, 60f)] public float tightExitAngle = 20f;
+            [Range(0f, 1f)] public float fuelResume = .4f;
+            [Range(0f, 1f)] public float fuelReserve = .08f;
             [Header("Wingman separation")]
             [Min(0f)] public float separationRadius = 50f;
             [Range(0f, 90f)] public float separationTurnDegrees = 55f;
@@ -43,6 +50,7 @@ namespace AirCombat
                 variant.exitMinSeconds *= exitTempo;
                 variant.exitMaxSeconds *= exitTempo;
                 variant.closeApproachSeconds *= UnityEngine.Random.Range(.9f, 1.1f);
+                variant.attackSeconds *= UnityEngine.Random.Range(.9f, 1.1f);
                 variant.exitDistance *= UnityEngine.Random.Range(.9f, 1.1f);
                 variant.catchUpDistance *= UnityEngine.Random.Range(.9f, 1.1f);
                 variant.exitBoostSeconds *= UnityEngine.Random.Range(.85f, 1.15f);
@@ -64,13 +72,15 @@ namespace AirCombat
         private readonly float fallbackSeparationSide;
         private float separationSide;
         private Transform wingman;
-        private bool catchUpBoost;
+        private bool fuelAvailable, tightTurning, pursuitBoost;
+        private float lastGunActivity;
         private Vector3 exitHeading;
 
         public Phase State { get; private set; } = Phase.Approach;
         public int AttackPasses { get; private set; }
         public int FiredCount => gun.FiredCount;
         public int HitCount => gun.HitCount;
+        public string FlightMode => boost.IsManeuvering ? "TIGHT" : boost.IsActive ? "BOOST" : "CRUISE";
 
         public ArcadeFighterPilot(CombatAircraftFlight flight, Afterburner boost,
             AutocannonWeapon gun, Transform target, FlightController targetFlight,
@@ -86,6 +96,7 @@ namespace AirCombat
             this.settings = settings ?? new Settings();
             this.fallbackSeparationSide = fallbackSeparationSide < 0f ? -1f : 1f;
             phaseStarted = Time.time;
+            lastGunActivity = phaseStarted;
         }
 
         // Called before CombatAircraftFlight.Update. No direct transform changes.
@@ -130,27 +141,25 @@ namespace AirCombat
                     if (!linedUp) linedUpSince = -1f;
                     else if (linedUpSince < 0f) linedUpSince = now;
                     // Delay the phase decision, never the actual steering input.
-                    if (linedUp && now - linedUpSince >= settings.attackReactionSeconds)
+                    if ((linedUp && now - linedUpSince >= settings.attackReactionSeconds) ||
+                        now - closeSince >= settings.closeApproachSeconds)
                     {
+                        // A difficult approach becomes an active pursuit, not an
+                        // automatic fly-away just because the nose is not lined up.
                         Enter(Phase.Attack, now);
                         AttackPasses++;
-                        age = 0f;
-                    }
-                    else if (now - closeSince >= settings.closeApproachSeconds)
-                    {
-                        // Allow time to turn back after disengage, but never circle
-                        // indefinitely when neither aircraft can line up a pass.
-                        exitHeading = flight.transform.forward;
-                        Enter(Phase.Disengage, now);
                         age = 0f;
                     }
                 }
             }
             if (State == Phase.Attack)
             {
-                bool passed = distance <= settings.passDistance ||
-                    (distance < attackRange && Vector3.Dot(flight.transform.forward, delta) < 0f);
-                if (passed || age >= settings.attackSeconds)
+                // Crossing the nose is not itself a reason to give up. Turn
+                // back into the fight. Only point-blank spacing or a prolonged
+                // failed pursuit forces a break; a working gun solution stays.
+                bool stalled = now - lastGunActivity >= settings.attackSeconds &&
+                    !HasGunSolution(delta, distance) && !gun.HasPendingShots;
+                if (distance <= settings.passDistance || stalled)
                 {
                     exitHeading = flight.transform.forward;
                     Enter(Phase.Disengage, now);
@@ -170,18 +179,36 @@ namespace AirCombat
                 Enter(Phase.Approach, now);
             }
 
-            Vector3 aim = AimVector(delta, distance);
-            bool wantsBoost = false;
-            if (State == Phase.Approach)
-            {
-                // Spend the same boost resource as the player. Recharge instead of
-                // holding an empty tank; don't spend it trying to turn around.
-                if (boost.Charge01 >= .8f) catchUpBoost = true;
-                if (boost.Charge01 <= .02f) catchUpBoost = false;
-                wantsBoost = catchUpBoost && distance > settings.catchUpDistance &&
-                    Mathf.Abs(HeadingError(aim)) < 25f;
-            }
-            SteerTo(aim, wantsBoost);
+            Pursue(delta, distance);
+        }
+
+        private void Pursue(Vector3 delta, float distance)
+        {
+            Vector3 aim = WithSeparation(AimVector(delta, distance));
+            float error = HeadingError(aim);
+            float angle = Mathf.Abs(error);
+            // Hysteresis gives the shared tank time to recharge and avoids
+            // one-frame on/off oscillation of the speed and turn mode.
+            float reserve = Mathf.Clamp(settings.fuelReserve, 0f, .99f);
+            float resume = Mathf.Clamp(settings.fuelResume, reserve + .01f, 1f);
+            if (boost.Charge01 >= resume) fuelAvailable = true;
+            if (boost.Charge01 <= reserve) fuelAvailable = false;
+            float tightThreshold = tightTurning
+                ? Mathf.Min(settings.tightExitAngle, settings.tightEnterAngle) : settings.tightEnterAngle;
+            tightTurning = fuelAvailable && distance <= settings.tightTurnDistance && angle >= tightThreshold;
+
+            // Don't just boost from far away: the slower Tiger needs to close
+            // on an escaping player even inside the old attack range. Avoid
+            // burning fuel on a rapidly closing head-on pass or a large turn.
+            Vector3 along = distance > .001f ? delta / distance : Vector3.zero;
+            float targetSpeed = targetFlight != null ? targetFlight.CurrentSpeed : 0f;
+            float closingSpeed = Vector3.Dot(Flat(flight.transform.forward) * flight.CurrentSpeed -
+                Flat(target.forward) * targetSpeed, along);
+            bool startBoost = angle < 25f && distance > settings.catchUpDistance &&
+                (closingSpeed < 15f || distance > settings.attackDistance);
+            bool keepBoost = pursuitBoost && angle < 32f && distance > settings.catchUpDistance * .8f;
+            pursuitBoost = fuelAvailable && !tightTurning && (startBoost || keepBoost);
+            flight.SetPilotCommand(Mathf.Clamp(error / 30f, -1f, 1f), pursuitBoost, tightTurning);
         }
 
         // Called after movement. Fire the real mounted AC-01 only in the attack
@@ -191,10 +218,17 @@ namespace AirCombat
             if (State == Phase.ReturnToMap) return;
             Vector3 delta = Flat(target.position - flight.transform.position);
             float distance = delta.magnitude;
-            float range = Mathf.Min(settings.fireDistance, gun.Preset.MaxRange);
-            bool held = State == Phase.Attack && distance > settings.passDistance &&
-                distance <= range && Mathf.Abs(HeadingError(AimVector(delta, distance))) <= settings.fireHalfAngle;
+            bool held = State == Phase.Attack && HasGunSolution(delta, distance);
+            int before = gun.FiredCount;
             trigger.TickTrigger(held, now);
+            if (State == Phase.Attack && gun.FiredCount > before) lastGunActivity = now;
+        }
+
+        private bool HasGunSolution(Vector3 delta, float distance)
+        {
+            float range = Mathf.Min(settings.fireDistance, gun.Preset.MaxRange);
+            return distance > settings.passDistance && distance <= range &&
+                Mathf.Abs(HeadingError(AimVector(delta, distance))) <= settings.fireHalfAngle;
         }
 
         public void Stop(float now)
@@ -207,6 +241,8 @@ namespace AirCombat
         {
             State = next;
             phaseStarted = now;
+            tightTurning = pursuitBoost = false;
+            if (next == Phase.Attack) lastGunActivity = now;
             closeSince = -1f;
             linedUpSince = -1f;
         }
