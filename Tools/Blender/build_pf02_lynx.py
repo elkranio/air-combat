@@ -7,7 +7,7 @@ from math import cos, sin, pi
 
 ROOT = Path(__file__).resolve().parents[2]
 OUT = ROOT / 'Assets/_Project/Art/Aircraft/PF02_Lynx'
-COLORS = {'Hull': (.19215687,.3254902,.41960785), 'Wing': (.8784314,.4745098,.2509804),
+COLORS = {'Hull': (.19215687,.3254902,.41960785), 'Wing': (.19215687,.3254902,.41960785),
           'Glass': (.08,.70,.80), 'Dark': (.105,.12,.135), 'Mark': (.8784314,.4745098,.2509804)}
 MESH = {k: [] for k in COLORS}
 
@@ -47,6 +47,35 @@ def wing(part, sign, outline):
     panel(part,[(sign*x,u,z) for x,z,u,l in outline],
                [(sign*x,l,z) for x,z,u,l in outline])
 
+def painted_wing(sign, outline, tip_start=3.85):
+    # Split the existing outer surface triangles at a spanwise paint boundary.
+    # Both materials share exact seam coordinates; no raised decal or overlapping faces.
+    start = len(MESH['Wing'])
+    wing('Wing', sign, outline)
+    triangles = MESH['Wing'][start:]
+    del MESH['Wing'][start:]
+
+    def clip(tri, outer):
+        result = []
+        for a, b in zip(tri, tri[1:] + tri[:1]):
+            da, db = sign*a[0] - tip_start, sign*b[0] - tip_start
+            a_in = da >= 0 if outer else da <= 0
+            b_in = db >= 0 if outer else db <= 0
+            if a_in:
+                result.append(a)
+            if a_in != b_in:
+                t = da / (da - db)
+                result.append((sign*tip_start, a[1]+t*(b[1]-a[1]),
+                               a[2]+t*(b[2]-a[2])))
+        return result
+
+    for tri in triangles:
+        for part, outer in (('Wing', False), ('Mark', True)):
+            pts = clip(tri, outer)
+            for i in range(1, len(pts)-1):
+                MESH[part].append((pts[0], pts[i], pts[i+1]))
+
+
 # Long central fuselage and nose, tapering toward the tail between the pods.
 loft('Hull',[(-5.7,0,.02,.49,.22),(-4.2,0,.06,.84,.39),
              (-1.7,0,.12,1.08,.59),(1.05,0,.16,1.08,.69),
@@ -70,7 +99,7 @@ for s in (-1,1):
     # Angular forward shoulder / glove and wing panels.
     wing('Hull',s,[(.75,2.10,.26,-.28),(2.12,.68,.22,-.22),
                    (2.64,-1.0,.14,-.15),(1.10,-2.44,.31,-.30)])
-    wing('Wing',s,[(1.90,.46,.19,-.18),(4.75,-1.72,.035,-.055),
+    painted_wing(s,[(1.90,.46,.19,-.18),(4.75,-1.72,.035,-.055),
                    (4.78,-2.30,.025,-.045),(2.55,-3.05,.12,-.12),(1.88,-2.32,.17,-.16)])
     # Distinct rear horizontal stabilizers.
     wing('Wing',s,[(1.40,-3.85,.13,-.12),(3.35,-4.87,.08,-.08),
@@ -80,9 +109,6 @@ for s in (-1,1):
     def finpoint(y,z,side): return (s*(1.48+.22*y)+side*.09,y,z)
     panel('Hull',[finpoint(y,z,1) for y,z in profile],
                  [finpoint(y,z,-1) for y,z in profile])
-    # Bold gold accent at outer wing tip, visible from the gameplay camera.
-    wing('Mark',s,[(4.27,-1.52,.057,.043),(4.74,-1.88,.053,.040),
-                   (4.77,-2.28,.052,.037),(4.27,-2.45,.065,.049)])
     # Raised dark shoulder markings and an inset-looking forward face.
     loft('Dark',[(1.42,s*1.32,-.14,.47,.39),(1.52,s*1.32,-.14,.47,.39)])
 

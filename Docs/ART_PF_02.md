@@ -21,3 +21,7 @@ Base `5cd5176`. Match Wing and Mark base colors to the existing E1C_Kestrel_Pane
 ## ART-PF-02E — Kestrel blue (trial)
 
 Base `b74bd9a`. Match only the Hull base color to E1C_Kestrel_Hull (RGB 49, 83, 107; #31536B), not the darker Upper material. Keep the matte shader settings, Kestrel orange wings and tips, canopy, dark details, geometry and prefab unchanged. Blender generator palette synchronized. Compare at gameplay zoom.
+
+## ART-PF-02F — Kestrel wingtip blocks (trial)
+
+Base `093bbc9`. Match the Wing material to the Hull blue, including the rear horizontal stabilizers. Keep the exact Kestrel orange on broad main-wing tips only (outer ~0.93 units, about one third of the nominal main-wing panel span). Split the original wing surface triangles at the paint boundary rather than overlaying raised markings. No silhouette, prefab, material GUID, cockpit or gameplay changes. Regenerated Wing and Mark OBJs; the generator matches the Unity materials. Check the paint boundary and readability at gameplay zoom.
