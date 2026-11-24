@@ -54,6 +54,12 @@ Base `b967377`. Direct scene-only art pass: replace the three U-shaped parking o
 
 Base `4087039`. Keep the C4 parking layout and add the two outer separators at local X148 and X208, matching the existing lines at X168 and X188 (Z-95, 15 units long, 0.42 wide). This defines three equal bays, including the empty player bay, without restoring U-shaped outlines. Reactivate the existing unused outer line objects; no new assets or editor commands. Aircraft, pavement, runway and buildings are unchanged. Next visual pass: control tower.
 
+## MISSION-01C6 — Hangar flip and roof marking (WIP)
+
+Base `c0d3a0c`. Open the saved mission scene and select **Air Combat > Missions > Apply Mission 01 Hangar Pass**. Orient the actual imported front portal toward the apron and bring it to the apron edge. Preserve the hangar model and annex. Replace the long approach neck with a continuous rounded apron edge and three short guide dashes. Add a heavy, solid white `05` conforming to the roof surface. The number reuses the existing paint material and is attached to the scene hangar instance, with no font or texture dependency.
+
+Save the scene and commit the new `Mission01_HangarPass.asset` and `.meta`. The old pavement remains disabled for comparison; no shared prefabs or flight logic change. Verify portal alignment, roof marking placement and appearance in Unity.
+
 ## Next work (order flexible, all WIP)
 
 Current visual trial: [ART-CT-01 — Compact control tower](ART_CT_01.md).

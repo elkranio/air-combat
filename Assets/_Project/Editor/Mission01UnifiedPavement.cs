@@ -10,7 +10,7 @@ using UnityEngine.SceneManagement;
 namespace AirCombat
 {
     // Explicit scene authoring command, not a runtime road generator.
-    internal static class Mission01UnifiedPavement
+    internal static partial class Mission01UnifiedPavement
     {
         private const string ScenePath = "Assets/_Project/Scenes/Mission01_FirstSortie.unity";
         private const string MeshPath = "Assets/_Project/Art/Environment/Mission01_FirstSortie/Mission01_AirfieldPavement.asset";
