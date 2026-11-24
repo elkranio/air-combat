@@ -158,7 +158,12 @@ namespace AirCombat
         }
 
         [MenuItem("Air Combat/Terrain/Rebake TERRAIN-01 Facets")]
-        private static void Rebake()
+        private static void Rebake() => Rebake(false);
+
+        [MenuItem("Air Combat/Terrain/Trial Macro Relief")]
+        private static void TrialMacroRelief() => Rebake(true);
+
+        private static void Rebake(bool regenerateMacroRelief)
         {
             if (EditorApplication.isPlayingOrWillChangePlaymode) return;
             Scene scene = SceneManager.GetActiveScene();
@@ -179,10 +184,21 @@ namespace AirCombat
                 Debug.LogError("TERRAIN-01: source or generated asset references are missing/changed; no assets overwritten.");
                 return;
             }
+            if (regenerateMacroRelief && !EditorUtility.DisplayDialog("TERRAIN-04 / Macro Relief",
+                "Replace the trial heightmap and rebake its facets? This overwrites current trial sculpting. The main map is not affected.",
+                "Generate", "Cancel")) return;
+            Undo.IncrementCurrentGroup();
+            int undoGroup = Undo.GetCurrentGroup();
             Undo.RegisterCompleteObjectUndo(mesh, "Rebake TERRAIN-01 mesh");
             Undo.RecordObject(source, "Hide smooth terrain source");
             Undo.RecordObject(surface, "Show faceted terrain");
             Undo.RecordObject(surface.transform, "Align faceted terrain");
+            if (regenerateMacroRelief)
+            {
+                Undo.RegisterCompleteObjectUndo(source.terrainData, "Replace trial heightmap");
+                source.terrainData.SetHeights(0, 0, MakeMacroHeights(source.terrainData));
+                EditorUtility.SetDirty(source.terrainData);
+            }
             FillMesh(mesh, source.terrainData, Cells);
             surface.transform.SetPositionAndRotation(source.transform.position, source.transform.rotation);
             surface.transform.localScale = source.transform.localScale;
@@ -196,8 +212,49 @@ namespace AirCombat
             surface.SetActive(true);
             EditorUtility.SetDirty(mesh);
             EditorSceneManager.MarkSceneDirty(scene);
+            Undo.CollapseUndoOperations(undoGroup);
             AssetDatabase.SaveAssets();
             Debug.Log("TERRAIN-01 rebaked from the edited heightmap. Save the scene if needed.");
+        }
+
+        // Macro geography first: unequal uplands separated by connected low country.
+        // Noise only bends the outlines and adds restrained relief within the slopes.
+        private static float[,] MakeMacroHeights(TerrainData data)
+        {
+            int n = data.heightmapResolution;
+            var heights = new float[n, n];
+            for (int z = 0; z < n; z++)
+            for (int x = 0; x < n; x++)
+            {
+                float u = x / (float)(n - 1), v = z / (float)(n - 1);
+                // Low-frequency coordinate warp makes the masses organic, not circles.
+                float px = u + .075f * (2f * Mathf.PerlinNoise(u * 3.1f + 13f, v * 3.1f + 8f) - 1f);
+                float pz = v + .075f * (2f * Mathf.PerlinNoise(u * 3.1f + 41f, v * 3.1f + 27f) - 1f);
+                float a = Landform(px, pz, .17f, .76f, .35f, .23f, 32f, .23f) * 83f;
+                float b = Landform(px, pz, .84f, .31f, .22f, .36f, -25f, .40f) * 75f;
+                float c = Landform(px, pz, .70f, .91f, .25f, .17f, 15f, .12f) * 52f;
+                float d = Landform(px, pz, .12f, .15f, .12f, .17f, -40f, .15f) * 30f;
+                float mass = Mathf.Max(Mathf.Max(a, b), Mathf.Max(c, d));
+                // The lowlands remain quiet; finer relief is proportional to the mass.
+                float floor = 3f + 5f * Mathf.PerlinNoise(u * 2f + 5f, v * 2f + 15f);
+                float detail = (2f * Mathf.PerlinNoise(u * 9f + 63f, v * 9f + 17f) - 1f)
+                    * 6f * Mathf.SmoothStep(0f, 1f, Mathf.Clamp01(mass / 35f));
+                heights[z, x] = Mathf.Clamp01((floor + mass + detail) / data.size.y);
+            }
+            return heights;
+        }
+
+        private static float Landform(float x, float z, float cx, float cz,
+            float rx, float rz, float angle, float shoulder)
+        {
+            float radians = angle * Mathf.Deg2Rad;
+            float co = Mathf.Cos(radians), si = Mathf.Sin(radians);
+            float dx = x - cx, dz = z - cz;
+            float a = (co * dx + si * dz) / rx;
+            float b = (-si * dx + co * dz) / rz;
+            float radius = Mathf.Sqrt(a * a + b * b);
+            float t = Mathf.InverseLerp(shoulder, 1f, radius);
+            return 1f - Mathf.SmoothStep(0f, 1f, t);
         }
 
         private static float[,] MakeHeights()

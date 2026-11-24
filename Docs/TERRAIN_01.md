@@ -14,6 +14,10 @@ The source is an editable Unity Terrain (257 x 257 height samples), hidden from 
 
 To edit: stop Play, hide `TERRAIN-01 / Faceted surface`, select `TERRAIN-01 / Editable source`, enable Draw Heightmap and the source TerrainCollider, then sculpt with Unity Terrain tools. Then choose **Air Combat > Terrain > Rebake TERRAIN-01 Facets**. This updates the existing mesh asset, hides the source rendering, disables its collider and restores the surface. Save the scene. Preserve the generated source and mesh assets and their .meta files with the scene if the trial is accepted. Adjust the Sand material directly if needed. No automatic rebaking. For the finer-facet trial, run this command once after applying the patch; the existing heightmap, material and Y-30 placement are preserved. The mesh asset must be saved/committed after rebaking.
 
+## TERRAIN-04 — Macro relief (trial)
+
+With Terrain01Playground open in Edit Mode, choose **Air Combat > Terrain > Trial Macro Relief** and confirm. This explicitly replaces the existing trial heightmap and rebakes the same mesh asset; ordinary Rebake remains non-destructive to sculpted heights. The four unequal, rotated and warped landforms leave broad connected lowlands, with a quiet floor and restrained local noise. The 84 x 84 facet grid, material, terrain transform (Y-30), camera and flight remain unchanged. The main map is untouched. Save and commit the updated source and mesh assets if accepted; use Undo or restore the previous green to compare.
+
 ## Acceptance
 
 - No missing components or errors during scene creation or Play.
