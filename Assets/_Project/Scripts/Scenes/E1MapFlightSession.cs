@@ -115,10 +115,8 @@ namespace AirCombat
                 if (keyboard.digit8Key.wasPressedThisFrame) ChangeAltitude(110f);
                 if (keyboard.digit9Key.wasPressedThisFrame) ChangeAltitude(150f);
             }
-            bool manuallyReset = keyboard != null && keyboard.rKey.wasPressedThisFrame;
-            var position = player.transform.position;
-            if (manuallyReset || Mathf.Abs(position.x) >= resetHalfExtent ||
-                Mathf.Abs(position.z) >= resetHalfExtent)
+            // Free-flight terrain testing: reset only on explicit player input.
+            if (keyboard != null && keyboard.rKey.wasPressedThisFrame)
                 ResetFlight();
         }
 
@@ -127,7 +125,7 @@ namespace AirCombat
             Vector3 p = player.transform.position;
             p.y = altitude;
             player.transform.position = p;
-            // R/bounds reset should retain whichever height is being tested.
+            // Manual reset should retain whichever height is being tested.
             spawnPosition.y = altitude;
             encounter?.SetAltitude(altitude);
             SnapCamera(); // Prevent a large vertical camera sweep.
