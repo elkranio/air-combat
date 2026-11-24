@@ -9,6 +9,17 @@ namespace AirCombat
     [DefaultExecutionOrder(180)]
     public sealed class MantisGun : MonoBehaviour, IRadarContact
     {
+        public enum AttackMode { Flak, Tracers }
+        [Header("Attack mode (AA-01d)")]
+        [SerializeField] private AttackMode attackMode = AttackMode.Flak;
+        [SerializeField, Min(.02f)] private float flakShotInterval = .15f;
+        [SerializeField, Min(.05f)] private float flakTravelSeconds = .25f;
+        [SerializeField, Min(.1f)] private float flakFuseSeconds = .5f;
+        [SerializeField, Min(1f)] private float flakRadius = 12f;
+        [SerializeField, Min(0f)] private float flakCenterSeparation = 18f;
+        [SerializeField, Min(.1f)] private float flakPause = 2.5f;
+        [SerializeField, Min(1)] private int flakDamage = 2;
+        [SerializeField, Range(0f, 1f)] private float flakSoundVolume = .45f;
         [Header("Tracking")]
         [SerializeField] private Transform turretYaw, gunPitch, muzzleL, muzzleR;
         [SerializeField, Min(1f)] private float detectionRange = 210f;
@@ -35,6 +46,10 @@ namespace AirCombat
         private AircraftRadar radar;
         private Material tracer;
         private readonly List<MantisRound> rounds = new List<MantisRound>();
+        private readonly List<MantisFlakCharge> flakCharges = new List<MantisFlakCharge>();
+        private Vector3 flakSecondPoint;
+        private AttackMode activeMode;
+        private AudioClip flakBlastClip, flakShotClip;
         private Vector3 previousPosition, targetVelocity, burstDirection;
         private bool sampled, bound;
         private int pending;
@@ -69,6 +84,7 @@ namespace AirCombat
         {
             ClearRounds();
             pending = 0;
+            activeMode = attackMode;
             sampled = false;
             targetVelocity = Vector3.zero;
             FiredCount = HitCount = 0;
@@ -89,19 +105,30 @@ namespace AirCombat
 
         private void OnEnable() { if (bound && radar != null) radar.Register(this); }
         private void OnDisable() { if (radar != null) radar.Unregister(this); pending = 0; ClearRounds(); }
-        private void OnDestroy() { Unbind(); if (tracer != null) Destroy(tracer); }
+        private void OnDestroy()
+        {
+            Unbind();
+            if (tracer != null) Destroy(tracer);
+            if (flakBlastClip != null) Destroy(flakBlastClip);
+            if (flakShotClip != null) Destroy(flakShotClip);
+        }
 
         private void ClearRounds()
         {
             foreach (var round in rounds)
                 if (round != null) { round.gameObject.SetActive(false); Destroy(round.gameObject); }
             rounds.Clear();
+            foreach (var charge in flakCharges)
+                if (charge != null) { charge.gameObject.SetActive(false); Destroy(charge.gameObject); }
+            flakCharges.Clear();
         }
 
         private void LateUpdate()
         {
             if (!bound || target == null) return;
             rounds.RemoveAll(r => r == null);
+            flakCharges.RemoveAll(r => r == null);
+            if (activeMode != attackMode) ResetCombat();
             if (!target.IsAlive) { pending = 0; return; }
             float dt = Time.deltaTime;
             Vector3 pos = target.transform.position;
@@ -119,6 +146,11 @@ namespace AirCombat
             if (!inRange && pending == 0) return;
 
             Vector3 origin = (muzzleL.position + muzzleR.position) * .5f;
+            if (attackMode == AttackMode.Flak)
+            {
+                TickFlak(pos, origin, inRange, dt);
+                return;
+            }
             // Short constant-velocity arcade prediction; never update a round after launch.
             Vector3 delta = pos - origin;
             float t = delta.magnitude / projectileSpeed;
@@ -159,6 +191,53 @@ namespace AirCombat
             pending--;
             nextPair = Time.time + pairInterval;
             if (pending == 0) SchedulePause();
+        }
+
+        // A paired world-space snapshot: the second charge never retargets,
+        // even if the player turns or the chassis moves between shots.
+        private void TickFlak(Vector3 pos, Vector3 origin, bool inRange, float dt)
+        {
+            if (pending > 0)
+            {
+                Vector3 secondAim = flakSecondPoint - origin;
+                if (secondAim.sqrMagnitude > .001f) AimServos(secondAim.normalized, dt);
+                if (Time.time < nextPair) return;
+                FireFlak(muzzleR, flakSecondPoint);
+                pending = 0;
+                nextBurst = Time.time + flakPause;
+                return;
+            }
+            // Predict only once for the pair, at the player's current flight height.
+            Vector3 travel = Vector3.ProjectOnPlane(targetVelocity, Vector3.up);
+            Vector3 course = travel.sqrMagnitude > 1f ? travel.normalized :
+                Vector3.ProjectOnPlane(target.transform.forward, Vector3.up).normalized;
+            if (course.sqrMagnitude < .001f) course = Vector3.forward;
+            Vector3 side = Vector3.Cross(Vector3.up, course);
+            Vector3 center = pos + travel * (flakTravelSeconds + flakFuseSeconds);
+            Vector3 first = center - side * (flakCenterSeparation * .5f);
+            Vector3 second = center + side * (flakCenterSeparation * .5f);
+            Vector3 aim = first - origin;
+            if (aim.sqrMagnitude < .001f) return;
+            AimServos(aim.normalized, dt);
+            if (!inRange || Time.time < nextBurst ||
+                Vector3.Angle(muzzleL.forward, first - muzzleL.position) > firingTolerance) return;
+            flakSecondPoint = second;
+            FireFlak(muzzleL, first);
+            pending = 1;
+            nextPair = Time.time + flakShotInterval;
+        }
+
+        private void FireFlak(Transform muzzle, Vector3 point)
+        {
+            if (flakBlastClip == null) flakBlastClip = MantisFlakCharge.MakeSound(false);
+            if (flakShotClip == null) flakShotClip = MantisFlakCharge.MakeSound(true);
+            var go = new GameObject("Mantis / Flak charge");
+            go.transform.position = muzzle.position;
+            var charge = go.AddComponent<MantisFlakCharge>();
+            charge.Launch(target, point, flakTravelSeconds, flakFuseSeconds, flakRadius,
+                flakDamage, tracer, flakShotClip, flakBlastClip, flakSoundVolume, () => HitCount++);
+            flakCharges.Add(charge);
+            FiredCount++;
         }
 
         private void SchedulePause() => nextBurst = Time.time + Random.Range(pauseMin, Mathf.Max(pauseMin, pauseMax));

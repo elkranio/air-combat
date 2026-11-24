@@ -1,5 +1,16 @@
 # AA-01c — Mantis combat
 
+## AA-01d — Flak experiment (current)
+
+Base `9c7d514`. No reinstall or scene changes needed. Existing MantisGun defaults to Attack Mode = Flak; select Tracers before Play for the original AA-01c. Same patrol, servo, ground mode, radar, HUD and reset lifecycle.
+
+- Two charges from left/right sockets, .15 s apart. Snapshot a pair of fixed points at player flight height using the initial velocity estimate; separation 18 units across the flight path. Second charge does not retarget. .25 s visible rise, .5 s stationary fuse, 2.5 s pause after second launch. All exposed on MantisGun.
+- Glowing charge and fixed-radius world-space aura, not HUD. Radius 12 units. At detonation test player center against the exact 3D sphere once, 2 HP per charge. No contact damage in transit, no lingering damage, no homing. This experimental effect does not test terrain obstruction.
+- Flash and exact-radius fading ring, radial sparks, dark fading smoke and procedural shot/blast sounds. Existing player damage feedback remains active. Fired/hit counters count charges/damaging detonations. Reset/unbind clears all charges and their audio.
+- Play gate: observe rise and warning, evade both charges in cruise and S/W, verify no hits outside aura at detonation, verify R and mode switch, compare Tracers. Tune fuse/radius/separation before damage/destruction work.
+
+## AA-01c (historical tracer mode)
+
 Base `fb379b5`: rounded patrol turns accepted. Mantis keeps its route and existing visual sockets. This atom tests the threat, not ground damage. The legacy AA1 lab is unchanged.
 
 In Edit Mode open `ArcadeDesertE1`, choose **Air Combat > Mission > AA-01c - Arm Mantis patrol**, save scene. The command equips each Mantis patrol motor with a `MantisGun`, binds the existing turret/pitch/muzzle transforms, preserves settings on rerun and selects the unit. Ground Nurs Test remains enabled. In Play, Air01Encounter binds scene guns only in that ground mode; the optional Tiger/AAM mode does not activate the Mantis guns. Existing NURS and patrol authoring are unchanged.
