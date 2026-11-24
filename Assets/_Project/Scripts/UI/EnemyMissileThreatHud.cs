@@ -12,10 +12,14 @@ namespace AirCombat
             new List<EnemyMissileStressTest.WarningCue>();
         private Camera view;
         private EnemyMissileStressTest threats;
-        private Texture2D missileIcon;
-        public enum WarningStyle { ShortVector, ThreatArc }
+        private Texture2D missileIcon, sweepMask;
+        public enum WarningStyle { ShortVector, ThreatArc, RadarSweep }
 
-        [SerializeField] private WarningStyle warningStyle = WarningStyle.ThreatArc;
+        [SerializeField] private WarningStyle warningStyle = WarningStyle.RadarSweep;
+        [Header("Radar sweep / reference pixels at 720p")]
+        [SerializeField, Min(20f)] private float sweepLength = 62f;
+        [SerializeField, Range(8f, 60f)] private float sweepDegrees = 28f;
+        [SerializeField, Range(.1f, 1f)] private float sweepOpacity = .65f;
         [Header("Threat arc / reference pixels at 720p")]
         [SerializeField, Min(12f)] private float arcRadius = 56f;
         [SerializeField, Range(10f, 100f)] private float arcDegrees = 44f;
@@ -41,6 +45,7 @@ namespace AirCombat
             float scale = Mathf.Clamp(rect.height / 720f, .75f, 3f);
             if (!Project(playerPosition, rect, out Vector2 player) || !rect.Contains(player)) return;
             if (warningStyle == WarningStyle.ShortVector && missileIcon == null) missileIcon = MakeMissileIcon();
+            if (warningStyle == WarningStyle.RadarSweep && sweepMask == null) sweepMask = MakeSweepMask();
 
             Color oldColor = GUI.color;
             int oldDepth = GUI.depth;
@@ -58,6 +63,8 @@ namespace AirCombat
                 Project(cue.Position, rect, out Vector2 source);
                 if (warningStyle == WarningStyle.ThreatArc)
                     DrawArc(rect, source, player, scale, alpha, pulse);
+                else if (warningStyle == WarningStyle.RadarSweep)
+                    DrawSweep(rect, source, player, scale, alpha, pulse);
                 else
                     DrawVector(rect, source, player, scale, alpha, pulse);
             }
@@ -72,6 +79,76 @@ namespace AirCombat
             p = new Vector2(screen.x, Screen.height - screen.y);
             if (!view.orthographic && screen.z <= 0f) p = rect.center - (p - rect.center);
             return screen.z > view.nearClipPlane && screen.z < view.farClipPlane;
+        }
+
+        private void DrawSweep(Rect rect, Vector2 source, Vector2 player, float s, float alpha, float pulse)
+        {
+            Vector2 delta = source - player;
+            if (delta.sqrMagnitude < 1f) return;
+            Vector2 outward = delta.normalized;
+            float gap = hullGap * s;
+            // A local tapered sector, never a beam across the map. The scan
+            // travels from the threat-facing wide edge toward the narrow end.
+            float length = Mathf.Min(sweepLength * s, delta.magnitude - gap);
+            if (length < 12f * s) return;
+            float height = 2f * (gap + length) * Mathf.Tan(sweepDegrees * .5f * Mathf.Deg2Rad);
+            Vector2 start = player + outward * gap - rect.position;
+            Matrix4x4 before = GUI.matrix;
+            // Clip the rotated sector to the actual camera viewport, not the
+            // entire desktop. Preserve the direction even at screen edges.
+            GUI.BeginGroup(rect);
+            Matrix4x4 local = GUI.matrix;
+            GUIUtility.RotateAroundPivot(Mathf.Atan2(outward.y, outward.x) * Mathf.Rad2Deg, start);
+            Rect wedge = new Rect(start.x, start.y - height * .5f, length, height);
+            float opacity = alpha * sweepOpacity;
+            GUI.color = new Color(.025f, .09f, .035f, opacity * .8f);
+            GUI.DrawTexture(wedge, sweepMask);
+            GUI.color = new Color(Threat.r, Threat.g, Threat.b, opacity);
+            GUI.DrawTexture(wedge, sweepMask);
+
+            // Use the same mask UV interval as the sector so the bright scan
+            // remains tapered. Each of the three beeps drives its own inward pass.
+            if (pulse > 0f)
+            {
+                const float band = .19f;
+                float lo = Mathf.Max(0f, pulse - band * .5f);
+                float hi = Mathf.Min(1f, pulse + band * .5f);
+                GUI.color = new Color(.79f, 1f, .63f, alpha);
+                GUI.DrawTextureWithTexCoords(new Rect(wedge.x + lo * length, wedge.y,
+                    (hi - lo) * length, height), sweepMask, new Rect(lo, 0f, hi - lo, 1f), true);
+            }
+            GUI.matrix = local;
+            GUI.EndGroup();
+            GUI.matrix = before;
+        }
+
+        // Generated once: a soft-edged, semi-transparent tapered wedge with a
+        // slightly denser rim. No new shaders or dependencies for the prototype.
+        private static Texture2D MakeSweepMask()
+        {
+            const int w = 128, h = 96;
+            var pixels = new Color32[w * h];
+            for (int y = 0; y < h; y++)
+            for (int x = 0; x < w; x++)
+            {
+                float t = (x + .5f) / w;
+                float halfWidth = Mathf.Lerp(.35f, .96f, t);
+                float lateral = Mathf.Abs((y + .5f) / h * 2f - 1f) / halfWidth;
+                float edge = 1f - Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(.88f, 1f, lateral));
+                float endFade = Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(0f, .08f, t)) *
+                    (1f - Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(.84f, 1f, t)));
+                float rim = Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(.68f, .88f, lateral));
+                float a = edge * endFade * Mathf.Lerp(.42f, .82f, rim);
+                pixels[y * w + x] = new Color32(255, 255, 255, (byte)Mathf.RoundToInt(a * 255f));
+            }
+            var texture = new Texture2D(w, h, TextureFormat.RGBA32, false)
+            {
+                name = "Prelaunch radar sweep mask", filterMode = FilterMode.Bilinear,
+                wrapMode = TextureWrapMode.Clamp
+            };
+            texture.SetPixels32(pixels);
+            texture.Apply(false, true);
+            return texture;
         }
 
         private void DrawArc(Rect rect, Vector2 source, Vector2 player, float s, float alpha, float pulse)
@@ -227,6 +304,7 @@ namespace AirCombat
         private void OnDestroy()
         {
             if (missileIcon != null) Destroy(missileIcon);
+            if (sweepMask != null) Destroy(sweepMask);
         }
     }
 }
