@@ -7,4 +7,13 @@ namespace AirCombat
         string HudName { get; }
         float Readiness01(float now);
     }
+
+    // Optional magazine instruments. The weapon remains the authority for rearm.
+    public interface IMagazineHudStatus : IWeaponHudStatus
+    {
+        string AmmoName { get; }
+        int AmmoRemaining { get; }
+        int AmmoCapacity { get; }
+        float ReloadRemaining(float now);
+    }
 }

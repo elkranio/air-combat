@@ -1,6 +1,6 @@
 # Air Combat — current handoff
 
-Updated 2026-11-24. Base `19ded7a`: MISSILE-01a mouse designation accepted; current playtest [MISSILE-02](Docs/Production/MISSILE_02.md) physical player AAM, 0.5s lock, 2-round magazine / 20s empty-only rearm, 5 HP damage, finite yaw budget, layered exhaust and lock beep. Next tune launch/lock presentation, then enemy missiles and evasion. JUICE-03 wingtip trails deferred. WASD shared fuel, AC-01 baseline / AC-02 optional, two independent 5 HP Tigers, hit feedback and wrecks retained. Earlier HUD-02/flight-only notes below are historical.
+Updated 2026-11-24. Base `0675463`: MISSILE-02 accepted with 150 ms lock. Current playtest [WEAPON-04](Docs/Production/WEAPON_04.md), independent LMB AC-01 BURST and RMB AAM, persistent dual HUD, AC-02 unequipped. 2-round magazine / 20s empty-only rearm, 5 HP damage and missile motion unchanged. Next enemy missiles and skill-based evasion. JUICE-03 wingtip trails deferred. WASD shared fuel, two independent 5 HP Tigers, hit feedback and wrecks retained. Earlier HUD-02/flight-only notes below are historical.
 
 ## Goal and immediate order
 

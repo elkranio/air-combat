@@ -3,9 +3,9 @@ using UnityEngine;
 
 namespace AirCombat
 {
-    // Production selectable AAM module. Acquisition, magazine and fire-and-forget launch.
+    // Production secondary AAM module. Acquisition, magazine and fire-and-forget launch.
     [DisallowMultipleComponent]
-    public sealed class ArcadeMissileLauncher : MonoBehaviour, ITriggeredWeapon, IWeaponHudStatus
+    public sealed class ArcadeMissileLauncher : MonoBehaviour, ITriggeredWeapon, IMagazineHudStatus
     {
         [SerializeField, Min(.01f)] private float acquireSeconds = .15f;
         [SerializeField, Min(0f)] private float partialGraceSeconds = .5f;
@@ -36,13 +36,14 @@ namespace AirCombat
         private float releasedUntil;
         private GUIStyle label;
 
-        public string HudName
+        public string HudName => "AAM LAUNCHER";
+        public string AmmoName => "GUIDED MISSILE";
+        public int AmmoRemaining { get { UpdateMagazine(Time.time); return rounds; } }
+        public int AmmoCapacity => Capacity;
+        public float ReloadRemaining(float now)
         {
-            get
-            {
-                UpdateMagazine(Time.time);
-                return $"AAM  {rounds}/{Capacity}";
-            }
+            UpdateMagazine(now);
+            return rounds == 0 ? Mathf.Max(0f, reloadUntil - now) : 0f;
         }
         public float Readiness01(float now)
         {
@@ -232,10 +233,11 @@ namespace AirCombat
                     seeker.IsLocked ? "LOCKED" : seeker.IsAiming ? "LOCKING" : "HOLD", tint);
             }
             // Full lock remains audible through the offscreen grace period.
-            string status = rounds == 0 ? $"REARM {Mathf.Max(0f, reloadUntil - Time.time):F1}s" :
-                Time.time < releasedUntil ? "MISSILE AWAY" : seeker.IsLocked ? "LOCKED / LMB" :
-                seeker.Target != null ? $"{(seeker.IsAiming ? "LOCKING" : "HOLD")} {seeker.Progress:P0}" : "ACQUIRE TARGET";
-            DrawLabel(new Rect(pixels.width * .5f - 120f * s, pixels.height - 50f * s, 240f * s, 22f * s), status, tint);
+            string status = Time.time < releasedUntil ? "MISSILE AWAY" : seeker.IsLocked ? "LOCKED / RMB" :
+                seeker.Target != null ? $"{(seeker.IsAiming ? "LOCKING" : "HOLD")} {seeker.Progress:P0}" : null;
+            // Idle/rearm state lives in the persistent secondary instrument, not the sight.
+            if (status != null)
+                DrawLabel(new Rect(pixels.width * .5f - 120f * s, pixels.height - 76f * s, 240f * s, 22f * s), status, tint);
             GUI.EndGroup();
             GUI.color = old;
             GUI.depth = depth;

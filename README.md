@@ -4,7 +4,7 @@ Unity 6.6 / URP. **Stylized arcade air combat**: strong aircraft silhouettes, di
 
 ## Start here (current state)
 
-**Current playtest:** [MISSILE-02 — player guided AAM](Docs/Production/MISSILE_02.md). [MISSILE-01a](Docs/Production/MISSILE_01A.md) designation accepted; [JUICE-02c](Docs/Production/JUICE_02C.md) terrain crash, layered smoke and hit feedback retained. Next tune missile feel and lock presentation, then enemy missiles. Wingtip trails deferred.
+**Current playtest:** [WEAPON-04 — dual weapon slots](Docs/Production/WEAPON_04.md). [MISSILE-02](Docs/Production/MISSILE_02.md) player AAM and 150 ms lock accepted; [JUICE-02c](Docs/Production/JUICE_02C.md) terrain crash, layered smoke and hit feedback retained. Next enemy missiles and evasion. Wingtip trails deferred.
 
 1. [HANDOFF.md](HANDOFF.md) — authoritative current green, immediate next atom and regression rules.
 2. [GAMEPLAY_COMBAT.md](GAMEPLAY_COMBAT.md) / [GAMEPLAY_ARCHITECTURE.md](GAMEPLAY_ARCHITECTURE.md) — current weapons, controls, radar and scene ownership.
@@ -18,13 +18,13 @@ Unity 6.6 / URP. **Stylized arcade air combat**: strong aircraft silhouettes, di
 
 | Scene | Role |
 | --- | --- |
-| `Assets/_Project/Scenes/ArcadeDesertE1.unity` | **Production map / live air combat**: 2×2 km Terrain and plateau, B1 barracks/HQ/roads/prepared lot, B1e runway/apron/tower/original hangar, B1f arch-hangar style trial, parked Kestrels and static EF-01 Tiger trial. Y78 flight and fixed-world `ArcadeCameraRig`; AIR-02b two live Tigers, player AC-01 and GUN-03 AC-02 playtest. |
+| `Assets/_Project/Scenes/ArcadeDesertE1.unity` | **Production map / live air combat**: 2×2 km Terrain and plateau, B1 barracks/HQ/roads/prepared lot, B1e runway/apron/tower/original hangar, B1f arch-hangar style trial, parked Kestrels and static EF-01 Tiger trial. Y78 flight and fixed-world `ArcadeCameraRig`; AIR-02b two live Tigers, player AC-01 / AAM dual-slot playtest. |
 | `Assets/_Project/Scenes/WeaponLab.unity` | **Regression lab**: enemy fighter, player air weapons 1–3 and legacy camera. |
 | `Assets/_Project/Scenes/GroundAttackLab.unity` | **Regression lab**: player ground weapons 4–6, AA/SAM, radar/HUD and legacy camera. |
 
 ## Current gameplay direction
 
-FLIGHT-02 W/S control and AIR-03 independent Tigers are accepted. Wheel selects AC-01 BURST, AC-02 continuous or the AAM lock preview; LMB fires cannons or consumes a completed test lock. No missile launches yet. JUICE-01/02 effects retained.
+FLIGHT-02 W/S control and AIR-03 independent Tigers are accepted. LMB fires AC-01 BURST; RMB fires AAM on full lock. Both slots are independent and visible on the HUD. AC-02 continuous is preserved but unequipped; mouse wheel is unbound on the production map. JUICE-01/02 effects retained.
 
 ## Working process
 

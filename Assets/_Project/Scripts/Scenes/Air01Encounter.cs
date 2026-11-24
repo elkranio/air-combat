@@ -88,16 +88,18 @@ namespace AirCombat
             {
                 targetingCursor = view.gameObject.AddComponent<TargetingCursor>();
                 targetingCursor.Bind(view);
-                // Last child keeps both cannon slots ahead of AAM.
+                // AC-02 remains an available prefab/preset, but is not equipped here.
+                foreach (var gun in player.GetComponentsInChildren<AutocannonWeapon>(true))
+                    if (gun.Preset != null && gun.Preset.Continuous) gun.enabled = false;
                 if (missilePrefab != null)
                 {
                     var mount = new GameObject("AAM / launcher");
                     mount.transform.SetParent(player.transform, false);
                     missileLauncher = mount.AddComponent<ArcadeMissileLauncher>();
                     missileLauncher.Bind(view, targetingCursor, player, missilePrefab, hitFeedback);
-                    playerTrigger.RefreshWeapons();
                 }
                 else Debug.LogError("AIR encounter: missing AAM missile prefab.", this);
+                playerTrigger.ConfigureDualSlots(missileLauncher);
             }
             playerBoost = player.GetComponent<Afterburner>();
             playerBreak = player.GetComponent<BreakTurn>();
@@ -319,7 +321,7 @@ namespace AirCombat
             {
                 missileLauncher.CeaseFire(Time.time);
                 missileLauncher.gameObject.SetActive(false);
-                if (playerTrigger != null) playerTrigger.RefreshWeapons();
+                if (playerTrigger != null) playerTrigger.ConfigureDualSlots(null);
                 Destroy(missileLauncher.gameObject);
             }
             if (targetingCursor != null)

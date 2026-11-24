@@ -5,7 +5,8 @@ using UnityEngine.InputSystem;
 namespace AirCombat
 {
     // Player-only input adapter. Modules stay input-agnostic so AI can use the
-    // same ITriggeredWeapon. Mouse wheel cycles the equipped aircraft modules.
+    // same ITriggeredWeapon. Production explicitly equips two independent slots;
+    // legacy scenes retain their original wheel-selected loadout.
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(130)]
     public sealed class PlayerWeaponTrigger : MonoBehaviour
@@ -13,6 +14,30 @@ namespace AirCombat
         [SerializeField] private MonoBehaviour weaponComponent; // GUN-01 first weapon, for stable ordering.
         private readonly List<ITriggeredWeapon> weapons = new List<ITriggeredWeapon>();
         private int selectedIndex;
+        private bool dualSlots;
+        private MonoBehaviour secondaryComponent;
+
+        public bool UsesDualSlots => dualSlots;
+        public IWeaponHudStatus PrimaryHudStatus => PrimaryWeapon as IWeaponHudStatus;
+        public IWeaponHudStatus SecondaryHudStatus => SecondaryWeapon as IWeaponHudStatus;
+        private ITriggeredWeapon PrimaryWeapon => ActiveWeapon(weaponComponent);
+        private ITriggeredWeapon SecondaryWeapon => ActiveWeapon(secondaryComponent);
+        private static ITriggeredWeapon ActiveWeapon(MonoBehaviour component) =>
+            component != null && component.isActiveAndEnabled ? component as ITriggeredWeapon : null;
+
+        // Explicit loadout binding: never infer a second slot from child ordering.
+        public void ConfigureDualSlots(MonoBehaviour secondary)
+        {
+            if (dualSlots)
+            {
+                PrimaryWeapon?.CeaseFire(Time.time);
+                SecondaryWeapon?.CeaseFire(Time.time);
+            }
+            else SelectedWeapon?.CeaseFire(Time.time);
+            dualSlots = true;
+            secondaryComponent = secondary;
+            RefreshWeapons();
+        }
 
         public int WeaponCount => weapons.Count;
         public IWeaponHudStatus SelectedHudStatus => SelectedWeapon as IWeaponHudStatus;
@@ -39,6 +64,13 @@ namespace AirCombat
         {
             var previous = SelectedWeapon;
             weapons.Clear();
+            if (dualSlots)
+            {
+                if (PrimaryWeapon != null) weapons.Add(PrimaryWeapon);
+                if (SecondaryWeapon != null && SecondaryWeapon != PrimaryWeapon) weapons.Add(SecondaryWeapon);
+                selectedIndex = 0;
+                return;
+            }
             if (weaponComponent != null && weaponComponent is ITriggeredWeapon first &&
                 weaponComponent.isActiveAndEnabled)
                 weapons.Add(first);
@@ -55,6 +87,15 @@ namespace AirCombat
         private void LateUpdate()
         {
             var mouse = Mouse.current;
+            if (dualSlots)
+            {
+                bool focused = Application.isFocused && mouse != null;
+                PrimaryWeapon?.TickTrigger(focused && mouse.leftButton.isPressed, Time.time);
+                // Tick even on release: secondary owns acquisition and rearm.
+                if (SecondaryWeapon != PrimaryWeapon)
+                    SecondaryWeapon?.TickTrigger(focused && mouse.rightButton.isPressed, Time.time);
+                return;
+            }
             if (Application.isFocused && mouse != null && weapons.Count > 1)
             {
                 float scroll = mouse.scroll.ReadValue().y;
@@ -68,6 +109,14 @@ namespace AirCombat
             SelectedWeapon?.TickTrigger(held, Time.time);
         }
 
-        private void OnDisable() { SelectedWeapon?.CeaseFire(Time.time); }
+        private void OnDisable()
+        {
+            if (dualSlots)
+            {
+                PrimaryWeapon?.CeaseFire(Time.time);
+                if (SecondaryWeapon != PrimaryWeapon) SecondaryWeapon?.CeaseFire(Time.time);
+            }
+            else SelectedWeapon?.CeaseFire(Time.time);
+        }
     }
 }
