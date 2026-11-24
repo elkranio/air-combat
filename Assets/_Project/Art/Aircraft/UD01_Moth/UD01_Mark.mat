@@ -35,8 +35,8 @@ Material:
     - _DstBlend: 0
     - _WorkflowMode: 1
     m_Colors:
-    - _BaseColor: {r: 0.72, g: 0.34, b: 0.18, a: 1}
-    - _Color: {r: 0.72, g: 0.34, b: 0.18, a: 1}
+    - _BaseColor: {r: 0.86, g: 0.055, b: 0.045, a: 1}
+    - _Color: {r: 0.86, g: 0.055, b: 0.045, a: 1}
     - _EmissionColor: {r: 0, g: 0, b: 0, a: 1}
   m_BuildTextureStacks: []
   m_AllowLocking: 1

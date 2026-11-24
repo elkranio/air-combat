@@ -7,7 +7,7 @@ from pathlib import Path
 from math import sin, cos, pi
 ROOT = Path(__file__).resolve().parents[2]
 OUT = ROOT / 'Assets/_Project/Art/Aircraft/UD01_Moth'
-COLORS = {'Hull': (.49,.54,.49), 'Wing': (.37,.43,.40), 'Dark': (.17,.21,.22), 'Mark': (.72,.34,.18)}
+COLORS = {'Hull': (.14,.15,.16), 'Wing': (.075,.08,.09), 'Dark': (.045,.05,.06), 'Mark': (.86,.055,.045)}
 MESH = {k: [] for k in COLORS}
 
 def face(part, pts, normal):
@@ -43,7 +43,7 @@ def shell(part, rings):
 for s in (-1,1):
     slab('Wing',[(s*x,z) for x,z in [(0,2.05),(.55,1.60),(2.70,-.94),(2.75,-1.70),(1.30,-1.43),(0,-1.85)]],-.10,.12)
     slab('Dark',[(s*x,z) for x,z in [(2.37,-.67),(2.70,-.94),(2.75,-1.70),(2.35,-1.62)]],-.105,.125)
-    slab('Mark',[(s*x,z) for x,z in [(1.65,-.79),(1.89,-.79),(2.05,-1.16),(1.81,-1.16)]],.123,.137)
+    slab('Mark',[(s*x,z) for x,z in [(.99,.58),(1.25,.58),(2.32,-.90),(2.06,-.90)]],.123,.137)
     # Bold decorative upright tabs, not functional control surfaces.
     x=s*2.53
     face('Dark',[(x-.09,.12,-.86),(x-.09,.65,-1.29),(x-.09,.65,-1.65),(x-.09,.12,-1.72)],(-1,0,0))
