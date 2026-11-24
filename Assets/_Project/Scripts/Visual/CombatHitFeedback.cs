@@ -32,6 +32,13 @@ namespace AirCombat
         [SerializeField, Min(0f)] private float receivedShakeSeconds = .19f;
         [SerializeField, Min(0f)] private float killShake = 2.1f;
         [SerializeField, Min(0f)] private float killShakeSeconds = .38f;
+        [Header("Ground crash (JUICE-02c)")]
+        [SerializeField, Min(.1f)] private float crashScale = 1f;
+        [SerializeField, Min(0f)] private float crashShake = 2.5f;
+        [SerializeField, Min(0f)] private float crashShakeSeconds = .45f;
+        [SerializeField, Min(1f)] private float crashFullDistance = 45f;
+        [SerializeField, Min(1f)] private float crashMaxDistance = 240f;
+        [SerializeField, Range(0f, 1f)] private float crashVolume = .8f;
         [Header("Sound / incoming damage")]
         [SerializeField, Range(0f, 1f)] private float hitVolume = .35f;
         [SerializeField, Range(0f, 1f)] private float killVolume = .60f;
@@ -66,6 +73,8 @@ namespace AirCombat
         private readonly List<AircraftWreck> wrecks = new List<AircraftWreck>();
         // Separate random stream: presentation cannot change enemy spawn/AI RNG.
         private readonly System.Random random = new System.Random(8153);
+        private GroundCrashFeedback groundCrash;
+        private Transform playerListener;
         private Camera view;
         private ArcadeCameraFollow cameraFollow;
         private ParticleSystem sparks, debris, impactFlash, smoke, criticalSmoke, criticalCloud, criticalFire;
@@ -117,11 +126,13 @@ namespace AirCombat
             hitClip = MakeHitClip(false);
             killClip = MakeHitClip(true);
             edgeTexture = MakeEdgeTexture();
+            groundCrash = new GroundCrashFeedback(transform, particleMaterial, puffMaterial, cloudMaterial);
         }
 
         public void Track(PlayerHitPoints health, bool isPlayer)
         {
             if (health == null || targets.ContainsKey(health)) return;
+            if (isPlayer) playerListener = health.transform;
             var tracked = new Tracked { IsPlayer = isPlayer };
             var jet = health.GetComponent<JetAssembly>();
             if (jet != null && jet.VisualRoot != null)
@@ -264,11 +275,27 @@ namespace AirCombat
                     wreck.PreviousAnchor = point;
                 }
                 if (airborne) continue;
-                // Ground impact FX is the next atom; keep its exact terrain point
-                // on the wreck for that handoff. No combat damage is applied here.
+                // Only an actual ground contact triggers the explosion, never a
+                // safety timeout or the reset path. Pure presentation, no damage.
+                if (wreck.HitGround) EmitGroundCrash(wreck.ImpactPoint);
                 wreck.Dispose();
                 wrecks.RemoveAt(i);
             }
+        }
+
+        private void EmitGroundCrash(Vector3 point)
+        {
+            if (groundCrash == null) return;
+            // Horizontal distance matches the arcade map and avoids penalizing
+            // the fixed flight altitude when a wreck hits directly underneath.
+            Vector3 delta = playerListener != null ? playerListener.position - point
+                : view != null ? view.transform.position - point : Vector3.zero;
+            delta.y = 0f;
+            float near = crashFullDistance;
+            float far = Mathf.Max(near + 1f, crashMaxDistance);
+            float strength = 1f - Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(near, far, delta.magnitude));
+            groundCrash.Emit(point, audioSource, crashVolume * strength, crashScale);
+            if (cameraFollow != null) cameraFollow.AddHitShake(crashShake * strength, crashShakeSeconds);
         }
 
         private void ClearWrecks()
@@ -288,6 +315,7 @@ namespace AirCombat
                 tracked.HiddenForWreck = false;
             }
             ClearWrecks();
+            groundCrash?.Clear();
             if (criticalSmoke != null) criticalSmoke.Clear();
             if (criticalCloud != null) criticalCloud.Clear();
             if (criticalFire != null) criticalFire.Clear();
@@ -683,6 +711,8 @@ namespace AirCombat
         private void OnDestroy()
         {
             ClearWrecks();
+            groundCrash?.Dispose();
+            groundCrash = null;
             foreach (var pair in targets)
             {
                 if (pair.Key != null) pair.Key.Damaged -= OnDamage;
