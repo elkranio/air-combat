@@ -9,3 +9,7 @@ Rebuild OBJs: `python Tools/Blender/build_pf02_lynx.py`. Run the same script in 
 ## ART-PF-02B — Bright squadron palette (trial)
 
 Base `ec6d2cf`. Material-only pass: saturated blue-teal hull, pale cool wings, turquoise canopy, vivid orange existing tips; dark nose and engine details unchanged. Keep matte lighting and existing material GUIDs. No logos, stripes, textures, mesh, prefab or gameplay edits. The Blender generator palette matches the Unity materials. Compare in the existing scene at gameplay zoom before acceptance.
+
+## ART-PF-02C — Orange wings (trial)
+
+Base `7ea99d1`. Replace the pale blue Wing material with saturated orange (RGB 0.94, 0.34, 0.07) on main wings and rear horizontal stabilizers. Keep the existing slightly brighter orange tips and all other materials unchanged. Blender generator palette synchronized. No geometry, logo, prefab or scene changes. Compare at gameplay zoom against the desert terrain and apron.
