@@ -39,6 +39,13 @@ Base `e7d1b7c`. With layout A in the existing mission scene, select **Air Combat
 - Three 18 x 22 bays in one row on the south side of the apron, facing the open central lane. Two Kestrels parked; the third bay remains empty. Keep the through lane and hangar approach clear of aircraft.
 - Hangar and tower transforms and models unchanged. The temporary free-flight player is unchanged; move only the static takeoff placeholder. No runtime changes. Verify composition, scale and takeoff space in Unity before choosing A or B.
 
+## MISSION-01C3 — Unified pavement B (WIP)
+
+Base `ea0ec92`. Layout B is the preferred composition for further visual iteration. With its saved scene open, select **Air Combat > Missions > Unify Mission 01 Airfield Pavement**. The command validates B, then replaces the visible runway, apron and hangar approach with one dark asphalt mesh and a continuous 3-unit ground shoulder. Rounded junctions use four segments; outside corner trims remain small to preserve parking space. The old surface objects stay disabled. No shared material or prefab is edited.
+
+- Keep the 240 x 24 runway, 82 x 66 apron, hangar, tower, parked aircraft and static takeoff start in their B positions. Open the runway edge paint across the whole apron connection and thin parking lines to 0.42 units.
+- The explicit editor command saves `Mission01_AirfieldPavement.asset` (two meshes) in the mission art folder. Save the scene and commit the mesh asset and its .meta. Undo restores scene objects; the mesh asset remains available for reapplication. No runtime generation, collision or gameplay changes. Unity import/Play Mode and aircraft contrast remain to be checked locally.
+
 ## Next work (order flexible, all WIP)
 
 1. Review the airfield layout in the actual game camera; adjust roads, spacing and model missing pieces only if needed.
