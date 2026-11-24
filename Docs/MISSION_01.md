@@ -46,6 +46,10 @@ Base `ea0ec92`. Layout B is the preferred composition for further visual iterati
 - Keep the 240 x 24 runway, 82 x 66 apron, hangar, tower, parked aircraft and static takeoff start in their B positions. Open the runway edge paint across the whole apron connection and thin parking lines to 0.42 units.
 - The explicit editor command saves `Mission01_AirfieldPavement.asset` (two meshes) in the mission art folder. Save the scene and commit the mesh asset and its .meta. Undo restores scene objects; the mesh asset remains available for reapplication. No runtime generation, collision or gameplay changes. Unity import/Play Mode and aircraft contrast remain to be checked locally.
 
+## MISSION-01C4 — Simple parking markings (WIP)
+
+Base `b967377`. Direct scene-only art pass: replace the three U-shaped parking outlines with two 15-unit separators (0.42 wide). Keep the unused marking objects disabled for easy reversal. Center the row within the apron along local X (158, 178, 198; midpoint 178), with 20-unit spacing, and move it one unit inward to Z-95. The third bay remains empty; its disabled Lynx follows the new position. Retain the clear lane to the hangar, unified pavement, buildings, runway and player as-is. Open the scene after applying; no editor command or asset regeneration needed. Verify in Unity.
+
 ## Next work (order flexible, all WIP)
 
 1. Review the airfield layout in the actual game camera; adjust roads, spacing and model missing pieces only if needed.
