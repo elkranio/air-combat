@@ -1,6 +1,6 @@
 # Air Combat — current handoff
 
-Updated 2026-11-24. Base `f55be1c`: MISSILE-03b2 direction readability accepted; current playtest [MISSILE-03b3](Docs/Production/MISSILE_03B.md#missile-03b3--short-vector-comparison), compact player-local dashed bearing with contour missile glyph. Radar retained, no in-flight screen markers or balance changes. Next compare Threat Arc / Radar Sweep sequentially, then evasion tuning and normal encounter pacing. WEAPON-04 accepted; LMB AC-01 BURST / RMB AAM, 150 ms lock, dual HUD. Q/E reserved for future per-slot weapon cycling. JUICE-03 deferred. Earlier HUD-02/flight-only notes below are historical.
+Updated 2026-11-24. Base `4c6bef1`: MISSILE-03b3 Short Vector accepted as a working option; current playtest [MISSILE-03b4](Docs/Production/MISSILE_03B.md#missile-03b4--threat-arc-comparison), compact pulsing player-local arc with bearing notch. Short Vector remains selectable on the runtime HUD. Next compare Radar Sweep, then evasion tuning and normal encounter pacing. No changes to radar, missile visuals, timing or balance. Current world art, HUD and audio are provisional; dedicated unified art-direction pass deferred. WEAPON-04 accepted; LMB AC-01 BURST / RMB AAM, 150 ms lock, dual HUD. Q/E reserved for future per-slot weapon cycling. JUICE-03 deferred. Earlier HUD-02/flight-only notes below are historical.
 
 ## Goal and immediate order
 

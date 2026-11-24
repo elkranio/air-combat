@@ -3,7 +3,7 @@ using UnityEngine;
 
 namespace AirCombat
 {
-    // A compact player-local pre-launch bearing vector, never a projectile tracking aid.
+    // Player-local pre-launch bearing experiments, never a projectile tracking aid.
     // Its direction follows the shooter through the moving camera.
     [DisallowMultipleComponent]
     public sealed class EnemyMissileThreatHud : MonoBehaviour
@@ -13,6 +13,13 @@ namespace AirCombat
         private Camera view;
         private EnemyMissileStressTest threats;
         private Texture2D missileIcon;
+        public enum WarningStyle { ShortVector, ThreatArc }
+
+        [SerializeField] private WarningStyle warningStyle = WarningStyle.ThreatArc;
+        [Header("Threat arc / reference pixels at 720p")]
+        [SerializeField, Min(12f)] private float arcRadius = 56f;
+        [SerializeField, Range(10f, 100f)] private float arcDegrees = 44f;
+        [SerializeField, Min(1f)] private float arcStroke = 3f;
         [Header("Short vector / reference pixels at 720p")]
         [SerializeField, Min(0f)] private float hullGap = 38f;
         [SerializeField, Min(25f)] private float vectorLength = 64f;
@@ -33,7 +40,7 @@ namespace AirCombat
             var rect = new Rect(pixels.xMin, Screen.height - pixels.yMax, pixels.width, pixels.height);
             float scale = Mathf.Clamp(rect.height / 720f, .75f, 3f);
             if (!Project(playerPosition, rect, out Vector2 player) || !rect.Contains(player)) return;
-            if (missileIcon == null) missileIcon = MakeMissileIcon();
+            if (warningStyle == WarningStyle.ShortVector && missileIcon == null) missileIcon = MakeMissileIcon();
 
             Color oldColor = GUI.color;
             int oldDepth = GUI.depth;
@@ -49,7 +56,10 @@ namespace AirCombat
                     ? Mathf.Clamp01(1f - phase / EnemyMissileStressTest.WarningPulseLength) : 0f;
                 float alpha = Mathf.Lerp(.24f, .92f, pulse);
                 Project(cue.Position, rect, out Vector2 source);
-                DrawVector(rect, source, player, scale, alpha, pulse);
+                if (warningStyle == WarningStyle.ThreatArc)
+                    DrawArc(rect, source, player, scale, alpha, pulse);
+                else
+                    DrawVector(rect, source, player, scale, alpha, pulse);
             }
             GUI.matrix = oldMatrix;
             GUI.color = oldColor;
@@ -62,6 +72,62 @@ namespace AirCombat
             p = new Vector2(screen.x, Screen.height - screen.y);
             if (!view.orthographic && screen.z <= 0f) p = rect.center - (p - rect.center);
             return screen.z > view.nearClipPlane && screen.z < view.farClipPlane;
+        }
+
+        private void DrawArc(Rect rect, Vector2 source, Vector2 player, float s, float alpha, float pulse)
+        {
+            Vector2 delta = source - player;
+            if (delta.sqrMagnitude < 1f) return;
+            float bearing = Mathf.Atan2(delta.y, delta.x);
+            float halfAngle = arcDegrees * .5f * Mathf.Deg2Rad;
+            float radius = (arcRadius + pulseTravel * pulse) * s;
+            float stroke = arcStroke * s;
+            var ink = new Color(Threat.r, Threat.g, Threat.b, alpha);
+            var backing = new Color(.025f, .065f, .035f, alpha * .8f);
+            // A short sector on the incoming side, not a full ring or a line to
+            // the shooter. It follows the player and contracts with each beep.
+            const int segments = 20;
+            Vector2 previous = ArcPoint(player, radius, bearing - halfAngle);
+            for (int i = 1; i <= segments; i++)
+            {
+                float angle = bearing - halfAngle + 2f * halfAngle * i / segments;
+                Vector2 next = ArcPoint(player, radius, angle);
+                if (rect.Contains(previous) && rect.Contains(next))
+                    DrawStroke(previous, next, stroke + 2f * s, backing);
+                previous = next;
+            }
+            previous = ArcPoint(player, radius, bearing - halfAngle);
+            for (int i = 1; i <= segments; i++)
+            {
+                float angle = bearing - halfAngle + 2f * halfAngle * i / segments;
+                Vector2 next = ArcPoint(player, radius, angle);
+                if (rect.Contains(previous) && rect.Contains(next))
+                    DrawStroke(previous, next, stroke, ink);
+                previous = next;
+            }
+            // A tiny inward notch singles out the exact bearing in the sector.
+            Vector2 outer = ArcPoint(player, radius, bearing);
+            Vector2 inner = ArcPoint(player, Mathf.Max(0f, radius - 7f * s), bearing);
+            if (rect.Contains(outer) && rect.Contains(inner))
+            {
+                DrawStroke(outer, inner, stroke + 2f * s, backing);
+                DrawStroke(outer, inner, stroke, ink);
+            }
+        }
+
+        private static Vector2 ArcPoint(Vector2 centre, float radius, float angle) =>
+            centre + new Vector2(Mathf.Cos(angle), Mathf.Sin(angle)) * radius;
+
+        private static void DrawStroke(Vector2 from, Vector2 to, float width, Color tint)
+        {
+            Vector2 delta = to - from;
+            Matrix4x4 before = GUI.matrix;
+            GUIUtility.RotateAroundPivot(Mathf.Atan2(delta.y, delta.x) * Mathf.Rad2Deg, from);
+            GUI.color = tint;
+            // Slight overlap keeps the short tessellated curve visually continuous.
+            GUI.DrawTexture(new Rect(from.x - width * .25f, from.y - width * .5f,
+                delta.magnitude + width * .5f, width), Texture2D.whiteTexture);
+            GUI.matrix = before;
         }
 
         private void DrawVector(Rect rect, Vector2 source, Vector2 player, float s, float alpha, float pulse)
