@@ -50,6 +50,10 @@ Base `ea0ec92`. Layout B is the preferred composition for further visual iterati
 
 Base `b967377`. Direct scene-only art pass: replace the three U-shaped parking outlines with two 15-unit separators (0.42 wide). Keep the unused marking objects disabled for easy reversal. Center the row within the apron along local X (158, 178, 198; midpoint 178), with 20-unit spacing, and move it one unit inward to Z-95. The third bay remains empty; its disabled Lynx follows the new position. Retain the clear lane to the hangar, unified pavement, buildings, runway and player as-is. Open the scene after applying; no editor command or asset regeneration needed. Verify in Unity.
 
+## MISSION-01C5 — Outer parking separators (WIP)
+
+Base `4087039`. Keep the C4 parking layout and add the two outer separators at local X148 and X208, matching the existing lines at X168 and X188 (Z-95, 15 units long, 0.42 wide). This defines three equal bays, including the empty player bay, without restoring U-shaped outlines. Reactivate the existing unused outer line objects; no new assets or editor commands. Aircraft, pavement, runway and buildings are unchanged. Next visual pass: control tower.
+
 ## Next work (order flexible, all WIP)
 
 1. Review the airfield layout in the actual game camera; adjust roads, spacing and model missing pieces only if needed.
