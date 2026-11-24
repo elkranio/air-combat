@@ -31,6 +31,14 @@ Base `7f6911d`. In the existing mission scene, select **Air Combat > Missions > 
 - Hangar and tower stay at their exact v0 transforms. Adapt the hangar approach to meet the smaller apron. Temporary airborne player unchanged.
 - Compare A from the game camera, then try a separate, even more compact B. No final art or gameplay decision yet. Unity verification is local.
 
+## MISSION-01C2B — Compact airfield B (WIP)
+
+Base `e7d1b7c`. With layout A in the existing mission scene, select **Air Combat > Missions > Apply Compact Airfield B** once. Undo is supported; A remains available in the prior green. This pass modifies only the current scene instance.
+
+- Runway 240 x 24, center local X125, with proportionally resized markings. Apron 82 x 66 meets the runway directly; hide the old diagonal taxiway. Open the right edge marking at the shared access lane.
+- Three 18 x 22 bays in one row on the south side of the apron, facing the open central lane. Two Kestrels parked; the third bay remains empty. Keep the through lane and hangar approach clear of aircraft.
+- Hangar and tower transforms and models unchanged. The temporary free-flight player is unchanged; move only the static takeoff placeholder. No runtime changes. Verify composition, scale and takeoff space in Unity before choosing A or B.
+
 ## Next work (order flexible, all WIP)
 
 1. Review the airfield layout in the actual game camera; adjust roads, spacing and model missing pieces only if needed.

@@ -236,6 +236,135 @@ namespace AirCombat
             }
         }
 
+        [MenuItem("Air Combat/Missions/Apply Compact Airfield B")]
+        private static void ApplyCompactB()
+        {
+            if (EditorApplication.isPlayingOrWillChangePlaymode) return;
+            Scene scene = SceneManager.GetActiveScene();
+            if (scene.path != ScenePath)
+            {
+                Debug.LogWarning("MISSION-01C2B: open Mission01_FirstSortie first.");
+                return;
+            }
+            var anchor = scene.GetRootGameObjects().SingleOrDefault(g => g.name == "Mission01 / Airfield");
+            var layout = anchor != null ? anchor.transform.Cast<Transform>()
+                .SingleOrDefault(t => t.name == "Airfield A - editable layout") : null;
+            if (layout == null)
+            {
+                Debug.LogWarning("MISSION-01C2B: expected layout A; nothing changed.");
+                return;
+            }
+
+            Transform runway, apron, taxiway, markings, approach, parked, start, edge;
+            Transform[] runwayParts, standLines, aircraft;
+            try
+            {
+                runway = Child(layout, "Runway and apron");
+                apron = Child(runway, "03 / Apron - aircraft and hangar");
+                taxiway = Child(runway, "04 / Taxiway runway-to-apron");
+                markings = Child(layout, "Apron connections and markings");
+                approach = Child(markings, "Hangar approach");
+                parked = Child(layout, "Parked aircraft - visuals only");
+                start = Child(layout, "Takeoff start - visual placeholder");
+                edge = Child(runway, "Runway edge 1");
+                runwayParts = runway.Cast<Transform>().Where(t =>
+                    t.name.StartsWith("01 / Graded runway", StringComparison.Ordinal) ||
+                    t.name.StartsWith("02 / Asphalt runway", StringComparison.Ordinal) ||
+                    t.name.StartsWith("Runway edge", StringComparison.Ordinal) ||
+                    t.name.StartsWith("Runway center dash", StringComparison.Ordinal) ||
+                    t.name.StartsWith("Threshold", StringComparison.Ordinal)).ToArray();
+                var asphalt = Child(runway, "02 / Asphalt runway 460x36");
+                if (runwayParts.Length != 25 || !Mathf.Approximately(asphalt.localScale.x, 26f) ||
+                    !Mathf.Approximately(asphalt.localScale.z, 300f))
+                    throw new InvalidOperationException("Expected the 300 x 26 runway from A.");
+                standLines = Enumerable.Range(1, 3).SelectMany(i => new[] {
+                    Child(markings, "Stand " + i + " left"),
+                    Child(markings, "Stand " + i + " right"),
+                    Child(markings, "Stand " + i + " front") }).ToArray();
+                aircraft = new[] { Child(parked, "Kestrel 01"), Child(parked, "Kestrel 02"), Child(parked, "Lynx 03") };
+                if (markings.Cast<Transform>().Any(t => t.name == "Runway edge - south of apron access"))
+                    throw new InvalidOperationException("B access marking already exists.");
+            }
+            catch (Exception ex)
+            {
+                Debug.LogError("MISSION-01C2B: unexpected layout; nothing changed. " + ex.Message);
+                return;
+            }
+
+            const string undo = "Apply compact airfield B";
+            Undo.IncrementCurrentGroup();
+            int undoGroup = Undo.GetCurrentGroup();
+            Undo.SetCurrentGroupName(undo);
+            var changed = new[] { runway, apron, taxiway, approach, start }
+                .Concat(runwayParts).Concat(standLines).Concat(aircraft).ToArray();
+            Undo.RecordObjects(changed.Cast<UnityEngine.Object>().ToArray(), undo);
+            Undo.RecordObjects(new UnityEngine.Object[] { layout.gameObject, taxiway.gameObject,
+                aircraft[2].gameObject }, undo);
+            try
+            {
+                const float runwayX = 125f;
+                const float widthRatio = 24f / 26f;
+                const float lengthRatio = 240f / 300f;
+                runway.localPosition = new Vector3(runwayX, runway.localPosition.y, 0f);
+                foreach (Transform part in runwayParts)
+                {
+                    Vector3 p = part.localPosition, s = part.localScale;
+                    part.localPosition = new Vector3(p.x * widthRatio, p.y, p.z * lengthRatio);
+                    part.localScale = new Vector3(s.x * widthRatio, s.y, s.z * lengthRatio);
+                }
+                // Apron abuts the runway's right edge. No separate diagonal road.
+                // Local layout bounds: apron X137..219, Z-108..-42.
+                SetSurface(apron, 178f - runwayX, -75f, 82f, 66f);
+                taxiway.gameObject.SetActive(false);
+                PrefabUtility.RecordPrefabInstancePropertyModifications(taxiway.gameObject);
+                // Continuous paved lane from the runway to the existing hangar portal.
+                SetSurface(approach, 231f, -75f, 24f, 26f);
+
+                // Break the runway edge paint only at the entrance to the clear lane.
+                // Preserve both ends of the original edge line, with no paint across the opening.
+                float end = edge.localScale.z * .5f;
+                float edgeX = edge.localPosition.x;
+                float edgeWidth = edge.localScale.x;
+                const float south = -88f, north = -62f;
+                CopySurface(edge, markings, "Runway edge - south of apron access",
+                    runwayX + edgeX, edge.localPosition.y, (-end + south) * .5f,
+                    edgeWidth, south + end);
+                Undo.RegisterCreatedObjectUndo(Child(markings,
+                    "Runway edge - south of apron access").gameObject, undo);
+                SetSurface(edge, edgeX, (north + end) * .5f, edgeWidth, end - north);
+
+                // Three bays in a single row off the side of the through lane, not across it.
+                // Nose points into the open apron; all aircraft clear the hangar approach.
+                Quaternion standYaw = Quaternion.identity;
+                for (int i = 0; i < 3; i++)
+                {
+                    Vector3 c = new Vector3(152f + i * 22f, .078f, -96f);
+                    SetStandLine(standLines[i * 3], c, standYaw, -9f, 0f, .65f, 22f);
+                    SetStandLine(standLines[i * 3 + 1], c, standYaw, 9f, 0f, .65f, 22f);
+                    SetStandLine(standLines[i * 3 + 2], c, standYaw, 0f, -11f, 18.65f, .65f);
+                    Transform jet = aircraft[i];
+                    jet.localPosition = new Vector3(c.x, jet.localPosition.y, c.z);
+                    jet.localRotation = standYaw;
+                }
+                aircraft[2].gameObject.SetActive(false);
+                PrefabUtility.RecordPrefabInstancePropertyModifications(aircraft[2].gameObject);
+                start.localPosition = new Vector3(runwayX, start.localPosition.y, -92f);
+                layout.gameObject.name = "Airfield B - editable layout";
+                foreach (Transform t in changed)
+                    if (PrefabUtility.IsPartOfPrefabInstance(t))
+                        PrefabUtility.RecordPrefabInstancePropertyModifications(t);
+                Undo.CollapseUndoOperations(undoGroup);
+                EditorSceneManager.MarkSceneDirty(scene);
+                Selection.activeGameObject = layout.gameObject;
+                Debug.Log("MISSION-01C2B: compact layout B applied. Review and save the scene.");
+            }
+            catch (Exception ex)
+            {
+                Undo.RevertAllDownToGroup(undoGroup);
+                Debug.LogError("MISSION-01C2B: layout change reverted. " + ex);
+            }
+        }
+
         private static void SetStandLine(Transform line, Vector3 center, Quaternion yaw,
             float x, float z, float width, float length)
         {
