@@ -18,18 +18,14 @@ namespace AirCombat
         [SerializeField, Range(0f, 90f)] private float verticalCorrectionBudget = 20f;
         [SerializeField, Min(.1f)] private float verticalPause = 2.5f;
         [SerializeField, Min(1)] private int verticalDamage = 3;
-        [Header("Temporary visual mount")]
-        [SerializeField] private Transform turretYaw, gunPitch;
+        [Header("Authored visual mount")]
+        [SerializeField] private Transform launchSocket;
         [SerializeField, Min(1f)] private float detectionRange = 210f;
 
         private PlayerHitPoints target;
         private AircraftRadar radar;
         private Material tracer, rocketHull;
         private readonly List<MantisVerticalRocket> verticalRockets = new List<MantisVerticalRocket>();
-        private GameObject verticalPod;
-        private Transform verticalSocket;
-        private Renderer[] barrelRenderers;
-        private bool[] barrelVisibility;
         private bool bound;
         private float nextBurst;
 
@@ -43,11 +39,19 @@ namespace AirCombat
         public void Bind(PlayerHitPoints player, AircraftRadar sensor)
         {
             Unbind();
-            if (player == null || sensor == null || turretYaw == null || gunPitch == null)
-            { Debug.LogError("Mantis: missing player, radar or visual mounts.", this); return; }
+            if (player == null || sensor == null || launchSocket == null)
+            { Debug.LogError("Mantis: missing player, radar or launch socket.", this); return; }
             var shader = Shader.Find("AirCombat/SandboxEffect");
             if (shader == null) { Debug.LogError("Mantis: tracer shader missing.", this); return; }
             if (tracer == null) tracer = new Material(shader) { name = "Mantis tracer / runtime" };
+            if (rocketHull == null)
+            {
+                var lit = Shader.Find("Universal Render Pipeline/Lit");
+                if (lit == null) { Debug.LogError("Mantis: URP Lit missing.", this); return; }
+                rocketHull = new Material(lit) { name = "Mantis / vertical missile hull" };
+                rocketHull.SetColor("_BaseColor", new Color(.52f, .59f, .57f));
+                rocketHull.SetFloat("_Smoothness", .08f);
+            }
             target = player;
             radar = sensor;
             bound = true;
@@ -60,9 +64,6 @@ namespace AirCombat
             ClearRockets();
             FiredCount = HitCount = 0;
             nextBurst = Time.time + .5f;
-            if (turretYaw != null) turretYaw.localRotation = Quaternion.identity;
-            if (gunPitch != null) gunPitch.localRotation = Quaternion.Euler(-18f, 0f, 0f);
-            SetVerticalVisual(true);
         }
 
         public void Unbind()
@@ -70,18 +71,16 @@ namespace AirCombat
             if (radar != null) radar.Unregister(this);
             ClearRockets();
             bound = false;
-            SetVerticalVisual(false);
             target = null;
             radar = null;
         }
 
         private void OnEnable() { if (bound && radar != null) { radar.Register(this); ResetCombat(); } }
-        private void OnDisable() { if (radar != null) radar.Unregister(this); ClearRockets(); SetVerticalVisual(false); }
+        private void OnDisable() { if (radar != null) radar.Unregister(this); ClearRockets(); }
         private void OnDestroy()
         {
             Unbind();
             if (tracer != null) Destroy(tracer);
-            if (verticalPod != null) Destroy(verticalPod);
             if (rocketHull != null) Destroy(rocketHull);
         }
 
@@ -103,50 +102,10 @@ namespace AirCombat
             TickVertical(inRange);
         }
 
-        // Keep the accepted placeholder geometry until the new launcher art pass.
-        private void SetVerticalVisual(bool visible)
-        {
-            if (gunPitch == null || turretYaw == null) return;
-            if (visible && verticalPod == null)
-            {
-                barrelRenderers = gunPitch.GetComponentsInChildren<Renderer>(true);
-                barrelVisibility = new bool[barrelRenderers.Length];
-                for (int i = 0; i < barrelRenderers.Length; i++) barrelVisibility[i] = barrelRenderers[i].enabled;
-                var shader = Shader.Find("Universal Render Pipeline/Lit");
-                if (shader == null) { Debug.LogError("Mantis: URP Lit missing.", this); return; }
-                rocketHull = new Material(shader) { name = "Mantis / vertical missile hull" };
-                rocketHull.SetColor("_BaseColor", new Color(.52f,.59f,.57f));
-                rocketHull.SetFloat("_Smoothness", .08f);
-                verticalPod = new GameObject("AA-01e / temporary vertical pod");
-                verticalPod.transform.SetParent(turretYaw, false);
-                verticalSocket = BuildTube(0f);
-            }
-            if (verticalPod != null) verticalPod.SetActive(visible);
-            if (verticalPod != null && barrelRenderers != null)
-                for (int i = 0; i < barrelRenderers.Length; i++)
-                    if (barrelRenderers[i] != null) barrelRenderers[i].enabled = !visible && barrelVisibility[i];
-        }
-
-        private Transform BuildTube(float x)
-        {
-            var tube = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
-            tube.name = "Launch canister";
-            tube.transform.SetParent(verticalPod.transform, false);
-            tube.transform.localPosition = new Vector3(x, 1.5f, 1.0f);
-            tube.transform.localScale = new Vector3(1.65f, 1.55f, 1.65f);
-            var collider = tube.GetComponent<Collider>();
-            collider.enabled = false; Destroy(collider);
-            tube.GetComponent<MeshRenderer>().sharedMaterial = rocketHull;
-            var socket = new GameObject("Vertical launch socket").transform;
-            socket.SetParent(verticalPod.transform, false);
-            socket.localPosition = new Vector3(x, 3.05f, 1.0f);
-            return socket;
-        }
-
         private void TickVertical(bool inRange)
         {
-            if (verticalSocket == null || !inRange || Time.time < nextBurst) return;
-            FireVertical(verticalSocket);
+            if (launchSocket == null || !inRange || Time.time < nextBurst) return;
+            FireVertical(launchSocket);
             nextBurst = Time.time + verticalPause;
         }
 
