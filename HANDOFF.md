@@ -1,6 +1,6 @@
 # Air Combat — current handoff
 
-Updated 2026-11-24. Base `b340950`: AI-04a pursuit accepted but accurate sustained tail fire is too strong. Current playtest [AI-04a2](Docs/Production/AI_04A.md#ai-04a2--imperfect-aim-and-bounded-gun-pressure): delayed gun aim 150–250 ms, ±15 degrees per burst, 2–3 bursts or 4 seconds of gun pressure per pass before disengage. Powered pursuit and AC-01 damage/cadence unchanged. H shows burst budget and AC/AAM stats. AAM 8–15 s independent cooldown, guidance, Short Vector and radar unchanged; next AI-04b Attack Intent after gun pressure test. WEAPON-04 accepted; LMB AC-01 BURST / RMB AAM, 150 ms lock, dual HUD. Q/E reserved for future per-slot weapon cycling. Unified art direction and JUICE-03 deferred. Earlier HUD-02/flight-only notes below are historical.
+Updated 2026-11-24. Base `42a6ee1`: AI-04a2 Tigers accepted as a strong encounter baseline, no more nerfs pending target diversity. Current playtest [NURS-01](Docs/Production/NURS_01.md): isolated direct NURS secondary on RMB, LMB AC-01 BURST, terrain-conforming ballistic dispersion ellipse, 6 rockets / .08s interval / 5s rearm. Ground Nurs Test defaults on; uncheck before Play to restore AAM and two Tigers unchanged. Next stationary targets, convoy, escort. Attack Intent deferred. AC-02 was postponed because of its power; later test long empty cooldown tradeoff. Q/E reserved for per-slot selection, unified art direction and JUICE-03 deferred. Earlier HUD-02/flight-only notes below are historical.
 
 ## Goal and immediate order
 

@@ -17,19 +17,22 @@ namespace AirCombat
         private Material flashMaterial;
         private Material scorchMaterial;
         private Action<int> onImpact;
+        private Action<GameObject> onEffect;
         private float elapsed;
         private float blastRadius = 6f;
         private bool launched;
 
         public void Launch(Vector3 initialVelocity, Transform owner,
             Material shell, Material trailMaterial, Material flash, Material scorch,
-            Action<int> impactCallback, float radius = 6f)
+            Action<int> impactCallback, float radius = 6f, bool castShadow = true,
+            Action<GameObject> effectCallback = null)
         {
             velocity = initialVelocity;
             shooter = owner;
             flashMaterial = flash;
             scorchMaterial = scorch;
             onImpact = impactCallback;
+            onEffect = effectCallback;
             blastRadius = Mathf.Max(.1f, radius);
 
             var visual = GameObject.CreatePrimitive(PrimitiveType.Capsule);
@@ -41,7 +44,7 @@ namespace AirCombat
             if (collider != null) { collider.enabled = false; Destroy(collider); }
             var renderer = visual.GetComponent<MeshRenderer>();
             renderer.sharedMaterial = shell;
-            renderer.shadowCastingMode = ShadowCastingMode.On;
+            renderer.shadowCastingMode = castShadow ? ShadowCastingMode.On : ShadowCastingMode.Off;
 
             var streak = new GameObject("NURS trail");
             streak.transform.SetParent(transform, false);
@@ -118,9 +121,19 @@ namespace AirCombat
         private void Detonate(Vector3 point)
         {
             int damagedParts = GroundBlastDamage.Apply(point, blastRadius, 1);
-            BombImpactFx.Spawn(point, flashMaterial, scorchMaterial, blastRadius);
+            var effect = BombImpactFx.Spawn(point, flashMaterial, scorchMaterial, blastRadius);
+            onEffect?.Invoke(effect);
             onImpact?.Invoke(damagedParts);
             Finish();
+        }
+
+        public void Cancel()
+        {
+            launched = false;
+            onImpact = null;
+            onEffect = null;
+            gameObject.SetActive(false); // Attached trail is destroyed with the rocket.
+            Destroy(gameObject);
         }
 
         private void Finish()
@@ -130,6 +143,7 @@ namespace AirCombat
             {
                 trail.emitting = false;
                 trail.transform.SetParent(null, true);
+                onEffect?.Invoke(trail.gameObject);
                 Destroy(trail.gameObject, trail.time + .1f);
                 trail = null;
             }

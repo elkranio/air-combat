@@ -18,6 +18,10 @@ namespace AirCombat
         [Header("Enemy AAM / independent attack cooldown")]
         [SerializeField] private EnemyMissileStressTest.Settings enemyMissiles = new EnemyMissileStressTest.Settings();
         private EnemyMissileStressTest missileStress;
+        [Header("NURS-01 / isolated ground playtest (set before Play)")]
+        [SerializeField] private bool groundNursTest = true;
+        private bool groundMode;
+        private ArcadeNursLauncher nursLauncher;
 
         private sealed class Fighter
         {
@@ -53,6 +57,7 @@ namespace AirCombat
         {
             get
             {
+                if (groundMode) return nursLauncher != null ? nursLauncher.DebugStatus : "NURS UNAVAILABLE";
                 if (defeated || victory)
                 {
                     string result = defeated ? "DEFEAT" : "VICTORY";
@@ -72,12 +77,13 @@ namespace AirCombat
         public void Bind(JetAssembly aircraft, Camera camera, AircraftRadar sensor,
             PlayerHitPoints health, float halfExtent)
         {
+            groundMode = groundNursTest;
             player = aircraft;
             view = camera;
             radar = sensor;
             playerHealth = health;
             boundary = halfExtent;
-            if (enemyPrefab == null || player == null || radar == null || playerHealth == null)
+            if ((!groundMode && enemyPrefab == null) || player == null || radar == null || playerHealth == null)
             {
                 Debug.LogError("AIR encounter is missing its prefab or player binding.", this);
                 return;
@@ -91,7 +97,7 @@ namespace AirCombat
             if (hitFeedback == null) hitFeedback = gameObject.AddComponent<CombatHitFeedback>();
             hitFeedback.Bind(view);
             hitFeedback.Track(playerHealth, true);
-            if (missilePrefab != null)
+            if (!groundMode && missilePrefab != null)
             {
                 missileStress = gameObject.AddComponent<EnemyMissileStressTest>();
                 missileStress.Bind(playerHealth, missilePrefab, hitFeedback, enemyMissiles, radar);
@@ -101,12 +107,23 @@ namespace AirCombat
             playerTrigger = player.GetComponent<PlayerWeaponTrigger>();
             if (playerTrigger != null && view != null)
             {
-                targetingCursor = view.gameObject.AddComponent<TargetingCursor>();
-                targetingCursor.Bind(view);
+                if (!groundMode)
+                {
+                    targetingCursor = view.gameObject.AddComponent<TargetingCursor>();
+                    targetingCursor.Bind(view);
+                }
                 // AC-02 remains an available prefab/preset, but is not equipped here.
                 foreach (var gun in player.GetComponentsInChildren<AutocannonWeapon>(true))
                     if (gun.Preset != null && gun.Preset.Continuous) gun.enabled = false;
-                if (missilePrefab != null)
+                if (groundMode)
+                {
+                    var mount = new GameObject("NURS / launcher");
+                    mount.transform.SetParent(player.transform, false);
+                    nursLauncher = mount.AddComponent<ArcadeNursLauncher>();
+                    nursLauncher.Bind(playerFlight, player.GetComponent<Afterburner>(), playerTrigger);
+                    playerTrigger.ConfigureDualSlots(nursLauncher);
+                }
+                else if (missilePrefab != null)
                 {
                     var mount = new GameObject("AAM / launcher");
                     mount.transform.SetParent(player.transform, false);
@@ -114,7 +131,7 @@ namespace AirCombat
                     missileLauncher.Bind(view, targetingCursor, player, missilePrefab, hitFeedback);
                 }
                 else Debug.LogError("AIR encounter: missing AAM missile prefab.", this);
-                playerTrigger.ConfigureDualSlots(missileLauncher);
+                if (!groundMode) playerTrigger.ConfigureDualSlots(missileLauncher);
             }
             playerBoost = player.GetComponent<Afterburner>();
             playerBreak = player.GetComponent<BreakTurn>();
@@ -126,6 +143,7 @@ namespace AirCombat
         public void Restart()
         {
             if (!bound) return;
+            if (nursLauncher != null) nursLauncher.ResetMagazine();
             if (missileStress != null) missileStress.ResetTest();
             if (missileLauncher != null) missileLauncher.ResetMagazine();
             if (hitFeedback != null) hitFeedback.ResetEffects();
@@ -139,6 +157,7 @@ namespace AirCombat
             if (playerFlight != null) playerFlight.enabled = true;
             if (playerTrigger != null) playerTrigger.enabled = true;
             defeated = victory = false;
+            if (groundMode) return; // Isolated flight/ground ordnance test: no Tigers or victory overlay.
 
             if (!TrySpawnPair(out Vector3 first, out Vector3 second, out Quaternion heading))
             {
@@ -345,6 +364,13 @@ namespace AirCombat
         {
             if (missileStress != null) { missileStress.ResetTest(); Destroy(missileStress); }
             RemoveAllFighters();
+            if (nursLauncher != null)
+            {
+                if (playerTrigger != null) playerTrigger.ConfigureDualSlots(null);
+                nursLauncher.ResetMagazine();
+                nursLauncher.gameObject.SetActive(false);
+                Destroy(nursLauncher.gameObject);
+            }
             if (missileLauncher != null)
             {
                 missileLauncher.CeaseFire(Time.time);

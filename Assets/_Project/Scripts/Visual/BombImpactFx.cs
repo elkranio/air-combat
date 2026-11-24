@@ -10,7 +10,7 @@ namespace AirCombat
         private float elapsed;
         private float radius;
 
-        public static void Spawn(Vector3 point, Material flashMaterial, Material scorchMaterial, float blastRadius)
+        public static GameObject Spawn(Vector3 point, Material flashMaterial, Material scorchMaterial, float blastRadius)
         {
             var root = new GameObject("Bomb impact");
             root.transform.position = point + Vector3.up * .12f;
@@ -37,6 +37,7 @@ namespace AirCombat
             Object.Destroy(scorchCollider);
             mark.GetComponent<MeshRenderer>().sharedMaterial = scorchMaterial;
             mark.GetComponent<MeshRenderer>().shadowCastingMode = ShadowCastingMode.Off;
+            return root;
         }
 
         private void Update()
