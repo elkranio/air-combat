@@ -4,7 +4,7 @@ Unity 6.6 / URP. **Stylized arcade air combat**: strong aircraft silhouettes, di
 
 ## Start here (current state)
 
-**Current playtest:** [MISSILE-01a — mouse cursor and target acquisition](Docs/Production/MISSILE_01A.md). [JUICE-02c](Docs/Production/JUICE_02C.md) terrain crash, [JUICE-02b](Docs/Production/JUICE_02B.md) falling wrecks, layered smoke and hit feedback retained. Next MISSILE-01b lock presentation/audio, then MISSILE-02 guided projectile. Wingtip trails deferred.
+**Current playtest:** [MISSILE-02 — player guided AAM](Docs/Production/MISSILE_02.md). [MISSILE-01a](Docs/Production/MISSILE_01A.md) designation accepted; [JUICE-02c](Docs/Production/JUICE_02C.md) terrain crash, layered smoke and hit feedback retained. Next tune missile feel and lock presentation, then enemy missiles. Wingtip trails deferred.
 
 1. [HANDOFF.md](HANDOFF.md) — authoritative current green, immediate next atom and regression rules.
 2. [GAMEPLAY_COMBAT.md](GAMEPLAY_COMBAT.md) / [GAMEPLAY_ARCHITECTURE.md](GAMEPLAY_ARCHITECTURE.md) — current weapons, controls, radar and scene ownership.

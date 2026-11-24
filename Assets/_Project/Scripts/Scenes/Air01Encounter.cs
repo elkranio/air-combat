@@ -10,6 +10,7 @@ namespace AirCombat
     public sealed class Air01Encounter : MonoBehaviour
     {
         [SerializeField] private GameObject enemyPrefab;
+        [SerializeField] private MissileProjectile missilePrefab;
         [SerializeField, Min(1f)] private float spawnRadius = 550f;
         [SerializeField, Min(20f)] private float pairSpacing = 45f;
         [SerializeField] private ArcadeFighterPilot.Settings attack = new ArcadeFighterPilot.Settings();
@@ -35,7 +36,7 @@ namespace AirCombat
         private FlightController playerFlight;
         private PlayerWeaponTrigger playerTrigger;
         private TargetingCursor targetingCursor;
-        private MissileLockPreview missilePreview;
+        private ArcadeMissileLauncher missileLauncher;
         private Afterburner playerBoost;
         private BreakTurn playerBreak;
         private bool bound;
@@ -87,12 +88,16 @@ namespace AirCombat
             {
                 targetingCursor = view.gameObject.AddComponent<TargetingCursor>();
                 targetingCursor.Bind(view);
-                // Last child keeps the two existing cannon slots ahead of the preview.
-                var mount = new GameObject("AAM / lock preview");
-                mount.transform.SetParent(player.transform, false);
-                missilePreview = mount.AddComponent<MissileLockPreview>();
-                missilePreview.Bind(view, targetingCursor);
-                playerTrigger.RefreshWeapons();
+                // Last child keeps both cannon slots ahead of AAM.
+                if (missilePrefab != null)
+                {
+                    var mount = new GameObject("AAM / launcher");
+                    mount.transform.SetParent(player.transform, false);
+                    missileLauncher = mount.AddComponent<ArcadeMissileLauncher>();
+                    missileLauncher.Bind(view, targetingCursor, player, missilePrefab, hitFeedback);
+                    playerTrigger.RefreshWeapons();
+                }
+                else Debug.LogError("AIR encounter: missing AAM missile prefab.", this);
             }
             playerBoost = player.GetComponent<Afterburner>();
             playerBreak = player.GetComponent<BreakTurn>();
@@ -104,6 +109,7 @@ namespace AirCombat
         public void Restart()
         {
             if (!bound) return;
+            if (missileLauncher != null) missileLauncher.ResetMagazine();
             if (hitFeedback != null) hitFeedback.ResetEffects();
             if (playerTrigger != null) playerTrigger.enabled = false;
             foreach (var gun in player.GetComponentsInChildren<AutocannonWeapon>())
@@ -153,7 +159,7 @@ namespace AirCombat
 
             health.InstallHitbox();
             if (hitFeedback != null) hitFeedback.Track(health, false);
-            if (missilePreview != null) missilePreview.Register(health);
+            if (missileLauncher != null) missileLauncher.Register(health);
             var fighter = new Fighter
             {
                 Index = index,
@@ -209,6 +215,7 @@ namespace AirCombat
             if (!playerHealth.IsAlive)
             {
                 defeated = true;
+                if (missileLauncher != null) missileLauncher.CancelMissiles();
                 if (playerTrigger != null) playerTrigger.enabled = false;
                 if (hitFeedback != null)
                     hitFeedback.SpawnWreck(playerHealth, playerFlight != null ? playerFlight.CurrentSpeed : 70f);
@@ -283,7 +290,7 @@ namespace AirCombat
         private void RemoveFighterAt(int index, bool destroyed = false)
         {
             Fighter fighter = fighters[index];
-            if (missilePreview != null) missilePreview.Unregister(fighter.Health);
+            if (missileLauncher != null) missileLauncher.Unregister(fighter.Health);
             if (hitFeedback != null)
             {
                 if (destroyed) hitFeedback.SpawnWreck(fighter.Health, fighter.Flight.CurrentSpeed);
@@ -308,12 +315,12 @@ namespace AirCombat
         private void OnDestroy()
         {
             RemoveAllFighters();
-            if (missilePreview != null)
+            if (missileLauncher != null)
             {
-                missilePreview.CeaseFire(Time.time);
-                missilePreview.gameObject.SetActive(false);
+                missileLauncher.CeaseFire(Time.time);
+                missileLauncher.gameObject.SetActive(false);
                 if (playerTrigger != null) playerTrigger.RefreshWeapons();
-                Destroy(missilePreview.gameObject);
+                Destroy(missileLauncher.gameObject);
             }
             if (targetingCursor != null)
             {

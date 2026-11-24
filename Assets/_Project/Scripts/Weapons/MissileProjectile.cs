@@ -19,6 +19,50 @@ namespace AirCombat
         private float age;
         public float RemainingManeuverBudget { get; private set; }
         private bool launched;
+        private Action<Vector3, Vector3> arcadeExhaust;
+        private PlayerHitPoints arcadeTarget;
+        private Vector3 previousExhaust;
+        private Vector3 exhaustLocal = new Vector3(0f, 0f, -1.9f);
+
+        // Per-instance production tuning. The prefab and lab launchers keep their defaults.
+        public void ConfigureArcade(PlayerHitPoints aimTarget, float velocity, float yawRate,
+            float budget, float flightSeconds, float radius, Action<Vector3, Vector3> exhaust)
+        {
+            arcadeTarget = aimTarget;
+            speed = Mathf.Max(.1f, velocity);
+            turnRate = Mathf.Max(1f, yawRate);
+            maneuverBudget = Mathf.Max(0f, budget);
+            lifetime = Mathf.Max(.1f, flightSeconds);
+            hitRadius = Mathf.Max(.1f, radius);
+            arcadeExhaust = exhaust;
+            if (trail != null)
+            {
+                exhaustLocal = transform.InverseTransformPoint(trail.transform.position);
+                trail.emitting = false;
+                trail.Clear();
+                trail.enabled = false;
+                trail = null; // Keep the disabled legacy exhaust child on this instance.
+            }
+            foreach (var renderer in GetComponentsInChildren<MeshRenderer>())
+                renderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.On;
+        }
+
+        public void Cancel()
+        {
+            launched = false;
+            onHit = null;
+            arcadeExhaust = null;
+            gameObject.SetActive(false);
+            Destroy(gameObject);
+        }
+
+        private void EmitArcadeExhaust()
+        {
+            if (arcadeExhaust == null) return;
+            Vector3 point = transform.TransformPoint(exhaustLocal);
+            arcadeExhaust(previousExhaust, point);
+            previousExhaust = point;
+        }
 
         public void Launch(Transform aimTarget, Action<Vector3, Transform> hitCallback)
         {
@@ -28,6 +72,7 @@ namespace AirCombat
             onHit = hitCallback;
             if (target != null) lastTargetPosition = target.position;
             if (trail != null) { trail.Clear(); trail.emitting = true; }
+            previousExhaust = transform.TransformPoint(exhaustLocal);
             launched = true;
         }
 
@@ -37,6 +82,7 @@ namespace AirCombat
             var dt = Mathf.Min(Time.deltaTime, Mathf.Max(0f, lifetime - age));
             var from = transform.position;
             bool hasTarget = target != null && target.gameObject.activeInHierarchy;
+            if (arcadeExhaust != null && !WeaponLock.Alive(arcadeTarget)) hasTarget = false;
             if (hasTarget && RemainingManeuverBudget > 0f)
             {
                 var direction = target.position - from;
@@ -65,6 +111,7 @@ namespace AirCombat
                 if ((relativeStart + segment * t).sqrMagnitude <= hitRadius * hitRadius)
                 {
                     transform.position = Vector3.Lerp(from, to, t);
+                    EmitArcadeExhaust();
                     onHit?.Invoke(transform.position, target);
                     Finish();
                     return;
@@ -72,6 +119,7 @@ namespace AirCombat
                 lastTargetPosition = target.position;
             }
             transform.position = to;
+            EmitArcadeExhaust();
             age += dt;
             if (age >= lifetime) Finish();
         }

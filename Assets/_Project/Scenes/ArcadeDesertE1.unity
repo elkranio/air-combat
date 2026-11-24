@@ -2485,6 +2485,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::AirCombat.Air01Encounter
   enemyPrefab: {fileID: 36626630230575987, guid: e59bcec657b57044ea9bbfbb12121973, type: 3}
+  missilePrefab: {fileID: 1166229602950883390, guid: 22d60401b2f22264a94c1483e5f97a30, type: 3}
   spawnRadius: 550
   initialBoostSeconds: 0.8
 --- !u!1001 &2025167888

@@ -78,6 +78,7 @@ namespace AirCombat
         private Camera view;
         private ArcadeCameraFollow cameraFollow;
         private ParticleSystem sparks, debris, impactFlash, smoke, criticalSmoke, criticalCloud, criticalFire;
+        private ParticleSystem missileSmoke, missileCloud;
         private Material particleMaterial, puffMaterial, trailMaterial, cloudMaterial;
         private Texture2D puffMask, trailMask, cloudMask;
         private AudioSource audioSource;
@@ -118,6 +119,12 @@ namespace AirCombat
                 cloudMaterial.SetTexture("_ParticleMask", cloudMask);
                 criticalCloud.GetComponent<ParticleSystemRenderer>().sharedMaterial = cloudMaterial;
                 ConfigureDamageTrail();
+                missileSmoke = MakePuffs("AAM exhaust core", 768, true);
+                missileCloud = MakePuffs("AAM exhaust turbulence", 384, true);
+                missileSmoke.GetComponent<ParticleSystemRenderer>().sharedMaterial = trailMaterial;
+                missileCloud.GetComponent<ParticleSystemRenderer>().sharedMaterial = cloudMaterial;
+                ConfigureSmokeLayer(missileSmoke, false);
+                ConfigureSmokeLayer(missileCloud, true);
             }
             else Debug.LogWarning("Combat hit particles: SandboxEffect shader missing.", this);
             audioSource = gameObject.AddComponent<AudioSource>();
@@ -316,6 +323,8 @@ namespace AirCombat
             }
             ClearWrecks();
             groundCrash?.Clear();
+            if (missileSmoke != null) missileSmoke.Clear();
+            if (missileCloud != null) missileCloud.Clear();
             if (criticalSmoke != null) criticalSmoke.Clear();
             if (criticalCloud != null) criticalCloud.Clear();
             if (criticalFire != null) criticalFire.Clear();
@@ -420,8 +429,18 @@ namespace AirCombat
             tracked.PreviousAnchor = point;
         }
 
+        // Same soft layered smoke as the accepted wreck trail, with a narrower,
+        // lighter exhaust. Each missile owns its own distance accumulators.
+        public void EmitMissileExhaust(Vector3 previous, Vector3 current,
+            ref float coreDebt, ref float cloudDebt)
+        {
+            if (!isActiveAndEnabled) return;
+            EmitSmokeLayer(missileSmoke, previous, current, .55f, ref coreDebt, false, false, .72f, true);
+            EmitSmokeLayer(missileCloud, previous, current, 1.05f, ref cloudDebt, true, false, .72f, true);
+        }
+
         private void EmitSmokeLayer(ParticleSystem system, Vector3 previous, Vector3 current,
-            float spacing, ref float debt, bool cloud, bool severe, float intensity = 1f)
+            float spacing, ref float debt, bool cloud, bool severe, float intensity = 1f, bool missile = false)
         {
             if (system == null) return;
             float before = debt;
@@ -435,6 +454,11 @@ namespace AirCombat
                 float t = amount > .0001f ? Mathf.Clamp01((i + 1f - before) / amount) : 1f;
                 float tone = cloud ? Range(.20f, .28f) : Range(.13f, .19f);
                 float alpha = cloud ? Range(.11f, .20f) : Range(.19f, .29f);
+                if (missile)
+                {
+                    tone = cloud ? Range(.60f, .72f) : Range(.68f, .82f);
+                    alpha *= 1.35f;
+                }
                 var p = new ParticleSystem.EmitParams
                 {
                     position = Vector3.Lerp(previous, current, t),
@@ -443,8 +467,8 @@ namespace AirCombat
                         ? new Vector3(Range(-2.1f, 2.1f), Range(1.3f, 3.4f), Range(-2.1f, 2.1f))
                         : new Vector3(Range(-.45f, .45f), Range(.5f, 1.4f), Range(-.45f, .45f)),
                     startSize = trailSmokeSize * (cloud ? Range(1.15f, 1.8f) : Range(.9f, 1.25f))
-                        * (severe ? 1.10f : 1f) * Mathf.Sqrt(intensity),
-                    startLifetime = trailSmokeLifetime * Range(.85f, 1.12f),
+                        * (severe ? 1.10f : 1f) * Mathf.Sqrt(intensity) * (missile ? .75f : 1f),
+                    startLifetime = trailSmokeLifetime * Range(.85f, 1.12f) * (missile ? .8f : 1f),
                     startColor = new Color(tone, tone * .96f, tone * .91f,
                         Mathf.Clamp01(alpha * (severe ? 1.2f : 1f) * intensity)),
                     rotation = Range(0f, 360f)
@@ -724,6 +748,8 @@ namespace AirCombat
             if (audioSource != null) Destroy(audioSource);
             if (impactFlash != null) Destroy(impactFlash.gameObject);
             if (smoke != null) Destroy(smoke.gameObject);
+            if (missileSmoke != null) Destroy(missileSmoke.gameObject);
+            if (missileCloud != null) Destroy(missileCloud.gameObject);
             if (criticalSmoke != null) Destroy(criticalSmoke.gameObject);
             if (criticalCloud != null) Destroy(criticalCloud.gameObject);
             if (criticalFire != null) Destroy(criticalFire.gameObject);
