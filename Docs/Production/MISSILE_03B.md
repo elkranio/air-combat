@@ -14,3 +14,9 @@ Base `fcb3b47`; 03a evasion mechanically works but the warning does not reveal d
 4. R during warning and flight; verify no stale indicators, contacts, glow, smoke or sound. Kill one shooter while its missile is airborne; warning vanishes but fired missile continues. Defeat/victory clear stress-test threats. Regression: WeaponLab and GroundAttackLab.
 
 Next: evasion tuning and normal enemy attack pacing; no global cap yet. Q/E reserved for per-slot loadout cycling.
+
+## MISSILE-03b1 — hostile missile visual cleanup
+
+Base `54b0d90`. 03b warning/radar behavior retained. Hostile missile only: cool medium-light grey hull, +12% instance visual scale (explicit hit radius unchanged), short two-tone motor glow moving with the nozzle, shorter and less opaque grey exhaust. Hostile smoke lifetime factor .52 vs .8 (35% reduction); friendly missile and damaged aircraft smoke unchanged. No guidance, timing, damage, radar or warning changes. Next: refine launch marker separately.
+
+Play Mode: compare missile body against sand and dark terrain, inspect engine glow at different frame rates, confirm shortened trail and preserved shadows, R during a volley. Confirm player AAM and legacy labs still look unchanged.

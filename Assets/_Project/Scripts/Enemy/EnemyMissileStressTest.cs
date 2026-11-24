@@ -164,6 +164,9 @@ namespace AirCombat
             Vector3 heading = Vector3.ProjectOnPlane(owner.forward, Vector3.up).normalized;
             var missile = Instantiate(prefab, point, Quaternion.LookRotation(heading, Vector3.up));
             missile.name = "Tiger AAM / stress test";
+            // This prefab has no physics collider; ConfigureArcade retains the
+            // explicit gameplay radius. Scale only this instance's visible geometry/exhaust.
+            missile.transform.localScale *= 1.12f;
             float coreDebt = 1f, cloudDebt = 1f;
             missile.ConfigureArcade(target, settings.speed, settings.turnRate, settings.turnBudget,
                 settings.lifetime, settings.hitRadius, (from, to) =>
@@ -175,7 +178,7 @@ namespace AirCombat
             foreach (var renderer in missile.GetComponentsInChildren<MeshRenderer>())
             {
                 renderer.GetPropertyBlock(tint);
-                tint.SetColor("_BaseColor", new Color(.12f, .15f, .18f, 1f));
+                tint.SetColor("_BaseColor", new Color(.52f, .60f, .67f, 1f));
                 tint.SetFloat("_Smoothness", .12f);
                 renderer.SetPropertyBlock(tint);
             }

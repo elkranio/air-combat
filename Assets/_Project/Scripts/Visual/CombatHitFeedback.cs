@@ -448,13 +448,26 @@ namespace AirCombat
             if (!isActiveAndEnabled) return;
             if (hostile)
             {
-                EmitSmokeLayer(hostileSmoke, previous, current, .55f, ref coreDebt, false, false, 1f, true, true);
-                EmitSmokeLayer(hostileCloud, previous, current, 1.05f, ref cloudDebt, true, false, 1f, true, true);
+                EmitSmokeLayer(hostileSmoke, previous, current, .55f, ref coreDebt, false, false, .85f, true, true);
+                EmitSmokeLayer(hostileCloud, previous, current, 1.05f, ref cloudDebt, true, false, .85f, true, true);
                 if (hostileGlow != null)
+                {
+                    // Keep the hot core close to the moving nozzle instead of
+                    // painting a long stationary orange streak behind the missile.
+                    Vector3 movement = current - previous;
+                    Vector3 direction = movement.normalized;
+                    Vector3 motorVelocity = movement / Mathf.Max(.001f, Time.deltaTime) * .85f;
                     hostileGlow.Emit(new ParticleSystem.EmitParams {
-                        position = current, velocity = Vector3.zero, startSize = 2.4f,
-                        startLifetime = .045f, startColor = new Color(1f, .24f, .035f, 1f)
+                        position = current - direction * .85f, velocity = motorVelocity,
+                        startSize = 1.55f, startLifetime = .04f,
+                        startColor = new Color(1f, .48f, .12f, .78f)
                     }, 1);
+                    hostileGlow.Emit(new ParticleSystem.EmitParams {
+                        position = current - direction * .28f, velocity = motorVelocity,
+                        startSize = .95f, startLifetime = .04f,
+                        startColor = new Color(1f, .94f, .68f, 1f)
+                    }, 1);
+                }
                 return;
             }
             EmitSmokeLayer(missileSmoke, previous, current, .55f, ref coreDebt, false, false, .72f, true);
@@ -482,8 +495,8 @@ namespace AirCombat
                     alpha *= 1.35f;
                     if (hostile)
                     {
-                        tone = cloud ? Range(.36f, .48f) : Range(.23f, .34f);
-                        alpha *= 1.25f;
+                        tone = cloud ? Range(.48f, .59f) : Range(.39f, .50f);
+                        alpha *= 1.05f;
                     }
                 }
                 var p = new ParticleSystem.EmitParams
@@ -495,7 +508,7 @@ namespace AirCombat
                         : new Vector3(Range(-.45f, .45f), Range(.5f, 1.4f), Range(-.45f, .45f)),
                     startSize = trailSmokeSize * (cloud ? Range(1.15f, 1.8f) : Range(.9f, 1.25f))
                         * (severe ? 1.10f : 1f) * Mathf.Sqrt(intensity) * (missile ? .75f : 1f),
-                    startLifetime = trailSmokeLifetime * Range(.85f, 1.12f) * (missile ? .8f : 1f),
+                    startLifetime = trailSmokeLifetime * Range(.85f, 1.12f) * (hostile ? .52f : missile ? .8f : 1f),
                     startColor = new Color(tone, tone * .96f, tone * .91f,
                         Mathf.Clamp01(alpha * (severe ? 1.2f : 1f) * intensity)),
                     rotation = Range(0f, 360f)
