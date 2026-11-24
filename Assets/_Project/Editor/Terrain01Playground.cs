@@ -18,6 +18,10 @@ namespace AirCombat
         private const string DataPath = ArtFolder + "/Terrain01_Source.asset";
         private const string MeshPath = ArtFolder + "/Terrain01_Facets.asset";
         private const string MaterialPath = ArtFolder + "/Terrain01_Sand.mat";
+        private const string PalettePath = ArtFolder + "/Terrain01_ReliefPalette.asset";
+        private const int PaletteSize = 64;
+        private const float MinAlbedo = .68f;
+        private const float ContrastHeightRange = 180f;
         private const string SourceName = "TERRAIN-01 / Editable source";
         private const string MeshName = "TERRAIN-01 / Faceted surface";
         private const float MapSize = 2400f; // Visual playground extent.
@@ -163,7 +167,10 @@ namespace AirCombat
         [MenuItem("Air Combat/Terrain/Trial Macro Relief")]
         private static void TrialMacroRelief() => Rebake(true);
 
-        private static void Rebake(bool regenerateMacroRelief)
+        [MenuItem("Air Combat/Terrain/Trial Relief Contrast")]
+        private static void TrialReliefContrast() => Rebake(true, true);
+
+        private static void Rebake(bool regenerateMacroRelief, bool contrast = false)
         {
             if (EditorApplication.isPlayingOrWillChangePlaymode) return;
             Scene scene = SceneManager.GetActiveScene();
@@ -184,9 +191,23 @@ namespace AirCombat
                 Debug.LogError("TERRAIN-01: source or generated asset references are missing/changed; no assets overwritten.");
                 return;
             }
-            if (regenerateMacroRelief && !EditorUtility.DisplayDialog("TERRAIN-04 / Macro Relief",
+            var renderer = surface.GetComponent<MeshRenderer>();
+            var material = AssetDatabase.LoadAssetAtPath<Material>(MaterialPath);
+            var palette = AssetDatabase.LoadAssetAtPath<Texture2D>(PalettePath);
+            if (regenerateMacroRelief && (renderer == null || material == null ||
+                renderer.sharedMaterial != material || !material.HasProperty("_BaseMap") ||
+                (material.GetTexture("_BaseMap") != null && material.GetTexture("_BaseMap") != palette) ||
+                (contrast && palette == null && AssetDatabase.LoadMainAssetAtPath(PalettePath) != null)))
+            {
+                Debug.LogError("TERRAIN-01: unexpected material or palette; no assets overwritten.");
+                return;
+            }
+            if (regenerateMacroRelief && !EditorUtility.DisplayDialog(
+                contrast ? "TERRAIN-05 / Relief Contrast" : "TERRAIN-04 / Macro Relief",
                 "Replace the trial heightmap and rebake its facets? This overwrites current trial sculpting. The main map is not affected.",
                 "Generate", "Cancel")) return;
+            if (contrast && palette == null)
+                palette = CreateReliefPalette();
             Undo.IncrementCurrentGroup();
             int undoGroup = Undo.GetCurrentGroup();
             Undo.RegisterCompleteObjectUndo(mesh, "Rebake TERRAIN-01 mesh");
@@ -196,8 +217,14 @@ namespace AirCombat
             if (regenerateMacroRelief)
             {
                 Undo.RegisterCompleteObjectUndo(source.terrainData, "Replace trial heightmap");
-                source.terrainData.SetHeights(0, 0, MakeMacroHeights(source.terrainData));
+                Vector3 size = source.terrainData.size;
+                size.y = contrast ? ContrastHeightRange : HeightRange;
+                source.terrainData.size = size;
+                source.terrainData.SetHeights(0, 0, MakeMacroHeights(source.terrainData, contrast));
                 EditorUtility.SetDirty(source.terrainData);
+                Undo.RecordObject(material, "Set relief contrast palette");
+                material.SetTexture("_BaseMap", contrast ? palette : null);
+                EditorUtility.SetDirty(material);
             }
             FillMesh(mesh, source.terrainData, Cells);
             surface.transform.SetPositionAndRotation(source.transform.position, source.transform.rotation);
@@ -217,9 +244,31 @@ namespace AirCombat
             Debug.Log("TERRAIN-01 rebaked from the edited heightmap. Save the scene if needed.");
         }
 
+        // URP Lit does not multiply vertex colors. A small linear palette sampled
+        // at each face's constant UV gives real albedo variation without a custom shader.
+        private static Texture2D CreateReliefPalette()
+        {
+            var palette = new Texture2D(PaletteSize, 1, TextureFormat.RGBA32, false, true)
+            {
+                name = "Terrain01 Relief Palette",
+                filterMode = FilterMode.Bilinear,
+                wrapMode = TextureWrapMode.Clamp
+            };
+            var colors = new Color[PaletteSize];
+            for (int i = 0; i < colors.Length; i++)
+            {
+                float value = Mathf.Lerp(MinAlbedo, 1f, i / (float)(PaletteSize - 1));
+                colors[i] = new Color(value, value, value, 1f);
+            }
+            palette.SetPixels(colors);
+            palette.Apply(false);
+            AssetDatabase.CreateAsset(palette, PalettePath);
+            return palette;
+        }
+
         // Macro geography first: unequal uplands separated by connected low country.
         // Noise only bends the outlines and adds restrained relief within the slopes.
-        private static float[,] MakeMacroHeights(TerrainData data)
+        private static float[,] MakeMacroHeights(TerrainData data, bool contrast)
         {
             int n = data.heightmapResolution;
             var heights = new float[n, n];
@@ -236,10 +285,12 @@ namespace AirCombat
                 float d = Landform(px, pz, .12f, .15f, .12f, .17f, -40f, .15f) * 30f;
                 float mass = Mathf.Max(Mathf.Max(a, b), Mathf.Max(c, d));
                 // The lowlands remain quiet; finer relief is proportional to the mass.
-                float floor = 3f + 5f * Mathf.PerlinNoise(u * 2f + 5f, v * 2f + 15f);
+                float floor = 3f + (contrast ? 3f : 5f) * Mathf.PerlinNoise(u * 2f + 5f, v * 2f + 15f);
                 float detail = (2f * Mathf.PerlinNoise(u * 9f + 63f, v * 9f + 17f) - 1f)
-                    * 6f * Mathf.SmoothStep(0f, 1f, Mathf.Clamp01(mass / 35f));
-                heights[z, x] = Mathf.Clamp01((floor + mass + detail) / data.size.y);
+                    * (contrast ? 10f : 6f) * Mathf.SmoothStep(0f, 1f, Mathf.Clamp01(mass / 35f));
+                // Preserve the exact warped footprints; increase vertical relief only.
+                float elevation = floor + mass * (contrast ? 1.8f : 1f) + detail;
+                heights[z, x] = Mathf.Clamp01(elevation / data.size.y);
             }
             return heights;
         }
@@ -294,6 +345,7 @@ namespace AirCombat
             int count = cells * cells * 6;
             var vertices = new Vector3[count];
             var indices = new int[count];
+            var uv = new Vector2[count];
             int cursor = 0;
             for (int z = 0; z < cells; z++)
             for (int x = 0; x < cells; x++)
@@ -313,14 +365,24 @@ namespace AirCombat
             mesh.indexFormat = count > 65535 ? IndexFormat.UInt32 : IndexFormat.UInt16;
             mesh.vertices = vertices;
             mesh.triangles = indices;
+            mesh.uv = uv;
             mesh.RecalculateNormals(); // Separate vertices for every face = flat shading.
             mesh.RecalculateBounds();
 
             void Triangle(Vector3 a, Vector3 b, Vector3 c)
             {
-                vertices[cursor] = a; indices[cursor] = cursor; cursor++;
-                vertices[cursor] = b; indices[cursor] = cursor; cursor++;
-                vertices[cursor] = c; indices[cursor] = cursor; cursor++;
+                // Height and slope, not random triangle colors. Shared material and
+                // dynamic lighting remain intact; only the palette affects albedo.
+                float elevation = (a.y + b.y + c.y) / 3f;
+                float normalY = Vector3.Cross(b - a, c - a).normalized.y;
+                float high = Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(5f, 145f, elevation));
+                float steep = Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(.015f, .18f, 1f - normalY));
+                float albedo = Mathf.Lerp(.84f, 1f, high) - .16f * steep;
+                float t = Mathf.InverseLerp(MinAlbedo, 1f, albedo);
+                var faceUV = new Vector2((.5f + t * (PaletteSize - 1)) / PaletteSize, .5f);
+                vertices[cursor] = a; indices[cursor] = cursor; uv[cursor++] = faceUV;
+                vertices[cursor] = b; indices[cursor] = cursor; uv[cursor++] = faceUV;
+                vertices[cursor] = c; indices[cursor] = cursor; uv[cursor++] = faceUV;
             }
         }
     }

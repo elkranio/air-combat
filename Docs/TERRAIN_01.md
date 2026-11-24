@@ -18,6 +18,14 @@ To edit: stop Play, hide `TERRAIN-01 / Faceted surface`, select `TERRAIN-01 / Ed
 
 With Terrain01Playground open in Edit Mode, choose **Air Combat > Terrain > Trial Macro Relief** and confirm. This explicitly replaces the existing trial heightmap and rebakes the same mesh asset; ordinary Rebake remains non-destructive to sculpted heights. The four unequal, rotated and warped landforms leave broad connected lowlands, with a quiet floor and restrained local noise. The 84 x 84 facet grid, material, terrain transform (Y-30), camera and flight remain unchanged. The main map is untouched. Save and commit the updated source and mesh assets if accepted; use Undo or restore the previous green to compare.
 
+## TERRAIN-05 — Relief contrast (trial)
+
+Open Terrain01Playground in Edit Mode and choose **Air Combat > Terrain > Trial Relief Contrast**. Confirm replacing the trial heightmap. The four warped landform footprints and 84 x 84 facet grid stay the same; vertical mass is multiplied by 1.8, the source height range expands to 180 units to avoid clipping summits, and local upland detail increases from 6 to 10 units. Lowlands have a quieter 3-unit variation. Both terrain transforms remain at Y-30. No camera, lighting, flight or main-map changes.
+
+The existing URP Lit material uses a generated 64 x 1 linear albedo palette (`Terrain01_ReliefPalette.asset`) with constant UVs per triangle. Elevation brightens the surface and steep slopes darken it slightly; there is no random face color, shader replacement or baked sunlight. Normal Rebake preserves current sculpting, height range and palette. **Trial Macro Relief** restores the original procedural relief and removes the palette from the material (the palette asset can remain for reuse). Both trial generation commands overwrite the trial heightmap explicitly; Undo or restore the previous green to compare.
+
+This is still a visual-only test: some peaks can exceed Y78 or Y110, and the aircraft can intersect the surface because terrain collision is not implemented. Use 9 (Y150) to inspect the full relief safely, then 7/8 to compare readability at gameplay height. Save and commit the changed terrain source, mesh, material, new palette asset and its .meta if accepted. Check that the original main map is unaffected.
+
 ## Acceptance
 
 - No missing components or errors during scene creation or Play.
