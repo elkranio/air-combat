@@ -196,17 +196,20 @@ namespace AirCombat
             {
                 defeated = true;
                 if (playerTrigger != null) playerTrigger.enabled = false;
+                if (hitFeedback != null)
+                    hitFeedback.SpawnWreck(playerHealth, playerFlight != null ? playerFlight.CurrentSpeed : 70f);
                 if (playerFlight != null) playerFlight.enabled = false;
                 playerBreak?.CancelBreak();
                 playerBoost?.Tick(false, 0f);
                 ClearRounds(player.transform);
-                RemoveAllFighters();
+                for (int i = fighters.Count - 1; i >= 0; i--)
+                    RemoveFighterAt(i, !fighters[i].Health.IsAlive);
                 return;
             }
 
             for (int i = fighters.Count - 1; i >= 0; i--)
             {
-                if (!fighters[i].Health.IsAlive) RemoveFighterAt(i);
+                if (!fighters[i].Health.IsAlive) RemoveFighterAt(i, true);
             }
             if (fighters.Count == 0) victory = true;
             for (int i = 0; i < fighters.Count; i++)
@@ -263,10 +266,14 @@ namespace AirCombat
             }
         }
 
-        private void RemoveFighterAt(int index)
+        private void RemoveFighterAt(int index, bool destroyed = false)
         {
             Fighter fighter = fighters[index];
-            if (hitFeedback != null) hitFeedback.Untrack(fighter.Health);
+            if (hitFeedback != null)
+            {
+                if (destroyed) hitFeedback.SpawnWreck(fighter.Health, fighter.Flight.CurrentSpeed);
+                hitFeedback.Untrack(fighter.Health);
+            }
             if (radar != null && fighter.Contact != null) radar.Unregister(fighter.Contact);
             if (fighter.Root != null)
             {

@@ -56,13 +56,14 @@ namespace AirCombat
             public Transform Visual;
             public MeshFilter[] HullMeshes;
             public DamageSurfaceAnchor DamageAnchor;
-            public bool AnchorAttempted, TrailActive;
+            public bool AnchorAttempted, TrailActive, HiddenForWreck;
             public Vector3 PreviousAnchor;
             public float SmokeDebt, CloudDebt, FireDebt;
             public readonly List<Slot> Slots = new List<Slot>();
         }
         private readonly Dictionary<PlayerHitPoints, Tracked> targets =
             new Dictionary<PlayerHitPoints, Tracked>();
+        private readonly List<AircraftWreck> wrecks = new List<AircraftWreck>();
         // Separate random stream: presentation cannot change enemy spawn/AI RNG.
         private readonly System.Random random = new System.Random(8153);
         private Camera view;
@@ -132,7 +133,7 @@ namespace AirCombat
                 foreach (var filter in tracked.Visual.GetComponentsInChildren<MeshFilter>(false))
                 {
                     var renderer = filter.GetComponent<MeshRenderer>();
-                    if (renderer != null && renderer.enabled && filter.sharedMesh != null && filter.sharedMesh.isReadable)
+                    if (renderer != null && renderer.enabled && filter.sharedMesh != null)
                         filters.Add(filter);
                 }
                 tracked.HullMeshes = filters.ToArray();
@@ -160,6 +161,25 @@ namespace AirCombat
             health.Damaged -= OnDamage;
             Restore(tracked);
             targets.Remove(health);
+        }
+
+        // Called once by the encounter before removing a killed aircraft. The
+        // damage source is preserved in model-local coordinates on the wreck.
+        public void SpawnWreck(PlayerHitPoints health, float speed)
+        {
+            if (health == null || health.IsAlive || !targets.TryGetValue(health, out var tracked)) return;
+            Restore(tracked);
+            if (!tracked.DamageAnchor.IsValid && !tracked.AnchorAttempted)
+                tracked.DamageAnchor = DamageSurfaceAnchor.Choose(tracked.Visual, tracked.HullMeshes, random);
+            var wreck = AircraftWreck.Create(health.transform, tracked.HullMeshes,
+                speed, tracked.DamageAnchor, random);
+            if (wreck == null) return;
+            wrecks.Add(wreck);
+            if (tracked.IsPlayer && tracked.Visual != null)
+            {
+                tracked.HiddenForWreck = true;
+                tracked.Visual.gameObject.SetActive(false);
+            }
         }
 
         private void OnDamage(PlayerHitPoints health, Vector3 point)
@@ -224,6 +244,37 @@ namespace AirCombat
                 if (tracked.Flashing && Time.time >= tracked.FlashUntil) Restore(tracked);
                 TickDamageTrail(pair.Key, tracked, Time.deltaTime);
             }
+            TickWrecks(Time.deltaTime);
+        }
+
+        private void TickWrecks(float dt)
+        {
+            for (int i = wrecks.Count - 1; i >= 0; i--)
+            {
+                var wreck = wrecks[i];
+                bool airborne = wreck.Step(dt);
+                if (airborne && wreck.HasAnchor && dt > 0f)
+                {
+                    Vector3 point = wreck.AnchorPosition;
+                    EmitSmokeLayer(criticalSmoke, wreck.PreviousAnchor, point,
+                        trailSmokeSpacing, ref wreck.SmokeDebt, false, true, 1.6f);
+                    EmitSmokeLayer(criticalCloud, wreck.PreviousAnchor, point,
+                        trailCloudSpacing, ref wreck.CloudDebt, true, true, 1.6f);
+                    EmitFireTrail(wreck.PreviousAnchor, point, dt, ref wreck.FireDebt, 1.8f);
+                    wreck.PreviousAnchor = point;
+                }
+                if (airborne) continue;
+                // Ground impact FX is the next atom; keep its exact terrain point
+                // on the wreck for that handoff. No combat damage is applied here.
+                wreck.Dispose();
+                wrecks.RemoveAt(i);
+            }
+        }
+
+        private void ClearWrecks()
+        {
+            foreach (var wreck in wrecks) wreck.Dispose();
+            wrecks.Clear();
         }
 
         public void ResetEffects()
@@ -232,7 +283,11 @@ namespace AirCombat
             {
                 Restore(tracked);
                 ResetTrail(tracked);
+                if (tracked.HiddenForWreck && tracked.Visual != null)
+                    tracked.Visual.gameObject.SetActive(true);
+                tracked.HiddenForWreck = false;
             }
+            ClearWrecks();
             if (criticalSmoke != null) criticalSmoke.Clear();
             if (criticalCloud != null) criticalCloud.Clear();
             if (criticalFire != null) criticalFire.Clear();
@@ -338,7 +393,7 @@ namespace AirCombat
         }
 
         private void EmitSmokeLayer(ParticleSystem system, Vector3 previous, Vector3 current,
-            float spacing, ref float debt, bool cloud, bool severe)
+            float spacing, ref float debt, bool cloud, bool severe, float intensity = 1f)
         {
             if (system == null) return;
             float before = debt;
@@ -360,20 +415,21 @@ namespace AirCombat
                         ? new Vector3(Range(-2.1f, 2.1f), Range(1.3f, 3.4f), Range(-2.1f, 2.1f))
                         : new Vector3(Range(-.45f, .45f), Range(.5f, 1.4f), Range(-.45f, .45f)),
                     startSize = trailSmokeSize * (cloud ? Range(1.15f, 1.8f) : Range(.9f, 1.25f))
-                        * (severe ? 1.10f : 1f),
+                        * (severe ? 1.10f : 1f) * Mathf.Sqrt(intensity),
                     startLifetime = trailSmokeLifetime * Range(.85f, 1.12f),
-                    startColor = new Color(tone, tone * .96f, tone * .91f, alpha * (severe ? 1.2f : 1f)),
+                    startColor = new Color(tone, tone * .96f, tone * .91f,
+                        Mathf.Clamp01(alpha * (severe ? 1.2f : 1f) * intensity)),
                     rotation = Range(0f, 360f)
                 };
                 system.Emit(p, 1);
             }
         }
 
-        private void EmitFireTrail(Vector3 previous, Vector3 current, float dt, ref float debt)
+        private void EmitFireTrail(Vector3 previous, Vector3 current, float dt, ref float debt, float intensity = 1f)
         {
             if (criticalFire == null || dt <= 0f) return;
             float before = debt;
-            float amount = Mathf.Max(0f, dt * trailFireRate);
+            float amount = Mathf.Max(0f, dt * trailFireRate * intensity);
             float total = before + amount;
             int count = Mathf.Min(12, Mathf.FloorToInt(total));
             debt = total - Mathf.Floor(total);
@@ -384,7 +440,7 @@ namespace AirCombat
                 {
                     position = Vector3.Lerp(previous, current, t),
                     velocity = Vector3.up * Range(.3f, 1.2f),
-                    startSize = trailFireSize * Range(.75f, 1.2f),
+                    startSize = trailFireSize * Range(.75f, 1.2f) * Mathf.Sqrt(intensity),
                     startLifetime = Range(.10f, .19f),
                     startColor = new Color(1f, .85f, .31f, .85f),
                     rotation = Range(0f, 360f)
@@ -626,6 +682,7 @@ namespace AirCombat
 
         private void OnDestroy()
         {
+            ClearWrecks();
             foreach (var pair in targets)
             {
                 if (pair.Key != null) pair.Key.Damaged -= OnDamage;
