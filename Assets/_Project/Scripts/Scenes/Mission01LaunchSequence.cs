@@ -5,6 +5,7 @@ namespace AirCombat
 {
     // Mission-specific launch state. Normal flight remains owned by FlightController.
     [DisallowMultipleComponent]
+    [DefaultExecutionOrder(-40)] // Before normal flight; E1 session initializes first.
     public sealed class Mission01LaunchSequence : MonoBehaviour
     {
         public enum Phase { Intro, Ready, Takeoff, Flight }
@@ -12,6 +13,22 @@ namespace AirCombat
         [SerializeField] private FlightController flight;
         [SerializeField] private PlayerWeaponTrigger weaponTrigger;
         [SerializeField] private bool skipIntro = true;
+
+        [Header("Automatic takeoff (WIP)")]
+        [SerializeField, Min(.1f)] private float rollSeconds = 2.2f;
+        [SerializeField, Min(.1f)] private float climbSeconds = 2.5f;
+        [SerializeField, Min(1f)] private float cruiseAltitude = 78f;
+        [SerializeField, Range(0f, 35f)] private float maxPitch = 18f;
+
+        private Transform aircraft;
+        private Transform visual;
+        private Afterburner boost;
+        private AfterburnerVfx flames;
+        private Vector3 runwayPosition;
+        private Quaternion runwayRotation, visualRest;
+        private float elapsed;
+        private bool handoverPending;
+        private bool initialized;
 
         public Phase State { get; private set; } = Phase.Intro;
 
@@ -31,8 +48,22 @@ namespace AirCombat
                 enabled = false;
                 return;
             }
+            aircraft = flight.transform;
+            visual = flight.Visual;
+            boost = aircraft.GetComponent<Afterburner>();
+            flames = visual != null ? visual.GetComponent<AfterburnerVfx>() : null;
+            if (visual == null || boost == null || flames == null)
+            {
+                Debug.LogError("Mission01 launch: missing Lynx visual or afterburner.", this);
+                enabled = false;
+                return;
+            }
+            runwayPosition = aircraft.position;
+            runwayRotation = aircraft.rotation;
+            visualRest = visual.localRotation;
             flight.enabled = false;
             weaponTrigger.enabled = false;
+            initialized = true;
             State = Phase.Intro;
         }
 
@@ -49,27 +80,82 @@ namespace AirCombat
 
         private void Update()
         {
-            if (!Application.isFocused) return;
             var keyboard = Keyboard.current;
-            if (keyboard == null) return;
-            if (State == Phase.Takeoff && keyboard.rKey.wasPressedThisFrame)
+            if (Application.isFocused && keyboard != null && keyboard.rKey.wasPressedThisFrame)
             {
-                State = Phase.Ready;
+                ResetToReady();
                 return;
             }
-            if (State == Phase.Ready && keyboard.wKey.wasPressedThisFrame)
+            if (State == Phase.Ready && Application.isFocused && keyboard != null && keyboard.wKey.wasPressedThisFrame)
             {
-                // Atom E intentionally stops here. Atom F implements motion and handover.
+                elapsed = 0f;
+                handoverPending = false;
                 State = Phase.Takeoff;
-                Debug.Log("Mission01: takeoff requested.", this);
+                // Existing straight twin plumes, independent of the gameplay tank.
+                flames.SetManeuverFlames(true);
+                return;
             }
+            if (State == Phase.Takeoff) TickTakeoff(Time.deltaTime);
+        }
+
+        private void TickTakeoff(float dt)
+        {
+            float roll = Mathf.Max(.1f, rollSeconds);
+            float climb = Mathf.Max(.1f, climbSeconds);
+            elapsed = Mathf.Min(roll + climb, elapsed + Mathf.Max(0f, dt));
+            float speed = flight.CruiseSpeed;
+            float t = Mathf.Min(elapsed, roll);
+            float airTime = Mathf.Max(0f, elapsed - roll);
+            // Analytic integral of linear acceleration; deterministic at any FPS.
+            float distance = .5f * speed * t * t / roll + speed * airTime;
+            float u = Mathf.Clamp01(airTime / climb);
+            float rise = Mathf.Max(0f, cruiseAltitude - runwayPosition.y) * Mathf.SmoothStep(0f, 1f, u);
+            Vector3 forward = runwayRotation * Vector3.forward;
+            aircraft.SetPositionAndRotation(runwayPosition + forward * distance + Vector3.up * rise, runwayRotation);
+            // Pitch the visual only. Limit pitch near the runway so the tail does not dip through it.
+            float pitch = Mathf.Min(maxPitch * Mathf.Sin(Mathf.PI * u), Mathf.Atan2(rise, 7.5f) * Mathf.Rad2Deg);
+            visual.localRotation = visualRest * Quaternion.Euler(-Mathf.Max(0f, pitch), 0f, 0f);
+            if (elapsed >= roll + climb) handoverPending = true;
+        }
+
+        private void LateUpdate()
+        {
+            if (State != Phase.Takeoff || !handoverPending) return;
+            // Enable after Update so the motor cannot translate twice on this frame.
+            handoverPending = false;
+            visual.localRotation = visualRest;
+            flames.SetManeuverFlames(false);
+            flight.PrepareCruiseHandover();
+            State = Phase.Flight;
+            flight.enabled = true;
+            // Weapons stay disabled until the mission loadout/objective atom.
+        }
+
+        private void ResetToReady()
+        {
+            handoverPending = false;
+            elapsed = 0f;
+            flight.enabled = false;
+            weaponTrigger.enabled = false;
+            flames.SetManeuverFlames(false);
+            // A repeat sortie starts with a full tank, as a fresh mission does.
+            boost.enabled = false;
+            boost.enabled = true;
+            aircraft.SetPositionAndRotation(runwayPosition, runwayRotation);
+            visual.localRotation = visualRest;
+            State = Phase.Ready;
+        }
+
+        private void OnDisable()
+        {
+            if (initialized && flames != null) flames.SetManeuverFlames(false);
         }
 
         private void OnGUI()
         {
             if (Event.current.type != EventType.Repaint || State == Phase.Flight) return;
             string message = State == Phase.Intro ? "MISSION INTRO" :
-                State == Phase.Ready ? "PRESS W TO TAKE OFF" : "TAKEOFF REQUESTED";
+                State == Phase.Ready ? "PRESS W TO TAKE OFF" : "TAKEOFF";
             var style = new GUIStyle(GUI.skin.label)
             {
                 alignment = TextAnchor.MiddleCenter,

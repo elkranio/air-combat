@@ -98,6 +98,10 @@ Replace the temporary airborne mission player at its current pose, rebind the fl
 
 Base `768901f`. Open Mission01_FirstSortie and select **Air Combat > Missions > Install Mission 01 Ready State**. Move the actual player Lynx to the exact runway placeholder pose (including ground clearance), disable the placeholder and keep the current camera/session bindings. Save the scene. The mission-only `Mission01LaunchSequence` owns Intro, Ready, Takeoff and Flight states. Intro is skipped by default; a future cutscene can call CompleteIntro. Normal flight and weapons stay disabled. W in Ready changes the state to Takeoff and shows a temporary confirmation; movement and handover are deliberately deferred to F. R returns the requested state to Ready. No changes to shared prefabs, flight tuning, camera or airfield.
 
+## MISSION-01F — Automatic takeoff (WIP)
+
+Base `b005aca`. With the saved E scene open, press Play; no installer or new scene objects. W starts a scripted takeoff: 2.2 s linear acceleration to the existing cruise speed, 2.5 s smooth climb to Y78, visual-only nose pitch up to 18 degrees, and straight afterburner plumes throughout without consuming the combat boost tank. The existing camera follows the player. At handover the visual returns to its rest rotation and the flight motor is re-seeded at cruise speed; normal WASD resumes, and W must be released before a new boost if held through handover. Weapons remain disabled. R returns to the runway Ready state (including a full boost tank) from any phase. Tuning is on Mission01LaunchSequence in the Inspector. No change to the shared flight tuning or other scenes; verify in Unity.
+
 ## Next work (order flexible, all WIP)
 
 Current visual trial: [ART-CT-01 — Compact control tower](ART_CT_01.md).

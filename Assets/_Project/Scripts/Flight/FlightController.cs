@@ -25,11 +25,13 @@ namespace AirCombat
         [SerializeField, Min(1f)] private float bankRate = 160f;
 
         public float CurrentSpeed => motor != null ? motor.CurrentSpeed : cruiseSpeed;
+        public float CruiseSpeed => Mathf.Clamp(cruiseSpeed, minSpeed, maxSpeed);
         public Transform Visual => visual; // Shared with optional flight maneuvers.
         private AircraftMotor motor;
         private BreakTurn breakTurn;
         private CabrageManeuver cabrage;
         private bool variableManeuverability;
+        private bool waitForBoostRelease;
         private float tightSpeed, boostTurnMultiplier, tightTurnMultiplier, maneuverResponse;
 
         // Explicit opt-in from the production scene; legacy labs retain Q/E and
@@ -58,6 +60,14 @@ namespace AirCombat
         private void Awake()
         {
             motor = new AircraftMotor(transform, visual, Mathf.Clamp(cruiseSpeed, minSpeed, maxSpeed));
+        }
+
+        // Called after a scripted launch, with the visual already back at rest.
+        // Re-seed the motor even on a repeated sortie; keep all flight tuning.
+        public void PrepareCruiseHandover()
+        {
+            motor = new AircraftMotor(transform, visual, CruiseSpeed);
+            waitForBoostRelease = Keyboard.current != null && Keyboard.current.wKey.isPressed;
         }
 
         private void Update()
@@ -120,7 +130,9 @@ namespace AirCombat
             bool focused = Application.isFocused && keyboard != null;
             // S takes priority if both are held; fuel is consumed exactly once.
             bool tightHeld = focused && keyboard.sKey.isPressed;
-            bool boostHeld = focused && !tightHeld && keyboard.wKey.isPressed;
+            if (waitForBoostRelease && keyboard != null && !keyboard.wKey.isPressed)
+                waitForBoostRelease = false;
+            bool boostHeld = focused && !tightHeld && !waitForBoostRelease && keyboard.wKey.isPressed;
             float steer = focused ? (keyboard.dKey.isPressed ? 1f : 0f)
                 - (keyboard.aKey.isPressed ? 1f : 0f) : 0f;
 
