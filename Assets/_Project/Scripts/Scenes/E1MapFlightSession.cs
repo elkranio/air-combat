@@ -84,12 +84,16 @@ namespace AirCombat
             if (combatHud != null || encounter != null)
             {
                 var radar = player.GetComponent<AircraftRadar>();
-                if (radar == null) radar = player.gameObject.AddComponent<AircraftRadar>();
+                var health = player.GetComponent<PlayerHitPoints>();
+                if (radar == null || health == null)
+                {
+                    Debug.LogError("E1: combat player prefab needs authored radar and health.", player);
+                    enabled = false;
+                    return;
+                }
                 // Parked art trials are not hostile contacts during a live encounter.
                 if (encounter == null && airContacts != null)
                     foreach (var contact in airContacts) radar.Register(contact);
-                var health = player.GetComponent<PlayerHitPoints>();
-                if (health == null) health = player.gameObject.AddComponent<PlayerHitPoints>();
                 health.ResetHealth();
                 if (encounter != null)
                     encounter.Bind(player, cameraRig.ViewCamera, radar, health, resetHalfExtent);

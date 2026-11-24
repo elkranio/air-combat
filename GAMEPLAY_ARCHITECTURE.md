@@ -28,6 +28,10 @@ Existing `Prefabs/Aircraft` (including Tiger fighter and chassis), `Prefabs/Came
 
 Drag `AA02_Mantis_Combat.prefab` into the scene. Create a route with `Air Combat > Mission > Create Patrol Route` or use an existing route. Assign it in the unit’s `GroundPatrolMotor` Inspector; the start pose previews immediately. Use `Group with assigned route` to move the route and child as one group. Different units may use independent routes or different start points on a shared route. Without a route the unit stays where placed. Tune the individual motor and launcher via prefab instance overrides; Play in Ground Nurs Test. Do not apply scene route references to the prefab asset.
 
+### Player combat prefab
+
+The main-map player uses `Prefabs/Aircraft/PlayerKestrel_Combat.prefab`, independently of the legacy `PlayerJet.prefab` used by the labs. The main-map session reads the authored radar and health instead of adding them at runtime. `Air01Encounter` selects and binds the authored AAM or NURS child (both inactive in the asset); the existing AC-01 primary is referenced by the trigger, and AC-02 remains unequipped. Scene-specific camera, targeting, feedback, spawn pose and flight-test settings remain in the session. Weapon modules no longer need to be created and destroyed by the encounter.
+
 ### Tiger combat prefab
 
 `Prefabs/Aircraft/EF01_Tiger_Fighter.prefab` contains the chassis, flight motor, boost, health, radar, AC-01 and `ArcadeFighterUnit`. Tune the Attack settings on that prefab (not on Air01Encounter). The encounter instantiates the prefab, prepares it, registers health/targeting/AAM/radar, and binds the player and map boundary. Each unit creates its own randomized pilot variant. The encounter deliberately schedules both flight decisions before aircraft movement and guns after movement, retaining wingman context and the existing shared AAM scheduler. A future mission can use the same unit API; simply dropping an unbound Tiger in the scene does not assign a target. No balance or timing changes in this atom.

@@ -95,8 +95,20 @@ namespace AirCombat
                 return;
             }
             var team = player.GetComponent<AircraftTeam>();
-            if (team == null) team = player.gameObject.AddComponent<AircraftTeam>();
+            playerFlight = player.GetComponent<FlightController>();
+            playerTrigger = player.GetComponent<PlayerWeaponTrigger>();
+            playerBoost = player.GetComponent<Afterburner>();
+            var groundLauncher = player.GetComponentInChildren<ArcadeNursLauncher>(true);
+            var airLauncher = player.GetComponentInChildren<ArcadeMissileLauncher>(true);
+            if (team == null || playerFlight == null || playerTrigger == null || playerBoost == null ||
+                groundLauncher == null || airLauncher == null || view == null)
+            {
+                Debug.LogError("AIR encounter: incomplete PlayerKestrel_Combat prefab.", player);
+                return;
+            }
             team.SetSide(AircraftSide.Player);
+            groundLauncher.gameObject.SetActive(false);
+            airLauncher.gameObject.SetActive(false);
             playerHealth.InstallHitbox();
             if (groundMode)
             {
@@ -118,37 +130,29 @@ namespace AirCombat
                 missileStress.Bind(playerHealth, missilePrefab, hitFeedback, enemyMissiles, radar);
                 gameObject.AddComponent<EnemyMissileThreatHud>().Bind(view, missileStress);
             }
-            playerFlight = player.GetComponent<FlightController>();
-            playerTrigger = player.GetComponent<PlayerWeaponTrigger>();
-            if (playerTrigger != null && view != null)
+            // AC-02 remains a prefab option, not an equipped weapon in this test.
+            foreach (var gun in player.GetComponentsInChildren<AutocannonWeapon>(true))
+                if (gun.Preset != null && gun.Preset.Continuous) gun.enabled = false;
+            if (groundMode)
             {
-                if (!groundMode)
+                nursLauncher = groundLauncher;
+                nursLauncher.gameObject.SetActive(true);
+                nursLauncher.Bind(playerFlight, playerBoost, playerTrigger, view);
+                playerTrigger.ConfigureDualSlots(nursLauncher);
+            }
+            else
+            {
+                targetingCursor = view.gameObject.AddComponent<TargetingCursor>();
+                targetingCursor.Bind(view);
+                if (missilePrefab != null)
                 {
-                    targetingCursor = view.gameObject.AddComponent<TargetingCursor>();
-                    targetingCursor.Bind(view);
-                }
-                // AC-02 remains an available prefab/preset, but is not equipped here.
-                foreach (var gun in player.GetComponentsInChildren<AutocannonWeapon>(true))
-                    if (gun.Preset != null && gun.Preset.Continuous) gun.enabled = false;
-                if (groundMode)
-                {
-                    var mount = new GameObject("NURS / launcher");
-                    mount.transform.SetParent(player.transform, false);
-                    nursLauncher = mount.AddComponent<ArcadeNursLauncher>();
-                    nursLauncher.Bind(playerFlight, player.GetComponent<Afterburner>(), playerTrigger, view);
-                    playerTrigger.ConfigureDualSlots(nursLauncher);
-                }
-                else if (missilePrefab != null)
-                {
-                    var mount = new GameObject("AAM / launcher");
-                    mount.transform.SetParent(player.transform, false);
-                    missileLauncher = mount.AddComponent<ArcadeMissileLauncher>();
+                    missileLauncher = airLauncher;
+                    missileLauncher.gameObject.SetActive(true);
                     missileLauncher.Bind(view, targetingCursor, player, missilePrefab, hitFeedback);
                 }
                 else Debug.LogError("AIR encounter: missing AAM missile prefab.", this);
-                if (!groundMode) playerTrigger.ConfigureDualSlots(missileLauncher);
+                playerTrigger.ConfigureDualSlots(missileLauncher);
             }
-            playerBoost = player.GetComponent<Afterburner>();
             playerBreak = player.GetComponent<BreakTurn>();
             bound = true;
         }
@@ -381,14 +385,13 @@ namespace AirCombat
                 if (playerTrigger != null) playerTrigger.ConfigureDualSlots(null);
                 nursLauncher.ResetMagazine();
                 nursLauncher.gameObject.SetActive(false);
-                Destroy(nursLauncher.gameObject);
             }
             if (missileLauncher != null)
             {
                 missileLauncher.CeaseFire(Time.time);
+                missileLauncher.CancelMissiles();
                 missileLauncher.gameObject.SetActive(false);
                 if (playerTrigger != null) playerTrigger.ConfigureDualSlots(null);
-                Destroy(missileLauncher.gameObject);
             }
             if (targetingCursor != null)
             {

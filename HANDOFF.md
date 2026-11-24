@@ -1,6 +1,6 @@
 # Air Combat — current handoff
 
-2026-11-24 | CLEANUP-02b, based on accepted green `34a43ef` (CLEANUP-02a with FileID fix). Tiger prefab pilot composition; pending Play Mode regression. Earlier iterations are archived. Inspector values on committed assets take precedence over code defaults.
+2026-11-24 | CLEANUP-02c, based on accepted green `eddf8ba`. Production player prefab composition; pending Play Mode regression. Earlier iterations are archived. Inspector values on committed assets take precedence over code defaults.
 
 ## Accepted baseline
 
@@ -11,16 +11,16 @@
 - Patrol authoring: movable group containing route and unit; draggable points, rounded path, start preview, obstacle check. Existing route and transforms preserved. `AA02_Mantis_Combat.prefab` now owns the motor, launcher and nested visual chassis; the main-map instance keeps its scene route override. New instances need only a scene route assignment (or no route for a stationary unit).
 
 - Tiger: `EF01_Tiger_Fighter.prefab` owns `ArcadeFighterUnit` and the attack settings formerly serialized on the encounter. The unit prepares its flight/health and owns its independent pilot. The encounter still schedules flight decisions before movement and fire after movement; AAM scheduling and registrations remain shared.
+- Player: `PlayerKestrel_Combat.prefab` owns the flight, boost, chassis, team, health, radar, trigger and mounted weapon modules. The scene selects and binds one secondary; AC-02 remains disabled. The original `PlayerJet.prefab` is retained for the labs. Spawn pose, camera and flight test settings stay on the scene/session.
 
 ## Next atoms (in order)
 
-1. CLEANUP-02c — prefabization: player; scene-specific references bound by mission/session. First verify 02b in air mode: two Tigers, independent tempo, guns and AAM, wingman separation, survivor, defeat/victory and R reset. Mobile AA prefabization accepted. No balance change or general mission framework.
-2. ART-AA-01 — dedicated mobile missile launcher model with authored launch socket, no obsolete gun-turret visuals. Preserve Mantis movement and rocket behavior.
-3. JUICE-AA-01 — launch smoke, attitude jets, distinct ignition burst, strong smoke trail, explosion and appropriate sound; evaluate in gameplay camera.
-4. GROUND-01 — NURS damage and destruction of ground vehicles; then JUICE-NURS-01 for meaningful hit/impact feedback.
-5. CONVOY-01 — first mixed mission: moving targets, mobile AA and optional fighter escort. Test the precision-versus-exposure tradeoff; mission completion need not require killing every fighter.
+1. ART-AA-01 — dedicated mobile missile launcher model with authored launch socket, no obsolete gun-turret visuals. Preserve Mantis movement and rocket behavior. First verify CLEANUP-02c in both main-map modes.
+2. JUICE-AA-01 — launch smoke, attitude jets, distinct ignition burst, strong smoke trail, explosion and appropriate sound; evaluate in gameplay camera.
+3. GROUND-01 — NURS damage and destruction of ground vehicles; then JUICE-NURS-01 for meaningful hit/impact feedback.
+4. CONVOY-01 — first mixed mission: moving targets, mobile AA and optional fighter escort. Test the precision-versus-exposure tradeoff; mission completion need not require killing every fighter.
 
-Deferred: Attack Intent, AC-02 balance, Q/E selection, wingtip trails, unified visual/audio direction. No new AI or weapon tuning in cleanup.
+Deferred: enemy aircraft placement/spawn authoring (wait for mission requirements), Attack Intent, AC-02 balance, Q/E selection, wingtip trails, unified visual/audio direction. The two-Tiger test still spawns automatically. No new AI or weapon tuning in cleanup.
 
 ## Regression gate
 
