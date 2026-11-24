@@ -66,6 +66,10 @@ Base `76ba27b`. With the saved C6 mission scene open, select **Air Combat > Miss
 
 Add two 20 x 7.6 single-storey barracks with gabled roofs, doors, windows and a shared narrow footpath. They reuse existing hangar materials and are visual-only. Save the scene and commit `Mission01_BarracksPass.asset` and its `.meta`. No changes to flight or shared prefabs. Verify roof marking, spacing and building colors in Unity.
 
+## MISSION-01C7a — Barracks roof repair
+
+Base `6fee760`. Fix the face builder so correcting winding never reverses the reused input rings in place. For already generated barracks, open the mission and select **Air Combat > Missions > Repair Mission 01 Barracks Roofs**. The command rebuilds the shared roof subasset in place, preserving references and all layout/material settings. Save and commit the repaired `Mission01_BarracksPass.asset` and the mission scene if it was not saved previously. Do not rerun the C7 layout command on an already built scene. Fresh C7 generation uses the corrected geometry.
+
 ## Next work (order flexible, all WIP)
 
 Current visual trial: [ART-CT-01 — Compact control tower](ART_CT_01.md).

@@ -14,6 +14,42 @@ namespace AirCombat
         private const string BarracksPath = "Assets/_Project/Art/Environment/Mission01_FirstSortie/Mission01_BarracksPass.asset";
         private const string BarracksUndo = "Apply Mission 01 barracks pass";
 
+        [MenuItem("Air Combat/Missions/Repair Mission 01 Barracks Roofs")]
+        private static void RepairBarracksRoofs()
+        {
+            if (EditorApplication.isPlayingOrWillChangePlaymode) return;
+            if (SceneManager.GetActiveScene().path != ScenePath)
+            {
+                Debug.LogWarning("MISSION-01C7a: open Mission01_FirstSortie first.");
+                return;
+            }
+            var targets = AssetDatabase.LoadAllAssetsAtPath(BarracksPath).OfType<Mesh>()
+                .Where(m => m.name == "C7 barracks roof").ToArray();
+            if (targets.Length != 1)
+            {
+                Debug.LogError("MISSION-01C7a: expected exactly one saved barracks roof mesh. Nothing changed.");
+                return;
+            }
+
+            var target = targets[0];
+            var rebuilt = BarracksRoof();
+            try
+            {
+                // Update the existing subasset in place; both buildings retain
+                // their mesh references, materials and transforms.
+                Undo.RegisterCompleteObjectUndo(target, "Repair Mission 01 barracks roofs");
+                EditorUtility.CopySerialized(rebuilt, target);
+                EditorUtility.SetDirty(target);
+                AssetDatabase.SaveAssets();
+                SceneView.RepaintAll();
+                Debug.Log("MISSION-01C7a: shared roof mesh repaired; save the mission scene if not already saved.");
+            }
+            finally
+            {
+                UnityEngine.Object.DestroyImmediate(rebuilt);
+            }
+        }
+
         [MenuItem("Air Combat/Missions/Apply Mission 01 Barracks Pass")]
         private static void ApplyBarracksPass()
         {
@@ -210,9 +246,12 @@ namespace AirCombat
             private readonly List<int> triangles = new List<int>();
             internal void Face(Vector3 inside, params Vector3[] pts)
             {
-                if (Vector3.Dot(Vector3.Cross(pts[1]-pts[0],pts[2]-pts[0]),inside-pts[0]) > 0) Array.Reverse(pts);
+                // Correct the triangle winding without mutating the input ring.
+                // The roof reuses both end rings to connect matching vertices.
+                bool flip = Vector3.Dot(Vector3.Cross(pts[1]-pts[0],pts[2]-pts[0]),inside-pts[0]) > 0;
                 int n=vertices.Count; vertices.AddRange(pts);
-                for (int i=1;i+1<pts.Length;i++) triangles.AddRange(new[] {n,n+i,n+i+1});
+                for (int i=1;i+1<pts.Length;i++)
+                    triangles.AddRange(flip ? new[] {n,n+i+1,n+i} : new[] {n,n+i,n+i+1});
             }
             internal void Box(float x,float y,float z,float w,float h,float d)
             {
