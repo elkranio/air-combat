@@ -94,6 +94,10 @@ Base `7071ba6`. Open Mission01_FirstSortie and select **Air Combat > Missions > 
 
 Replace the temporary airborne mission player at its current pose, rebind the flight session and camera, and leave firing disabled in this preview. The static runway Lynx remains until the ready-state atom. Save the scene, new player prefab and its .meta. Unity verification: Play, A/D steering, W boost and S tight turn with both exhausts aligned, R reset; check console and model orientation. No changes to the production combat scene or runtime scripts.
 
+## MISSION-01E — Runway ready state (WIP)
+
+Base `768901f`. Open Mission01_FirstSortie and select **Air Combat > Missions > Install Mission 01 Ready State**. Move the actual player Lynx to the exact runway placeholder pose (including ground clearance), disable the placeholder and keep the current camera/session bindings. Save the scene. The mission-only `Mission01LaunchSequence` owns Intro, Ready, Takeoff and Flight states. Intro is skipped by default; a future cutscene can call CompleteIntro. Normal flight and weapons stay disabled. W in Ready changes the state to Takeoff and shows a temporary confirmation; movement and handover are deliberately deferred to F. R returns the requested state to Ready. No changes to shared prefabs, flight tuning, camera or airfield.
+
 ## Next work (order flexible, all WIP)
 
 Current visual trial: [ART-CT-01 — Compact control tower](ART_CT_01.md).
