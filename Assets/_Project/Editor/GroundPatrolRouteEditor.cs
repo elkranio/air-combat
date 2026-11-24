@@ -226,41 +226,6 @@ namespace AirCombat
             Selection.activeGameObject = route.gameObject;
         }
 
-        [MenuItem("Air Combat/Mission/AA-01b - Install Mantis patrol trial")]
-        private static void InstallTrial()
-        {
-            if (!PatrolAuthoringState.CanEdit) return;
-            Scene scene = SceneManager.GetSceneByPath("Assets/_Project/Scenes/ArcadeDesertE1.unity");
-            if (!scene.IsValid() || !scene.isLoaded) { Debug.LogError("Open ArcadeDesertE1 first."); return; }
-            GameObject trial = scene.GetRootGameObjects().SelectMany(x => x.GetComponentsInChildren<Transform>(true))
-                .FirstOrDefault(x => x.name == "AA-01a / Mantis - VISUAL TRIAL")?.gameObject;
-            Terrain terrain = FindTerrain(scene);
-            if (trial == null || terrain == null)
-            {
-                Debug.LogError("Patrol: install the AA-01a visual trial and open its Terrain first.");
-                return;
-            }
-            var motor = trial.GetComponent<GroundPatrolMotor>();
-            if (motor != null && motor.Route != null)
-            {
-                if (GroupUnit(motor)) Selection.activeGameObject = motor.Route.gameObject;
-                return;
-            }
-            Undo.IncrementCurrentGroup();
-            int group = Undo.GetCurrentGroup();
-            Undo.SetCurrentGroupName("Install Mantis patrol trial");
-            GroundPatrolRoute route = MakeRoute(scene, terrain, trial.transform.position, "AA-01b / Mantis patrol route");
-            if (motor == null) motor = Undo.AddComponent<GroundPatrolMotor>(trial);
-            Undo.RecordObject(motor, "Assign patrol route");
-            motor.SetRoute(route);
-            EditorUtility.SetDirty(motor);
-            EditorSceneManager.MarkSceneDirty(scene);
-            Undo.CollapseUndoOperations(group);
-            GroupUnit(motor);
-            Selection.activeGameObject = route.gameObject;
-            Debug.Log("AA-01b1: patrol group installed. Move the group or edit its points, save and Play.", route);
-        }
-
         private static Terrain FindTerrain(Scene scene) => Terrain.activeTerrains.FirstOrDefault(x => x.gameObject.scene == scene);
 
         private static GroundPatrolRoute MakeRoute(Scene scene, Terrain terrain, Vector3 point, string name)

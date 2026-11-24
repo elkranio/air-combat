@@ -1191,43 +1191,18 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e086c9ad59e84c228939bab66ab1d596, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::AirCombat.MantisGun
-  attackMode: 2
-  verticalShotInterval: 0.35
-  verticalRiseSpeed: 180
-  verticalAlignSeconds: 0.16
+  verticalEjectionSeconds: 0.48
+  verticalTurnSeconds: 0.32
+  verticalIgnitionSeconds: 0.22
   verticalCruiseSpeed: 240
   verticalRange: 310
+  verticalCorrectionRate: 25
+  verticalCorrectionBudget: 20
   verticalPause: 2.5
   verticalDamage: 3
-  flakShotInterval: 0.15
-  flakTravelSeconds: 0.25
-  flakFuseSeconds: 0.5
-  flakRadius: 12
-  flakCenterSeparation: 18
-  flakPause: 2.5
-  flakDamage: 2
-  flakSoundVolume: 0.45
   turretYaw: {fileID: 1185370416}
   gunPitch: {fileID: 820247698}
-  muzzleL: {fileID: 756519504}
-  muzzleR: {fileID: 458970929}
   detectionRange: 210
-  yawSpeed: 240
-  pitchSpeed: 180
-  firingTolerance: 5
-  maxElevation: 85
-  pairsPerBurst: 7
-  pairInterval: 0.085
-  pauseMin: 1.25
-  pauseMax: 1.8
-  burstDrift: 3
-  roundSpread: 0.65
-  projectileSpeed: 190
-  projectileRange: 340
-  tracerLength: 13
-  dangerHeight: 13
-  airPuffAbove: 5
-  damage: 1
 --- !u!1 &809140383
 GameObject:
   m_ObjectHideFlags: 0

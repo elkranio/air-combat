@@ -1,35 +1,27 @@
 # Air Combat — current handoff
 
-**Latest atom AA-01e2 (base `b2491c8`):** [limited course correction](Docs/Production/AA_01C.md#aa-01e2--limited-course-correction-current) supersedes the no-correction rule below. Cold launch unchanged; tune rate/budget on MantisGun, no scene migration. Camera visibility deferred.
+2026-11-24 | CLEANUP-01, based on accepted green `7881719` (AA-01e2). This file replaces the chronological handoff; earlier notes are archived. Inspector values on committed assets take precedence over code defaults.
 
-Updated 2026-11-24. Base `f24ee9a`: [AA-01e1 cold launch](Docs/Production/AA_01C.md#aa-01e1--cold-launch-historical). One silent rocket per cycle, decelerating ejection, visible attitude jets, accelerating committed flight. Select Vertical Unguided on the existing MantisGun, save and Play. Flak and Tracers preserved for comparison; fixed plane, no course correction after ignition. AA-01b2 [rounded moving turns](Docs/Production/AA_01B.md#aa-01b2--rounded-moving-turns-current) with accepted AA-01b1 movable patrol group and editor start preview (no reinstallation; existing route preserved) using the accepted AA-01a visual trial ([source and installation](Docs/Production/AA_01A.md)); NURS precision mechanic accepted. AI-04a2 Tigers accepted as a strong encounter baseline, no more nerfs pending target diversity. Underlying ground test [NURS-01a](Docs/Production/NURS_01.md#nurs-01a--project-the-footprint-on-visible-world-surfaces): isolated direct NURS secondary on RMB, LMB AC-01 BURST, opaque-depth projected ballistic dispersion ellipse (including plateau meshes and roofs; bare-terrain prediction unchanged), 6 rockets / .08s interval / 5s rearm. Ground Nurs Test defaults on; uncheck before Play to restore AAM and two Tigers unchanged. Next vertical launch readability and balance, NURS damage/destruction, then convoy/escort. Attack Intent deferred. AC-02 was postponed because of its power; later test long empty cooldown tradeoff. Q/E reserved for per-slot selection, unified art direction and JUICE-03 deferred. Earlier HUD-02/flight-only notes below are historical.
+## Accepted baseline
 
-## Goal and immediate order
+- Main map: `ArcadeDesertE1`, authored 2 km desert, fixed-world oblique camera, flight and radar/HUD. WASD variable maneuverability shares one boost resource between fast and tight turns.
+- Air test: AC-01 BURST on LMB and AAM on RMB, two independently behaving Tigers. Strong opponents accepted; imperfect gun aim and bounded pressure, independent missile cycles 8–15s. Player AAM evasion and Short Vector cue accepted. AC-02 retained but not equipped; powerful, needs a later resource/cooldown tradeoff.
+- Ground test (default): AC-01 + direct NURS, one mobile AA patrol. NURS ballistic ground footprint, afterburner spread penalty and tight-turn accuracy reward accepted. Ground destructibility and impact feedback not finished.
+- Mobile AA: single silent cold-launch rocket, ejection, visible attitude jets, smooth ignition acceleration, finite horizontal correction. Accepted as an arcade threat, not an exact real-world analogue. Old Mantis tracer and Flak experiments retired. Temporary canister, smoke, launch, ignition and explosion effects need an art/juice pass. Offscreen rise readability remains a known issue.
+- Patrol authoring: movable group containing route and unit; draggable points, rounded path, start preview, obstacle check. Existing route and transforms preserved.
 
-Stylized, aggressive **arcade** air/ground combat: one fighter can outfight multiple enemies, destroy vehicles and wreck a base, supported later by heavy music, spectacular explosions and powerful sound. No milsim balance or photorealism; no transforming aircraft or loss of recognizable fighter silhouettes.
+## Next atoms (in order)
 
-1. **GREEN:** [HUD-01](Docs/Production/HUD_01.md) shared radar, compact HP/BOOST; main camera-aligned radar displays the static Tiger contact.
-2. **GREEN:** [GUN-01](Docs/Production/GUN_01.md) independent player AC-01 module, nose-forward LMB fire; GUN-02/c tracer glow passes accepted as a usable starting point. Existing combat labs retain their legacy guns.
-3. **NOW HUD-02:** show selected AC-01 on compact bottom-left HUD and the real burst cooldown; wheel-select equipped modular weapons. See [HUD-02](Docs/Production/HUD_02.md). Next, discuss 1v1 Tiger AI before implementing it.
+1. CLEANUP-02 — prefabization: reusable player, Tiger and mobile AA composition; scene-specific references bound by mission/session; route groups authorable with minimal setup. Do not change balance or invent a large mission framework.
+2. ART-AA-01 — dedicated mobile missile launcher model with authored launch socket, no obsolete gun-turret visuals. Preserve Mantis movement and rocket behavior.
+3. JUICE-AA-01 — launch smoke, attitude jets, distinct ignition burst, strong smoke trail, explosion and appropriate sound; evaluate in gameplay camera.
+4. GROUND-01 — NURS damage and destruction of ground vehicles; then JUICE-NURS-01 for meaningful hit/impact feedback.
+5. CONVOY-01 — first mixed mission: moving targets, mobile AA and optional fighter escort. Test the precision-versus-exposure tradeoff; mission completion need not require killing every fighter.
 
-No Tiger behavior implementation in HUD-02. User will set the next enemy AI atoms after testing the panel.
+Deferred: Attack Intent, AC-02 balance, Q/E selection, wingtip trails, unified visual/audio direction. No new AI or weapon tuning in cleanup.
 
-## Current repository reality
+## Regression gate
 
-- **Main scene** `Assets/_Project/Scenes/ArcadeDesertE1.unity` remains `E1MapFlightSession` **flight/art only**, with no live combat session. Persistent **2000×2000** Unity Terrain; quiet sand `#B8A993`, accepted ~**430×275×30 m** plateau, and production dark blue-grey Kestrel. **Y78** default; `7/8/9` compare Y78/Y110/Y150; `A/D` steer, `W` boost, `Q/E` Break Turn, `R` reset, `H` overlay.
-- **Production camera** `Prefabs/Camera/ArcadeCameraRig.prefab`: fixed-world yaw **-45°**, pitch **50°**, orthographic **80**, heading look-ahead **48**, boost extra **14**, ~**0.42 s** smoothing, **20%** safe margin. It is **not** the legacy top-down/rotation camera used in combat labs.
-- **Lighting**: one `CombatLightingRig`; main scene tests `Assets/_Project/Settings/ArcadeCombat_URP.asset` (**600** shadow distance / **4** cascades / **4096** atlas). In-game quality and GPU cost are **not final-approved**. Labs still use the old profile.
-- **Base**: three B1b barracks, B1c HQ/courtyard, B1d access/service roads and wear, B1d3 **one sharp irregular prepared-lot mesh** (`B1 / Prepared lot - DISABLE to compare`), the B1e runway/apron/control tower/original hangar, two **parked Kestrels**, and a newer **B1f arched-hangar style trial**. Airfield and HQ area are separate zones; final deliberately curved service connections are deferred. See [base](Docs/Production/BASE_DESIGN.md) and [airfield](Docs/Production/AIRFIELD_B1E.md).
-- **Enemy EF-01 Tiger D1**: latest commit includes `Resources/Blender/EF01_Tiger_D1.blend`, OBJ sections, matte URP materials, `EF01_Tiger_D1_Chassis.prefab` with `JetChassis` sockets, and an independently toggleable **static comparison** between parked Kestrels. **It has no enemy AI, weapons or flight movement yet.** Visual Game-view approval remains to be explicitly confirmed. See [Tiger D1](Docs/Production/TIGER_D1.md).
+Open main map: no missing scripts/materials, no automatic scene modifications or obsolete install menus. Ground mode: move/rotate patrol, edit points and start preview; launch one rocket per cycle, verify correction and physical hit, reset, NURS and HUD. Air mode: two Tigers, independent guns/AAM, player HP, dual weapons, radar warning, hit feedback and reset. Smoke/FX unchanged in cleanup. Both lab scenes still open and function; no unused-asset deletion without dependency proof. Commit a green only after Play Mode passes.
 
-## Combat proofs (keep for regression)
-
-- `WeaponLab` / `WeaponLabSession`: fighter pursuit, BURST (1), GAUSS (2), guided A2A missile (3), on its **legacy camera**. Lab BURST still permits mouse-bounded aim; the main map uses modular fixed-forward AC-01.
-- `GroundAttackLab` / `GroundAttackLabSession`: bombs (4), committed cabrage NURS (5), direct NURS (6), AA1, vertical-launch SAM1, `AircraftRadar` / `RadarHud`, HP/fuel and all six weapon slots. Cruise **70**, boost **140**, tank **2.5 s**; Q/E emergency turn. The main map also has HUD-01 radar, but still no live combat session.
-- **Deferred debt**: direct NURS range feels too long, provisional `GroundDepotTarget` mesh-cut destruction, and functional-but-rough shot/impact/audio/particle presentation. No new general balance pass until core dogfight feel is proven.
-
-## Rules and regression
-
-- Reuse `PlayerJet`, `EnemyJet`, `Kestrel`, `EF01_Tiger_D1_Chassis`, `ArcadeCameraRig`, legacy `CombatCameraRig` (labs), `AA1Autocannon`, `SAM1Launcher`, `CombatHUD`, lighting and other existing scene-neutral prefabs. Do **not** casually add scene-specific weapons/AI to shared prefabs.
-- Keep the main scene hand-authored; do not regenerate it or rerun accepted one-time installers. Preserve `.meta` GUIDs, source `.blend`/OBJ assets, existing material links and inspected serialized values. One approved atom → `.patch` → check/apply → Unity Play Mode → green push.
-- Regression after combat changes: **main map** flight/camera/shadows; **WeaponLab** weapons 1–3, enemy and evasions; **GroundAttackLab** weapons 1–6, AA/SAM, radar/HUD and reset. Only retire labs when their behavior is explicitly proven on the combined map.
+[Combat rules](GAMEPLAY_COMBAT.md) | [Architecture](GAMEPLAY_ARCHITECTURE.md) | [History](Docs/Archive/README.md)

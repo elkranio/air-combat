@@ -1,30 +1,29 @@
 # Gameplay architecture — active boundaries
 
-The **main art/flight map is not a finished combat scene**. Keep usable combat labs until the full six-weapon game can be regression-tested in the main scene. Gameplay numbers: [GAMEPLAY_COMBAT.md](GAMEPLAY_COMBAT.md).
-
 ## Scene ownership
 
-| Scene | Owner | Camera | Purpose |
-| --- | --- | --- | --- |
-| `ArcadeDesertE1.unity` | `E1MapFlightSession` | `ArcadeCameraRig.prefab` / `ArcadeCameraFollow` | Growing authored world, flight, height comparison; no weapons/enemies session |
-| `WeaponLab.unity` | `WeaponLabSession` | Legacy `CombatCameraRig.prefab` | Fighter pursuit, BURST/GAUSS/MISSILE regression |
-| `GroundAttackLab.unity` | `GroundAttackLabSession` | Legacy `CombatCameraRig.prefab` + `NursCameraCue` | Ground weapons, AA/SAM, radar/HP regression |
+| Scene | Owner | Responsibility |
+| --- | --- | --- |
+| `ArcadeDesertE1` | `E1MapFlightSession` + `Air01Encounter` | Persistent authored world, production camera/flight, player/HUD binding, isolated air or ground test |
+| `WeaponLab` | `WeaponLabSession` | Legacy weapon/aircraft regression |
+| `GroundAttackLab` | `GroundAttackLabSession` | Legacy ground weapons, depot, AA/SAM and camera regression |
 
-Main map is **never regenerated**. Both camera prefabs are independent and have no cross-scene references in prefab assets. `CombatCameraRig.BindPlayer()` supports both the accepted arcade follow and the lab legacy follow. `CombatHud` binds radar direction to a supplied camera when appropriate; `RadarHud` does not depend on retired C1 components.
+Only the main map is enabled in the build. `E1MapFlightSession` configures variable maneuverability, camera, radar, health, HUD and reset. `Air01Encounter` owns the runtime test composition; Ground Nurs Test selects NURS and scene-authored mobile AA, otherwise it equips AAM and spawns two Tigers. It binds, resets and tears down the active weapons/enemies. This is not a general mission system yet. Do not regenerate the map or rewrite shared lab prefabs for production changes.
 
-## Reused gameplay assets
+## Component boundaries
 
-- `Prefabs/Aircraft/{PlayerJet,EnemyJet}`, `Prefabs/Chassis/Kestrel`: reusable flight/weapon sockets and visual composition. Never add scene-specific weapons to the shared player prefab without approval.
-- `Prefabs/Aircraft/EF01_Tiger_D1_Chassis.prefab`: new **visual-only** Tiger + `JetChassis` sockets, currently **not** the `EnemyJet` AI. [Details](Docs/Production/TIGER_D1.md).
-- `Prefabs/Camera/{ArcadeCameraRig,CombatCameraRig}`: new production fixed-world camera vs old lab framing. Keep the legacy lab camera for regression.
-- `Prefabs/Enemies/{AA1Autocannon,SAM1Launcher,SAM1Missile}`, `Prefabs/Targets/MilitaryDepot`, `Prefabs/UI/CombatHUD`, `Prefabs/Environment/CombatLightingRig`: existing tested components.
-- `Scripts/Flight`, `Weapons`, `Enemy`, `Combat`, `Targeting`, `UI`: scene-neutral mechanics. `WeaponSelection` supports six slots; ground lab populates 4–6. `DamageableTarget.Domain` distinguishes Air and Ground. Hostile SAM missiles differ from player A2A missiles.
-- `Scripts/Camera/{ArcadeCameraFollow,TopDownCameraFollow,CameraLookAhead,NursCameraCue}`: production and legacy lab components. Retired studies must not be reinstalled.
+- Aircraft: `JetAssembly`, `FlightController`, `Afterburner`, `PlayerHitPoints` and `CombatAircraftFlight`; flight, resource, health and chassis sockets remain separate. `ArcadeFighterPilot` owns Tiger pursuit and gun decisions; `EnemyMissileStressTest` (historical class name) owns independent enemy AAM cycles.
+- Weapons: `PlayerWeaponTrigger` dispatches independent primary/secondary slots. `AutocannonWeapon`, AAM launcher/projectile and `ArcadeNursLauncher` own their mechanics; `NursImpactMarker` handles the world-space footprint. Legacy `WeaponSelection` remains for labs.
+- Ground: `GroundPatrolRoute` is scene-authored waypoint data and shared rounded-path geometry; `GroundPatrolMotor` owns vehicle motion. `MantisGun` owns the accepted mobile missile launcher, radar registration and projectile lifecycle; `MantisVerticalRocket` owns launch phases and limited correction. Temporary runtime canister still depends on authored `turretYaw` and `gunPitch` visual mounts. Keep component GUID and serialized accepted tuning until prefabization/art migration is deliberately done.
+- Damage: `DamageableTarget.Domain` separates air and ground; `PlayerHitPoints` provides health and damage events; `GroundBlastDamage` applies ground splash. No cross-domain magic screen-hit test. `CombatHitFeedback` owns air combat feedback. Vehicle destruction still to implement.
+- Radar/HUD: `AircraftRadar` samples explicit `IRadarContact`s; `CombatHud` displays camera-relative radar, health, fuel and equipped weapons. Threat warning and physical hit are distinct.
 
-## Next integration gate — progressive, air combat first
+## Authoring and assets
 
-1. **Single atom:** evaluate player BURST with **fixed forward aim** (no cursor-angle deviation) on the **production camera**, preserving regression for GAUSS, missile and ground weapons.
-2. **One fighter:** after approving Tiger D1 visually, wire the existing fighter AI to the Tiger chassis and test 1v1. Add the minimum radar/HUD needed to indicate a **detected** enemy contact; do not invent detection mechanics before discussing them.
-3. **Several fighters:** test readable, fun and survivable arcade 1vN combat. Later mission composition integrates AA/SAM and other weapons without merging lab session classes into one monolith.
+`Air Combat > Mission > Create Patrol Route` is the persistent mission tool. Group/point editing, obstacle check and start preview are in the Inspector. A route anchor is independent of the moving child; place and yaw the group, edit waypoints, do not scale the vehicle. Terrain-only path projection; no pathfinding. The old one-time installers are no longer active editor code.
 
-`ArcadeDesertE1` still has **no combined combat session**. Do not delete either lab or alter shared prefab/scene ownership until tested. On each atom check compilation, missing scripts/materials, colliders, reset bounds, shadows and clean scene state. Inspector serialization is authoritative over C# defaults.
+Existing `Prefabs/Aircraft` (including Tiger fighter and chassis), `Prefabs/Ground/AA02_Mantis`, `Prefabs/Camera`, `Prefabs/UI` and environment prefabs are retained. The Mantis prefab is still a visual chassis; the scene wrapper carries the motor and combat component. CLEANUP-02 will formalize reusable battle-ready prefab composition without putting scene references in prefab assets. All labs, their prefabs, and raw art sources stay available. See [asset policy](ART_PIPELINE.md).
+
+## Future boundary
+
+Mission scripts should compose reusable units, routes and objective/trigger data. Do not add mission-specific coordinates or dependencies inside generic weapon/flight code. Prefabize existing behavior before new features. Keep runtime asset lookup and serialized GUID references in mind during resource cleanup; a lack of scene references alone is not proof of disuse.

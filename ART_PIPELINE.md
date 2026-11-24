@@ -1,6 +1,6 @@
 # Art pipeline — active map and assets
 
-The current asset direction is [Stylized Arcade Military](Docs/Production/ART_DIRECTION.md). We author **one reusable asset at a time**, compare in the actual `ArcadeDesertE1` flight view and only then reuse or expand it. No more blind whole-map generators.
+The current asset direction is [Stylized Arcade Military](Docs/Archive/ART_DIRECTION.md). We author **one reusable asset at a time**, compare in the actual `ArcadeDesertE1` flight view and only then reuse or expand it. No more blind whole-map generators.
 
 ## Folders
 
@@ -11,11 +11,13 @@ The current asset direction is [Stylized Arcade Military](Docs/Production/ART_DI
 - `Assets/_Project/Prefabs/`: scene-neutral gameplay and camera prefabs. Prefer prefab reuse over copying materials or composing dependencies inside an obsolete scene.
 - `Assets/_Project/Scenes/ArcadeDesertE1.unity`: persistent, hand-editable map; **never regenerate**. Combat labs remain strictly for regression.
 - `Assets/_Project/Settings/ArcadeCombat_URP.asset`: main-map candidate for 600-unit, four-cascade shadows. Compare its cost/quality to the current combat-lab profile before global adoption.
-- `Assets/ThirdParty/`: only protected dependencies after cleanup; attribution/license rules in [THIRD_PARTY_ASSETS.md](THIRD_PARTY_ASSETS.md).
+- `Assets/ThirdParty/`: third-party imports; protect runtime and lab dependencies; attribution/license rules in [THIRD_PARTY_ASSETS.md](THIRD_PARTY_ASSETS.md).
+
+Use **Air Combat > Tools > Audit unreferenced art assets** to generate a read-only candidate report in `Temp/AirCombat-asset-audit.txt`. Keep dynamic lookups, imported sidecars, licenses and source art until verified.
 
 ## Base/airfield surface authoring — as built
 
-B1d roads, shoulder meshes and sparse wear are **separate authored objects**. Its initial B1d/B1d2 compacted-ground TerrainLayer/alphamap experiment was superseded by **B1d3**, a separately toggleable ~183×226 m **sharp-edge prepared-lot mesh**. The B1d3 install cleared the old local prepared paint; the original editable Terrain and TerrainCollider remain. B1e runway/apron and B1f hangar trial occupy a different sector. **Do not rerun any one-time B1 installers on the accepted scene**. See [base](Docs/Production/BASE_DESIGN.md) and [airfield](Docs/Production/AIRFIELD_B1E.md).
+B1d roads, shoulder meshes and sparse wear are **separate authored objects**. Its initial B1d/B1d2 compacted-ground TerrainLayer/alphamap experiment was superseded by **B1d3**, a separately toggleable ~183×226 m **sharp-edge prepared-lot mesh**. The B1d3 install cleared the old local prepared paint; the original editable Terrain and TerrainCollider remain. B1e runway/apron and B1f hangar trial occupy a different sector. **One-time B1 installers are retired outside Assets.** See [base](Docs/Archive/BASE_DESIGN.md) and [airfield](Docs/Archive/AIRFIELD_B1E.md).
 
 ## Model handoff
 

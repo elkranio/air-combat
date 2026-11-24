@@ -61,10 +61,10 @@ namespace AirCombat
                 if (groundMode)
                 {
                     string groundStatus = nursLauncher != null ? nursLauncher.DebugStatus : "NURS UNAVAILABLE";
-                    int fired = 0, hits = 0, active = 0;
+                    int fired = 0, hits = 0;
                     foreach (var gun in groundGuns)
-                        if (gun != null) { fired += gun.FiredCount; hits += gun.HitCount; if (gun.IsBursting) active++; }
-                    return $"{groundStatus} | AA {hits}/{fired} hit/fired B{active}";
+                        if (gun != null) { fired += gun.FiredCount; hits += gun.HitCount; }
+                    return $"{groundStatus} | AA {hits}/{fired} hit/fired";
                 }
                 if (defeated || victory)
                 {

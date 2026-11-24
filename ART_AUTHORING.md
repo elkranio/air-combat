@@ -1,6 +1,6 @@
 # Model authoring and bake rules
 
-Current goal: a readable stylized arcade military base built on the accepted 2×2 km muted desert map. [Active B1 plan](Docs/Production/BASE_DESIGN.md).
+Current goal: a readable stylized arcade military base built on the accepted 2×2 km muted desert map. [Base design history](Docs/Archive/BASE_DESIGN.md).
 
 ## Geometry first
 
