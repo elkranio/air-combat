@@ -1127,6 +1127,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 805212927}
+  - component: {fileID: 805212928}
   m_Layer: 0
   m_Name: AA-01a / Mantis - VISUAL TRIAL
   m_TagString: Untagged
@@ -1142,14 +1143,31 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 805212926}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0.21643962, z: 0, w: 0.976296}
-  m_LocalPosition: {x: -434.832, y: 9.35, z: -320.168}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 916384967}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &805212928
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 805212926}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5cb8e3f8a37c42a59ea1ff08a67d23c6, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::AirCombat.GroundPatrolMotor
+  route: {fileID: 829228147}
+  speed: 12
+  turnRate: 95
+  startPoint: 0
+  groundClearance: 0
 --- !u!1 &809140383
 GameObject:
   m_ObjectHideFlags: 0
@@ -1181,6 +1199,59 @@ Transform:
   m_Children:
   - {fileID: 2051588310}
   - {fileID: 2142157666}
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &829228146
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 829228148}
+  - component: {fileID: 829228147}
+  m_Layer: 0
+  m_Name: AA-01b / Mantis patrol route
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &829228147
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 829228146}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 77c5f9b44f97440db591cfdf10736b11, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::AirCombat.GroundPatrolRoute
+  terrain: {fileID: 1071449414}
+  traversal: 0
+  localPoints:
+  - {x: -6.3499155, y: 0, z: -11.351196}
+  - {x: 69.808044, y: 0, z: -11.09906}
+  - {x: 70.32065, y: 0, z: 76.6828}
+  - {x: -9.300665, y: 0, z: 77.19273}
+  showRoute: 1
+  routeColor: {r: 0.25, g: 0.9, b: 0.95, a: 1}
+--- !u!4 &829228148
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 829228146}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: -567, y: 0, z: -208.6}
+  m_LocalScale: {x: 1.2913, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1001 &891563306
@@ -2926,3 +2997,4 @@ SceneRoots:
   - {fileID: 474682791}
   - {fileID: 1691306171}
   - {fileID: 805212927}
+  - {fileID: 829228148}
