@@ -29,6 +29,21 @@ namespace AirCombat
         private AircraftMotor motor;
         private BreakTurn breakTurn;
         private CabrageManeuver cabrage;
+        private bool variableManeuverability;
+        private float tightSpeed, boostTurnMultiplier, tightTurnMultiplier, maneuverResponse;
+
+        // Explicit opt-in from the production scene; legacy labs retain Q/E and
+        // their original throttle, steering, boost and cabrage behavior.
+        public void ConfigureVariableManeuverability(float slowSpeed, float boostTurn,
+            float tightTurn, float response)
+        {
+            variableManeuverability = true;
+            tightSpeed = Mathf.Clamp(slowSpeed, minSpeed, cruiseSpeed);
+            boostTurnMultiplier = Mathf.Max(.01f, boostTurn);
+            tightTurnMultiplier = Mathf.Max(.01f, tightTurn);
+            maneuverResponse = Mathf.Max(.1f, response);
+            breakTurn?.CancelBreak();
+        }
 
         // Optional maneuvers; null when a scene does not equip them.
         public void ConfigureBreakTurn(BreakTurn maneuver) { breakTurn = maneuver; }
@@ -48,6 +63,11 @@ namespace AirCombat
         private void Update()
         {
             var keyboard = Keyboard.current;
+            if (variableManeuverability)
+            {
+                TickVariableFlight(keyboard, Time.deltaTime);
+                return;
+            }
             float throttle = 0f;
             float steer = 0f;
             if (keyboard != null)
@@ -93,6 +113,36 @@ namespace AirCombat
                 ? Mathf.Max(acceleration, afterburner.BoostAcceleration) : acceleration;
             motor.Tick(targetSpeed, steer, accel, deceleration,
                 actualTurnRate, maxBank, bankRate, Time.deltaTime);
+        }
+
+        private void TickVariableFlight(Keyboard keyboard, float dt)
+        {
+            bool focused = Application.isFocused && keyboard != null;
+            // S takes priority if both are held; fuel is consumed exactly once.
+            bool tightHeld = focused && keyboard.sKey.isPressed;
+            bool boostHeld = focused && !tightHeld && keyboard.wKey.isPressed;
+            float steer = focused ? (keyboard.dKey.isPressed ? 1f : 0f)
+                - (keyboard.aKey.isPressed ? 1f : 0f) : 0f;
+
+            bool powered = afterburner != null && afterburner.TickResource(
+                tightHeld || boostHeld, boostHeld, dt);
+            float target = cruiseSpeed;
+            float yaw = turnRate;
+            float accel = maneuverResponse;
+            if (powered && tightHeld)
+            {
+                target = tightSpeed;
+                yaw *= tightTurnMultiplier;
+            }
+            else if (powered && boostHeld)
+            {
+                target = afterburner.BoostSpeed;
+                yaw *= boostTurnMultiplier;
+                accel = Mathf.Max(accel, afterburner.BoostAcceleration);
+            }
+            // The motor still owns smooth speed and bank. Steering is never
+            // committed to an angle or locked for a maneuver duration.
+            motor.Tick(target, steer, accel, maneuverResponse, yaw, maxBank, bankRate, dt);
         }
     }
 }

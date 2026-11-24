@@ -50,16 +50,21 @@ namespace AirCombat
             return true;
         }
 
-        public bool Tick(bool held, float deltaTime)
+        public bool Tick(bool held, float deltaTime) => TickResource(held, held, deltaTime);
+
+        // Both powered flight modes use the same tank. IsActive specifically
+        // means thrust, for existing flames, sound and camera consumers.
+        public bool TickResource(bool held, bool thrust, float deltaTime)
         {
             if (!isActiveAndEnabled) return false;
             float capacity = Mathf.Max(0.01f, capacitySeconds);
             charge = Mathf.Clamp(charge, 0f, capacity);
             float dt = Mathf.Max(0f, deltaTime);
-            IsActive = held && charge > 0f;
+            bool powered = held && charge > 0f;
+            IsActive = powered && thrust;
             if (held)
             {
-                if (IsActive) charge = Mathf.Max(0f, charge - dt);
+                if (powered) charge = Mathf.Max(0f, charge - dt);
                 // At zero, a held request cannot recharge or pulse the engine.
             }
             else
@@ -70,7 +75,7 @@ namespace AirCombat
                 charge = Mathf.Min(capacity, charge + (dt - waiting) * capacity / Mathf.Max(0.01f, rechargeSeconds));
             }
             wasHeld = held;
-            return IsActive;
+            return powered;
         }
     }
 }
