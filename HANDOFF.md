@@ -1,6 +1,6 @@
 # Air Combat — current handoff
 
-Updated 2026-11-24. Base `0675463`: MISSILE-02 accepted with 150 ms lock. Current playtest [WEAPON-04](Docs/Production/WEAPON_04.md), independent LMB AC-01 BURST and RMB AAM, persistent dual HUD, AC-02 unequipped. 2-round magazine / 20s empty-only rearm, 5 HP damage and missile motion unchanged. Next enemy missiles and skill-based evasion. JUICE-03 wingtip trails deferred. WASD shared fuel, two independent 5 HP Tigers, hit feedback and wrecks retained. Earlier HUD-02/flight-only notes below are historical.
+Updated 2026-11-24. Base `97a7438`: WEAPON-04 accepted; LMB AC-01 BURST / RMB AAM with 150 ms lock, dual HUD and unchanged player balance. Current playtest [MISSILE-03a](Docs/Production/MISSILE_03A.md): independent unlimited Tiger AAM stress test, missile-only by default, no shared attack cap. Next threat radar/edge indicators and evasion tuning; then normal encounter attack pacing. Q/E reserved for future per-slot weapon cycling. JUICE-03 deferred. Earlier HUD-02/flight-only notes below are historical.
 
 ## Goal and immediate order
 

@@ -15,6 +15,10 @@ namespace AirCombat
         [SerializeField, Min(20f)] private float pairSpacing = 45f;
         [SerializeField] private ArcadeFighterPilot.Settings attack = new ArcadeFighterPilot.Settings();
 
+        [Header("MISSILE-03a / temporary evasion stress test")]
+        [SerializeField] private EnemyMissileStressTest.Settings enemyMissiles = new EnemyMissileStressTest.Settings();
+        private EnemyMissileStressTest missileStress;
+
         private sealed class Fighter
         {
             public int Index;
@@ -49,9 +53,14 @@ namespace AirCombat
         {
             get
             {
-                if (defeated) return "DEFEAT";
-                if (victory) return "VICTORY";
+                if (defeated || victory)
+                {
+                    string result = defeated ? "DEFEAT" : "VICTORY";
+                    return missileStress != null ? $"{result} | AAM {missileStress.Hits}/{missileStress.Launched} hits/fired" : result;
+                }
                 if (fighters.Count == 0) return "NO ENEMY";
+                if (missileStress != null)
+                    return $"Tigers {fighters.Count}/{FighterCount} | AAM {missileStress.InFlight} live | {missileStress.Hits}/{missileStress.Launched} hits/fired";
                 // Both independent pilots remain visible on the H debug overlay.
                 string status = $"Tigers {fighters.Count}/{FighterCount}";
                 foreach (var fighter in fighters)
@@ -82,6 +91,11 @@ namespace AirCombat
             if (hitFeedback == null) hitFeedback = gameObject.AddComponent<CombatHitFeedback>();
             hitFeedback.Bind(view);
             hitFeedback.Track(playerHealth, true);
+            if (missilePrefab != null)
+            {
+                missileStress = gameObject.AddComponent<EnemyMissileStressTest>();
+                missileStress.Bind(playerHealth, missilePrefab, hitFeedback, enemyMissiles);
+            }
             playerFlight = player.GetComponent<FlightController>();
             playerTrigger = player.GetComponent<PlayerWeaponTrigger>();
             if (playerTrigger != null && view != null)
@@ -111,6 +125,7 @@ namespace AirCombat
         public void Restart()
         {
             if (!bound) return;
+            if (missileStress != null) missileStress.ResetTest();
             if (missileLauncher != null) missileLauncher.ResetMagazine();
             if (hitFeedback != null) hitFeedback.ResetEffects();
             if (playerTrigger != null) playerTrigger.enabled = false;
@@ -162,6 +177,7 @@ namespace AirCombat
             health.InstallHitbox();
             if (hitFeedback != null) hitFeedback.Track(health, false);
             if (missileLauncher != null) missileLauncher.Register(health);
+            if (missileStress != null) missileStress.Register(health);
             var fighter = new Fighter
             {
                 Index = index,
@@ -217,6 +233,7 @@ namespace AirCombat
             if (!playerHealth.IsAlive)
             {
                 defeated = true;
+                if (missileStress != null) missileStress.StopTest();
                 if (missileLauncher != null) missileLauncher.CancelMissiles();
                 if (playerTrigger != null) playerTrigger.enabled = false;
                 if (hitFeedback != null)
@@ -234,7 +251,11 @@ namespace AirCombat
             {
                 if (!fighters[i].Health.IsAlive) RemoveFighterAt(i, true);
             }
-            if (fighters.Count == 0) victory = true;
+            if (fighters.Count == 0)
+            {
+                victory = true;
+                if (missileStress != null) missileStress.StopTest();
+            }
             for (int i = 0; i < fighters.Count; i++)
             {
                 // Both pilots sample the same pre-movement positions. A killed
@@ -247,8 +268,12 @@ namespace AirCombat
         private void LateUpdate()
         {
             if (!bound || !encounterReady || defeated || victory || !playerHealth.IsAlive) return;
-            foreach (var fighter in fighters)
-                if (fighter.Health.IsAlive) fighter.Pilot.TickFire(Time.time);
+            if (missileStress != null) missileStress.Tick(Time.time);
+            // Isolate missile evasion during this temporary test; uncheck to
+            // combine the original cannon attack passes with the missile pressure.
+            if (missileStress == null || enemyMissiles == null || !enemyMissiles.missileOnly)
+                foreach (var fighter in fighters)
+                    if (fighter.Health.IsAlive) fighter.Pilot.TickFire(Time.time);
         }
 
         private void OnGUI()
@@ -293,6 +318,7 @@ namespace AirCombat
         {
             Fighter fighter = fighters[index];
             if (missileLauncher != null) missileLauncher.Unregister(fighter.Health);
+            if (missileStress != null) missileStress.Unregister(fighter.Health);
             if (hitFeedback != null)
             {
                 if (destroyed) hitFeedback.SpawnWreck(fighter.Health, fighter.Flight.CurrentSpeed);
@@ -316,6 +342,7 @@ namespace AirCombat
 
         private void OnDestroy()
         {
+            if (missileStress != null) { missileStress.ResetTest(); Destroy(missileStress); }
             RemoveAllFighters();
             if (missileLauncher != null)
             {
