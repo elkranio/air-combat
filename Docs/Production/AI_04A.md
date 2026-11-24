@@ -14,3 +14,9 @@ Base `d74ce33`. Combined combat playtest: Tiger AAM is dangerous but dodgeable a
 3. Check both Tigers remain separated, return from map boundaries, and restart/defeat/victory clear combat normally. Regress legacy WeaponLab and GroundAttackLab.
 
 Next: AI-04b deliberate Gun/Missile Attack Intent, after evaluating this pursuit behavior. All settings are provisional for playtest.
+
+## AI-04a2 — imperfect aim and bounded gun pressure
+
+Base `b340950`: powered pursuit works but sustained accurate tail fire is too punishing. Preserve the Tiger motor, powered modes, wingman separation, player weapons, enemy AAM cooldown and guidance, and AC-01 projectile damage/cadence. During gun-range pursuit only, aim the physical nose at a delayed target sample (independent 150–250 ms reaction delay per pilot, extrapolate its old velocity) plus a random signed angular error up to 15 degrees. Hold the error for the entire burst, reroll on completion. Trigger within 5 degrees of that imperfect solution, not the true target; no projectile steering or artificial hit probability. Outside gun range use the existing pursuit aim. Each attack rolls a budget of 2–3 bursts; disengage after that budget or 4 seconds since first fire, allowing pending rounds to finish. The old failed-pursuit timeout and point-blank exit still apply. H adds B started/budget per Tiger.
+
+Play Mode: check straight pursuit remains dangerous but visible volleys miss on either side; sharp turns should defeat stale aim. Verify 2–3 burst exits or time cap, unchanged powered maneuverability and missile attacks, and counterattack windows. Tune aim error, delay and burst budget in Air01Encounter attack settings. Next AI-04b Attack Intent only after accepting gun pressure.

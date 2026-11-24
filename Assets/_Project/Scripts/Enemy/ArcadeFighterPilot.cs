@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace AirCombat
@@ -25,6 +26,13 @@ namespace AirCombat
             [Min(1f)] public float catchUpDistance = 100f;
             [Min(0f)] public float exitBoostSeconds = .7f;
             [Range(0f, 1f)] public float aimLeadFraction = .75f;
+            [Header("Imperfect gun aim")]
+            [Range(0f, 35f)] public float burstAimError = 15f;
+            [Min(0f)] public float aimDelayMin = .15f;
+            [Min(0f)] public float aimDelayMax = .25f;
+            [Min(1)] public int minBurstsPerPass = 2;
+            [Min(1)] public int maxBurstsPerPass = 3;
+            [Min(.1f)] public float maxGunPressureSeconds = 4f;
             [Header("Powered pursuit")]
             [Min(1f)] public float tightTurnDistance = 200f;
             [Range(10f, 90f)] public float tightEnterAngle = 40f;
@@ -75,6 +83,19 @@ namespace AirCombat
         private bool fuelAvailable, tightTurning, pursuitBoost;
         private float lastGunActivity;
         private Vector3 exitHeading;
+        private struct AimSample
+        {
+            public float Time;
+            public Vector3 Position, Velocity;
+        }
+        private readonly List<AimSample> aimHistory = new List<AimSample>(64);
+        private readonly float aimDelay;
+        private AimSample delayedAim;
+        private float burstAimOffset;
+        private int burstLimit, burstsStarted;
+        private float firstBurstAt = -1f;
+        public int BurstsThisPass => burstsStarted;
+        public int BurstLimit => burstLimit;
 
         public Phase State { get; private set; } = Phase.Approach;
         public int AttackPasses { get; private set; }
@@ -97,11 +118,15 @@ namespace AirCombat
             this.fallbackSeparationSide = fallbackSeparationSide < 0f ? -1f : 1f;
             phaseStarted = Time.time;
             lastGunActivity = phaseStarted;
+            float delayMin = Mathf.Max(0f, this.settings.aimDelayMin);
+            aimDelay = UnityEngine.Random.Range(delayMin, Mathf.Max(delayMin, this.settings.aimDelayMax));
+            SampleAim(phaseStarted);
         }
 
         // Called before CombatAircraftFlight.Update. No direct transform changes.
         public void TickFlight(float now, Transform liveWingman = null)
         {
+            SampleAim(now);
             wingman = liveWingman;
             if (wingman == null) separationSide = 0f;
             Vector3 position = flight.transform.position;
@@ -159,7 +184,11 @@ namespace AirCombat
                 // failed pursuit forces a break; a working gun solution stays.
                 bool stalled = now - lastGunActivity >= settings.attackSeconds &&
                     !HasGunSolution(delta, distance) && !gun.HasPendingShots;
-                if (distance <= settings.passDistance || stalled)
+                // Allow a committed burst to finish before leaving a productive
+                // gun pass. A time cap also prevents endless intermittent fire.
+                bool spent = !gun.HasPendingShots && (burstsStarted >= burstLimit ||
+                    (firstBurstAt >= 0f && now - firstBurstAt >= settings.maxGunPressureSeconds));
+                if (distance <= settings.passDistance || stalled || spent)
                 {
                     exitHeading = flight.transform.forward;
                     Enter(Phase.Disengage, now);
@@ -184,7 +213,10 @@ namespace AirCombat
 
         private void Pursue(Vector3 delta, float distance)
         {
-            Vector3 aim = WithSeparation(AimVector(delta, distance));
+            float gunRange = Mathf.Min(settings.fireDistance, gun.Preset.MaxRange);
+            Vector3 desired = State == Phase.Attack && distance <= gunRange + 15f
+                ? GunAimVector(distance) : AimVector(delta, distance);
+            Vector3 aim = WithSeparation(desired);
             float error = HeadingError(aim);
             float angle = Mathf.Abs(error);
             // Hysteresis gives the shared tank time to recharge and avoids
@@ -218,17 +250,33 @@ namespace AirCombat
             if (State == Phase.ReturnToMap) return;
             Vector3 delta = Flat(target.position - flight.transform.position);
             float distance = delta.magnitude;
-            bool held = State == Phase.Attack && HasGunSolution(delta, distance);
+            bool held = State == Phase.Attack && burstsStarted < burstLimit &&
+                (firstBurstAt < 0f || now - firstBurstAt < settings.maxGunPressureSeconds) &&
+                HasGunSolution(delta, distance);
+            bool pendingBefore = gun.HasPendingShots;
             int before = gun.FiredCount;
             trigger.TickTrigger(held, now);
-            if (State == Phase.Attack && gun.FiredCount > before) lastGunActivity = now;
+            bool fired = gun.FiredCount > before;
+            if (State != Phase.Attack) return;
+            if (fired)
+            {
+                lastGunActivity = now;
+                if (!pendingBefore)
+                {
+                    burstsStarted++;
+                    if (firstBurstAt < 0f) firstBurstAt = now;
+                }
+            }
+            // Hold the same aim error through every round of a committed burst;
+            // roll a new error only when it actually finishes, including hitches.
+            if ((pendingBefore || fired) && !gun.HasPendingShots) RollAimError();
         }
 
         private bool HasGunSolution(Vector3 delta, float distance)
         {
             float range = Mathf.Min(settings.fireDistance, gun.Preset.MaxRange);
             return distance > settings.passDistance && distance <= range &&
-                Mathf.Abs(HeadingError(AimVector(delta, distance))) <= settings.fireHalfAngle;
+                Mathf.Abs(HeadingError(GunAimVector(distance))) <= Mathf.Min(settings.fireHalfAngle, 5f);
         }
 
         public void Stop(float now)
@@ -242,7 +290,16 @@ namespace AirCombat
             State = next;
             phaseStarted = now;
             tightTurning = pursuitBoost = false;
-            if (next == Phase.Attack) lastGunActivity = now;
+            if (next == Phase.Attack)
+            {
+                lastGunActivity = now;
+                burstsStarted = 0;
+                firstBurstAt = -1f;
+                int min = Mathf.Max(1, settings.minBurstsPerPass);
+                int max = Mathf.Max(min, settings.maxBurstsPerPass);
+                burstLimit = UnityEngine.Random.Range(min, max + 1);
+                RollAimError();
+            }
             closeSince = -1f;
             linedUpSince = -1f;
         }
@@ -254,6 +311,49 @@ namespace AirCombat
             float lead = Mathf.Min(.35f, distance / Mathf.Max(1f, gun.Preset.MuzzleVelocity)) *
                 settings.aimLeadFraction;
             return delta + Flat(target.forward) * (speed * lead);
+        }
+
+        private void RollAimError()
+        {
+            float error = Mathf.Max(0f, settings.burstAimError);
+            burstAimOffset = UnityEngine.Random.Range(-error, error);
+        }
+
+        private void SampleAim(float now)
+        {
+            var sample = new AimSample
+            {
+                Time = now,
+                Position = target.position,
+                Velocity = Flat(target.forward) * (targetFlight != null ? targetFlight.CurrentSpeed : 0f)
+            };
+            if (aimHistory.Count > 0 && aimHistory[aimHistory.Count - 1].Time >= now)
+                aimHistory[aimHistory.Count - 1] = sample;
+            else aimHistory.Add(sample);
+            float wanted = now - aimDelay;
+            int trim = 0;
+            while (trim + 1 < aimHistory.Count && aimHistory[trim + 1].Time <= wanted) trim++;
+            if (trim > 0) aimHistory.RemoveRange(0, trim);
+            delayedAim = aimHistory[0];
+            if (aimHistory.Count > 1)
+            {
+                AimSample a = aimHistory[0], b = aimHistory[1];
+                float t = Mathf.InverseLerp(a.Time, b.Time, wanted);
+                delayedAim.Position = Vector3.Lerp(a.Position, b.Position, t);
+                delayedAim.Velocity = Vector3.Lerp(a.Velocity, b.Velocity, t);
+            }
+        }
+
+        private Vector3 GunAimVector(float distance)
+        {
+            // Aim at the recently observed target, not its instantaneous heading.
+            // Extrapolate that old velocity through the reaction delay so straight
+            // flight remains dangerous but a new maneuver is not predicted perfectly.
+            float lead = Mathf.Min(.35f, distance / Mathf.Max(1f, gun.Preset.MuzzleVelocity)) *
+                settings.aimLeadFraction;
+            Vector3 aim = Flat(delayedAim.Position - flight.transform.position) +
+                delayedAim.Velocity * (aimDelay + lead);
+            return Quaternion.AngleAxis(burstAimOffset, Vector3.up) * aim;
         }
 
         private void SteerTo(Vector3 direction, bool wantsBoost)

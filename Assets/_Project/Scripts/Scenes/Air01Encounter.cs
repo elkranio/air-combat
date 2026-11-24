@@ -64,7 +64,7 @@ namespace AirCombat
                 if (missileStress != null)
                     status += $" | AAM {missileStress.InFlight} live {missileStress.Hits}/{missileStress.Launched} hits/fired";
                 foreach (var fighter in fighters)
-                    status += $" | {(fighter.Index == 0 ? "A" : "B")}:{fighter.Pilot.State}/{fighter.Pilot.FlightMode} AC {fighter.Pilot.HitCount}/{fighter.Pilot.FiredCount}";
+                    status += $" | {(fighter.Index == 0 ? "A" : "B")}:{fighter.Pilot.State}/{fighter.Pilot.FlightMode} AC {fighter.Pilot.HitCount}/{fighter.Pilot.FiredCount} B {fighter.Pilot.BurstsThisPass}/{fighter.Pilot.BurstLimit}";
                 return status;
             }
         }
