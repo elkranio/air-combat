@@ -10,6 +10,8 @@ A/D steer, W boost, S tight turn, LMB/RMB fire, R reset, H debug. Q/E reserved f
 
 To add another mobile AA, drag `Assets/_Project/Prefabs/Ground/AA02_Mantis_Combat.prefab` into the main scene and assign a scene route in its `GroundPatrolMotor` Inspector. See [authoring instructions](GAMEPLAY_ARCHITECTURE.md#add-mobile-aa-to-the-main-map).
 
+Tiger behavior settings live on `Assets/_Project/Prefabs/Aircraft/EF01_Tiger_Fighter.prefab` (`ArcadeFighterUnit`), not on the scene encounter. The current air test still spawns two Tigers automatically.
+
 ## Current documentation
 
 - [HANDOFF.md](HANDOFF.md) — current baseline, next atoms, regression gates.

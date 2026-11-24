@@ -12,7 +12,7 @@ Only the main map is enabled in the build. `E1MapFlightSession` configures varia
 
 ## Component boundaries
 
-- Aircraft: `JetAssembly`, `FlightController`, `Afterburner`, `PlayerHitPoints` and `CombatAircraftFlight`; flight, resource, health and chassis sockets remain separate. `ArcadeFighterPilot` owns Tiger pursuit and gun decisions; `EnemyMissileStressTest` (historical class name) owns independent enemy AAM cycles.
+- Aircraft: `JetAssembly`, `FlightController`, `Afterburner`, `PlayerHitPoints` and `CombatAircraftFlight`; flight, resource, health and chassis sockets remain separate. `ArcadeFighterUnit` on the Tiger prefab owns its serialized attack settings, pilot lifetime, flight/health initialization and delegates to `ArcadeFighterPilot` for pursuit and gun decisions; `EnemyMissileStressTest` (historical class name) owns independent enemy AAM cycles.
 - Weapons: `PlayerWeaponTrigger` dispatches independent primary/secondary slots. `AutocannonWeapon`, AAM launcher/projectile and `ArcadeNursLauncher` own their mechanics; `NursImpactMarker` handles the world-space footprint. Legacy `WeaponSelection` remains for labs.
 - Ground: `GroundPatrolRoute` is scene-authored waypoint data and shared rounded-path geometry; `GroundPatrolMotor` owns vehicle motion. `MantisGun` owns the accepted mobile missile launcher, radar registration and projectile lifecycle; `MantisVerticalRocket` owns launch phases and limited correction. Temporary runtime canister still depends on authored `turretYaw` and `gunPitch` visual mounts. Keep component GUID and serialized accepted tuning until prefabization/art migration is deliberately done.
 - Damage: `DamageableTarget.Domain` separates air and ground; `PlayerHitPoints` provides health and damage events; `GroundBlastDamage` applies ground splash. No cross-domain magic screen-hit test. `CombatHitFeedback` owns air combat feedback. Vehicle destruction still to implement.
@@ -27,6 +27,10 @@ Existing `Prefabs/Aircraft` (including Tiger fighter and chassis), `Prefabs/Came
 ### Add mobile AA to the main map
 
 Drag `AA02_Mantis_Combat.prefab` into the scene. Create a route with `Air Combat > Mission > Create Patrol Route` or use an existing route. Assign it in the unit’s `GroundPatrolMotor` Inspector; the start pose previews immediately. Use `Group with assigned route` to move the route and child as one group. Different units may use independent routes or different start points on a shared route. Without a route the unit stays where placed. Tune the individual motor and launcher via prefab instance overrides; Play in Ground Nurs Test. Do not apply scene route references to the prefab asset.
+
+### Tiger combat prefab
+
+`Prefabs/Aircraft/EF01_Tiger_Fighter.prefab` contains the chassis, flight motor, boost, health, radar, AC-01 and `ArcadeFighterUnit`. Tune the Attack settings on that prefab (not on Air01Encounter). The encounter instantiates the prefab, prepares it, registers health/targeting/AAM/radar, and binds the player and map boundary. Each unit creates its own randomized pilot variant. The encounter deliberately schedules both flight decisions before aircraft movement and guns after movement, retaining wingman context and the existing shared AAM scheduler. A future mission can use the same unit API; simply dropping an unbound Tiger in the scene does not assign a target. No balance or timing changes in this atom.
 
 ## Future boundary
 

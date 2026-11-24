@@ -13,7 +13,6 @@ namespace AirCombat
         [SerializeField] private MissileProjectile missilePrefab;
         [SerializeField, Min(1f)] private float spawnRadius = 550f;
         [SerializeField, Min(20f)] private float pairSpacing = 45f;
-        [SerializeField] private ArcadeFighterPilot.Settings attack = new ArcadeFighterPilot.Settings();
 
         [Header("Enemy AAM / independent attack cooldown")]
         [SerializeField] private EnemyMissileStressTest.Settings enemyMissiles = new EnemyMissileStressTest.Settings();
@@ -27,11 +26,10 @@ namespace AirCombat
         private sealed class Fighter
         {
             public int Index;
-            public GameObject Root;
-            public CombatAircraftFlight Flight;
-            public PlayerHitPoints Health;
-            public RadarAirContact Contact;
-            public ArcadeFighterPilot Pilot;
+            public ArcadeFighterUnit Unit;
+            public GameObject Root => Unit != null ? Unit.gameObject : null;
+            public PlayerHitPoints Health => Unit.Health;
+            public RadarAirContact Contact => Unit.Contact;
         }
 
         private const int FighterCount = 2;
@@ -77,7 +75,7 @@ namespace AirCombat
                 if (missileStress != null)
                     status += $" | AAM {missileStress.InFlight} live {missileStress.Hits}/{missileStress.Launched} hits/fired";
                 foreach (var fighter in fighters)
-                    status += $" | {(fighter.Index == 0 ? "A" : "B")}:{fighter.Pilot.State}/{fighter.Pilot.FlightMode} AC {fighter.Pilot.HitCount}/{fighter.Pilot.FiredCount} B {fighter.Pilot.BurstsThisPass}/{fighter.Pilot.BurstLimit}";
+                    status += $" | {(fighter.Index == 0 ? "A" : "B")}:{fighter.Unit.DebugStatus}";
                 return status;
             }
         }
@@ -207,38 +205,21 @@ namespace AirCombat
         {
             GameObject root = Instantiate(enemyPrefab, position, rotation);
             root.name = index == 0 ? "EF-01 Tiger Alpha / AIR-03" : "EF-01 Tiger Bravo / AIR-03";
-            var flight = root.GetComponent<CombatAircraftFlight>();
-            var health = root.GetComponent<PlayerHitPoints>();
-            var contact = root.GetComponent<RadarAirContact>();
-            var boost = root.GetComponent<Afterburner>();
-            var gun = root.GetComponentInChildren<AutocannonWeapon>();
-            if (flight == null || health == null || contact == null || boost == null ||
-                gun == null || !gun.isActiveAndEnabled || gun.Preset == null)
+            var unit = root.GetComponent<ArcadeFighterUnit>();
+            if (unit == null || !unit.Prepare())
             {
-                Debug.LogError("AIR encounter: incomplete Tiger prefab or AC-01 mount.", root);
+                Debug.LogError("AIR encounter: incomplete Tiger combat prefab.", root);
                 root.SetActive(false);
                 Destroy(root);
                 return false;
             }
 
-            flight.EnableVariableManeuverability();
-            health.InstallHitbox();
-            if (hitFeedback != null) hitFeedback.Track(health, false);
-            if (missileLauncher != null) missileLauncher.Register(health);
-            if (missileStress != null) missileStress.Register(health);
-            var fighter = new Fighter
-            {
-                Index = index,
-                Root = root,
-                Flight = flight,
-                Health = health,
-                Contact = contact,
-                Pilot = new ArcadeFighterPilot(flight, boost, gun, player.transform,
-                    playerFlight, boundary, (attack ?? new ArcadeFighterPilot.Settings()).CreateVariant(later),
-                    index == 0 ? -1f : 1f)
-            };
-            fighters.Add(fighter);
-            radar.Register(contact);
+            if (hitFeedback != null) hitFeedback.Track(unit.Health, false);
+            if (missileLauncher != null) missileLauncher.Register(unit.Health);
+            if (missileStress != null) missileStress.Register(unit.Health);
+            unit.BindPilot(player.transform, playerFlight, boundary, later, index == 0 ? -1f : 1f);
+            fighters.Add(new Fighter { Index = index, Unit = unit });
+            radar.Register(unit.Contact);
             return true;
         }
 
@@ -311,7 +292,7 @@ namespace AirCombat
                 // Both pilots sample the same pre-movement positions. A killed
                 // wingman has already been removed, so the survivor flies normally.
                 Transform wingman = fighters.Count == 2 ? fighters[1 - i].Root.transform : null;
-                fighters[i].Pilot.TickFlight(Time.time, wingman);
+                fighters[i].Unit.TickFlight(Time.time, wingman);
             }
         }
 
@@ -322,7 +303,7 @@ namespace AirCombat
             // Combined combat: gun requests tick independently of AAM readiness,
             // pending launch warnings and the number of missiles in flight.
             foreach (var fighter in fighters)
-                if (fighter.Health.IsAlive) fighter.Pilot.TickFire(Time.time);
+                if (fighter.Health.IsAlive) fighter.Unit.TickFire(Time.time);
         }
 
         private void OnGUI()
@@ -370,13 +351,13 @@ namespace AirCombat
             if (missileStress != null) missileStress.Unregister(fighter.Health);
             if (hitFeedback != null)
             {
-                if (destroyed) hitFeedback.SpawnWreck(fighter.Health, fighter.Flight.CurrentSpeed);
+                if (destroyed) hitFeedback.SpawnWreck(fighter.Health, fighter.Unit.CurrentSpeed);
                 hitFeedback.Untrack(fighter.Health);
             }
             if (radar != null && fighter.Contact != null) radar.Unregister(fighter.Contact);
             if (fighter.Root != null)
             {
-                fighter.Pilot?.Stop(Time.time);
+                fighter.Unit.Stop(Time.time);
                 ClearRounds(fighter.Root.transform);
                 fighter.Root.SetActive(false);
                 Destroy(fighter.Root);

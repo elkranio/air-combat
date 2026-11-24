@@ -16,6 +16,7 @@ GameObject:
   - component: {fileID: 673208277050848784}
   - component: {fileID: 4092763716338382832}
   - component: {fileID: 5885432053115185686}
+  - component: {fileID: 7608235936304712891}
   m_Layer: 0
   m_Name: EF01_Tiger_Fighter
   m_TagString: Untagged
@@ -147,6 +148,44 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::AirCombat.RadarAirContact
   headingSource: {fileID: 0}
+--- !u!114 &7608235936304712891
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 36626630230575987}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 37dc2a88e42b45aeb9b01c2978de9146, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::AirCombat.ArcadeFighterUnit
+  attack:
+    attackDistance: 170
+    fireDistance: 125
+    fireHalfAngle: 6
+    attackSeconds: 3.2
+    closeApproachSeconds: 3
+    passDistance: 23
+    exitDistance: 150
+    exitMinSeconds: 1.3
+    exitMaxSeconds: 2.7
+    catchUpDistance: 240
+    exitBoostSeconds: 0.7
+    aimLeadFraction: 0.75
+    burstAimError: 15
+    aimDelayMin: 0.15
+    aimDelayMax: 0.25
+    minBurstsPerPass: 2
+    maxBurstsPerPass: 3
+    maxGunPressureSeconds: 4
+    tightTurnDistance: 200
+    tightEnterAngle: 40
+    tightExitAngle: 20
+    fuelResume: 0.4
+    fuelReserve: 0.08
+    separationRadius: 50
+    separationTurnDegrees: 55
 --- !u!1 &4638787547729329209
 GameObject:
   m_ObjectHideFlags: 0
