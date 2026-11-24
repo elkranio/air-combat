@@ -4,7 +4,7 @@ Unity 6.6 / URP. **Stylized arcade air combat**: strong aircraft silhouettes, di
 
 ## Start here (current state)
 
-**Current playtest:** [FLIGHT-03 — tight turn feedback](Docs/Production/FLIGHT_03.md). [AIR-03](Docs/Production/AIR_03.md), [FLIGHT-02](Docs/Production/FLIGHT_02.md), [HUD-04](Docs/Production/HUD_04.md) and [GUN-03](Docs/Production/GUN_03.md) accepted for continued testing.
+**Current playtest:** [FLIGHT-03b — tight turn visibility](Docs/Production/FLIGHT_03.md#flight-03b--visibility-tuning). [AIR-03](Docs/Production/AIR_03.md), [FLIGHT-02](Docs/Production/FLIGHT_02.md), [HUD-04](Docs/Production/HUD_04.md) and [GUN-03](Docs/Production/GUN_03.md) accepted for continued testing.
 
 1. [HANDOFF.md](HANDOFF.md) — authoritative current green, immediate next atom and regression rules.
 2. [GAMEPLAY_COMBAT.md](GAMEPLAY_COMBAT.md) / [GAMEPLAY_ARCHITECTURE.md](GAMEPLAY_ARCHITECTURE.md) — current weapons, controls, radar and scene ownership.

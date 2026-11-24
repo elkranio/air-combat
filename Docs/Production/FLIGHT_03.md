@@ -11,3 +11,7 @@ Base `1d9a171`; AIR-03 and FLIGHT-02 accepted. No flight or weapon balance chang
 1. E1: Q/E have no effect; WASD unchanged. Hold W: existing flames and ignition. Hold S: same ignition, shorter outward flames while fuel lasts; release or deplete tank and flames disappear. Switch directly W to S and back, check plume orientation and sound.
 2. Hold S+A or S+D while firing, reset with R, test defeat and focus loss. Verify no stuck jets and no camera boost lead during S. Check both Tigers remain unchanged.
 3. WeaponLab / GroundAttackLab: original boost and Q/E, including cabrage abort, still work. Next atom: discuss missiles.
+
+## FLIGHT-03b — visibility tuning
+
+Base `e8fd525`: controls and ignition accepted; small S plumes were too subtle at normal gameplay zoom. Increase tight-turn length from 42% to 82%, width from 65% to 95%, yaw from 25 to 40 degrees outward. Remove the extra alpha reduction (retain the original vertex alpha gradient), add a slightly warmer tint and stronger/faster flicker for S only. No changes to W, legacy Q/E, audio, fuel, flight, weapons or AI. Verify S is obvious at normal camera zoom, including banked turns and W/S transitions.

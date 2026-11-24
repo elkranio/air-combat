@@ -16,9 +16,9 @@ namespace AirCombat
         [SerializeField] private bool playIgnitionSound;
         [SerializeField, Range(0f, 1f)] private float ignitionVolume = 0.18f;
         [Header("Tight turn feedback")]
-        [SerializeField, Range(.1f, 1f)] private float maneuverLengthScale = .42f;
-        [SerializeField, Range(.1f, 1f)] private float maneuverWidthScale = .65f;
-        [SerializeField, Range(0f, 60f)] private float maneuverYaw = 25f;
+        [SerializeField, Range(.1f, 1f)] private float maneuverLengthScale = .82f;
+        [SerializeField, Range(.1f, 1f)] private float maneuverWidthScale = .95f;
+        [SerializeField, Range(0f, 60f)] private float maneuverYaw = 40f;
         private Transform[] plumes;
         private Mesh flameMesh;
         private Mesh maneuverMesh;
@@ -75,7 +75,12 @@ namespace AirCombat
                 maneuverMesh = Instantiate(flameMesh);
                 maneuverMesh.name = "Tight turn flame";
                 Color[] colors = maneuverMesh.colors;
-                for (int i = 0; i < colors.Length; i++) colors[i].a *= .65f;
+                // Retain full alpha and a hot core; tint only the maneuver mesh.
+                for (int i = 0; i < colors.Length; i++)
+                {
+                    colors[i].g *= .94f;
+                    colors[i].b *= .75f;
+                }
                 maneuverMesh.colors = colors;
             }
             for (int i = 0; i < plumes.Length; i++)
@@ -91,11 +96,12 @@ namespace AirCombat
                         : Quaternion.identity;
                 }
                 if (!active) continue;
-                float t = Time.time * 36f + i * 1.7f;
-                float width = flameRadius * (1f + 0.08f * Mathf.Sin(t * 1.3f));
+                float t = Time.time * (tight ? 44f : 36f) + i * 1.7f;
+                float width = flameRadius * (1f + (tight ? .12f : .08f) * Mathf.Sin(t * 1.3f));
                 if (tight) width *= maneuverWidthScale;
                 float length = flameLength * (tight ? maneuverLengthScale : 1f);
-                plume.localScale = new Vector3(width, width, length * (1f + 0.14f * Mathf.Sin(t)));
+                plume.localScale = new Vector3(width, width,
+                    length * (1f + (tight ? .20f : .14f) * Mathf.Sin(t)));
             }
             wasActive = active;
             wasManeuvering = tight;

@@ -1,6 +1,6 @@
 # Air Combat — current handoff
 
-Updated 2026-11-24. Base `1d9a171`: [AIR-03](Docs/Production/AIR_03.md) accepted, two independent 5 HP Tigers; [FLIGHT-02](Docs/Production/FLIGHT_02.md) accepted, WASD flight with shared fuel. AC-01 BURST is the viable baseline, AC-02 continuous retained for future loadouts. Current playtest: [FLIGHT-03](Docs/Production/FLIGHT_03.md), permanent production WASD controls and tight-turn ignition/plumes. Next after green: discuss missiles. Full combat juice deferred. Earlier HUD-02/flight-only notes below are historical, not the current scene state.
+Updated 2026-11-24. Base `e8fd525`: [AIR-03](Docs/Production/AIR_03.md) accepted, two independent 5 HP Tigers; [FLIGHT-02](Docs/Production/FLIGHT_02.md) accepted, WASD flight with shared fuel. AC-01 BURST is the viable baseline, AC-02 continuous retained for future loadouts. FLIGHT-03 controls and ignition accepted; current playtest: [FLIGHT-03b](Docs/Production/FLIGHT_03.md#flight-03b--visibility-tuning), stronger tight-turn plumes. Next after green: discuss missiles. Full combat juice deferred. Earlier HUD-02/flight-only notes below are historical, not the current scene state.
 
 ## Goal and immediate order
 
