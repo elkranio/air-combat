@@ -170,7 +170,10 @@ namespace AirCombat
         [MenuItem("Air Combat/Terrain/Trial Relief Contrast")]
         private static void TrialReliefContrast() => Rebake(true, true);
 
-        private static void Rebake(bool regenerateMacroRelief, bool contrast = false)
+        [MenuItem("Air Combat/Terrain/Trial Canyon Run")]
+        private static void TrialCanyonRun() => Rebake(true, true, true);
+
+        private static void Rebake(bool regenerateMacroRelief, bool contrast = false, bool canyon = false)
         {
             if (EditorApplication.isPlayingOrWillChangePlaymode) return;
             Scene scene = SceneManager.GetActiveScene();
@@ -202,8 +205,23 @@ namespace AirCombat
                 Debug.LogError("TERRAIN-01: unexpected material or palette; no assets overwritten.");
                 return;
             }
+            JetAssembly canyonPlayer = null;
+            if (canyon)
+            {
+                var session = roots.Select(r => r.GetComponent<E1MapFlightSession>())
+                    .FirstOrDefault(s => s != null);
+                if (session != null)
+                    canyonPlayer = new SerializedObject(session).FindProperty("player")
+                        .objectReferenceValue as JetAssembly;
+                if (canyonPlayer == null)
+                {
+                    Debug.LogError("TERRAIN-06: trial player not found; no assets overwritten.");
+                    return;
+                }
+            }
             if (regenerateMacroRelief && !EditorUtility.DisplayDialog(
-                contrast ? "TERRAIN-05 / Relief Contrast" : "TERRAIN-04 / Macro Relief",
+                canyon ? "TERRAIN-06 / Canyon Run" :
+                    (contrast ? "TERRAIN-05 / Relief Contrast" : "TERRAIN-04 / Macro Relief"),
                 "Replace the trial heightmap and rebake its facets? This overwrites current trial sculpting. The main map is not affected.",
                 "Generate", "Cancel")) return;
             if (contrast && palette == null)
@@ -220,7 +238,9 @@ namespace AirCombat
                 Vector3 size = source.terrainData.size;
                 size.y = contrast ? ContrastHeightRange : HeightRange;
                 source.terrainData.size = size;
-                source.terrainData.SetHeights(0, 0, MakeMacroHeights(source.terrainData, contrast));
+                source.terrainData.SetHeights(0, 0, canyon
+                    ? MakeCanyonHeights(source.terrainData)
+                    : MakeMacroHeights(source.terrainData, contrast));
                 EditorUtility.SetDirty(source.terrainData);
                 Undo.RecordObject(material, "Set relief contrast palette");
                 material.SetTexture("_BaseMap", contrast ? palette : null);
@@ -237,6 +257,22 @@ namespace AirCombat
                 collider.enabled = false;
             }
             surface.SetActive(true);
+            if (canyon)
+            {
+                // Start inside the southern mouth, facing along the first bend.
+                // Only this explicit trial command moves the player; normal Rebake never does.
+                Vector3 size = source.terrainData.size;
+                const float start = .055f;
+                Vector3 localStart = new Vector3(CanyonCenter(start) * size.x, 0f, start * size.z);
+                Vector3 position = source.transform.TransformPoint(localStart);
+                position.y = 78f;
+                float dx = (CanyonCenter(start + .001f) - CanyonCenter(start - .001f)) * size.x;
+                Vector3 direction = source.transform.TransformDirection(new Vector3(dx, 0f, .002f * size.z));
+                direction.y = 0f;
+                Undo.RecordObject(canyonPlayer.transform, "Place player at canyon entrance");
+                canyonPlayer.transform.SetPositionAndRotation(position, Quaternion.LookRotation(direction, Vector3.up));
+                PrefabUtility.RecordPrefabInstancePropertyModifications(canyonPlayer.transform);
+            }
             EditorUtility.SetDirty(mesh);
             EditorSceneManager.MarkSceneDirty(scene);
             Undo.CollapseUndoOperations(undoGroup);
@@ -264,6 +300,56 @@ namespace AirCombat
             palette.Apply(false);
             AssetDatabase.CreateAsset(palette, PalettePath);
             return palette;
+        }
+
+        // One continuous S-shaped valley cut into a high desert plateau. The route
+        // is expressed in normalized map coordinates; widths and relief are in world units.
+        private static float CanyonCenter(float t)
+        {
+            return .5f + .14f * Mathf.Sin(t * 2f * Mathf.PI);
+        }
+
+        private static float[,] MakeCanyonHeights(TerrainData data)
+        {
+            int n = data.heightmapResolution;
+            Vector3 size = data.size;
+            var heights = new float[n, n];
+            for (int z = 0; z < n; z++)
+            {
+                float t = z / (float)(n - 1);
+                float center = CanyonCenter(t) * size.x;
+                float slope = .14f * 2f * Mathf.PI * Mathf.Cos(t * 2f * Mathf.PI) * size.x / size.z;
+                // Approximate perpendicular distance to the gently curving centerline.
+                float distanceScale = 1f / Mathf.Sqrt(1f + slope * slope);
+                float pocket = Mathf.Exp(-Mathf.Pow((t - .58f) / .085f, 2f));
+                float mouth = Mathf.Max(1f - Mathf.SmoothStep(0f, 1f, t / .13f),
+                    Mathf.SmoothStep(0f, 1f, (t - .85f) / .15f));
+                float halfWidth = 72f + 18f * Mathf.Sin(t * 3f * Mathf.PI + .4f)
+                    + 92f * pocket + 65f * mouth;
+                for (int x = 0; x < n; x++)
+                {
+                    float u = x / (float)(n - 1);
+                    float signedDistance = (u * size.x - center) * distanceScale;
+                    float bank = signedDistance < 0f ? 13f : 41f;
+                    // Each bank has its own low-frequency erosion and occasional spurs.
+                    // The bounded perturbation cannot close the continuous valley floor.
+                    float irregularity = 24f * (2f * Mathf.PerlinNoise(t * 8f + bank, 7.3f) - 1f)
+                        + 9f * (2f * Mathf.PerlinNoise(t * 21f + bank, 21.7f) - 1f);
+                    float edge = Mathf.Max(46f, halfWidth + irregularity);
+                    float wallWidth = Mathf.Lerp(78f, 110f, Mathf.PerlinNoise(t * 5f + bank, 3.1f));
+                    float wall = Mathf.SmoothStep(0f, 1f,
+                        Mathf.InverseLerp(edge, edge + wallWidth, Mathf.Abs(signedDistance)));
+                    float floor = 15f + 7f * Mathf.PerlinNoise(u * 5f + 11f, t * 7f + 19f);
+                    float plateau = 156f + 15f * Mathf.PerlinNoise(u * 4f + 31f, t * 5f + 5f);
+                    float rock = (2f * Mathf.PerlinNoise(u * 17f + 63f, t * 17f + 17f) - 1f)
+                        * 9f * 4f * wall * (1f - wall);
+                    // With the committed Y-30 transform, the plateau is above Y78,
+                    // while the valley floor is comfortably below the player's plane.
+                    float elevation = Mathf.Lerp(floor, plateau, wall) + rock;
+                    heights[z, x] = Mathf.Clamp01(elevation / size.y);
+                }
+            }
+            return heights;
         }
 
         // Macro geography first: unequal uplands separated by connected low country.

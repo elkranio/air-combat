@@ -1,6 +1,6 @@
 # TERRAIN-01 — faceted terrain playground
 
-Base: `143259e`. Visual trial only, separate from the authored `ArcadeDesertE1`. Inspired by the mobile Jet Attack reference: large matte faces, coherent terrain forms, no surface noise or props. No collision, enemies, weapons, canyon, or mission rules.
+Base: `143259e`. Visual trial only, separate from the authored `ArcadeDesertE1`. Inspired by the mobile Jet Attack reference: large matte faces, coherent terrain forms, no surface noise or props. No collision, enemies, weapons or mission rules. Later trials add canyon geography.
 
 ## First run
 
@@ -26,6 +26,12 @@ The existing URP Lit material uses a generated 64 x 1 linear albedo palette (`Te
 
 This is still a visual-only test: some peaks can exceed Y78 or Y110, and the aircraft can intersect the surface because terrain collision is not implemented. Use 9 (Y150) to inspect the full relief safely, then 7/8 to compare readability at gameplay height. Save and commit the changed terrain source, mesh, material, new palette asset and its .meta if accepted. Check that the original main map is unaffected.
 
+## TERRAIN-06 — Canyon Run (trial)
+
+Open `Terrain01Playground` in Edit Mode and choose **Air Combat > Terrain > Trial Canyon Run**, then confirm. This replaces only the trial heightmap with a continuous S-shaped valley cut through a high plateau: open mouths, varying width, a wider mid-route basin, independently irregular banks and coherent steep slopes. It reuses the 84 x 84 faceted mesh, the existing URP Lit sand material and relief palette, the 180-unit height range, and the committed Y-30 terrain placement. At that placement the floor is approximately world Y-15 to -8 and the plateau Y126 to Y141; the Y78 combat plane passes through the walls, not over them. There is deliberately no collision detection yet.
+
+The command moves the trial Kestrel to the southern mouth at Y78, facing along the route. Camera, controls, lighting and flight tuning are unchanged. R returns to the new start. 9 (Y150) is useful for an overhead comparison. Ordinary Rebake preserves the current heightmap and player placement. The old relief trial commands remain available, but do not restore the previous player pose; restore the previous green for an exact comparison. Save the trial scene and commit the terrain data and mesh if accepted. The authored main map and labs are untouched.
+
 ## Acceptance
 
 - No missing components or errors during scene creation or Play.
@@ -34,4 +40,4 @@ This is still a visual-only test: some peaks can exceed Y78 or Y110, and the air
 - Source terrain edits survive rebake; mesh has no cracks, upside-down triangles or smooth normals.
 - Main scene and existing lab scenes are untouched; the main map still runs the current interception test.
 
-Next, if the visual style is accepted: TERRAIN-02 (wide canyon with large turns and open combat space), then COLLISION-01. Do not implement altitude gameplay or terrain collision in this trial.
+Next: evaluate the Canyon Run at Y78, including wall readability and whether the corridor feels comfortable at speed; then consider COLLISION-01. Do not implement altitude gameplay or terrain collision in this trial.
