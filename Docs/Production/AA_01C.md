@@ -1,5 +1,13 @@
 # AA-01c — Mantis combat
 
+## AA-01e — vertical unguided experiment (current)
+
+Base `53f907f`. Flak was mechanically playable but the stationary airborne markers read as ground objects under the oblique camera. Preserve Flak and Tracers; in Edit Mode select the existing Mantis vehicle wrapper (MantisGun), set **Attack Mode = Vertical Unguided**, save and Play. No installer or scene migration. New components default to Vertical Unguided; existing serialized mode is deliberately preserved until changed. Runtime-only twin vertical pod replaces the gun meshes in this mode; no art/prefab changes.
+
+- Two independent launches, .35s apart, 2.5s pause after the second. Each rises vertically at 180 units/s to the launch-time aircraft height; turns over .16s, aiming at the player's current XZ position until commitment. No lead. Then 240 units/s, fixed horizontal heading, 310 units of travel. Only the committed phase deals damage (3 HP on swept physical hit); expiry/impact puff is harmless. No UI markers or seeking after commitment.
+- Visible hull, smoke trail, distinct boost ignition, launch and expiry sound placeholders. Existing radar ground contact, movement, reset/unbind and NURS remain unchanged. No extra missile contact on radar in this experiment. Test on a fixed altitude; changing flight altitude mid-launch is outside the current test.
+- Play gate: verify both rockets originate from the pod, rise to the aircraft plane, turn independently, fly straight after ignition, expire without splash damage, and clear on encounter reset/mode change. Try different approach angles and speeds; tune readability before lethality. Flak/Tracers remain selectable.
+
 ## AA-01d — Flak experiment (current)
 
 Base `9c7d514`. No reinstall or scene changes needed. Existing MantisGun defaults to Attack Mode = Flak; select Tracers before Play for the original AA-01c. Same patrol, servo, ground mode, radar, HUD and reset lifecycle.

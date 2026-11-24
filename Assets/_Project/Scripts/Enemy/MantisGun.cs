@@ -9,9 +9,18 @@ namespace AirCombat
     [DefaultExecutionOrder(180)]
     public sealed class MantisGun : MonoBehaviour, IRadarContact
     {
-        public enum AttackMode { Flak, Tracers }
-        [Header("Attack mode (AA-01d)")]
-        [SerializeField] private AttackMode attackMode = AttackMode.Flak;
+        public enum AttackMode { Flak, Tracers, VerticalUnguided }
+        [Header("Attack mode (AA-01e)")]
+        [SerializeField] private AttackMode attackMode = AttackMode.VerticalUnguided;
+        [Header("Vertical unguided pair")]
+        [SerializeField, Min(.02f)] private float verticalShotInterval = .35f;
+        [SerializeField, Min(1f)] private float verticalRiseSpeed = 180f;
+        [SerializeField, Min(.05f)] private float verticalAlignSeconds = .16f;
+        [SerializeField, Min(1f)] private float verticalCruiseSpeed = 240f;
+        [SerializeField, Min(1f)] private float verticalRange = 310f;
+        [SerializeField, Min(.1f)] private float verticalPause = 2.5f;
+        [SerializeField, Min(1)] private int verticalDamage = 3;
+        [Header("Flak experiment")]
         [SerializeField, Min(.02f)] private float flakShotInterval = .15f;
         [SerializeField, Min(.05f)] private float flakTravelSeconds = .25f;
         [SerializeField, Min(.1f)] private float flakFuseSeconds = .5f;
@@ -47,6 +56,12 @@ namespace AirCombat
         private Material tracer;
         private readonly List<MantisRound> rounds = new List<MantisRound>();
         private readonly List<MantisFlakCharge> flakCharges = new List<MantisFlakCharge>();
+        private readonly List<MantisVerticalRocket> verticalRockets = new List<MantisVerticalRocket>();
+        private GameObject verticalPod;
+        private Transform verticalLeft, verticalRight;
+        private Renderer[] barrelRenderers;
+        private bool[] barrelVisibility;
+        private Material rocketHull;
         private Vector3 flakSecondPoint;
         private AttackMode activeMode;
         private AudioClip flakBlastClip, flakShotClip;
@@ -91,6 +106,7 @@ namespace AirCombat
             nextBurst = Time.time + .5f;
             if (turretYaw != null) turretYaw.localRotation = Quaternion.identity;
             if (gunPitch != null) gunPitch.localRotation = Quaternion.Euler(-18f, 0f, 0f);
+            SetVerticalVisual(attackMode == AttackMode.VerticalUnguided);
         }
 
         public void Unbind()
@@ -99,16 +115,19 @@ namespace AirCombat
             ClearRounds();
             pending = 0;
             bound = false;
+            SetVerticalVisual(false);
             target = null;
             radar = null;
         }
 
-        private void OnEnable() { if (bound && radar != null) radar.Register(this); }
-        private void OnDisable() { if (radar != null) radar.Unregister(this); pending = 0; ClearRounds(); }
+        private void OnEnable() { if (bound && radar != null) { radar.Register(this); ResetCombat(); } }
+        private void OnDisable() { if (radar != null) radar.Unregister(this); pending = 0; ClearRounds(); SetVerticalVisual(false); }
         private void OnDestroy()
         {
             Unbind();
             if (tracer != null) Destroy(tracer);
+            if (verticalPod != null) Destroy(verticalPod);
+            if (rocketHull != null) Destroy(rocketHull);
             if (flakBlastClip != null) Destroy(flakBlastClip);
             if (flakShotClip != null) Destroy(flakShotClip);
         }
@@ -121,6 +140,9 @@ namespace AirCombat
             foreach (var charge in flakCharges)
                 if (charge != null) { charge.gameObject.SetActive(false); Destroy(charge.gameObject); }
             flakCharges.Clear();
+            foreach (var rocket in verticalRockets)
+                if (rocket != null) { rocket.gameObject.SetActive(false); Destroy(rocket.gameObject); }
+            verticalRockets.Clear();
         }
 
         private void LateUpdate()
@@ -128,6 +150,7 @@ namespace AirCombat
             if (!bound || target == null) return;
             rounds.RemoveAll(r => r == null);
             flakCharges.RemoveAll(r => r == null);
+            verticalRockets.RemoveAll(r => r == null);
             if (activeMode != attackMode) ResetCombat();
             if (!target.IsAlive) { pending = 0; return; }
             float dt = Time.deltaTime;
@@ -145,6 +168,11 @@ namespace AirCombat
             bool inRange = horizontal.sqrMagnitude <= detectionRange * detectionRange;
             if (!inRange && pending == 0) return;
 
+            if (attackMode == AttackMode.VerticalUnguided)
+            {
+                TickVertical(inRange);
+                return;
+            }
             Vector3 origin = (muzzleL.position + muzzleR.position) * .5f;
             if (attackMode == AttackMode.Flak)
             {
@@ -191,6 +219,79 @@ namespace AirCombat
             pending--;
             nextPair = Time.time + pairInterval;
             if (pending == 0) SchedulePause();
+        }
+
+        // Runtime-only placeholder pod; keep the authored Mantis prefab and both
+        // earlier attack modes intact. The actual launch sockets sit on the tubes.
+        private void SetVerticalVisual(bool visible)
+        {
+            if (gunPitch == null || turretYaw == null) return;
+            if (visible && verticalPod == null)
+            {
+                barrelRenderers = gunPitch.GetComponentsInChildren<Renderer>(true);
+                barrelVisibility = new bool[barrelRenderers.Length];
+                for (int i = 0; i < barrelRenderers.Length; i++) barrelVisibility[i] = barrelRenderers[i].enabled;
+                var shader = Shader.Find("Universal Render Pipeline/Lit");
+                if (shader == null) { Debug.LogError("Mantis: URP Lit missing.", this); return; }
+                rocketHull = new Material(shader) { name = "Mantis / vertical missile hull" };
+                rocketHull.SetColor("_BaseColor", new Color(.52f,.59f,.57f));
+                rocketHull.SetFloat("_Smoothness", .08f);
+                verticalPod = new GameObject("AA-01e / temporary vertical pod");
+                verticalPod.transform.SetParent(turretYaw, false);
+                verticalLeft = BuildTube(-1.05f);
+                verticalRight = BuildTube(1.05f);
+            }
+            if (verticalPod != null) verticalPod.SetActive(visible);
+            if (verticalPod != null && barrelRenderers != null)
+                for (int i = 0; i < barrelRenderers.Length; i++)
+                    if (barrelRenderers[i] != null) barrelRenderers[i].enabled = !visible && barrelVisibility[i];
+        }
+
+        private Transform BuildTube(float x)
+        {
+            var tube = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
+            tube.name = "Launch canister";
+            tube.transform.SetParent(verticalPod.transform, false);
+            tube.transform.localPosition = new Vector3(x, 1.5f, 1.0f);
+            tube.transform.localScale = new Vector3(1.65f, 1.55f, 1.65f);
+            var collider = tube.GetComponent<Collider>();
+            collider.enabled = false; Destroy(collider);
+            tube.GetComponent<MeshRenderer>().sharedMaterial = rocketHull;
+            var socket = new GameObject(x < 0 ? "Vertical L" : "Vertical R").transform;
+            socket.SetParent(verticalPod.transform, false);
+            socket.localPosition = new Vector3(x, 3.05f, 1.0f);
+            return socket;
+        }
+
+        private void TickVertical(bool inRange)
+        {
+            if (verticalLeft == null || verticalRight == null) return;
+            if (pending > 0)
+            {
+                if (Time.time < nextPair) return;
+                FireVertical(verticalRight);
+                pending = 0;
+                nextBurst = Time.time + verticalPause;
+                return;
+            }
+            if (!inRange || Time.time < nextBurst) return;
+            FireVertical(verticalLeft);
+            pending = 1;
+            nextPair = Time.time + verticalShotInterval;
+        }
+
+        private void FireVertical(Transform socket)
+        {
+            if (flakBlastClip == null) flakBlastClip = MantisFlakCharge.MakeSound(false);
+            if (flakShotClip == null) flakShotClip = MantisFlakCharge.MakeSound(true);
+            var go = new GameObject("Mantis / vertical unguided rocket");
+            go.transform.position = socket.position;
+            var rocket = go.AddComponent<MantisVerticalRocket>();
+            rocket.Launch(transform, target, verticalRiseSpeed, verticalAlignSeconds,
+                verticalCruiseSpeed, verticalRange, verticalDamage, rocketHull, tracer,
+                flakShotClip, flakBlastClip, flakSoundVolume, () => HitCount++);
+            verticalRockets.Add(rocket);
+            FiredCount++;
         }
 
         // A paired world-space snapshot: the second charge never retargets,
