@@ -44,8 +44,10 @@ namespace AirCombat
                 trail.enabled = false;
                 trail = null; // Keep the disabled legacy exhaust child on this instance.
             }
-            foreach (var renderer in GetComponentsInChildren<MeshRenderer>())
-                renderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.On;
+            // A displaced ground shadow reads as a second incoming missile.
+            // Production AAM on both sides must not cast shadows.
+            foreach (var renderer in GetComponentsInChildren<Renderer>(true))
+                renderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
         }
 
         public void Cancel()

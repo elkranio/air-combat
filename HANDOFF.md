@@ -1,6 +1,6 @@
 # Air Combat — current handoff
 
-Updated 2026-11-24. Base `609c3de`: Short Vector and Threat Arc usable, Short Vector preferred so far. Current playtest [MISSILE-03b5](Docs/Production/MISSILE_03B.md#missile-03b5--radar-sweep-comparison), player-local tapered sector with inward scan pulses. All three styles selectable on the runtime HUD. Next choose warning baseline, then evasion tuning and normal encounter pacing. No changes to radar, missile visuals, timing or balance. Current world art, HUD and audio are provisional; dedicated unified art-direction pass deferred. WEAPON-04 accepted; LMB AC-01 BURST / RMB AAM, 150 ms lock, dual HUD. Q/E reserved for future per-slot weapon cycling. JUICE-03 deferred. Earlier HUD-02/flight-only notes below are historical.
+Updated 2026-11-24. Base `c750941`: Short Vector and enemy missile evasion tuning accepted. Current playtest [MISSILE-04](Docs/Production/MISSILE_03B.md#missile-04--combined-air-combat): two Tigers use AC-01 and unlimited AAM, independent randomized 3–8 s cooldowns, no global cap. Short Vector only; no production AAM cast shadows. Radar and warning timing retained. WEAPON-04 accepted; LMB AC-01 BURST / RMB AAM, 150 ms lock, dual HUD. Next test combined combat pressure. Q/E reserved for future per-slot weapon cycling. Unified art direction and JUICE-03 deferred. Earlier HUD-02/flight-only notes below are historical.
 
 ## Goal and immediate order
 

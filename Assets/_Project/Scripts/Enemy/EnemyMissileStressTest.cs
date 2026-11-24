@@ -4,7 +4,7 @@ using UnityEngine;
 
 namespace AirCombat
 {
-    // Temporary high-frequency test policy. Owns independent launch schedules,
+    // Independent enemy AAM launch policy. Owns launch schedules,
     // not flight commands. Projectiles outlive their launch aircraft.
     [DisallowMultipleComponent]
     public sealed class EnemyMissileStressTest : MonoBehaviour
@@ -12,9 +12,9 @@ namespace AirCombat
         [Serializable]
         public sealed class Settings
         {
-            public bool missileOnly = true;
-            [Min(.1f)] public float minInterval = 2f;
-            [Min(.1f)] public float maxInterval = 3.2f;
+            public bool missileOnly = false;
+            [Min(.1f)] public float minInterval = 3f;
+            [Min(.1f)] public float maxInterval = 8f;
             [Min(.1f)] public float warningSeconds = .8f;
             [Min(0f)] public float minLaunchRange = 90f;
             [Min(1f)] public float maxLaunchRange = 300f;
@@ -88,7 +88,7 @@ namespace AirCombat
         {
             if (health == null) return;
             shooters.Add(new Shooter { Health = health, Aircraft = health.GetComponent<JetAssembly>(),
-                NextAttempt = Time.time + Range(.15f, .8f) });
+                NextAttempt = Time.time + RollCooldown() });
         }
 
         public void Unregister(PlayerHitPoints health)
@@ -114,8 +114,7 @@ namespace AirCombat
                     if (now < shooter.LaunchAt) continue;
                     Launch(shooter);
                     shooter.LaunchAt = -1f;
-                    shooter.NextAttempt = now + Range(settings.minInterval,
-                        Mathf.Max(settings.minInterval, settings.maxInterval));
+                    shooter.NextAttempt = now + RollCooldown();
                     continue;
                 }
                 if (now < shooter.NextAttempt || !CanAcquire(shooter.Health.transform)) continue;
@@ -164,7 +163,7 @@ namespace AirCombat
             point.y = owner.position.y;
             Vector3 heading = Vector3.ProjectOnPlane(owner.forward, Vector3.up).normalized;
             var missile = Instantiate(prefab, point, Quaternion.LookRotation(heading, Vector3.up));
-            missile.name = "Tiger AAM / stress test";
+            missile.name = "Tiger AAM";
             // This prefab has no physics collider; ConfigureArcade retains the
             // explicit gameplay radius. Scale only this instance's visible geometry/exhaust.
             missile.transform.localScale *= 1.12f;
@@ -210,6 +209,12 @@ namespace AirCombat
         {
             StopTest();
             Launched = Hits = 0;
+        }
+
+        private float RollCooldown()
+        {
+            float min = Mathf.Max(.1f, settings.minInterval);
+            return Range(min, Mathf.Max(min, settings.maxInterval));
         }
 
         private float Range(float min, float max) => min + (max - min) * (float)random.NextDouble();
