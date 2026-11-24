@@ -844,6 +844,11 @@ Transform:
   - {fileID: 2025167889}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!4 &458970929 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 3773506270487298550, guid: fb953cbf99b48a04582a3ae1238c5a61, type: 3}
+  m_PrefabInstance: {fileID: 916384966}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &474682790
 GameObject:
   m_ObjectHideFlags: 0
@@ -1118,6 +1123,11 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 762429172124412495, guid: 65a5ae05c6cb16e459d6c0455ae3835c, type: 3}
   m_PrefabInstance: {fileID: 700792396}
   m_PrefabAsset: {fileID: 0}
+--- !u!4 &756519504 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 2151085775241642714, guid: fb953cbf99b48a04582a3ae1238c5a61, type: 3}
+  m_PrefabInstance: {fileID: 916384966}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &805212926
 GameObject:
   m_ObjectHideFlags: 0
@@ -1128,6 +1138,7 @@ GameObject:
   m_Component:
   - component: {fileID: 805212927}
   - component: {fileID: 805212928}
+  - component: {fileID: 805212929}
   m_Layer: 0
   m_Name: AA-01a / Mantis - VISUAL TRIAL
   m_TagString: Untagged
@@ -1143,13 +1154,13 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 805212926}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalRotation: {x: -0, y: 0.70619977, z: -0, w: 0.70801264}
+  m_LocalPosition: {x: 0.44348145, y: -0.0018310547, z: -11.329041}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 916384967}
-  m_Father: {fileID: 0}
+  m_Father: {fileID: 829228148}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &805212928
 MonoBehaviour:
@@ -1168,6 +1179,39 @@ MonoBehaviour:
   turnRate: 95
   startPoint: 0
   groundClearance: 0
+--- !u!114 &805212929
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 805212926}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e086c9ad59e84c228939bab66ab1d596, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::AirCombat.MantisGun
+  turretYaw: {fileID: 1185370416}
+  gunPitch: {fileID: 820247698}
+  muzzleL: {fileID: 756519504}
+  muzzleR: {fileID: 458970929}
+  detectionRange: 210
+  yawSpeed: 240
+  pitchSpeed: 180
+  firingTolerance: 5
+  maxElevation: 85
+  pairsPerBurst: 7
+  pairInterval: 0.085
+  pauseMin: 1.25
+  pauseMax: 1.8
+  burstDrift: 3
+  roundSpread: 0.65
+  projectileSpeed: 190
+  projectileRange: 340
+  tracerLength: 13
+  dangerHeight: 13
+  airPuffAbove: 5
+  damage: 1
 --- !u!1 &809140383
 GameObject:
   m_ObjectHideFlags: 0
@@ -1201,6 +1245,11 @@ Transform:
   - {fileID: 2142157666}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!4 &820247698 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 1092910648580169293, guid: fb953cbf99b48a04582a3ae1238c5a61, type: 3}
+  m_PrefabInstance: {fileID: 916384966}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &829228146
 GameObject:
   m_ObjectHideFlags: 0
@@ -1212,7 +1261,7 @@ GameObject:
   - component: {fileID: 829228148}
   - component: {fileID: 829228147}
   m_Layer: 0
-  m_Name: AA-01b / Mantis patrol route
+  m_Name: Mantis / Patrol Group
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -1233,10 +1282,11 @@ MonoBehaviour:
   terrain: {fileID: 1071449414}
   traversal: 0
   localPoints:
-  - {x: -6.3499155, y: 0, z: -11.351196}
-  - {x: 69.808044, y: 0, z: -11.09906}
-  - {x: 70.32065, y: 0, z: 76.6828}
-  - {x: -9.300665, y: 0, z: 77.19273}
+  - {x: -8.199646, y: -0.0018310547, z: -11.351196}
+  - {x: 90.14313, y: -0.0018310547, z: -11.09906}
+  - {x: 90.80505, y: -0.0018310547, z: 76.6828}
+  - {x: -12.009949, y: -0.0018310547, z: 77.19273}
+  cornerRadius: 9
   showRoute: 1
   routeColor: {r: 0.25, g: 0.9, b: 0.95, a: 1}
 --- !u!4 &829228148
@@ -1249,9 +1299,10 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: -567, y: 0, z: -208.6}
-  m_LocalScale: {x: 1.2913, y: 1, z: 1}
+  m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
-  m_Children: []
+  m_Children:
+  - {fileID: 805212927}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1001 &891563306
@@ -2120,6 +2171,11 @@ PrefabInstance:
       insertIndex: -1
       addedObject: {fileID: 902630264}
   m_SourcePrefab: {fileID: 100100000, guid: d5110f3e56ef9894c825455424d41a82, type: 3}
+--- !u!4 &1185370416 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 1334917448485419360, guid: fb953cbf99b48a04582a3ae1238c5a61, type: 3}
+  m_PrefabInstance: {fileID: 916384966}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &1213592969
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -2996,5 +3052,4 @@ SceneRoots:
   - {fileID: 809140384}
   - {fileID: 474682791}
   - {fileID: 1691306171}
-  - {fileID: 805212927}
   - {fileID: 829228148}
