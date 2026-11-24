@@ -9,6 +9,9 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 8176654010010000002}
+  - component: {fileID: 8176654010010000020}
+  - component: {fileID: 8176654010010000021}
+  - component: {fileID: 8176654010010000022}
   m_Layer: 0
   m_Name: CM01_Sparrow
   m_TagString: Untagged
@@ -331,3 +334,51 @@ Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: 9819ed4721fa5a89947ed9be1accedf6, type: 3}
   m_PrefabInstance: {fileID: 8176654010010000016}
   m_PrefabAsset: {fileID: 0}
+--- !u!114 &8176654010010000020
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8176654010010000001}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4d5c0b8e719f44c7a2627b8d5acbc202, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::AirCombat.CruiseMissileTarget
+  maxHp: 1
+--- !u!114 &8176654010010000021
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8176654010010000001}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4d5c0b8e719f44c7a2627b8d5acbc201, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::AirCombat.AirRouteMotor
+  speed: 55
+  visualTurnRate: 120
+--- !u!65 &8176654010010000022
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8176654010010000001}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 0
+  serializedVersion: 3
+  m_Size: {x: 1.32, y: 1.32, z: 6.2}
+  m_Center: {x: 0, y: 0, z: -0.025}

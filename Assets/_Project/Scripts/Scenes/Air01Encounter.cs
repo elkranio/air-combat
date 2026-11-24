@@ -20,6 +20,13 @@ namespace AirCombat
         [Header("NURS-01 / isolated ground playtest (set before Play)")]
         [SerializeField] private bool groundNursTest = true;
         private bool groundMode;
+        [Header("CM-02 / interception test (overrides Ground Nurs Test)")]
+        [SerializeField] private bool interceptionTest;
+        [SerializeField] private CruiseMissileTarget sparrowPrefab;
+        [SerializeField, Min(1)] private int interceptionCount = 10;
+        [SerializeField, Min(.1f)] private float interceptionInterval = .7f;
+        private InterceptionPlayground interception;
+        private bool interceptionMode;
         private ArcadeNursLauncher nursLauncher;
         private readonly List<MantisGun> groundGuns = new List<MantisGun>();
 
@@ -56,6 +63,7 @@ namespace AirCombat
         {
             get
             {
+                if (interceptionMode) return interception != null ? interception.DebugStatus : "INTERCEPT UNAVAILABLE";
                 if (groundMode)
                 {
                     string groundStatus = nursLauncher != null ? nursLauncher.DebugStatus : "NURS UNAVAILABLE";
@@ -83,13 +91,15 @@ namespace AirCombat
         public void Bind(JetAssembly aircraft, Camera camera, AircraftRadar sensor,
             PlayerHitPoints health, float halfExtent)
         {
-            groundMode = groundNursTest;
+            interceptionMode = interceptionTest;
+            groundMode = groundNursTest && !interceptionMode;
             player = aircraft;
             view = camera;
             radar = sensor;
             playerHealth = health;
             boundary = halfExtent;
-            if ((!groundMode && enemyPrefab == null) || player == null || radar == null || playerHealth == null)
+            if ((!groundMode && !interceptionMode && enemyPrefab == null) ||
+                (interceptionMode && sparrowPrefab == null) || player == null || radar == null || playerHealth == null)
             {
                 Debug.LogError("AIR encounter is missing its prefab or player binding.", this);
                 return;
@@ -124,7 +134,7 @@ namespace AirCombat
             if (hitFeedback == null) hitFeedback = gameObject.AddComponent<CombatHitFeedback>();
             hitFeedback.Bind(view);
             hitFeedback.Track(playerHealth, true);
-            if (!groundMode && missilePrefab != null)
+            if (!groundMode && !interceptionMode && missilePrefab != null)
             {
                 missileStress = gameObject.AddComponent<EnemyMissileStressTest>();
                 missileStress.Bind(playerHealth, missilePrefab, hitFeedback, enemyMissiles, radar);
@@ -133,7 +143,13 @@ namespace AirCombat
             // AC-02 remains a prefab option, not an equipped weapon in this test.
             foreach (var gun in player.GetComponentsInChildren<AutocannonWeapon>(true))
                 if (gun.Preset != null && gun.Preset.Continuous) gun.enabled = false;
-            if (groundMode)
+            if (interceptionMode)
+            {
+                playerTrigger.ConfigureDualSlots(null);
+                interception = new InterceptionPlayground(sparrowPrefab, radar, hitFeedback,
+                    interceptionCount, interceptionInterval);
+            }
+            else if (groundMode)
             {
                 nursLauncher = groundLauncher;
                 nursLauncher.gameObject.SetActive(true);
@@ -176,6 +192,12 @@ namespace AirCombat
             if (playerFlight != null) playerFlight.enabled = true;
             if (playerTrigger != null) playerTrigger.enabled = true;
             defeated = victory = false;
+            if (interceptionMode)
+            {
+                interception?.Restart(player.transform.position, boundary, Time.time);
+                encounterReady = true;
+                return;
+            }
             if (groundMode)
             {
                 foreach (var gun in groundGuns)
@@ -276,11 +298,17 @@ namespace AirCombat
                 playerBreak?.CancelBreak();
                 playerBoost?.Tick(false, 0f);
                 ClearRounds(player.transform);
+                interception?.Clear();
                 for (int i = fighters.Count - 1; i >= 0; i--)
                     RemoveFighterAt(i, !fighters[i].Health.IsAlive);
                 return;
             }
 
+            if (interceptionMode)
+            {
+                interception?.Tick(Time.time, Time.deltaTime);
+                return;
+            }
             if (groundMode) return;
             for (int i = fighters.Count - 1; i >= 0; i--)
             {
@@ -312,6 +340,11 @@ namespace AirCombat
 
         private void OnGUI()
         {
+            if (interceptionMode && !defeated && Event.current.type == EventType.Repaint && interception != null)
+            {
+                var counter = new Rect((Screen.width - 340f) * .5f, 12f, 340f, 30f);
+                GUI.Box(counter, interception.DebugStatus);
+            }
             if ((!victory && !defeated) || Event.current.type != EventType.Repaint) return;
             if (resultStyle == null)
                 resultStyle = new GUIStyle(GUI.skin.label)
@@ -339,6 +372,7 @@ namespace AirCombat
 
         public void SetAltitude(float y)
         {
+            interception?.SetAltitude(y);
             foreach (var fighter in fighters)
             {
                 if (fighter.Root == null) continue;
@@ -376,6 +410,7 @@ namespace AirCombat
 
         private void OnDestroy()
         {
+            interception?.Clear();
             foreach (var gun in groundGuns) if (gun != null) gun.Unbind();
             groundGuns.Clear();
             if (missileStress != null) { missileStress.ResetTest(); Destroy(missileStress); }

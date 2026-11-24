@@ -319,6 +319,13 @@ namespace AirCombat
             wrecks.Clear();
         }
 
+        // Interception targets detonate in place instead of creating a fighter wreck.
+        public void EmitInterceptionBurst(Vector3 point, Vector3 forward)
+        {
+            EmitBurst(point, forward, true, true);
+            EmitPuffs(point, true);
+        }
+
         public void ResetEffects()
         {
             foreach (var tracked in targets.Values)

@@ -6,6 +6,8 @@ Unity 6.6 / URP. Stylized arcade air combat: strong silhouettes, responsive flig
 
 Open `Assets/_Project/Scenes/ArcadeDesertE1.unity` and press Play. The current green uses **Ground Nurs Test** on `Air01Encounter`: AC-01 on LMB, NURS on RMB, mobile missile AA on the authored patrol. Disable Ground Nurs Test before Play to restore the two-Tiger air encounter and AAM secondary. These are separate test compositions, not a finished mission system.
 
+**CM-02:** the main scene starts in Interception Test (takes priority over Ground Nurs Test). Ten Sparrow targets travel along a fixed route, AC-01 only, R restarts, no mission objective. Turn Interception Test off to restore the original ground/air selector. See [CM-02](Docs/CM_02.md).
+
 A/D steer, W boost, S tight turn, LMB/RMB fire, R reset, H debug. Q/E reserved for future per-slot weapon selection.
 
 To add another mobile AA, drag `Assets/_Project/Prefabs/Ground/AA02_Mantis_Combat.prefab` into the main scene and assign a scene route in its `GroundPatrolMotor` Inspector. See [authoring instructions](GAMEPLAY_ARCHITECTURE.md#add-mobile-aa-to-the-main-map).

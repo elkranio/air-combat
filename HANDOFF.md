@@ -1,6 +1,6 @@
 # Air Combat — current handoff
 
-2026-11-24 | ART-AA-01, based on accepted green `9060cbb` (CLEANUP-02c). New rocket-carrier visual; pending Unity import and Play Mode regression. Earlier iterations are archived. Inspector values on committed assets take precedence over code defaults.
+2026-11-24 | CM-02, based on green `da86980`. Sparrow visual and Mantis rocket carrier accepted; interception playground pending Play Mode regression. Earlier iterations are archived. Inspector values on committed assets take precedence over code defaults.
 
 ## Accepted baseline
 
@@ -15,7 +15,7 @@
 
 ## Next atoms (in order)
 
-1. ART-AA-01 — inspect the new [rocket carrier](Docs/ART_AA_01.md) in Unity at gameplay zoom, verify materials, socket and cold-launch behavior. No scene migration or tuning changes. A separate guided SAM model may follow; enemy aircraft placement remains deferred.
+1. CM-02 — verify [interception playground](Docs/CM_02.md): ten moving Sparrow targets, AC-01 hits, radar, explosion, escape and R restart. Tune only after playtest; drone model and future mission composition deferred.
 2. JUICE-AA-01 — launch smoke, attitude jets, distinct ignition burst, strong smoke trail, explosion and appropriate sound; evaluate in gameplay camera.
 3. GROUND-01 — NURS damage and destruction of ground vehicles; then JUICE-NURS-01 for meaningful hit/impact feedback.
 4. CONVOY-01 — first mixed mission: moving targets, mobile AA and optional fighter escort. Test the precision-versus-exposure tradeoff; mission completion need not require killing every fighter.

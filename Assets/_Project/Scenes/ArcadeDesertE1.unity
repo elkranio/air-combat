@@ -2408,6 +2408,10 @@ MonoBehaviour:
     hitRadius: 5
     damage: 6
   groundNursTest: 1
+  interceptionTest: 1
+  sparrowPrefab: {fileID: 8176654010010000020, guid: 69cd2d1011a85dce9593357073f49dbc, type: 3}
+  interceptionCount: 10
+  interceptionInterval: 0.7
 --- !u!1001 &2025167888
 PrefabInstance:
   m_ObjectHideFlags: 0
