@@ -13,9 +13,18 @@ Base `d6f6d21`. Apply the patch, let Unity compile, then select **Air Combat > M
 
 Save/commit the created scene and its new asset folder including all .meta files after verifying Play Mode. The menu reopens rather than regenerates an existing scene. Unity compilation and Play Mode need local verification.
 
+## MISSION-01B/C — Airfield layout v0 (WIP)
+
+Base `86f7331`. The player approved the schematic: one runway, a connecting taxiway, three parked aircraft, one hangar and one control tower. With the existing mission scene open, select **Air Combat > Missions > Build Mission 01 Airfield v0**. This adds an editable child layout beneath the existing empty Airfield anchor. It refuses to overwrite an existing layout. Review in Scene/Game view, then save and commit the scene. Do not rerun an old B1 installer.
+
+- Reuse the existing B1e runway/shoulders/markings (460 x 36), B1f arch hangar and B1e tower. Only the new scene instance is modified. The entire layout is rotated 30 degrees towards the map interior.
+- Resize the apron to 150 x 130, move the 22-wide taxiway towards the near end of the runway, add a separate hangar approach and three open parking stands. Old apron markings and wear are hidden on this instance. Roads and spacing are provisional and expected to change after visual review.
+- Two visual-only Kestrels reuse the combat prefab's painted chassis meshes (no flight, weapons, scripts or colliders); one parked Lynx uses the approved visual prefab. Another static Lynx marks the future runway start, to be removed when the real player is integrated.
+- No change to the temporary airborne player, camera, terrain, flight logic, mission flow, existing prefabs or other scenes. No new runtime code. Unity compile/Play Mode verification remains local.
+
 ## Next work (order flexible, all WIP)
 
-1. Agree on the airfield plan (runway, taxiway, three parked aircraft, hangar, tower); reuse accepted assets where suitable, model missing pieces and evaluate from the actual game camera.
+1. Review the airfield layout in the actual game camera; adjust roads, spacing and model missing pieces only if needed.
 2. Integrate the approved Lynx visual into a player aircraft prefab without retuning the existing flight/weapon logic. Keep Kestrel available.
 3. Mission intro/ready state with room for a later cutscene or dialogue; W initiates automatic takeoff.
 4. Automatic roll, liftoff, climb and handover to normal flight.
