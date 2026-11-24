@@ -20,10 +20,10 @@ namespace AirCombat
         private const string MaterialPath = ArtFolder + "/Terrain01_Sand.mat";
         private const string SourceName = "TERRAIN-01 / Editable source";
         private const string MeshName = "TERRAIN-01 / Faceted surface";
-        private const float MapSize = 2400f; // Extra border beyond the existing +/-850 reset.
+        private const float MapSize = 2400f; // Visual playground extent.
         private const float HeightRange = 100f;
         private const int HeightResolution = 257;
-        private const int Cells = 42;
+        private const int Cells = 84; // Half the previous nominal facet edge length.
 
         [MenuItem("Air Combat/Terrain/Create or Open TERRAIN-01")]
         private static void CreateOrOpen()
