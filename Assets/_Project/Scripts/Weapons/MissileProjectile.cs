@@ -21,12 +21,12 @@ namespace AirCombat
         private bool launched;
         public bool IsInFlight => launched && isActiveAndEnabled;
         private Action<Vector3, Vector3> arcadeExhaust;
-        private PlayerHitPoints arcadeTarget;
+        private AirDamageableTarget arcadeTarget;
         private Vector3 previousExhaust;
         private Vector3 exhaustLocal = new Vector3(0f, 0f, -1.9f);
 
         // Per-instance production tuning. The prefab and lab launchers keep their defaults.
-        public void ConfigureArcade(PlayerHitPoints aimTarget, float velocity, float yawRate,
+        public void ConfigureArcade(AirDamageableTarget aimTarget, float velocity, float yawRate,
             float budget, float flightSeconds, float radius, Action<Vector3, Vector3> exhaust)
         {
             arcadeTarget = aimTarget;

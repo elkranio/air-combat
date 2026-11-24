@@ -12,4 +12,10 @@ namespace AirCombat
         // True if the target accepted the hit (for hit counters/feedback).
         public abstract bool ApplyDamage(Vector3 point, int damage);
     }
+
+    // Shared lockable air target; ground receivers remain outside AAM designation.
+    public abstract class AirDamageableTarget : DamageableTarget
+    {
+        public abstract bool IsAlive { get; }
+    }
 }

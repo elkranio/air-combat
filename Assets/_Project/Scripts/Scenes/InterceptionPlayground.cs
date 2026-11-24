@@ -11,6 +11,9 @@ namespace AirCombat
         private readonly CombatHitFeedback feedback;
         private readonly int count;
         private readonly float interval;
+        private readonly float lateralSpread;
+        private readonly ArcadeMissileLauncher aam;
+        private float safeExtent;
         private readonly List<CruiseMissileTarget> live = new List<CruiseMissileTarget>();
         private Vector3[] route;
         private float nextSpawn;
@@ -18,13 +21,15 @@ namespace AirCombat
         private bool running;
 
         public InterceptionPlayground(CruiseMissileTarget prefab, AircraftRadar radar,
-            CombatHitFeedback feedback, int count, float interval)
+            CombatHitFeedback feedback, ArcadeMissileLauncher aam, int count, float interval, float lateralSpread)
         {
             this.prefab = prefab;
             this.radar = radar;
             this.feedback = feedback;
             this.count = Mathf.Max(1, count);
             this.interval = Mathf.Max(.1f, interval);
+            this.lateralSpread = Mathf.Max(0f, lateralSpread);
+            this.aam = aam;
         }
 
         public string DebugStatus => $"Sparrow {destroyed}/{count} DOWN   {escaped} ESCAPED   {live.Count} LIVE";
@@ -33,7 +38,7 @@ namespace AirCombat
         {
             Clear();
             spawned = destroyed = escaped = 0;
-            float safe = Mathf.Max(50f, boundary - 65f);
+            float safe = safeExtent = Mathf.Max(50f, boundary - 65f);
             // Simple straight authoring-test lane across the map, at combat altitude.
             float z = Mathf.Clamp(origin.z + 100f, -safe, safe);
             float startX = Mathf.Clamp(origin.x - 200f, -safe, safe - 50f);
@@ -63,11 +68,20 @@ namespace AirCombat
             // At most one spawn per frame: no overlapping catch-up batch after a stall.
             if (spawned < count && now >= nextSpawn)
             {
-                var target = Object.Instantiate(prefab, route[0], Quaternion.identity);
+                // Each target gets its own parallel lane, still at combat altitude.
+                // Sample inside the map rather than clamping multiple lanes onto its edge.
+                float z = Random.Range(Mathf.Max(-safeExtent, route[0].z - lateralSpread),
+                    Mathf.Min(safeExtent, route[0].z + lateralSpread));
+                var lane = new[] {
+                    new Vector3(route[0].x, route[0].y, z),
+                    new Vector3(route[1].x, route[1].y, z)
+                };
+                var target = Object.Instantiate(prefab, lane[0], Quaternion.identity);
                 target.name = $"CM-01 Sparrow {++spawned:00}";
-                target.Begin(route);
+                target.Begin(lane);
                 live.Add(target);
                 radar.Register(target);
+                if (aam != null) aam.Register(target);
                 nextSpawn = now + interval;
             }
             if (live.Count > 0) Physics.SyncTransforms();
@@ -88,6 +102,7 @@ namespace AirCombat
             if (radar != null) radar.Unregister(target);
             if (target != null)
             {
+                if (aam != null) aam.Unregister(target);
                 target.gameObject.SetActive(false);
                 Object.Destroy(target.gameObject);
             }

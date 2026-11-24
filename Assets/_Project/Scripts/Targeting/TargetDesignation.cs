@@ -6,27 +6,28 @@ namespace AirCombat
     // Encounter supplies candidates once per spawn/removal; no scene-wide scans.
     public sealed class TargetDesignation
     {
-        private readonly Dictionary<PlayerHitPoints, List<Renderer>> candidates =
-            new Dictionary<PlayerHitPoints, List<Renderer>>();
+        private readonly Dictionary<AirDamageableTarget, List<Renderer>> candidates =
+            new Dictionary<AirDamageableTarget, List<Renderer>>();
 
-        public void Register(PlayerHitPoints health)
+        public void Register(AirDamageableTarget health)
         {
             if (health == null || candidates.ContainsKey(health)) return;
             var jet = health.GetComponent<JetAssembly>();
-            if (jet == null || jet.VisualRoot == null) return;
+            Transform visual = jet != null ? jet.VisualRoot : health.transform;
+            if (visual == null) return;
             var hull = new List<Renderer>();
-            foreach (var renderer in jet.VisualRoot.GetComponentsInChildren<Renderer>(false))
+            foreach (var renderer in visual.GetComponentsInChildren<Renderer>(false))
                 if (renderer.enabled && (renderer is MeshRenderer || renderer is SkinnedMeshRenderer))
                     hull.Add(renderer);
             candidates.Add(health, hull);
         }
 
-        public void Unregister(PlayerHitPoints health)
+        public void Unregister(AirDamageableTarget health)
         {
             if (health != null) candidates.Remove(health);
         }
 
-        public bool TryBounds(Camera camera, PlayerHitPoints health, out Rect bounds)
+        public bool TryBounds(Camera camera, AirDamageableTarget health, out Rect bounds)
         {
             bounds = default;
             if (camera == null || !WeaponLock.Alive(health) || !candidates.TryGetValue(health, out var hull)) return false;
@@ -62,13 +63,13 @@ namespace AirCombat
             return new Rect(bounds.center - new Vector2(w, h) * .5f, new Vector2(w, h));
         }
 
-        public PlayerHitPoints Pick(Camera camera, Vector2 pointer, PlayerHitPoints current)
+        public AirDamageableTarget Pick(Camera camera, Vector2 pointer, AirDamageableTarget current)
         {
             if (camera == null || !camera.pixelRect.Contains(pointer)) return null;
             float scale = Mathf.Clamp(camera.pixelHeight / 720f, .75f, 3f);
             // Keep the current target only while its own pick area contains the cursor.
             if (TryBounds(camera, current, out Rect old) && PickRect(old, scale).Contains(pointer)) return current;
-            PlayerHitPoints closest = null;
+            AirDamageableTarget closest = null;
             float best = float.PositiveInfinity;
             foreach (var pair in candidates)
             {

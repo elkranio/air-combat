@@ -5,16 +5,16 @@ namespace AirCombat
     // Weapon-independent state: designation supplies hover, not cursor input.
     public sealed class WeaponLock
     {
-        public PlayerHitPoints Target { get; private set; }
+        public AirDamageableTarget Target { get; private set; }
         public float Progress { get; private set; }
         public float LostTime { get; private set; }
         public bool IsAiming { get; private set; }
         public bool IsLocked => Alive(Target) && Progress >= 1f;
 
-        public static bool Alive(PlayerHitPoints health) => health != null &&
+        public static bool Alive(AirDamageableTarget health) => health != null &&
             health.isActiveAndEnabled && health.IsAlive;
 
-        public void Step(PlayerHitPoints hover, float dt, float acquire, float partialGrace, float fullGrace)
+        public void Step(AirDamageableTarget hover, float dt, float acquire, float partialGrace, float fullGrace)
         {
             if (!Alive(Target)) Reset();
             if (!Alive(hover)) hover = null;

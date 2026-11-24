@@ -25,6 +25,7 @@ namespace AirCombat
         [SerializeField] private CruiseMissileTarget sparrowPrefab;
         [SerializeField, Min(1)] private int interceptionCount = 10;
         [SerializeField, Min(.1f)] private float interceptionInterval = .7f;
+        [SerializeField, Min(0f)] private float interceptionLateralSpread = 60f;
         private InterceptionPlayground interception;
         private bool interceptionMode;
         private ArcadeNursLauncher nursLauncher;
@@ -99,7 +100,7 @@ namespace AirCombat
             playerHealth = health;
             boundary = halfExtent;
             if ((!groundMode && !interceptionMode && enemyPrefab == null) ||
-                (interceptionMode && sparrowPrefab == null) || player == null || radar == null || playerHealth == null)
+                (interceptionMode && (sparrowPrefab == null || missilePrefab == null)) || player == null || radar == null || playerHealth == null)
             {
                 Debug.LogError("AIR encounter is missing its prefab or player binding.", this);
                 return;
@@ -143,13 +144,7 @@ namespace AirCombat
             // AC-02 remains a prefab option, not an equipped weapon in this test.
             foreach (var gun in player.GetComponentsInChildren<AutocannonWeapon>(true))
                 if (gun.Preset != null && gun.Preset.Continuous) gun.enabled = false;
-            if (interceptionMode)
-            {
-                playerTrigger.ConfigureDualSlots(null);
-                interception = new InterceptionPlayground(sparrowPrefab, radar, hitFeedback,
-                    interceptionCount, interceptionInterval);
-            }
-            else if (groundMode)
+            if (groundMode)
             {
                 nursLauncher = groundLauncher;
                 nursLauncher.gameObject.SetActive(true);
@@ -169,6 +164,9 @@ namespace AirCombat
                 else Debug.LogError("AIR encounter: missing AAM missile prefab.", this);
                 playerTrigger.ConfigureDualSlots(missileLauncher);
             }
+            if (interceptionMode)
+                interception = new InterceptionPlayground(sparrowPrefab, radar, hitFeedback,
+                    missileLauncher, interceptionCount, interceptionInterval, interceptionLateralSpread);
             playerBreak = player.GetComponent<BreakTurn>();
             bound = true;
         }

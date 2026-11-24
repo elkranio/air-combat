@@ -1,6 +1,6 @@
 # Air Combat — current handoff
 
-2026-11-24 | CM-02, based on green `da86980`. Sparrow visual and Mantis rocket carrier accepted; interception playground pending Play Mode regression. Earlier iterations are archived. Inspector values on committed assets take precedence over code defaults.
+2026-11-24 | CM-03, based on green `98c1f28`. Cannon interception accepted; existing player AAM and lateral target spread added to the playground, pending Play Mode regression. Earlier iterations are archived. Inspector values on committed assets take precedence over code defaults.
 
 ## Accepted baseline
 
@@ -15,7 +15,7 @@
 
 ## Next atoms (in order)
 
-1. CM-02 — verify [interception playground](Docs/CM_02.md): ten moving Sparrow targets, AC-01 hits, radar, explosion, escape and R restart. Tune only after playtest; drone model and future mission composition deferred.
+1. CM-03 — verify [interception playground](Docs/CM_02.md): ten moving Sparrow targets, AC-01 and AAM hits, offset lanes, lock/radar removal, explosion, escape and R restart. Existing AAM tuning retained. Spatial audio and dedicated sound design deferred; drone model and future mission composition deferred.
 2. JUICE-AA-01 — launch smoke, attitude jets, distinct ignition burst, strong smoke trail, explosion and appropriate sound; evaluate in gameplay camera.
 3. GROUND-01 — NURS damage and destruction of ground vehicles; then JUICE-NURS-01 for meaningful hit/impact feedback.
 4. CONVOY-01 — first mixed mission: moving targets, mobile AA and optional fighter escort. Test the precision-versus-exposure tradeoff; mission completion need not require killing every fighter.

@@ -5,13 +5,14 @@ namespace AirCombat
     // Fictional passive air target. Receives ordinary swept AC hits.
     [DisallowMultipleComponent]
     [RequireComponent(typeof(AirRouteMotor), typeof(BoxCollider))]
-    public sealed class CruiseMissileTarget : DamageableTarget, IRadarAirContact
+    public sealed class CruiseMissileTarget : AirDamageableTarget, IRadarAirContact
     {
         [SerializeField, Min(1)] private int maxHp = 1;
         private AirRouteMotor motor;
         private BoxCollider hitbox;
         private int hp;
-        public bool Alive => hp > 0;
+        public override bool IsAlive => hp > 0;
+        public bool Alive => IsAlive;
         public bool Finished => motor != null && motor.Finished;
         public override CombatTargetDomain Domain => CombatTargetDomain.Air;
         public Vector3 RadarPosition => transform.position;

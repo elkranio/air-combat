@@ -5,7 +5,7 @@ namespace AirCombat
     // Generic aircraft damage receiver. AA1 equips it only on GroundAttackLab's
     // player instance; the shared PlayerJet prefab and Sandbox stay untouched.
     [DisallowMultipleComponent]
-    public sealed class PlayerHitPoints : DamageableTarget
+    public sealed class PlayerHitPoints : AirDamageableTarget
     {
         [SerializeField, Min(1)] private int maxHp = 20;
         private BoxCollider hitbox;
@@ -16,7 +16,7 @@ namespace AirCombat
         public int Hp { get; private set; }
         public int MaxHp => maxHp;
         public int HitCount { get; private set; }
-        public bool IsAlive => Hp > 0;
+        public override bool IsAlive => Hp > 0;
         public float LastHitTime { get; private set; }
         public override CombatTargetDomain Domain => CombatTargetDomain.Air;
 

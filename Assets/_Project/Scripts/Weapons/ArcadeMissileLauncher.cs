@@ -59,7 +59,7 @@ namespace AirCombat
                 reloadUntil = 0f;
             }
         }
-        public PlayerHitPoints LockedTarget => selected && rounds > 0 && seeker.IsLocked ? seeker.Target : null;
+        public AirDamageableTarget LockedTarget => selected && rounds > 0 && seeker.IsLocked ? seeker.Target : null;
 
         public void Bind(Camera camera, TargetingCursor pointer, JetAssembly owner,
             MissileProjectile missilePrefab, CombatHitFeedback hitFeedback)
@@ -76,8 +76,8 @@ namespace AirCombat
             beepClip = MakeSound(false);
             launchClip = MakeSound(true);
         }
-        public void Register(PlayerHitPoints target) { designation.Register(target); }
-        public void Unregister(PlayerHitPoints target)
+        public void Register(AirDamageableTarget target) { designation.Register(target); }
+        public void Unregister(AirDamageableTarget target)
         {
             if (seeker.Target == target) { seeker.Reset(); StopBeep(); }
             designation.Unregister(target);
@@ -101,7 +101,7 @@ namespace AirCombat
             heldLast = held;
         }
 
-        private void Fire(float now, PlayerHitPoints target)
+        private void Fire(float now, AirDamageableTarget target)
         {
             if (prefab == null || aircraft == null || !WeaponLock.Alive(target)) return;
             var root = aircraft.transform;
