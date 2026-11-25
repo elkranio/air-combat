@@ -2,62 +2,75 @@
 Python exports the OBJ library; Blender --background --python also saves an
 editable .blend library (Z-up). No external packages required for OBJ export.
 """
-from math import cos, sin, pi, sqrt
+from math import cos, sin, pi, sqrt, exp
 from pathlib import Path
 from random import Random
 
 ROOT = Path(__file__).resolve().parents[2]
 OUT = ROOT / 'Assets/_Project/Art/Environment/Mission01_FirstSortie/ENV01_ShallowRelief'
-# name, half-width, half-depth, peak height, perimeter count, seed, ridge bias
+# name, v0 X/Z bounds (keep existing placement clearance), height, grid, seed,
+# plan asymmetry, crest lobes (u, v, width, depth, weight).
 SPECS = [
-    ('ENV01_A_SandHump', 30, 23, 5.0, 10, 61, 0.12),
-    ('ENV01_B_LongDrift', 63, 21, 7.0, 14, 72, 0.36),
-    ('ENV01_C_BroadRise', 67, 47, 11.0, 14, 83, -0.18),
-    ('ENV01_D_DoubleCrest', 48, 32, 9.0, 12, 94, 0.28),
-    ('ENV01_E_WindRidge', 77, 31, 12.0, 16, 105, -0.32),
+    ('ENV01_A_SandHump', (-25.900422,34.503234,-24.141421,22.753328), 3.5, (8,7), 61, .18,
+     [(-.22,.12,.66,.60,1),(.38,-.10,.49,.43,.65)]),
+    ('ENV01_B_LongDrift', (-72.018758,61.038692,-22.121087,22.143782), 4.9, (12,6), 72, -.26,
+     [(-.38,-.12,.68,.45,.78),(.25,.22,.68,.42,1)]),
+    ('ENV01_C_BroadRise', (-73.837,70.697,-43.940,49.353), 7.7, (11,9), 83, .23,
+     [(-.30,.18,.64,.55,1),(.35,-.18,.63,.65,.86)]),
+    ('ENV01_D_DoubleCrest', (-49.871,49.058,-30.397,36.680), 5.8, (10,7), 94, -.19,
+     [(-.44,-.12,.36,.51,1),(.43,.16,.38,.48,.91)]),
+    ('ENV01_E_WindRidge', (-77.684,82.593,-30.525,35.027), 8.4, (13,8), 105, .30,
+     [(-.46,-.18,.54,.47,.80),(.10,.18,.58,.44,1),(.49,.04,.44,.50,.77)]),
 ]
 # Exact UV of original Mission01 ground: palette texel (0,0), not a new color.
 UV = (0.0078125, 0.015625)
 
 
 def model(spec):
-    name, w, d, h, n, seed, lean = spec
+    name, bounds, h, (nx,nz), seed, lean, lobes = spec
     rng = Random(seed)
-    verts, faces = [], []
-    angles = [2*pi*(i+rng.uniform(-.20,.20))/n for i in range(n)]
+    verts, faces, weights = [], [], []
     phase = rng.uniform(0,2*pi)
-    radii = [1 + .12*sin(3*a+phase) + .07*cos(5*a-phase) + rng.uniform(-.045,.045) for a in angles]
-    # Open decorative surface: buried perimeter, gently rising shoulder, irregular crown.
-    # No bottom or vertical walls: the sand plane closes the silhouette.
-    for ring in range(3):
-        for i,a in enumerate(angles):
-            r = radii[i]
-            if ring == 0:
-                x, z, y = w*r*cos(a), d*r*sin(a), -.12
-            elif ring == 1:
-                x, z = w*r*.70*cos(a), d*r*.70*sin(a)
-                y = h*(.15+.12*(1+sin(a+phase))/2+rng.uniform(-.035,.035))
-            else:
-                x = w*(r*.35*cos(a)+lean*.36)
-                z = d*(r*.34*sin(a)+lean*.18)
-                crest = .70+.14*sin(2*a+phase)+rng.uniform(-.045,.045)
-                if name.endswith('DoubleCrest'):
-                    crest = .64+.28*abs(cos(a))-.12*abs(sin(a))
-                y = h*crest
-            verts.append((x,y,z))
-    verts.append((w*lean*.24, h*(.74 if name.endswith('DoubleCrest') else 1), d*lean*.15))
-    for k in range(2):
-        for i in range(n):
-            j=(i+1)%n; a=k*n+i; b=k*n+j; c=(k+1)*n+j; e=(k+1)*n+i
-            faces.extend([(a,e,b),(b,e,c)] if (i+k)%2 else [(a,e,c),(a,c,b)])
-    for i in range(n):
-        faces.append((2*n+i,3*n,2*n+(i+1)%n))
-    # Correct every face to upward-facing and reject folded/degenerate geometry.
+    # Jittered rectangular lattice mapped into an asymmetric rounded outline.
+    # All inner vertices have local neighbours: no radial fan or shared apex.
+    for j in range(nz+1):
+        for i in range(nx+1):
+            u, v = 2*i/nx-1, 2*j/nz-1
+            if 0<i<nx: u += rng.uniform(-.25,.25)*2/nx
+            if 0<j<nz: v += rng.uniform(-.25,.25)*2/nz
+            x = u*sqrt(1-v*v/2)
+            z = v*sqrt(1-u*u/2)
+            # Broad asymmetric curves, not high frequency edge noise.
+            x += lean*.19*(1-x*x)*sin(2.4*z+phase)
+            z = z*(1+lean*.43*x+.09*sin(3*x+phase)) + lean*.23*(1-x*x)
+            # Continuous envelope vanishes with zero slope at the boundary.
+            edge = max(0, (1-u*u)*(1-v*v))**1.8
+            lobe = sum(weight*exp(-((u-cu)/wu)**2-((v-cv)/wv)**2)
+                       for cu,cv,wu,wv,weight in lobes)
+            # For the double crest keep a visible but shallow saddle.
+            weights.append(edge*lobe)
+            verts.append((x,0,z))
+    xmin,xmax,zmin,zmax = bounds
+    ax,bx = min(p[0] for p in verts),max(p[0] for p in verts)
+    az,bz = min(p[2] for p in verts),max(p[2] for p in verts)
+    peak = max(weights)
+    # Preserve pivots and stay inside the original conservative bounding boxes.
+    def fit(v,a,b,lo,hi): return (lo+hi)/2+(hi-lo)*.495*(2*(v-a)/(b-a)-1)
+    verts = [(fit(x,ax,bx,xmin,xmax), -.12+(h+.12)*weight/peak,
+              fit(z,az,bz,zmin,zmax)) for (x,_,z),weight in zip(verts,weights)]
+    for j in range(nz):
+        for i in range(nx):
+            a=j*(nx+1)+i; b=a+1; c=b+nx+1; d=a+nx+1
+            # Pick the shorter diagonal, with a seeded tie-break to avoid stripes.
+            def length2(p,q): return sum((verts[p][k]-verts[q][k])**2 for k in (0,2))
+            ac,bd=length2(a,c),length2(b,d)
+            use_ac = ac < bd if abs(ac-bd)>.08*max(ac,bd) else rng.random()<.5
+            faces.extend([(a,d,c),(a,c,b)] if use_ac else [(a,d,b),(b,d,c)])
     for i,(a,b,c) in enumerate(faces):
-        p,q,r = (verts[j] for j in (a,b,c))
+        # Reject folded faces instead of masking them by reversing normals.
+        p,q,r = (verts[k] for k in (a,b,c))
         ny=(q[2]-p[2])*(r[0]-p[0])-(q[0]-p[0])*(r[2]-p[2])
-        assert abs(ny)>1e-5, (name,i)
-        if ny<0: faces[i]=(a,c,b)
+        assert ny>1e-5, (name,i,ny)
     return verts,faces
 
 
