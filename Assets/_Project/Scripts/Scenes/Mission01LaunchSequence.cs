@@ -56,6 +56,7 @@ namespace AirCombat
 
         public Phase State { get; private set; } = Phase.Intro;
         internal MissionBoundaryGuard Boundary => boundary;
+        public Rect OperationBounds => operationBounds;
 
 #if UNITY_EDITOR
         public void ConfigureForAuthoring(FlightController controller, PlayerWeaponTrigger trigger)

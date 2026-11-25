@@ -128,7 +128,12 @@ namespace AirCombat
             if (float.IsNaN(altitude) || float.IsInfinity(altitude)) throw new InvalidOperationException("Invalid altitude.");
             var b = ground.bounds;
             var world = Rect.MinMaxRect(b.min.x, b.min.z, b.max.x, b.max.z);
-            if (world.width <= .01f || world.height <= .01f) throw new InvalidOperationException("Ground has no X/Z extent.");
+            // For campaign scenes the operation rectangle, not the original
+            // ground mesh or the decorative surround, defines the map extent.
+            var launch = scene.GetRootGameObjects().SelectMany(g =>
+                g.GetComponentsInChildren<Mission01LaunchSequence>(true)).SingleOrDefault();
+            if (launch != null) world = launch.OperationBounds;
+            if (world.width <= .01f || world.height <= .01f) throw new InvalidOperationException("Map has no X/Z extent.");
             if (!TerrainSectionUnion.TryBakeForAuthoring(scene, altitude, out var edges, out var fill, out int count))
                 throw new InvalidOperationException("Terrain union failed. Check readable closed rock meshes; previous bake retained.");
             if (count > 0 && fill.Length == 0)

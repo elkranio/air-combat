@@ -15,7 +15,7 @@ namespace AirCombat
         private const string SurfaceName = "Mission01 / Faceted surface";
         private const string SurroundName = "Mission01 / Boundary surround (visual only)";
         private const string MeshPath = "Assets/_Project/Art/Environment/Mission01_FirstSortie/Mission01_BoundarySurround.asset";
-        private const float Padding = 600f;
+        private const float Padding = 1000f;
 
         [MenuItem("Air Combat/Art/Apply Mission01 Boundary Surround v0")]
         private static void Apply()
