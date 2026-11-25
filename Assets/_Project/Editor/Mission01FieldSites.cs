@@ -18,12 +18,21 @@ namespace AirCombat
         private const string LayerName = "Mission01 / ENV04 field sites";
         private static readonly string[] Names = {
             "ENV04_A_FieldRadar", "ENV04_B_SupplyCrate", "ENV04_C_LongCase", "ENV04_D_Generator",
-            "ENV04_E_Pallet", "ENV04_F_Hardstand", "ENV04_G_HardstandLong", "ENV04_H_Tracks"
+            "ENV04_E_Pallet"
         };
         private static readonly string[][] Parts = {
             new[]{"Hull","Equipment","Metal","Caps"}, new[]{"Hull","Equipment","Metal","Caps"},
             new[]{"Hull","Equipment","Metal","Caps"}, new[]{"Hull","Equipment","Metal","Caps"},
-            new[]{"Hull","Equipment","Metal","Caps"}, new[]{"Pad"}, new[]{"Pad"}, new[]{"Track"}
+            new[]{"Hull","Equipment","Metal","Caps"}
+        };
+        // Existing accepted nature prefabs. Indices 5+ in the combined placement library.
+        private static readonly string[] NaturePaths = {
+            "ENV02_DesertVegetation/ENV02_A_Umbrella.prefab",
+            "ENV02_DesertVegetation/ENV02_B_WindBent.prefab",
+            "ENV02_DesertVegetation/ENV02_D_SaltBush.prefab",
+            "ENV02_DesertVegetation/ENV02_E_Scrub.prefab",
+            "ENV03_DesertStones/ENV03_B_RubbleScatter.prefab",
+            "ENV03_DesertStones/ENV03_C_WeatheredBoulder.prefab"
         };
         private static GameObject Root(Scene scene,string name)=>scene.GetRootGameObjects().SingleOrDefault(g=>g.name==name);
         private static Renderer[] Renderers(GameObject go)=>go.GetComponentsInChildren<Renderer>(false).Where(r=>r.enabled).ToArray();
@@ -54,26 +63,26 @@ namespace AirCombat
         }
         private static Placement At(int model,Bounds[] bounds,Vector3 origin,float heading,float x,float z,float yaw,float scale=1,float y=0)
         {
-            var p=new Placement{model=model,position=origin+Quaternion.Euler(0,heading,0)*new Vector3(x,y,z),yaw=heading+yaw,scale=new Vector3(scale,1,scale)};
-            p.rect=Footprint(TransformBounds(bounds[model],Matrix4x4.TRS(p.position,Quaternion.Euler(0,p.yaw,0),p.scale)),model<5?.35f:0);return p;
+            var p=new Placement{model=model,position=origin+Quaternion.Euler(0,heading,0)*new Vector3(x,y,z),yaw=heading+yaw,scale=Vector3.one*scale};
+            p.rect=Footprint(TransformBounds(bounds[model],Matrix4x4.TRS(p.position,Quaternion.Euler(0,p.yaw,0),p.scale)),model<5?1.5f:2f);return p;
         }
         private static bool Fits(Placement p,Rect area,List<Rect> blocked)=>area.Contains(p.rect.min)&&area.Contains(p.rect.max)&&!blocked.Any(b=>b.Overlaps(p.rect));
 
         // Try the authored offset first, then nearby alternatives. Only a genuinely
         // crowded site needs the wider search; do not move existing scene objects.
         private static Placement FindProp(int model,Bounds[] bounds,Vector3 origin,float heading,
-            float x,float z,float yaw,Rect area,List<Rect> blocked,bool wide)
+            float x,float z,float yaw,Rect area,List<Rect> blocked,bool wide,float scale=1f)
         {
-            var preferred=At(model,bounds,origin,heading,x,z,yaw,1,.035f);
+            var preferred=At(model,bounds,origin,heading,x,z,yaw,scale,.015f);
             if(Fits(preferred,area,blocked))return preferred;
             float radius=Mathf.Sqrt(x*x+z*z),angle=Mathf.Atan2(z,x);
             // Alternate sides of the preferred bearing, rather than uniformly scattering.
-            foreach(float extra in (wide?new[]{0f,3f,6f,10f,16f,24f,32f}:new[]{0f,3f,6f}))
+            foreach(float extra in (wide?new[]{0f,3f,6f,10f,16f,24f}:new[]{0f,3f,6f,10f}))
                 for(int j=0;j<16;j++)
                 {
                     int step=j==0?0:(j%2==1?1:-1)*((j+1)/2);
                     float a=angle+step*Mathf.PI/8f,r=radius+extra;
-                    var p=At(model,bounds,origin,heading,Mathf.Cos(a)*r,Mathf.Sin(a)*r,yaw,1,.035f);
+                    var p=At(model,bounds,origin,heading,Mathf.Cos(a)*r,Mathf.Sin(a)*r,yaw,scale,.015f);
                     if(Fits(p,area,blocked))return p;
                 }
             return null;
@@ -101,58 +110,69 @@ namespace AirCombat
                 foreach(var r in Renderers(objectives))
                     if(r.bounds.min.y<15&&!sites.Any(s=>r.transform.IsChildOf(s.transform)))blocked.Add(Footprint(r.bounds,2));
                 var siteBounds=sites.Select(s=>Footprint(Combine(Renderers(s.gameObject)),.8f)).ToArray();
-                var library=BuildLibrary();var local=library.Select(LocalBounds).ToArray();
-                var layouts=new List<Placement[]>();int trackCount=0,padCount=0,radarCount=0;
-                // Prefer full, compact compositions. A blocked optional item must
-                // not prevent all six sites from being dressed.
+                var nature=NaturePaths.Select(path=>{
+                    var prefab=AssetDatabase.LoadAssetAtPath<GameObject>(Art+path);
+                    if(prefab==null)throw new InvalidOperationException("Missing accepted nature prefab: "+path+". Apply ENV02 and ENV03 first.");
+                    return prefab;
+                }).ToArray();
+                var library=BuildLibrary().Concat(nature).ToArray();var local=library.Select(LocalBounds).ToArray();
+                var layouts=new List<Placement[]>();int radarCount=0,natureCount=0,propCount=0;
+                var existingNature=new List<Vector2>();
+                foreach(var root in new[]{Root(scene,"Mission01 / ENV02 desert vegetation"),Root(scene,"Mission01 / ENV03 desert stones")})
+                    if(root!=null)foreach(Transform child in root.transform)
+                        if(child.gameObject.activeInHierarchy)existingNature.Add(new Vector2(child.position.x,child.position.z));
+                // Leave the original sand uninterrupted. Equipment is a loose, off-center
+                // group rather than a ring of props on a display base.
                 for(int i=0;i<sites.Length;i++)
                 {
                     var site=sites[i];var origin=new Vector3(site.transform.position.x,world.center.y,site.transform.position.z);
-                    var obstacles=new List<Rect>(blocked);for(int j=0;j<sites.Length;j++)if(i!=j)obstacles.Add(siteBounds[j]);
-                    var propBlocked=new List<Rect>(obstacles){siteBounds[i]};
-                    Placement[] chosen=Array.Empty<Placement>();int bestScore=-1;
+                    var obstacles=new List<Rect>(blocked);obstacles.AddRange(siteBounds);
+                    Placement[] chosen=Array.Empty<Placement>();int bestScore=-1;float chosenHeading=0;
+                    float side=i%2==0?1:-1;
                     for(int attempt=0;attempt<32;attempt++)
                     {
                         float heading=site.transform.eulerAngles.y+new[]{0f,35f,-25f,70f,-55f,105f}[i]+(attempt%16)*22.5f;
-                        float size=attempt<16?1f:.84f;
-                        float side=i%2==0?1:-1;
-                        var pad=At(5+i%2,local,origin,heading,0,0,0,size,.035f);
-                        bool padFits=Fits(pad,area,obstacles);
-                        var props=new List<Placement>();
                         var desired=new[]{
-                            (model:0,x:side*9.2f,z:2.7f+(i%3-1)*2f,yaw:25f+i*19f),
-                            (model:1+i%3,x:-side*7.8f,z:3.8f,yaw:12f+i*7f),
-                            (model:i%2==0?2:4,x:-side*8.6f,z:-2.8f,yaw:75f+i*12f),
-                            (model:i%2==0?4:1,x:side*5.7f,z:8.8f,yaw:-18f+i*9f)
+                            (model:0,x:side*14.5f,z:4f+(i%3-1)*3f,yaw:25f+i*19f),
+                            (model:1+i%3,x:-side*13.5f,z:5.5f,yaw:12f+i*7f),
+                            (model:i%2==0?2:4,x:-side*17f,z:-3.5f,yaw:75f+i*12f),
+                            (model:i%2==0?4:1,x:side*8f,z:16f,yaw:-18f+i*9f)
                         };
-                        var reserved=new List<Rect>(propBlocked);
+                        var props=new List<Placement>();var reserved=new List<Rect>(obstacles);
                         int wanted=i%3==0?4:3;
                         foreach(var d in desired.Take(wanted))
                         {
-                            // Only the radar may use the wider fallback. Keep boxes close.
                             var p=FindProp(d.model,local,origin,heading,d.x,d.z,d.yaw,area,reserved,d.model==0&&attempt>=16);
                             if(p==null)continue;
                             props.Add(p);reserved.Add(p.rect);
                         }
                         bool hasRadar=props.Any(p=>p.model==0);
-                        var track=At(7,local,origin,heading,side*(i%3-1)*1.5f,-10.5f*size,0,.85f,.055f);
-                        bool trackFits=Fits(track,area,obstacles)&&!props.Any(p=>p.rect.Overlaps(track.rect))&&!siteBounds[i].Overlaps(track.rect);
-                        int score=(hasRadar?100:0)+props.Count*10+(padFits?5:0)+(trackFits?1:0)-(attempt>=16?2:0);
+                        int score=(hasRadar?100:0)+props.Count*10-(attempt>=16?2:0);
                         if(score<=bestScore)continue;
-                        bestScore=score;
-                        chosen=(padFits?new[]{pad}:Array.Empty<Placement>()).Concat(props).Concat(trackFits?new[]{track}:Array.Empty<Placement>()).ToArray();
-                        if(hasRadar&&props.Count==wanted&&padFits&&trackFits)break;
+                        bestScore=score;chosen=props.ToArray();chosenHeading=heading;
+                        if(hasRadar&&props.Count==wanted)break;
                     }
-                    bool radarPlaced=chosen.Any(p=>p.model==0),padPlaced=chosen.Any(p=>p.model==5||p.model==6);
-                    int extras=chosen.Count(p=>p.model>0&&p.model<5);
-                    if(radarPlaced)radarCount++;
-                    if(padPlaced)padCount++;
-                    if(chosen.Any(p=>p.model==7))trackCount++;
-                    if(!radarPlaced||!padPlaced||extras<2)
-                        Debug.LogWarning($"ENV04: {site.name}: tight clearance; radar={radarPlaced}, pad={padPlaced}, props={extras}. Existing scenery kept.",site);
-                    layouts.Add(chosen);blocked.AddRange(chosen.Select(p=>p.rect));
+                    var composition=chosen.ToList();var occupied=new List<Rect>(obstacles);occupied.AddRange(chosen.Select(p=>p.rect));
+                    // Dress the outside of the site, not the truck. Preserve any nearby
+                    // accepted scenery; supplement it only where the site is still bare.
+                    var center=new Vector2(origin.x,origin.z);
+                    int nearby=existingNature.Count(p=>(p-center).sqrMagnitude<38f*38f);
+                    int wantedNature=Mathf.Clamp((i%3==0?1:2)-nearby,0,2);
+                    var naturalModels=new[]{new[]{9,7},new[]{5,10},new[]{8,9},new[]{6,7},new[]{10,8},new[]{7,5}};
+                    for(int k=0;k<wantedNature;k++)
+                    {
+                        int model=naturalModels[i][k];float scale=.85f+(i+k)%4*.07f;
+                        var p=FindProp(model,local,origin,chosenHeading,side*(k==0?25f:33f),k==0?-16f:-10f,40f+i*53f+k*29f,area,occupied,false,scale);
+                        if(p==null)continue;
+                        composition.Add(p);occupied.Add(p.rect);natureCount++;
+                        existingNature.Add(new Vector2(p.position.x,p.position.z));
+                    }
+                    bool radarPlaced=chosen.Any(p=>p.model==0);int extras=chosen.Count(p=>p.model>0);
+                    if(radarPlaced)radarCount++;propCount+=extras;
+                    if(!radarPlaced||extras<2)Debug.LogWarning($"ENV04: {site.name}: tight clearance; radar={radarPlaced}, props={extras}. Existing scenery kept.",site);
+                    layouts.Add(composition.ToArray());blocked.AddRange(composition.Select(p=>p.rect));
                 }
-                if(layouts.All(l=>l.Length==0))throw new InvalidOperationException("No free field-site placements in this scene.");
+                if(radarCount+propCount==0)throw new InvalidOperationException("No free field-site placements in this scene.");
                 Undo.IncrementCurrentGroup();int group=Undo.GetCurrentGroup();Undo.SetCurrentGroupName("Apply ENV04 field sites");
                 var old=Root(scene,LayerName);if(old!=null)Undo.DestroyObjectImmediate(old);
                 var layer=new GameObject(LayerName);SceneManager.MoveGameObjectToScene(layer,scene);Undo.RegisterCreatedObjectUndo(layer,"Create ENV04 layer");
@@ -167,7 +187,7 @@ namespace AirCombat
                     }
                 }
                 Undo.CollapseUndoOperations(group);EditorSceneManager.MarkSceneDirty(scene);Selection.activeGameObject=layer;
-                Debug.Log($"ENV04: six sites checked, {radarCount} radars, {padCount} pads, {layouts.Sum(l=>l.Length)} modules, {trackCount} clear track approaches. Save scene after review.");
+                Debug.Log($"ENV04: six sites checked, {radarCount} radars, {propCount} equipment props, {natureCount} additional nature modules. No pads or tracks. Save scene after review.");
             }
             catch(Exception ex){Debug.LogError("ENV04: "+ex);}
         }
@@ -178,12 +198,6 @@ namespace AirCombat
             var scene=SceneManager.GetActiveScene();if(scene.name!="Mission01_FirstSortie")return;
             var layer=Root(scene,LayerName);if(layer==null)return;Undo.DestroyObjectImmediate(layer);EditorSceneManager.MarkSceneDirty(scene);
         }
-        private static Material GroundMaterial(string name,Color tint)
-        {
-            var path=Library+"ENV04_"+name+".mat";var existing=AssetDatabase.LoadAssetAtPath<Material>(path);if(existing!=null)return existing;
-            var sand=AssetDatabase.LoadAssetAtPath<Material>(Art+"Mission01_Sand.mat");if(sand==null)throw new InvalidOperationException("Original sand material missing.");
-            var m=new Material(sand);m.SetColor("_BaseColor",tint);AssetDatabase.CreateAsset(m,path);return m;
-        }
         private static GameObject[] BuildLibrary()
         {
             var materials=new Dictionary<string,Material>();
@@ -191,8 +205,6 @@ namespace AirCombat
             {
                 var m=AssetDatabase.LoadAssetAtPath<Material>(PicketArt+"SAM01_"+part+".mat");if(m==null)throw new InvalidOperationException("Missing Picket material "+part);materials.Add(part,m);
             }
-            materials.Add("Pad",GroundMaterial("Pad",new Color(.90f,.90f,.88f,1)));
-            materials.Add("Track",GroundMaterial("Track",new Color(.78f,.78f,.76f,1)));
             var result=new GameObject[Names.Length];var preview=EditorSceneManager.NewPreviewScene();
             try
             {
@@ -206,7 +218,7 @@ namespace AirCombat
                         var filters=obj==null?Array.Empty<MeshFilter>():obj.GetComponentsInChildren<MeshFilter>(true);
                         if(filters.Length!=1||filters[0].sharedMesh==null)throw new InvalidOperationException("Missing ENV04 mesh "+Names[i]+"_"+part);
                         var child=new GameObject(part,typeof(MeshFilter),typeof(MeshRenderer));SceneManager.MoveGameObjectToScene(child,preview);child.transform.SetParent(go.transform,false);
-                        child.GetComponent<MeshFilter>().sharedMesh=filters[0].sharedMesh;var r=child.GetComponent<MeshRenderer>();r.sharedMaterial=materials[part];r.shadowCastingMode=i<5?ShadowCastingMode.On:ShadowCastingMode.Off;r.receiveShadows=true;
+                        child.GetComponent<MeshFilter>().sharedMesh=filters[0].sharedMesh;var r=child.GetComponent<MeshRenderer>();r.sharedMaterial=materials[part];r.shadowCastingMode=ShadowCastingMode.On;r.receiveShadows=true;
                     }
                     result[i]=PrefabUtility.SaveAsPrefabAsset(go,path);if(result[i]==null)throw new InvalidOperationException("Cannot save "+path);
                 }
