@@ -125,7 +125,7 @@ namespace AirCombat
 
         private void Awake() { hp = maxHp; }
 
-        public void ResetEncounter()
+        public void CancelMissionProjectiles()
         {
             // All overlapping shots belong to this encounter, not just the latest.
             // Disable immediately: Destroy alone is deferred until end of frame.
@@ -138,6 +138,11 @@ namespace AirCombat
             }
             ownedMissiles.Clear();
             missile = null;
+        }
+
+        public void ResetEncounter()
+        {
+            CancelMissionProjectiles();
             hp = maxHp;
             lockProgress = 0f;
             missionWarningStarted = -1f;

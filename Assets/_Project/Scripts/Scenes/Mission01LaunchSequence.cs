@@ -8,7 +8,7 @@ namespace AirCombat
     [DefaultExecutionOrder(-40)] // Before normal flight; E1 session initializes first.
     public sealed class Mission01LaunchSequence : MonoBehaviour
     {
-        public enum Phase { Intro, Ready, Takeoff, Flight, Crashed, BoundaryFailed }
+        public enum Phase { Intro, Ready, Takeoff, Flight, Crashed, BoundaryFailed, Landing, Landed }
 
         [SerializeField] private FlightController flight;
         [SerializeField] private PlayerWeaponTrigger weaponTrigger;
@@ -22,6 +22,7 @@ namespace AirCombat
         [Header("Temporary terrain test (Editor only)")]
         [SerializeField] private bool debugAirStart = true;
         [SerializeField] private bool debugNoClip;
+        [SerializeField] private bool debugLandingNearAirfield = true;
 #endif
 
         [Header("Terrain crash")]
@@ -38,6 +39,19 @@ namespace AirCombat
         [SerializeField, Min(1f)] private float cruiseAltitude = 78f;
         [SerializeField, Range(0f, 35f)] private float maxPitch = 18f;
 
+        [Header("Automatic landing (WIP, reverse runway heading)")]
+        [SerializeField, Min(1f)] private float landingRevealDistance = 550f;
+        [SerializeField, Min(1f)] private float landingCorridorNear = 150f;
+        [SerializeField, Min(1f)] private float landingCorridorFar = 350f;
+        [SerializeField, Min(1f)] private float landingCorridorWidth = 90f;
+        [SerializeField, Range(5f, 60f)] private float landingHeadingTolerance = 35f;
+        [SerializeField, Min(.15f)] private float landingHoldSeconds = .8f;
+        [SerializeField, Min(10f)] private float landingTouchdownOffset = 65f;
+        [SerializeField, Min(5f)] private float landingTouchdownSpeed = 27f;
+
+        private Mission01Landing landing;
+        private Mission01ReconEncounter reconEncounter;
+        private bool landingTestOnly;
         private Transform aircraft;
         private Transform visual;
         private Afterburner boost;
@@ -95,12 +109,17 @@ namespace AirCombat
             // Keep the authored operation rectangle independent of decorative ground.
             boundary = new MissionBoundaryGuard(transform, operationBounds,
                 boundaryCautionDistance, boundaryCriticalDistance);
+            landing = new Mission01Landing(transform, runwayPosition, runwayRotation, visualRest,
+                cruiseAltitude, operationBounds, landingCorridorNear, landingCorridorFar, landingCorridorWidth,
+                landingRevealDistance, landingHeadingTolerance, landingHoldSeconds, landingTouchdownOffset,
+                landingTouchdownSpeed);
             initialized = true;
             State = Phase.Intro;
         }
 
         private void Start()
         {
+            reconEncounter = GetComponent<Mission01ReconEncounter>();
             samRadar = aircraft.GetComponent<AircraftRadar>();
             playerHealth = aircraft.GetComponent<PlayerHitPoints>();
             if (samSites != null && samSites.Length > 0)
@@ -160,6 +179,7 @@ namespace AirCombat
             if (TacticalMapView.IsOpenFor(gameObject.scene))
             {
                 boundary?.Clear();
+                landing?.Clear();
                 return;
             }
             var keyboard = Keyboard.current;
@@ -187,6 +207,8 @@ namespace AirCombat
                 return;
             }
             if (State == Phase.Takeoff) TickTakeoff(Time.deltaTime);
+            else if (State == Phase.Landing && landing.TickLanding(aircraft, visual, Time.deltaTime))
+                State = Phase.Landed;
         }
 
         private void TickTakeoff(float dt)
@@ -237,6 +259,7 @@ namespace AirCombat
                 {
                     previousFlightPosition = next;
                     boundary.Tick(next);
+                    TickLandingApproach();
                 }
                 return;
             }
@@ -245,10 +268,38 @@ namespace AirCombat
             EnterFlight();
         }
 
+        private void TickLandingApproach()
+        {
+            bool primaryComplete = reconEncounter != null && reconEncounter.Eliminated == 3;
+            bool available = primaryComplete;
+#if UNITY_EDITOR
+            available |= debugLandingNearAirfield;
+#endif
+            var keys = Keyboard.current;
+            bool hold = Application.isFocused && keys != null && keys.sKey.isPressed;
+            if (playerHealth != null && !playerHealth.IsAlive) { landing.Clear(); return; }
+            if (!landing.TickApproach(aircraft, visual, flight.CurrentSpeed, available, hold, Time.deltaTime)) return;
+            landingTestOnly = !primaryComplete;
+            State = Phase.Landing;
+            boundary.Clear();
+            flight.enabled = false;
+            weaponTrigger.enabled = false;
+            boost.enabled = false;
+            flames.SetManeuverFlames(false);
+            SetSamArmed(false);
+            if (samSites != null) foreach (var site in samSites)
+                if (site != null) site.CancelMissionProjectiles();
+            // No more player shots after control is committed to landing.
+            foreach (var round in FindObjectsByType<BallisticProjectile>(FindObjectsSortMode.None))
+                if (round.gameObject.scene == gameObject.scene && round.IsOwnedBy(aircraft))
+                { round.enabled = false; Destroy(round.gameObject); }
+        }
+
         private void Crash(Vector3 impact)
         {
             if (State != Phase.Flight) return;
             State = Phase.Crashed;
+            landing?.Clear();
             boundary?.Clear();
             SetSamArmed(false);
             aircraft.position = impact;
@@ -266,6 +317,7 @@ namespace AirCombat
         {
             if (State != Phase.Flight) return;
             State = Phase.BoundaryFailed;
+            landing?.Clear();
             aircraft.position = stop;
             previousFlightPosition = stop;
             flight.enabled = false;
@@ -339,6 +391,8 @@ namespace AirCombat
         {
             ReleaseBoundaryPause();
             boundary?.Clear();
+            landing?.Clear();
+            landingTestOnly = false;
             SetSamArmed(false);
             if (samSites != null) foreach (var site in samSites)
                 if (site != null) site.ResetEncounter();
@@ -363,6 +417,7 @@ namespace AirCombat
         {
             ReleaseBoundaryPause();
             boundary?.Dispose();
+            landing?.Dispose();
             if (samRadar != null && samSites != null) foreach (var site in samSites)
                 if (site != null) samRadar.Unregister(site);
         }
@@ -371,6 +426,7 @@ namespace AirCombat
         {
             ReleaseBoundaryPause();
             boundary?.Clear();
+            landing?.Clear();
             SetSamArmed(false);
             if (initialized && flames != null) flames.SetManeuverFlames(false);
 #if UNITY_EDITOR
@@ -384,12 +440,16 @@ namespace AirCombat
             if (State == Phase.Flight)
             {
                 boundary?.DrawWarning();
+                landing?.DrawWarning();
                 return;
             }
             string message = State == Phase.Intro ? "MISSION INTRO" :
                 State == Phase.Ready ? "PRESS W TO TAKE OFF" :
                 State == Phase.Crashed ? "AIRCRAFT LOST  /  PRESS R TO RETRY" :
-                State == Phase.BoundaryFailed ? "MISSION FAILED — OPERATION AREA ABANDONED  /  PRESS R TO RETRY" : "TAKEOFF";
+                State == Phase.BoundaryFailed ? "MISSION FAILED — OPERATION AREA ABANDONED  /  PRESS R TO RETRY" :
+                State == Phase.Landing ? "AUTOPILOT / LANDING" :
+                State == Phase.Landed ? (landingTestOnly ? "LANDING TEST COMPLETE  /  PRESS R TO RETRY" :
+                    "MISSION COMPLETE  /  PRESS R TO RETRY") : "TAKEOFF";
             var style = new GUIStyle(GUI.skin.label)
             {
                 alignment = TextAnchor.MiddleCenter,

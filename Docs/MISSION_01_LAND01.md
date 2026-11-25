@@ -1,0 +1,9 @@
+# LAND-01 — assisted runway landing v0
+
+Open Mission01_FirstSortie and Play. The launch sequence's Editor-only `debugLandingNearAirfield` defaults on: a cyan corridor appears within 550 units of the runway start even before recon is complete. Disable this to test normal gating; builds always require three Watchers destroyed. Optional objective is not required.
+
+Approach from the takeoff side of the runway, facing opposite the takeoff heading (inbound toward the original spawn). The corridor spans 150–350 units along the takeoff axis, width 90, at cruise altitude. Align within 35 degrees, hold S for .8 seconds while inside. Fuel does not gate landing. The cue changes color and shows hold progress. Leaving the corridor or releasing S before capture resets progress.
+
+After capture, autopilot owns the pose, disables weapons and SAM acquisition, removes existing mission SAM projectiles without resetting site HP/counters, blends from the current visual bank, descends to a touchdown 65 units ahead of the original runway spawn, and brakes to the original spawn at zero speed. The plane faces the opposite direction from takeoff. XZ cubic control points are constrained to the operation rectangle. The authored final approach must remain clear of terrain; this v0 trusts the runway corridor and does not simulate terrain impacts after capture. No landing gear art, audio, final result/debriefing or mission statistics yet. A debug capture before objective completion shows LANDING TEST COMPLETE, not MISSION COMPLETE.
+
+Test: normal and debug air start, approach at both lateral edges and heading tolerance, release S before capture, empty boost tank, Tab pause/resume, R during approach/landing/after landing, and confirm touchdown on pavement. Inspect the reverse approach relative to the actual saved runway and terrain, tune fields if necessary. Unity compilation and Play Mode are local acceptance gates.
