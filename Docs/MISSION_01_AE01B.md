@@ -1,0 +1,10 @@
+# AE-01B — live Overlord prototype
+
+Open Mission01_FirstSortie, run **Air Combat > Missions > Install Mission01 Overlord v0**, save after review. Uses the existing optional map marker and accepted AE01 prefab; removes the temporary visual trial. First installation seeds the patrol at X1610/Z100 and flight altitude; repeat install preserves target position and Inspector tuning. Existing Watchers, SAMs and landing completion gate are unchanged.
+
+- 18 HP, four approximate air hit zones, hostile radar contact, shared Watcher combat effects and existing projectile receiver. Independent circular patrol (65 radius), 35% player cruise; at 450 units or on hit, commit to an outbound turn and 50% cruise. No weapons.
+- Charge for up to 22 seconds, then accelerate for up to 2.5 seconds to at least 2.5x player boost speed; simple emission preview. Escape is a distinct terminal state, not a kill; contact and hitboxes removed. Outbound clearance guard may ignite/finish earlier to avoid the mission boundary. No countdown. This is gameplay prototype, not the final escape VFX: visual disappearance may need tuning, particularly if target remains onscreen. The path is authored provisionally and must be checked against saved terrain and SAM coverage.
+- Map marker follows live aircraft, hides at destruction/escape, mission data shows state. R restores patrol/HP, clears shared FX via existing recon reset; Tab pauses. Optional failure never blocks RTB. No extra SAMs, final effects, debrief or reward in this atom.
+- For a quick test enable **Debug Near Player** on OverlordTarget in Inspector (Editor only); target appears ahead of the player at runtime and uses the player's starting heading for outbound travel. Disable before saving the production scene.
+
+Test detection, turn, hit confirmation, smoke and destruction, letting the target escape, radar/map removal, R and Tab, and complete the primary mission with either optional outcome. Check normal sector flight clearance and tune charge/boost timings before adding the two extra Pickets and polished escape VFX.
