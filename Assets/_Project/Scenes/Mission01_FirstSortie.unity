@@ -19205,9 +19205,13 @@ MonoBehaviour:
   groundY: 0
   maxHp: 18
   patrolRadius: 65
-  detectionRadius: 450
+  patrolLegHalfLength: 55
+  patrolCenterOffset: {x: -70, y: 300}
+  visualDetectionRadius: 220
+  southeastTurnFraction: 0.65
   preparationSeconds: 22
   boostSeconds: 2.5
+  boostAccelerationSeconds: 1.6
   patrolSpeedRatio: 0.35
   escapeSpeedRatio: 0.5
   boostSpeedRatio: 4
@@ -52690,9 +52694,9 @@ MonoBehaviour:
   - {fileID: 2145265484}
   - {fileID: 765515993}
   - {fileID: 1859142576}
-  debugAirStart: 1
-  debugNoClip: 1
-  debugLandingNearAirfield: 1
+  debugAirStart: 0
+  debugNoClip: 0
+  debugLandingNearAirfield: 0
   terrainCrashRadius: 3.5
   operationBounds:
     serializedVersion: 2
