@@ -100,9 +100,10 @@ for j,z in enumerate((.73,-3.72)):
     for s in (-1,1):
         tag=f'{j} {s}'
         box('Outrigger housing '+tag,'Equipment',s*1.25,1.32,z,.64,.40,.53)
-        box('Outrigger arm '+tag,'Metal',s*2.00,1.23,z,1.58,.24,.33)
-        box('Outrigger upright '+tag,'Equipment',s*2.73,.69,z,.32,1.28,.35)
-        box('Outrigger foot '+tag,'Metal',s*2.73,.085,z,.74,.17,.76)
+        box('Outrigger arm '+tag,'Metal',s*2.00,1.23,z,1.58,.34,.46)
+        box('Outrigger upright '+tag,'Equipment',s*2.73,.69,z,.46,1.28,.48)
+        box('Outrigger foot '+tag,'Metal',s*2.73,.10,z,.94,.20,.96)
+module_start = len(PARTS)
 # Compact turret-like equipment block. Four closed fictional launcher boxes.
 rings('Turntable graphic','Metal',[(1.70,0,-1.75,1.10),(1.96,0,-1.75,1.10)],axis='y')
 box('Module base','Equipment',0,2.16,-1.75,1.92,.46,2.15)
@@ -122,6 +123,18 @@ for s in (-1,1):
 box('Sensor plinth','Metal',0,3.13,-2.76,.46,.30,.48)
 box('Sensor housing','Hull',0,3.46,-2.76,1.03,.48,.33)
 box('Sensor face','Glass',0,3.46,-2.57,.91,.35,.06)
+
+
+# ART-SAM-01B: exaggerated, readable game silhouettes rather than scale realism.
+# Enlarge the complete decorative module together, anchored at the deck surface.
+MODULE_SCALE = 1.28
+WORLD_SCALE = 1.5
+for i,(name,group,v,t) in enumerate(PARTS):
+    if i >= module_start:
+        v = [(x*MODULE_SCALE, 1.70+(y-1.70)*MODULE_SCALE,
+              -1.75+(z+1.75)*MODULE_SCALE) for x,y,z in v]
+    v = [tuple(c*WORLD_SCALE for c in p) for p in v]
+    PARTS[i] = (name,group,v,t)
 
 
 def obj(group):

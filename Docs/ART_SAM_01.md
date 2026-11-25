@@ -5,3 +5,7 @@ Base `b03eb8f`. Fictional compact deployed 6x6 truck for Mission 01. Angular hea
 - Source: `Tools/Blender/build_sam01_picket.py`. Run with regular Python to regenerate the six material-group OBJs; run `blender --background --factory-startup --python Tools/Blender/build_sam01_picket.py` to additionally save the editable `Resources/Blender/SAM01_Picket.blend` (86 separate pieces).
 - Unity: **Air Combat > Art > Create SAM01 Picket Preview**. Creates the prefab `Assets/_Project/Prefabs/Environment/SAM01_Picket.prefab` and six neutral URP materials; existing prefab and materials are preserved. Double-click the prefab or place it in a test scene for visual review at game zoom. No mission changes. Commit generated prefab/materials and their .meta files if accepted.
 - Geometry validation: closed oriented triangle topology per solid, no zero-area faces. 1936 triangles. Unity/Blender application execution must be checked locally.
+
+## ART-SAM-01B — Readability pass (WIP)
+
+Base `35b5c80`. Bake 1.5x uniform scale into the mesh geometry (keep prefab root and instance scale at one), enlarge the complete decorative equipment module by an additional 28% around the deck, and thicken the deployed supports and feet. Preserve the material groups, OBJ asset paths, mesh topology and existing prefab references. No new scene changes or installer; Unity reimports the meshes automatically. Compare at flight height before selecting the Dominion palette.
