@@ -12,13 +12,21 @@ namespace AirCombat
             public AirDamageableTarget Target;
             public Vector2 Previous;
             public bool HasPrevious;
+            public bool Latched;
         }
 
         private readonly Transform aircraft;
         private readonly Transform[] parts;
         private readonly Vector3[] rest;
         private readonly List<Contact> contacts = new List<Contact>();
-        private float height, heightVelocity;
+        private readonly Quaternion[] restRotation;
+        private const float ClimbSeconds = .35f;
+        private const float CrestSeconds = .20f;
+        private const float DescentSeconds = .45f;
+        private const float Duration = ClimbSeconds + CrestSeconds + DescentSeconds;
+        private const float PredictionSeconds = ClimbSeconds + CrestSeconds * .5f;
+        private float elapsed, maneuverLift;
+        public bool IsEvading { get; private set; }
 
         public Mission01AirSeparation(Transform aircraft, Transform visual)
         {
@@ -40,7 +48,12 @@ namespace AirCombat
                     moving.Add(nozzle);
             parts = moving.ToArray();
             rest = new Vector3[parts.Length];
-            for (int i = 0; i < parts.Length; i++) rest[i] = parts[i].localPosition;
+            restRotation = new Quaternion[parts.Length];
+            for (int i = 0; i < parts.Length; i++)
+            {
+                rest[i] = parts[i].localPosition;
+                restRotation[i] = parts[i].localRotation;
+            }
 
             // Mission01 targets are authored scene objects, reset in place on R.
             // Cache once; no global search or allocations during flight.
@@ -49,72 +62,130 @@ namespace AirCombat
                     contacts.Add(new Contact { Target = target });
         }
 
-        public void Tick(float dt, float lift, float startDistance, float fullDistance)
+        // A predicted crossing starts one finite maneuver. Mere proximity,
+        // parallel flight and a receding contact do not start it. Rearm only
+        // once the same contact has cleared the outer envelope.
+        public void Tick(float dt, float lift, float startDistance, float fullDistance, float forwardSpeed)
         {
             if (parts == null || dt <= 0f) return;
             lift = Mathf.Max(0f, lift);
             fullDistance = Mathf.Max(1f, fullDistance);
             startDistance = Mathf.Max(fullDistance + 1f, startDistance);
-            float desired = 0f;
+            bool start = false;
             foreach (var contact in contacts)
             {
                 var target = contact.Target;
                 if (target == null || !target.isActiveAndEnabled || !target.IsAlive)
-                { contact.HasPrevious = false; continue; }
+                { contact.HasPrevious = contact.Latched = false; continue; }
                 Vector3 delta = target.transform.position - aircraft.position;
                 if (Mathf.Abs(delta.y) > 8f)
-                { contact.HasPrevious = false; continue; }
+                { contact.HasPrevious = contact.Latched = false; continue; }
                 var relative = new Vector2(delta.x, delta.z);
-                float distance = relative.magnitude;
-                if (contact.HasPrevious && dt > .0001f)
+                if (relative.sqrMagnitude > startDistance * startDistance) contact.Latched = false;
+                if (!IsEvading && !contact.Latched && lift > 0f && contact.HasPrevious && dt > .0001f)
                 {
-                    // Relative velocity handles head-on, crossing, and overtaking
-                    // contacts alike. Predict up to .35 seconds of motion, without
-                    // reacting to an already receding contact as if it were closing.
-                    Vector2 velocity = (relative - contact.Previous) / dt;
-                    if (velocity.sqrMagnitude > .01f)
-                    {
-                        float t = Mathf.Clamp(-Vector2.Dot(relative, velocity) / velocity.sqrMagnitude, 0f, .35f);
-                        distance = Mathf.Min(distance, (relative + velocity * t).magnitude + 12f);
-                    }
-                    // Catch a crossing between samples (e.g. Editor fast travel).
                     Vector2 segment = relative - contact.Previous;
-                    if (segment.sqrMagnitude > .01f)
+                    Vector2 velocity = segment / dt;
+                    float v2 = velocity.sqrMagnitude;
+                    if (v2 > 4f)
                     {
-                        float t = Mathf.Clamp01(-Vector2.Dot(contact.Previous, segment) / segment.sqrMagnitude);
-                        distance = Mathf.Min(distance, (contact.Previous + segment * t).magnitude);
+                        float closestTime = -Vector2.Dot(relative, velocity) / v2;
+                        // Fast closure can require starting beyond the old proximity
+                        // envelope. Use the actual time to closest approach instead.
+                        bool approaching = closestTime > 0f && closestTime <= PredictionSeconds &&
+                            (relative + velocity * closestTime).sqrMagnitude <= fullDistance * fullDistance;
+                        // Recover a crossing that happened between two samples.
+                        float sweptT = segment.sqrMagnitude > .0001f
+                            ? -Vector2.Dot(contact.Previous, segment) / segment.sqrMagnitude : -1f;
+                        bool crossed = sweptT > 0f && sweptT <= 1f &&
+                            (contact.Previous + segment * sweptT).sqrMagnitude <= fullDistance * fullDistance;
+                        if (approaching || crossed)
+                        {
+                            contact.Latched = true;
+                            start = true;
+                        }
                     }
                 }
                 contact.Previous = relative;
                 contact.HasPrevious = true;
-                float weight = Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(startDistance, fullDistance, distance));
-                // Multiple close contacts never stack visual altitude.
-                desired = Mathf.Max(desired, lift * weight);
             }
-            height = Mathf.SmoothDamp(height, desired, ref heightVelocity,
-                desired > height ? .10f : .25f, Mathf.Infinity, dt);
-            if (desired == 0f && height < .01f) { height = heightVelocity = 0f; }
-            ApplyHeight();
+
+            if (!IsEvading)
+            {
+                if (!start) return;
+                IsEvading = true;
+                elapsed = 0f;
+                maneuverLift = lift;
+            }
+            else elapsed = Mathf.Min(Duration, elapsed + dt);
+
+            if (elapsed >= Duration)
+            {
+                IsEvading = false;
+                ApplyPose(0f, 0f);
+                return;
+            }
+
+            float height, verticalSpeed, pitchLimit;
+            if (elapsed < ClimbSeconds)
+            {
+                float u = elapsed / ClimbSeconds;
+                height = maneuverLift * Smooth(u);
+                verticalSpeed = maneuverLift * 6f * u * (1f - u) / ClimbSeconds;
+                pitchLimit = 25f;
+            }
+            else if (elapsed < ClimbSeconds + CrestSeconds)
+            {
+                height = maneuverLift;
+                verticalSpeed = 0f;
+                pitchLimit = 25f;
+            }
+            else
+            {
+                float u = Mathf.Clamp01((elapsed - ClimbSeconds - CrestSeconds) / DescentSeconds);
+                height = maneuverLift * (1f - Smooth(u));
+                verticalSpeed = -maneuverLift * 6f * u * (1f - u) / DescentSeconds;
+                pitchLimit = 20f;
+            }
+            // Nose follows the visual trajectory, with an arcade pitch cap.
+            // Smoothstep has zero vertical speed at every phase boundary.
+            float pitch = Mathf.Clamp(Mathf.Atan2(verticalSpeed, Mathf.Max(1f, forwardSpeed)) * Mathf.Rad2Deg,
+                -pitchLimit, pitchLimit);
+            ApplyPose(height, pitch);
         }
 
-        private void ApplyHeight()
+        private static float Smooth(float u) => u * u * (3f - 2f * u);
+
+        private void ApplyPose(float height, float noseUp)
         {
             if (parts == null) return;
+            Quaternion pitch = Quaternion.AngleAxis(-noseUp, aircraft.right);
+            Vector3 pivot = aircraft.position;
             for (int i = 0; i < parts.Length; i++)
             {
                 Transform part = parts[i];
                 if (part == null || part.parent == null) continue;
-                // World-up offset even while the aircraft banks; keep local
-                // rotations/scale and original authored rest positions intact.
-                part.localPosition = rest[i] + part.parent.InverseTransformVector(Vector3.up * height);
+                if (height == 0f && noseUp == 0f)
+                {
+                    part.localPosition = rest[i];
+                    part.localRotation = restRotation[i];
+                    continue;
+                }
+                Transform parent = part.parent;
+                // Rotate both the mesh and separate exhaust sockets around the
+                // same aircraft pivot, not around their individual local origins.
+                Vector3 worldRest = parent.TransformPoint(rest[i]);
+                part.localPosition = parent.InverseTransformPoint(pivot + pitch * (worldRest - pivot) + Vector3.up * height);
+                part.localRotation = Quaternion.Inverse(parent.rotation) * pitch * parent.rotation * restRotation[i];
             }
         }
 
         public void Clear()
         {
-            height = heightVelocity = 0f;
-            foreach (var contact in contacts) contact.HasPrevious = false;
-            ApplyHeight();
+            IsEvading = false;
+            elapsed = maneuverLift = 0f;
+            foreach (var contact in contacts) contact.HasPrevious = contact.Latched = false;
+            ApplyPose(0f, 0f);
         }
     }
 }

@@ -49,10 +49,12 @@ namespace AirCombat
         [SerializeField, Min(10f)] private float landingTouchdownOffset = 65f;
         [SerializeField, Min(5f)] private float landingAutoTouchdownSpeed = 65f;
 
-        [Header("Visual air separation (COLL-01)")]
+        [Header("Emergency air evasion (COLL-02)")]
         [SerializeField] private bool visualAirSeparation = true;
         [SerializeField, Min(0f)] private float airSeparationLift = 16f;
+        [Tooltip("Distance required to rearm a previously evaded contact.")]
         [SerializeField, Min(1f)] private float airSeparationStartDistance = 56f;
+        [Tooltip("Predicted closest approach that triggers evasion.")]
         [SerializeField, Min(1f)] private float airSeparationFullDistance = 23f;
         private Mission01AirSeparation airSeparation;
 
@@ -269,10 +271,14 @@ namespace AirCombat
                     previousFlightPosition = next;
                     boundary.Tick(next);
                     TickLandingApproach();
-                    if (State == Phase.Flight && visualAirSeparation)
+                    if (State == Phase.Flight && visualAirSeparation &&
+                        (playerHealth == null || playerHealth.IsAlive))
+                    {
                         airSeparation?.Tick(Time.deltaTime, airSeparationLift,
-                            airSeparationStartDistance, airSeparationFullDistance);
-                    else airSeparation?.Clear();
+                            airSeparationStartDistance, airSeparationFullDistance, flight.CurrentSpeed);
+                        weaponTrigger.SetFireInhibited(airSeparation != null && airSeparation.IsEvading);
+                    }
+                    else ClearAirSeparation();
                 }
                 return;
             }
@@ -316,11 +322,17 @@ namespace AirCombat
                 { round.enabled = false; Destroy(round.gameObject); }
         }
 
+        private void ClearAirSeparation()
+        {
+            airSeparation?.Clear();
+            if (weaponTrigger != null) weaponTrigger.SetFireInhibited(false);
+        }
+
         private void Crash(Vector3 impact)
         {
             if (State != Phase.Flight) return;
             State = Phase.Crashed;
-            airSeparation?.Clear();
+            ClearAirSeparation();
             landing?.Clear();
             boundary?.Clear();
             SetSamArmed(false);
@@ -339,7 +351,7 @@ namespace AirCombat
         {
             if (State != Phase.Flight) return;
             State = Phase.BoundaryFailed;
-            airSeparation?.Clear();
+            ClearAirSeparation();
             landing?.Clear();
             aircraft.position = stop;
             previousFlightPosition = stop;
@@ -412,7 +424,7 @@ namespace AirCombat
 
         private void ResetToReady()
         {
-            airSeparation?.Clear();
+            ClearAirSeparation();
             ReleaseBoundaryPause();
             boundary?.Clear();
             landing?.Clear();
@@ -449,7 +461,7 @@ namespace AirCombat
 
         private void OnDisable()
         {
-            airSeparation?.Clear();
+            ClearAirSeparation();
             ReleaseBoundaryPause();
             boundary?.Clear();
             landing?.Clear();
