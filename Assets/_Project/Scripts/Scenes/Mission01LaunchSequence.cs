@@ -81,6 +81,10 @@ namespace AirCombat
             {
                 // Explicit cannon-only loadout. The empty secondary uses the existing HUD label.
                 weaponTrigger.ConfigureDualSlots(null);
+                // Mission-only terrain warning uses the already configured flight camera.
+                var follow = FindFirstObjectByType<ArcadeCameraFollow>();
+                if (follow != null)
+                    TerrainCollisionWarning.Create(missionHud.transform, flight, follow.GetComponent<Camera>());
                 missionHud.gameObject.SetActive(false);
             }
 #if UNITY_EDITOR
