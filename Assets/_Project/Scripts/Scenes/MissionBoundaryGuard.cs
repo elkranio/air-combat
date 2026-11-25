@@ -33,6 +33,9 @@ namespace AirCombat
             tone = MakeTone();
         }
 
+        internal Rect Bounds => bounds;
+        internal float CautionDistance => caution;
+
         public float Distance(Vector3 p) => Mathf.Min(
             Mathf.Min(p.x - bounds.xMin, bounds.xMax - p.x),
             Mathf.Min(p.z - bounds.yMin, bounds.yMax - p.z));

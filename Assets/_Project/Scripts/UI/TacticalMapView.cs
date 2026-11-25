@@ -40,6 +40,8 @@ namespace AirCombat
         private Vector2 mapRight, mapUp;
         private float mapScale;
         private bool cameraUp;
+        private MissionBoundaryGuard operationBoundary;
+        private static readonly Color CautionInk = new Color(.98f,.81f,.40f,.68f);
         private static readonly Color Ink = new Color(.80f,.89f,.87f);
         private static readonly Color Muted = new Color(.53f,.66f,.65f);
         private static readonly Color Cyan = new Color(.48f,.92f,.94f);
@@ -122,6 +124,7 @@ namespace AirCombat
         private void BuildCanvas()
         {
             DisposeCanvas();
+            operationBoundary = ResolveOperationBoundary();
             buildStage = "font and textures";
             EnsureGraphics();
             buildStage = "canvas root";
@@ -156,6 +159,7 @@ namespace AirCombat
             panel.gameObject.AddComponent<RectMask2D>();
             drawParent = panel;
             DrawGeography(new Rect(0,0,area.width,area.height));
+            DrawOperationBoundary(new Rect(0,0,area.width,area.height));
             DrawMap(new Rect(0,0,area.width,area.height));
             drawParent = frame;
             buildStage = "mission data and footer";
@@ -251,6 +255,48 @@ namespace AirCombat
             graphic.uvRect=new Rect((x0-full.xMin)/full.width,(full.yMax-y1)/full.height,
                 clipped.width/full.width,clipped.height/full.height);
         }
+
+        private MissionBoundaryGuard ResolveOperationBoundary()
+        {
+            foreach (var root in gameObject.scene.GetRootGameObjects())
+                foreach (var launch in root.GetComponentsInChildren<Mission01LaunchSequence>())
+                    if (launch.isActiveAndEnabled && launch.Boundary != null) return launch.Boundary;
+            return null;
+        }
+
+        private void DrawOperationBoundary(Rect area)
+        {
+            if (operationBoundary == null) return;
+            Rect outer = operationBoundary.Bounds;
+            float inset = operationBoundary.CautionDistance;
+            if (outer.width > 2f * inset && outer.height > 2f * inset)
+                DrawBoundaryContour(area, Rect.MinMaxRect(outer.xMin + inset, outer.yMin + inset,
+                    outer.xMax - inset, outer.yMax - inset), 1.4f, CautionInk);
+            DrawBoundaryContour(area, outer, 2.5f, RadarHud.BoundaryInk);
+        }
+
+        // Clip in world X/Z before projection. If the operation is changed in
+        // the Inspector, never fabricate a border at the baked geography edge.
+        private void DrawBoundaryContour(Rect area, Rect bounds, float width, Color tint)
+        {
+            Rect extent = map.WorldBounds;
+            Vector2 Project(float x, float z) => Point(area, map.WorldToUV(new Vector2(x,z)));
+            void Horizontal(float z)
+            {
+                float a = Mathf.Max(bounds.xMin, extent.xMin), b = Mathf.Min(bounds.xMax, extent.xMax);
+                if (z >= extent.yMin && z <= extent.yMax && b > a)
+                    Stroke(Project(a,z), Project(b,z), width, tint);
+            }
+            void Vertical(float x)
+            {
+                float a = Mathf.Max(bounds.yMin, extent.yMin), b = Mathf.Min(bounds.yMax, extent.yMax);
+                if (x >= extent.xMin && x <= extent.xMax && b > a)
+                    Stroke(Project(x,a), Project(x,b), width, tint);
+            }
+            Horizontal(bounds.yMin); Horizontal(bounds.yMax);
+            Vertical(bounds.xMin); Vertical(bounds.xMax);
+        }
+
         private void DrawMap(Rect rect)
         {
             if (map.HasAirfield && Inside(map.WorldToUV(map.AirfieldPosition)))
@@ -312,10 +358,17 @@ namespace AirCombat
             Legend(x,y+348,Ink,"Recon target marker");
             Legend(x,y+381,Gold,"Optional target marker");
             Legend(x,y+414,Cyan,"Player / airfield");
-            Solid(new Rect(x,y+454,w,1),new Color(.23f,.34f,.35f));
+            float footer = 454f;
+            if (operationBoundary != null)
+            {
+                Legend(x,y+447,RadarHud.BoundaryInk,"Operation boundary");
+                Legend(x,y+480,CautionInk,"Boundary caution zone");
+                footer = 520f;
+            }
+            Solid(new Rect(x,y+footer,w,1),new Color(.23f,.34f,.35f));
             bool armed = linked && Array.TrueForAll(plannedSam, sam => sam.Launcher.IsConfigured);
-            Text(new Rect(x,y+469,w,25),linked ? "MISSION PROTOTYPE" : "PLANNING DATA / NOT LIVE",14,Gold,true);
-            Text(new Rect(x,y+500,w,28),armed ? (reconLive ? "SAMs and recon live; optional pending." : "SAMs live; objectives pending.") : linked ? "SAM sites linked; combat pending." : "SAMs and objectives are placeholders.",14,Muted);
+            Text(new Rect(x,y+footer+15,w,25),linked ? "MISSION PROTOTYPE" : "PLANNING DATA / NOT LIVE",14,Gold,true);
+            Text(new Rect(x,y+footer+46,w,28),armed ? (reconLive ? "SAMs and recon live; optional pending." : "SAMs live; objectives pending.") : linked ? "SAM sites linked; combat pending." : "SAMs and objectives are placeholders.",14,Muted);
         }
         private void Legend(float x,float y,Color c,string text)
         { Solid(new Rect(x,y+5,15,15),c); Text(new Rect(x+25,y,300,25),text,15,Ink); }

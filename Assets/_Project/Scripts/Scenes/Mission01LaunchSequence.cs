@@ -55,6 +55,7 @@ namespace AirCombat
         private bool previousAudioPause;
 
         public Phase State { get; private set; } = Phase.Intro;
+        internal MissionBoundaryGuard Boundary => boundary;
 
 #if UNITY_EDITOR
         public void ConfigureForAuthoring(FlightController controller, PlayerWeaponTrigger trigger)
@@ -123,6 +124,7 @@ namespace AirCombat
             {
                 // Explicit cannon-only loadout. The empty secondary uses the existing HUD label.
                 weaponTrigger.ConfigureDualSlots(null);
+                missionHud.BindOperationBoundary(boundary);
                 // Mission-only terrain warning uses the already configured flight camera.
                 var follow = FindFirstObjectByType<ArcadeCameraFollow>();
                 if (follow != null)

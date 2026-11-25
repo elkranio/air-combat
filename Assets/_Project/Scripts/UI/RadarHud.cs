@@ -22,6 +22,14 @@ namespace AirCombat
         private readonly List<RadarDetection> detected = new List<RadarDetection>(16);
         private AircraftRadar radar;
         private Camera presentationCamera;
+        private MissionBoundaryGuard operationBoundary;
+        internal static readonly Color BoundaryInk = new Color(1f, .56f, .30f, .92f);
+
+        internal void BindOperationBoundary(MissionBoundaryGuard boundary)
+        {
+            operationBoundary = boundary;
+            SetVerticesDirty();
+        }
 
         // Camera choice affects only presentation, never AircraftRadar samples.
         // A null camera preserves north-up for legacy combat labs.
@@ -110,6 +118,7 @@ namespace AirCombat
             {
                 float scale = radius / radar.Range;
                 GetDisplayAxes(out Vector2 displayRight, out Vector2 displayUp);
+                DrawOperationBoundary(mesh, center, radius, scale, displayRight, displayUp);
                 for (int i = 0; i < detected.Count; i++)
                 {
                     var contact = detected[i];
@@ -216,6 +225,26 @@ namespace AirCombat
         internal static Vector2 RelativeOnDisplay(Vector2 offset, Vector2 right, Vector2 up)
         {
             return new Vector2(Vector2.Dot(offset, right), Vector2.Dot(offset, up));
+        }
+
+        private void DrawOperationBoundary(VertexHelper mesh, Vector2 center, float radius,
+            float scale, Vector2 right, Vector2 up)
+        {
+            if (operationBoundary == null) return;
+            Rect bounds = operationBoundary.Bounds;
+            Vector3 p = radar.transform.position;
+            Vector2 origin = new Vector2(p.x, p.z);
+            Vector2 Project(float x, float z) => RelativeOnDisplay(new Vector2(x, z) - origin, right, up) * scale;
+            void Edge(Vector2 a, Vector2 b)
+            {
+                if (!ClipSegmentToDisc(ref a, ref b, radius - 2f)) return;
+                Segment(mesh, center + a, center + b, 2f, BoundaryInk);
+            }
+            Vector2 sw = Project(bounds.xMin, bounds.yMin);
+            Vector2 se = Project(bounds.xMax, bounds.yMin);
+            Vector2 ne = Project(bounds.xMax, bounds.yMax);
+            Vector2 nw = Project(bounds.xMin, bounds.yMax);
+            Edge(sw, se); Edge(se, ne); Edge(ne, nw); Edge(nw, sw);
         }
 
         private void ClippedThreatRing(VertexHelper mesh, Vector2 at, float threatRadius,

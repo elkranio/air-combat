@@ -14,6 +14,11 @@ namespace AirCombat
 
         public TargetMarkerHud Marker => targetMarker;
 
+        internal void BindOperationBoundary(MissionBoundaryGuard boundary)
+        {
+            if (radarDisplay != null) radarDisplay.BindOperationBoundary(boundary);
+        }
+
         public void ConfigureParts(FlightHud bar, RadarHud radar)
         {
             statusBar = bar;
