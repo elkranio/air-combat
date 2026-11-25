@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using UnityEditor;
 using UnityEditor.SceneManagement;
@@ -388,6 +389,7 @@ namespace AirCombat
             Vector3 size = data.size;
             int cells = Mathf.Clamp(Mathf.RoundToInt(Mathf.Max(size.x, size.z) / FacetSize), 1, 256);
             Terrain01Playground.FillMesh(mesh, data, cells);
+            RefineReliefFacets(mesh, data);
             // Once H1a is installed, all later terrain bakes preserve its color rules.
             var material = AssetDatabase.LoadAssetAtPath<Material>(Art + "Mission01_Sand.mat");
             var palette = AssetDatabase.LoadAssetAtPath<Texture2D>(RockPalettePath);
@@ -395,6 +397,95 @@ namespace AirCombat
                 mesh.uv = MakeRockUV(mesh);
             EditorUtility.SetDirty(data);
             EditorUtility.SetDirty(mesh);
+        }
+
+        // H1c: subdivide elevated facets, with conforming transitions on their
+        // neighbors. Keep the original deterministic grid and all flat faces
+        // away from relief. The midpoint height comes from the editable source.
+        private static void RefineReliefFacets(Mesh mesh, TerrainData data)
+        {
+            var source = mesh.vertices;
+            var sourceUv = mesh.uv;
+            var splitEdges = new HashSet<Vector3>();
+            for (int i = 0; i < source.Length; i += 3)
+            {
+                Vector3 a = source[i], b = source[i + 1], c = source[i + 2];
+                if (Mathf.Max(a.y, Mathf.Max(b.y, c.y)) <= .05f) continue;
+                splitEdges.Add((a + b) * .5f);
+                splitEdges.Add((b + c) * .5f);
+                splitEdges.Add((c + a) * .5f);
+            }
+            if (splitEdges.Count == 0) return;
+
+            // Midpoint keys are exact for shared edges of this non-overlapping
+            // grid, independent of the direction in which the edge is traversed.
+            var sampled = new Dictionary<Vector3, Vector3>();
+            var vertices = new List<Vector3>(source.Length + splitEdges.Count * 6);
+            var uv = new List<Vector2>(vertices.Capacity);
+            var boundary = new List<Vector3>(6);
+            Vector3 size = data.size;
+            for (int i = 0; i < source.Length; i += 3)
+            {
+                Vector3 a = source[i], b = source[i + 1], c = source[i + 2];
+                Vector3 ab = (a + b) * .5f, bc = (b + c) * .5f, ca = (c + a) * .5f;
+                bool splitAB = splitEdges.Contains(ab), splitBC = splitEdges.Contains(bc), splitCA = splitEdges.Contains(ca);
+                Vector2 faceUv = sourceUv[i];
+                if (!splitAB && !splitBC && !splitCA)
+                {
+                    Add(a, b, c, faceUv);
+                    continue;
+                }
+                if (splitAB) ab = SampleEdge(ab);
+                if (splitBC) bc = SampleEdge(bc);
+                if (splitCA) ca = SampleEdge(ca);
+                if (splitAB && splitBC && splitCA)
+                {
+                    Add(a, ab, ca, faceUv);
+                    Add(ab, b, bc, faceUv);
+                    Add(ca, bc, c, faceUv);
+                    Add(ab, bc, ca, faceUv);
+                    continue;
+                }
+                // Transition triangles follow the same subdivided boundary as
+                // their neighbors. A fan avoids T-junctions and degenerate faces.
+                boundary.Clear();
+                boundary.Add(a); if (splitAB) boundary.Add(ab);
+                boundary.Add(b); if (splitBC) boundary.Add(bc);
+                boundary.Add(c); if (splitCA) boundary.Add(ca);
+                Vector3 center = SampleHeight((a + b + c) / 3f);
+                for (int j = 0; j < boundary.Count; j++)
+                    Add(center, boundary[j], boundary[(j + 1) % boundary.Count], faceUv);
+            }
+            var indices = new int[vertices.Count];
+            for (int i = 0; i < indices.Length; i++) indices[i] = i;
+            mesh.Clear();
+            mesh.indexFormat = vertices.Count > 65535 ? UnityEngine.Rendering.IndexFormat.UInt32 : UnityEngine.Rendering.IndexFormat.UInt16;
+            mesh.SetVertices(vertices);
+            mesh.triangles = indices;
+            mesh.SetUVs(0, uv);
+            mesh.RecalculateNormals();
+            mesh.RecalculateBounds();
+            Debug.Log($"MISSION-01H1c: {source.Length / 3} -> {indices.Length / 3} terrain triangles (local refinement).");
+
+            Vector3 SampleHeight(Vector3 p)
+            {
+                p.y = data.GetInterpolatedHeight(p.x / size.x, p.z / size.z);
+                return p;
+            }
+            Vector3 SampleEdge(Vector3 key)
+            {
+                if (!sampled.TryGetValue(key, out var point))
+                {
+                    point = SampleHeight(key);
+                    sampled.Add(key, point);
+                }
+                return point;
+            }
+            void Add(Vector3 a, Vector3 b, Vector3 c, Vector2 faceUv)
+            {
+                vertices.Add(a); vertices.Add(b); vertices.Add(c);
+                uv.Add(faceUv); uv.Add(faceUv); uv.Add(faceUv);
+            }
         }
 
         // Names in the authored hierarchy contain literal slashes. Transform.Find
