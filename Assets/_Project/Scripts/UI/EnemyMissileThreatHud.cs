@@ -19,7 +19,7 @@ namespace AirCombat
         [SerializeField, Min(0f)] private float hullGap = 38f;
         [SerializeField, Min(25f)] private float vectorLength = 64f;
         [SerializeField, Min(0f)] private float pulseTravel = 6f;
-        private static readonly Color Threat = new Color(.56f, .91f, .47f, 1f);
+        private static readonly Color Threat = new Color(1f, .24f, .20f, 1f);
 
         public void Bind(Camera camera, EnemyMissileStressTest source)
         {
@@ -120,7 +120,7 @@ namespace AirCombat
             float height = iconLength * .5f;
             float lineLength = span - iconLength;
             Color ink = new Color(Threat.r, Threat.g, Threat.b, alpha);
-            Color backing = new Color(.025f, .065f, .035f, alpha * .8f);
+            Color backing = new Color(.10f, .025f, .025f, alpha * .8f);
 
             Matrix4x4 before = GUI.matrix;
             GUIUtility.RotateAroundPivot(Mathf.Atan2(inward.y, inward.x) * Mathf.Rad2Deg, start);
