@@ -16,7 +16,7 @@ namespace AirCombat
         private Transform rotor;
         private Mission01ReconEncounter encounter;
         private Vector3 center, fallStart, fallForward;
-        private Quaternion visualRest;
+        private Quaternion visualRest, fallStartRotation;
         private float angle, speed, fallTime, smokeDebt, groundY;
         private int hp;
         private bool initialized, falling, detonated;
@@ -84,6 +84,7 @@ namespace AirCombat
                 fallTime = smokeDebt = 0f;
                 fallStart = transform.position;
                 fallForward = transform.forward;
+                fallStartRotation = visual.localRotation;
                 encounter.AirBurst(point, fallForward);
             }
             return true;
@@ -104,15 +105,18 @@ namespace AirCombat
             }
             if (!falling) return;
             fallTime += dt;
-            if (rotor != null) rotor.Rotate(0f, 0f, Mathf.Max(0f, 420f * (1f - fallTime / 2f)) * dt, Space.Self);
+            if (rotor != null) rotor.Rotate(0f, 0f, Mathf.Lerp(780f, 0f, Mathf.Clamp01(fallTime / 2f)) * dt, Space.Self);
             // Short burning glide followed by an accelerating nose-down descent.
             float u = Mathf.Clamp01((fallTime - .65f) / 3.15f);
             float sink = u * u;
             Vector3 next = fallStart + fallForward * (speed * (fallTime + .12f * fallTime * fallTime));
             next.y = Mathf.Lerp(fallStart.y, groundY + 8f, sink);
             transform.position = next;
-            float roll = (clockwise ? -1f : 1f) * Mathf.Lerp(8f, 65f, u);
-            visual.localRotation = visualRest * Quaternion.Euler(Mathf.Lerp(0f, 58f, u), 0f, roll);
+            // Blend from the actual hit-frame pose, continuing the patrol bank.
+            float blend = Mathf.SmoothStep(0f, 1f, Mathf.Clamp01(fallTime / .65f));
+            float roll = (clockwise ? 1f : -1f) * Mathf.Lerp(14f, 65f, u);
+            Quaternion deathPose = visualRest * Quaternion.Euler(Mathf.Lerp(0f, 58f, u), 0f, roll);
+            visual.localRotation = Quaternion.Slerp(fallStartRotation, deathPose, blend);
             Trail(dt, 23f, true);
             if (!detonated && fallTime >= 1.05f)
             {
