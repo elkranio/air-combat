@@ -17,3 +17,7 @@ Base `e8a30f2`. Geometry and scale unchanged. Separate the four launcher box bod
 ## ART-SAM-01D — Industrial Empire palette B (WIP)
 
 Base `120783c`. Alternate cold industrial gray hull, charcoal equipment and chassis, light gray launcher bodies and saturated red front caps. Reuse all eight existing material assets, mesh assets and the same prefab. No geometry, scale, lighting or scene changes. In Unity choose **Air Combat > Art > Apply SAM01 Industrial Empire** for B, or **Apply SAM01 Imperial Olive** to restore A. Both menu commands update shared materials globally, so compare successive screenshots under identical lighting; they do not create independent per-instance variants. The Blender generator retains palette A during this Unity-only color trial. Commit the selected material state after review.
+
+## ART-SAM-01E — Heavy Industry palette C (WIP)
+
+Base `d3804e3`. Muted yellow-olive hull, dark olive equipment and chassis, pale gray-green launcher bodies and yellow industrial accents on the front caps. Choose **Air Combat > Art > Apply SAM01 Heavy Industry**. A and B remain selectable via their existing menu commands. Same eight shared materials, prefab, geometry, scene and lighting; Blender retains palette A during the color trial. Compare under identical game-camera conditions and commit the selected material state after review.

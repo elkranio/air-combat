@@ -24,6 +24,13 @@ namespace AirCombat
             new Color32(174,181,177,255), new Color32(184,48,43,255)
         };
 
+        private static readonly Color32[] HeavyIndustry = {
+            new Color32(115,119,76,255), new Color32(82,85,59,255),
+            new Color32(55,57,44,255), new Color32(35,37,34,255),
+            new Color32(40,53,58,255), new Color32(190,190,164,255),
+            new Color32(165,169,149,255), new Color32(210,178,56,255)
+        };
+
         [MenuItem("Air Combat/Art/Create SAM01 Picket Preview")]
         private static void Create()
         {
@@ -38,6 +45,9 @@ namespace AirCombat
 
         [MenuItem("Air Combat/Art/Apply SAM01 Industrial Empire")]
         private static void ApplyIndustrialEmpire() => ApplyPalette(IndustrialEmpire, "Industrial Empire (B)");
+
+        [MenuItem("Air Combat/Art/Apply SAM01 Heavy Industry")]
+        private static void ApplyHeavyIndustry() => ApplyPalette(HeavyIndustry, "Heavy Industry (C)");
 
         private static void ApplyPalette(Color32[] palette, string paletteName)
         {
