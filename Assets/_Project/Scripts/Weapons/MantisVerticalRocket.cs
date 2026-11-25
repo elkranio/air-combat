@@ -119,7 +119,7 @@ namespace AirCombat
                     age += slice; dt -= slice;
                     Vector3 p = launchPoint;
                     p.y += riseStartSpeed * age + .5f * (riseEndSpeed - riseStartSpeed) / ejectSeconds * age * age;
-                    transform.position = p;
+                    if (!MoveColdLaunch(p)) return;
                     if (age >= ejectSeconds - .000001f)
                     { phase = Phase.Align; age = 0f; }
                     continue;
@@ -138,14 +138,15 @@ namespace AirCombat
                     // small sideways drift; main engine is not active yet.
                     Vector3 p = transform.position + horizontalAim * (coastSpeed * alignSeconds * .5f * (t*t - before*before));
                     p.y = launchPoint.y + riseDistance + riseEndSpeed * alignSeconds * (t - .5f*t*t);
-                    transform.position = p;
+                    if (!MoveColdLaunch(p)) return;
                     heading = Vector3.Slerp(Vector3.up, horizontalAim, Mathf.SmoothStep(0f, 1f, t)).normalized;
                     if (age >= alignSeconds - .000001f)
                     {
                         delta = target.transform.position - transform.position; delta.y = 0f;
                         if (delta.sqrMagnitude > .0001f) horizontalAim = delta.normalized;
                         heading = horizontalAim; // initial powered heading; no predictive lead
-                        p.y = height; transform.position = p;
+                        p.y = height;
+                        if (!MoveColdLaunch(p)) return;
                         phase = Phase.Ignition; age = 0f; flightAge = 0f;
                         trail.Clear(); trail.emitting = true;
                     }
@@ -166,6 +167,18 @@ namespace AirCombat
                 dt = 0f;
             }
             DrawMotor();
+        }
+
+        private bool MoveColdLaunch(Vector3 to)
+        {
+            if (RadarTerrainObstacle.TryProjectileHit(gameObject.scene, transform.position, to,
+                    out _, out Vector3 rockPoint))
+            {
+                BeginPuff(rockPoint);
+                return false;
+            }
+            transform.position = to;
+            return true;
         }
 
         private bool MoveCommitted(float distance, float dt)
@@ -201,6 +214,11 @@ namespace AirCombat
                     if (hit.collider == null || hit.distance >= nearest ||
                         (owner != null && hit.collider.transform.IsChildOf(owner))) continue;
                     nearest = hit.distance; closest = hit;
+                }
+                if (RadarTerrainObstacle.TryProjectileHit(gameObject.scene, start, start + heading * step,
+                        out float rockAt, out Vector3 rockPoint) && rockAt * step <= nearest)
+                {
+                    BeginPuff(rockPoint); return false;
                 }
                 if (!float.IsPositiveInfinity(nearest))
                 {

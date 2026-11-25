@@ -26,7 +26,7 @@ namespace AirCombat
 
             activeMissile = Instantiate(missilePrefab, transform.position + transform.forward * launchOffset,
                 transform.rotation);
-            activeMissile.Launch(target, OnHit);
+            activeMissile.Launch(target, OnHit, terrainPoint => MissileImpact.Spawn(terrainPoint, effectMaterial));
             targetLock.ResetLock();
         }
 

@@ -86,6 +86,15 @@ namespace AirCombat
                 hitPoint = HitBuffer[i].point;
                 best = HitBuffer[i].distance;
             }
+            if (RadarTerrainObstacle.TryProjectileHit(gameObject.scene, start, start + direction * travel,
+                    out float rockAt, out Vector3 rockPoint) && rockAt * travel <= best)
+            {
+                transform.position = rockPoint;
+                if (onImpactFx != null) onImpactFx(rockPoint);
+                else if (tracer != null) ArcadeCannonImpactFx.Spawn(rockPoint, tracer.sharedMaterial, .65f);
+                Destroy(gameObject);
+                return;
+            }
             if (nearest != null)
             {
                 transform.position = hitPoint;

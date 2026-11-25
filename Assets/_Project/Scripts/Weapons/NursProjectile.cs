@@ -94,6 +94,12 @@ namespace AirCombat
                         closest = hit.distance;
                         impact = hit.point;
                     }
+                    if (RadarTerrainObstacle.TryProjectileHit(gameObject.scene, from, to,
+                            out float rockAt, out Vector3 rockPoint) && rockAt * distance <= closest)
+                    {
+                        Detonate(rockPoint);
+                        return;
+                    }
                     if (!float.IsPositiveInfinity(closest))
                     {
                         Detonate(impact);

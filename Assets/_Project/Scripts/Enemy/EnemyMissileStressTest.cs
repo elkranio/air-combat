@@ -184,6 +184,9 @@ namespace AirCombat
             missile.Launch(target.transform, (hitPoint, hit) =>
             {
                 if (WeaponLock.Alive(target) && target.ApplyDamage(hitPoint, settings.damage)) Hits++;
+            }, terrainPoint =>
+            {
+                if (feedback != null) feedback.EmitInterceptionBurst(terrainPoint, missile.transform.forward);
             });
             var contact = new MissileContact { Missile = missile };
             live.Add(contact);

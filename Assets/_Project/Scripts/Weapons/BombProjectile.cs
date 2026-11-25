@@ -48,8 +48,16 @@ namespace AirCombat
                 Vector3 to = BombTrajectory.Integrate(ref velocity, from, step);
                 Vector3 delta = to - from;
                 float distance = delta.magnitude;
-                if (distance > 0.0001f && Physics.Raycast(from, delta / distance,
-                    out RaycastHit hit, distance, ~0, QueryTriggerInteraction.Ignore))
+                RaycastHit hit = default;
+                bool physicsHit = distance > 0.0001f && Physics.Raycast(from, delta / distance,
+                    out hit, distance, ~0, QueryTriggerInteraction.Ignore);
+                if (RadarTerrainObstacle.TryProjectileHit(gameObject.scene, from, to,
+                        out float rockAt, out Vector3 rockPoint) && (!physicsHit || rockAt * distance <= hit.distance))
+                {
+                    Detonate(rockPoint);
+                    return;
+                }
+                if (physicsHit)
                 {
                     Detonate(hit.point);
                     return;

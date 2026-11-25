@@ -54,7 +54,7 @@ namespace AirCombat
             activeMissile = Instantiate(missilePrefab,
                 launchPoint != null ? launchPoint.position : transform.position + transform.forward * launchOffset,
                 transform.rotation);
-            activeMissile.Launch(target, OnMissileHit);
+            activeMissile.Launch(target, OnMissileHit, terrainPoint => MissileImpact.Spawn(terrainPoint, impactMaterial));
             MissileLaunched?.Invoke(activeMissile);
             FiredCount++;
             targetLock.ResetLock(); // Every shot requires a fresh acquisition.

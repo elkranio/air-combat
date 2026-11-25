@@ -15,6 +15,7 @@ namespace AirCombat
         [SerializeField] private TrailRenderer trail;
         private Transform target;
         private Action<Vector3, Transform> onHit;
+        private Action<Vector3> onTerrainImpact;
         private Vector3 lastTargetPosition;
         private float age;
         public float RemainingManeuverBudget { get; private set; }
@@ -54,6 +55,7 @@ namespace AirCombat
         {
             launched = false;
             onHit = null;
+            onTerrainImpact = null;
             arcadeExhaust = null;
             gameObject.SetActive(false);
             Destroy(gameObject);
@@ -67,12 +69,14 @@ namespace AirCombat
             previousExhaust = point;
         }
 
-        public void Launch(Transform aimTarget, Action<Vector3, Transform> hitCallback)
+        public void Launch(Transform aimTarget, Action<Vector3, Transform> hitCallback,
+            Action<Vector3> terrainImpact = null)
         {
             age = 0f;
             RemainingManeuverBudget = Mathf.Max(0f, maneuverBudget);
             target = aimTarget;
             onHit = hitCallback;
+            onTerrainImpact = terrainImpact;
             if (target != null) lastTargetPosition = target.position;
             if (trail != null) { trail.Clear(); trail.emitting = true; }
             previousExhaust = transform.TransformPoint(exhaustLocal);
@@ -102,6 +106,8 @@ namespace AirCombat
                 }
             }
             var to = from + transform.forward * speed * dt;
+            bool terrainHit = RadarTerrainObstacle.TryProjectileHit(gameObject.scene, from, to,
+                out float terrainAt, out Vector3 terrainPoint);
             if (hasTarget)
             {
                 // Sweep in relative space so fast missiles cannot tunnel through a moving target.
@@ -111,7 +117,10 @@ namespace AirCombat
                 var segment = relativeEnd - relativeStart;
                 float t = segment.sqrMagnitude > 0.000001f ?
                     Mathf.Clamp01(-Vector3.Dot(relativeStart, segment) / segment.sqrMagnitude) : 0f;
-                if ((relativeStart + segment * t).sqrMagnitude <= hitRadius * hitRadius)
+                if ((relativeStart + segment * t).sqrMagnitude <= hitRadius * hitRadius &&
+                    (!terrainHit || t < terrainAt) &&
+                    !RadarTerrainObstacle.TryProjectileHit(gameObject.scene, Vector3.Lerp(from, to, t),
+                        Vector3.Lerp(lastTargetPosition, target.position, t), out _, out _))
                 {
                     transform.position = Vector3.Lerp(from, to, t);
                     EmitArcadeExhaust();
@@ -120,6 +129,14 @@ namespace AirCombat
                     return;
                 }
                 lastTargetPosition = target.position;
+            }
+            if (terrainHit)
+            {
+                transform.position = terrainPoint;
+                EmitArcadeExhaust();
+                onTerrainImpact?.Invoke(terrainPoint);
+                Finish();
+                return;
             }
             transform.position = to;
             EmitArcadeExhaust();

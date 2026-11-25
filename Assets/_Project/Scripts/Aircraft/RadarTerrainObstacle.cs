@@ -39,6 +39,92 @@ namespace AirCombat
             return dx * dx + dz * dz <= distance * distance;
         }
 
+        // Weapon sweeps use real three-dimensional rock faces, not the flight
+        // slice. Reuse the world-space mesh cache; no new physics colliders or
+        // per-shot mesh allocations. Only explicitly registered terrain blocks.
+        private static readonly ProfilerMarker ProjectileMarker = new ProfilerMarker("AirCombat.TerrainProjectile.Query");
+        private static readonly List<float> InsideCrossings = new List<float>(32);
+        private static readonly Vector3 InsideDirection = new Vector3(.81237f, .33179f, .47913f).normalized;
+
+        internal static bool TryProjectileHit(UnityEngine.SceneManagement.Scene scene,
+            Vector3 from, Vector3 to, out float fraction, out Vector3 point)
+        {
+            using (ProjectileMarker.Auto())
+            {
+                fraction = float.PositiveInfinity; point = default;
+                Vector3 delta = to - from;
+                float length = delta.magnitude;
+                if (length <= .00001f) return false;
+                var ray = new Ray(from, delta / length);
+                float best = length;
+                bool found = false;
+                foreach (var rock in Active)
+                {
+                    if (rock == null || rock.gameObject.scene != scene) continue;
+                    bool startsInBounds = rock.bounds.Contains(from);
+                    if (!startsInBounds && (!rock.bounds.IntersectRay(ray, out float entry) || entry > best)) continue;
+                    if (startsInBounds && rock.ContainsProjectileOrigin(from))
+                    {
+                        fraction = 0f; point = from; return true;
+                    }
+                    for (int i = 0; i < rock.triangles.Count; i += 3)
+                    {
+                        if (!RayTriangle(ray, rock.triangles[i], rock.triangles[i+1], rock.triangles[i+2], out float t) || t > best) continue;
+                        best = t; found = true;
+                    }
+                }
+                if (!found) return false;
+                fraction = Mathf.Clamp01(best / length);
+                point = Vector3.LerpUnclamped(from, to, fraction);
+                return true;
+            }
+        }
+
+        // A muzzle can protrude into a rock even though the forgiving aircraft
+        // hit radius has not touched it. Treat a shot born inside as blocked.
+        // Use a separate oblique ray and deduplicate shared triangle edges.
+        private bool ContainsProjectileOrigin(Vector3 origin)
+        {
+            var ray = new Ray(origin, InsideDirection);
+            InsideCrossings.Clear();
+            for (int i = 0; i < triangles.Count; i += 3)
+                if (RayTriangle(ray, triangles[i], triangles[i+1], triangles[i+2], out float t))
+                {
+                    if (t <= .0001f) return true;
+                    InsideCrossings.Add(t);
+                }
+            InsideCrossings.Sort();
+            int count = 0;
+            float last = float.NegativeInfinity;
+            foreach (float t in InsideCrossings)
+            {
+                if (t - last <= .0005f) continue;
+                last = t; count++;
+            }
+            return (count & 1) != 0;
+        }
+
+        // Two-sided Moller-Trumbore intersection; ray direction is normalized.
+        private static bool RayTriangle(Ray ray, Vector3 a, Vector3 b, Vector3 c, out float distance)
+        {
+            distance = 0f;
+            Vector3 ab = b - a, ac = c - a;
+            Vector3 p = Vector3.Cross(ray.direction, ac);
+            float det = Vector3.Dot(ab, p);
+            if (Mathf.Abs(det) < 1e-6f) return false;
+            float inv = 1f / det;
+            Vector3 s = ray.origin - a;
+            float u = Vector3.Dot(s, p) * inv;
+            if (u < -1e-5f || u > 1.00001f) return false;
+            Vector3 q = Vector3.Cross(s, ab);
+            float v = Vector3.Dot(ray.direction, q) * inv;
+            if (v < -1e-5f || u + v > 1.00001f) return false;
+            float t = Vector3.Dot(ac, q) * inv;
+            if (t < -.0001f) return false;
+            distance = Mathf.Max(0f, t);
+            return true;
+        }
+
         private void OnEnable()
         {
             triangles.Clear();

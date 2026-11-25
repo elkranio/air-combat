@@ -136,7 +136,9 @@ namespace AirCombat
                 float denominator = movement.sqrMagnitude;
                 float t = denominator > .000001f
                     ? Mathf.Clamp01(-Vector3.Dot(relativeFrom, movement) / denominator) : 0f;
-                if ((relativeFrom + movement * t).sqrMagnitude <= hitRadius * hitRadius)
+                if ((relativeFrom + movement * t).sqrMagnitude <= hitRadius * hitRadius &&
+                    !RadarTerrainObstacle.TryProjectileHit(gameObject.scene, Vector3.Lerp(from, to, t),
+                        Vector3.Lerp(previousTargetPosition, target.position, t), out _, out _))
                     targetAt = t;
                 previousTargetPosition = target.position;
             }
@@ -166,6 +168,13 @@ namespace AirCombat
                         obstacleName = hit.collider.name;
                     }
                 }
+            }
+            // Only the silo's collider immunity is preserved during cold launch;
+            // a marked terrain face still blocks the missile throughout flight.
+            if (RadarTerrainObstacle.TryProjectileHit(gameObject.scene, from, to,
+                    out float rockAt, out Vector3 rockPoint) && rockAt <= obstacleAt)
+            {
+                obstacleAt = rockAt; obstaclePoint = rockPoint; obstacleName = "TERRAIN";
             }
             // Both values are +Infinity when nothing was hit. Without this guard,
             // Infinity <= Infinity despawns every missile on its first frame.

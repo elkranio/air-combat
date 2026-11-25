@@ -120,6 +120,9 @@ namespace AirCombat
             missile.Launch(target.transform, (point, hit) =>
             {
                 if (WeaponLock.Alive(target)) target.ApplyDamage(point, hitDamage);
+            }, terrainPoint =>
+            {
+                if (feedback != null) feedback.EmitInterceptionBurst(terrainPoint, missile.transform.forward);
             });
             live.RemoveAll(item => item == null);
             live.Add(missile);
