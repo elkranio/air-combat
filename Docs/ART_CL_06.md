@@ -1,0 +1,17 @@
+# CL06 — solid rock barrier (WIP)
+
+Base `ecda2cb`. CL05 visual trial approved for further development. Replace the camera-layout v2 cliff geometry only, retaining the seven-segment main ridge axis and separate lower spur. No change to objectives, SAM sites, airfield, terrain, player, camera or shared art. The new ridge is narrower than H2C; the revised clearance is provisional, not a navigation balance decision.
+
+## Reusable stone kit
+
+Eight individually modeled solids (bastion, pillar, fracture, buttress, crown, shoulder, boulder, slab), sharing the three accepted CL05 matte materials. Each has its own closed surface, near-vertical walls, local chips and modestly sloping cap. No continuous material bands; vary the individual blocks, not the scale of a complete mountain. Source `Tools/Blender/build_cl06_rock_barrier.py` reuses the CL05 solid builder. Python exports eight OBJ files and a separate layout JSON. In Blender background mode it also creates `Resources/Blender/CL06_RockLibrary.blend` (editable sources; not supplied). The layout JSON contains world X/Z positions, yaw and scales; this is editor input only. All group roots have identity transforms. To iterate on tops later, edit the library shape specifications or their source template/mesh, then regenerate with the same names and meta GUIDs. Existing CL05 is unchanged.
+
+## Install
+
+1. Open `Mission01_FirstSortie`. The committed base still has the older v4 scene, even though H2C's code is present. If your saved scene does not yet contain `Mission01 / Cliff barrier - camera layout v2`, run **Air Combat > Missions > Apply Mission 01 Camera Layout v2** first and verify it. Do not rerun on an already installed v2 scene.
+2. Run **Air Combat > Missions > Replace Mission 01 Barrier with CL06**. Creates eight reusable prefabs under `Assets/_Project/Prefabs/Environment/Cliffs` if missing, and places the recipe's 85 stones in eight editable groups. Reuses existing prefabs without overwriting. Deletes the old v2 barrier and the isolated named CL05 trial instance (if present), preserving all old assets and CL05 prefab. Undo supported for scene changes; generated prefab assets remain. Repeating selects no new geometry.
+3. Inspect at gameplay zoom, orbit by flying both sides, check shadows, vertical mass, joins, tops, radar and warning. Save scene and newly generated prefab/meta assets only after review. Optional separate **Air Combat > Art > Build CL06 Rock Library** creates prefabs without placing them.
+
+## Verification and limits
+
+Python checks closed winding and cap normals through the existing CL05 builder. Source triangle slices at Y78.001 (including an X-mirrored import alternative) yield one connected main ridge and one connected lower spur; each crosses its intended map edge. Source section clears the planned main and optional route by about 439–443 and 375–378 units respectively, greater than the old barrier's approximate clearance. These are straight-line geometric distances to rock sections, not guarantees about turning, gameplay, external map bypass or SAM coverage. Actual Unity import, compilation and visuals require local verification. Each closed rock has its own RadarTerrainObstacle, so intersecting radar fills can show interior seams; profile the increased count before shipping. Collision/crash, radar union, boundaries and combat remain deferred. Keep existing layouts for rollback in git, do not regenerate the scene.

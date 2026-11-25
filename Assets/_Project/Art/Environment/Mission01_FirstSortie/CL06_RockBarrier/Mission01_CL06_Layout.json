@@ -1,0 +1,888 @@
+{
+  "models": [
+    {
+      "name": "CL06_A_Bastion",
+      "tone": 0
+    },
+    {
+      "name": "CL06_B_Pillar",
+      "tone": 1
+    },
+    {
+      "name": "CL06_C_Fracture",
+      "tone": 0
+    },
+    {
+      "name": "CL06_D_Buttress",
+      "tone": 1
+    },
+    {
+      "name": "CL06_E_Crown",
+      "tone": 0
+    },
+    {
+      "name": "CL06_F_Shoulder",
+      "tone": 2
+    },
+    {
+      "name": "CL06_G_Boulder",
+      "tone": 1
+    },
+    {
+      "name": "CL06_H_Slab",
+      "tone": 2
+    }
+  ],
+  "placements": [
+    {
+      "section": "01 Main ridge",
+      "model": "CL06_A_Bastion",
+      "x": -1053.706,
+      "z": -491.434,
+      "yaw": -53.37,
+      "sx": 1.1,
+      "sy": 1,
+      "sz": 1.13
+    },
+    {
+      "section": "01 Main ridge",
+      "model": "CL06_C_Fracture",
+      "x": -1006.538,
+      "z": -417.312,
+      "yaw": -32.37,
+      "sx": 1.06,
+      "sy": 0.97,
+      "sz": 1.05
+    },
+    {
+      "section": "02 Main ridge",
+      "model": "CL06_B_Pillar",
+      "x": -935.946,
+      "z": -367.084,
+      "yaw": -63.099,
+      "sx": 1.18,
+      "sy": 1.04,
+      "sz": 1.15
+    },
+    {
+      "section": "02 Main ridge",
+      "model": "CL06_A_Bastion",
+      "x": -887.599,
+      "z": -294.486,
+      "yaw": -40.099,
+      "sx": 1.12,
+      "sy": 0.95,
+      "sz": 1.13
+    },
+    {
+      "section": "02 Main ridge",
+      "model": "CL06_E_Crown",
+      "x": -809.502,
+      "z": -251.535,
+      "yaw": -28.099,
+      "sx": 1.1,
+      "sy": 1.02,
+      "sz": 1.05
+    },
+    {
+      "section": "02 Main ridge",
+      "model": "CL06_C_Fracture",
+      "x": -760.447,
+      "z": -179.643,
+      "yaw": -51.099,
+      "sx": 1.06,
+      "sy": 1,
+      "sz": 1.15
+    },
+    {
+      "section": "02 Main ridge",
+      "model": "CL06_D_Buttress",
+      "x": -690.142,
+      "z": -128.927,
+      "yaw": -42.099,
+      "sx": 1.18,
+      "sy": 0.97,
+      "sz": 1.13
+    },
+    {
+      "section": "03 Main ridge",
+      "model": "CL06_B_Pillar",
+      "x": -644.709,
+      "z": -53.671,
+      "yaw": -54.967,
+      "sx": 1.12,
+      "sy": 1.04,
+      "sz": 1.05
+    },
+    {
+      "section": "03 Main ridge",
+      "model": "CL06_A_Bastion",
+      "x": -575.18,
+      "z": -1.895,
+      "yaw": -33.967,
+      "sx": 1.1,
+      "sy": 0.95,
+      "sz": 1.15
+    },
+    {
+      "section": "03 Main ridge",
+      "model": "CL06_A_Bastion",
+      "x": -527.938,
+      "z": 71.427,
+      "yaw": -63.967,
+      "sx": 1.06,
+      "sy": 1.02,
+      "sz": 1.13
+    },
+    {
+      "section": "03 Main ridge",
+      "model": "CL06_C_Fracture",
+      "x": -450.501,
+      "z": 115.556,
+      "yaw": -40.967,
+      "sx": 1.18,
+      "sy": 1,
+      "sz": 1.05
+    },
+    {
+      "section": "04 Main ridge",
+      "model": "CL06_B_Pillar",
+      "x": -402.523,
+      "z": 188.171,
+      "yaw": -28.922,
+      "sx": 1.12,
+      "sy": 0.97,
+      "sz": 1.15
+    },
+    {
+      "section": "04 Main ridge",
+      "model": "CL06_A_Bastion",
+      "x": -332.954,
+      "z": 239.892,
+      "yaw": -51.922,
+      "sx": 1.1,
+      "sy": 1.04,
+      "sz": 1.13
+    },
+    {
+      "section": "04 Main ridge",
+      "model": "CL06_E_Crown",
+      "x": -287.81,
+      "z": 315.264,
+      "yaw": -42.922,
+      "sx": 1.06,
+      "sy": 0.95,
+      "sz": 1.05
+    },
+    {
+      "section": "04 Main ridge",
+      "model": "CL06_C_Fracture",
+      "x": -218.24,
+      "z": 366.985,
+      "yaw": -54.922,
+      "sx": 1.18,
+      "sy": 1.02,
+      "sz": 1.15
+    },
+    {
+      "section": "04 Main ridge",
+      "model": "CL06_D_Buttress",
+      "x": -170.941,
+      "z": 440.27,
+      "yaw": -33.922,
+      "sx": 1.12,
+      "sy": 1,
+      "sz": 1.13
+    },
+    {
+      "section": "05 Main ridge",
+      "model": "CL06_B_Pillar",
+      "x": -92.907,
+      "z": 483.536,
+      "yaw": -63.0,
+      "sx": 1.1,
+      "sy": 0.97,
+      "sz": 1.05
+    },
+    {
+      "section": "05 Main ridge",
+      "model": "CL06_A_Bastion",
+      "x": -43.728,
+      "z": 555.344,
+      "yaw": -40.0,
+      "sx": 1.06,
+      "sy": 1.04,
+      "sz": 1.15
+    },
+    {
+      "section": "05 Main ridge",
+      "model": "CL06_A_Bastion",
+      "x": 26.665,
+      "z": 605.937,
+      "yaw": -28.0,
+      "sx": 1.18,
+      "sy": 0.95,
+      "sz": 1.13
+    },
+    {
+      "section": "05 Main ridge",
+      "model": "CL06_C_Fracture",
+      "x": 73.017,
+      "z": 680.573,
+      "yaw": -51.0,
+      "sx": 1.12,
+      "sy": 1.02,
+      "sz": 1.05
+    },
+    {
+      "section": "06 Main ridge",
+      "model": "CL06_B_Pillar",
+      "x": 143.377,
+      "z": 731.261,
+      "yaw": -42.846,
+      "sx": 1.1,
+      "sy": 1,
+      "sz": 1.15
+    },
+    {
+      "section": "06 Main ridge",
+      "model": "CL06_A_Bastion",
+      "x": 190.774,
+      "z": 804.483,
+      "yaw": -54.846,
+      "sx": 1.06,
+      "sy": 0.97,
+      "sz": 1.13
+    },
+    {
+      "section": "06 Main ridge",
+      "model": "CL06_E_Crown",
+      "x": 268.305,
+      "z": 848.448,
+      "yaw": -33.846,
+      "sx": 1.18,
+      "sy": 1.04,
+      "sz": 1.05
+    },
+    {
+      "section": "06 Main ridge",
+      "model": "CL06_C_Fracture",
+      "x": 316.419,
+      "z": 920.973,
+      "yaw": -63.846,
+      "sx": 1.12,
+      "sy": 0.95,
+      "sz": 1.15
+    },
+    {
+      "section": "06 Main ridge",
+      "model": "CL06_D_Buttress",
+      "x": 386.058,
+      "z": 972.6,
+      "yaw": -40.846,
+      "sx": 1.1,
+      "sy": 1.02,
+      "sz": 1.13
+    },
+    {
+      "section": "07 Main ridge",
+      "model": "CL06_B_Pillar",
+      "x": 435.362,
+      "z": 1045.111,
+      "yaw": -23.379,
+      "sx": 1.06,
+      "sy": 1,
+      "sz": 1.05
+    },
+    {
+      "section": "07 Main ridge",
+      "model": "CL06_A_Bastion",
+      "x": 509.602,
+      "z": 1089.869,
+      "yaw": -46.379,
+      "sx": 1.18,
+      "sy": 0.97,
+      "sz": 1.15
+    },
+    {
+      "section": "07 Main ridge",
+      "model": "CL06_A_Bastion",
+      "x": 563.76,
+      "z": 1158.242,
+      "yaw": -37.379,
+      "sx": 1.12,
+      "sy": 1.04,
+      "sz": 1.13
+    },
+    {
+      "section": "07 Main ridge",
+      "model": "CL06_C_Fracture",
+      "x": 645.126,
+      "z": 1194.62,
+      "yaw": -49.379,
+      "sx": 1.1,
+      "sy": 0.95,
+      "sz": 1.05
+    },
+    {
+      "section": "01 Main ridge",
+      "model": "CL06_D_Buttress",
+      "x": -964.334,
+      "z": -506.126,
+      "yaw": -61.37,
+      "sx": 1.02,
+      "sy": 0.78,
+      "sz": 1.05
+    },
+    {
+      "section": "01 Main ridge",
+      "model": "CL06_D_Buttress",
+      "x": -1085.312,
+      "z": -382.46,
+      "yaw": -27.37,
+      "sx": 1.02,
+      "sy": 0.78,
+      "sz": 1.05
+    },
+    {
+      "section": "02 Main ridge",
+      "model": "CL06_F_Shoulder",
+      "x": -868.945,
+      "z": -438.685,
+      "yaw": -77.099,
+      "sx": 0.9,
+      "sy": 0.9,
+      "sz": 0.95
+    },
+    {
+      "section": "02 Main ridge",
+      "model": "CL06_F_Shoulder",
+      "x": -1019.111,
+      "z": -289.038,
+      "yaw": -13.099,
+      "sx": 0.9,
+      "sy": 0.9,
+      "sz": 0.95
+    },
+    {
+      "section": "02 Main ridge",
+      "model": "CL06_H_Slab",
+      "x": -829.278,
+      "z": -478.214,
+      "yaw": -7.099,
+      "sx": 0.92,
+      "sy": 1.05,
+      "sz": 1
+    },
+    {
+      "section": "02 Main ridge",
+      "model": "CL06_C_Fracture",
+      "x": -795.51,
+      "z": -350.828,
+      "yaw": -33.099,
+      "sx": 1.08,
+      "sy": 1.04,
+      "sz": 1.13
+    },
+    {
+      "section": "02 Main ridge",
+      "model": "CL06_D_Buttress",
+      "x": -700.825,
+      "z": -284.148,
+      "yaw": -70.099,
+      "sx": 1.02,
+      "sy": 0.86,
+      "sz": 1.05
+    },
+    {
+      "section": "02 Main ridge",
+      "model": "CL06_D_Buttress",
+      "x": -837.533,
+      "z": -147.913,
+      "yaw": -20.099,
+      "sx": 1.02,
+      "sy": 0.86,
+      "sz": 1.05
+    },
+    {
+      "section": "02 Main ridge",
+      "model": "CL06_F_Shoulder",
+      "x": -770.474,
+      "z": -53.704,
+      "yaw": -28.099,
+      "sx": 0.9,
+      "sy": 0.78,
+      "sz": 0.95
+    },
+    {
+      "section": "02 Main ridge",
+      "model": "CL06_G_Boulder",
+      "x": -810.14,
+      "z": -14.175,
+      "yaw": -83.099,
+      "sx": 0.92,
+      "sy": 1.05,
+      "sz": 1
+    },
+    {
+      "section": "03 Main ridge",
+      "model": "CL06_A_Bastion",
+      "x": -560.404,
+      "z": -100.27,
+      "yaw": -77.967,
+      "sx": 1.08,
+      "sy": 0.9,
+      "sz": 1.13
+    },
+    {
+      "section": "03 Main ridge",
+      "model": "CL06_C_Fracture",
+      "x": -684.782,
+      "z": 19.977,
+      "yaw": -13.967,
+      "sx": 1.08,
+      "sy": 0.9,
+      "sz": 1.13
+    },
+    {
+      "section": "03 Main ridge",
+      "model": "CL06_D_Buttress",
+      "x": -467.46,
+      "z": -31.468,
+      "yaw": -33.967,
+      "sx": 1.02,
+      "sy": 1.04,
+      "sz": 1.05
+    },
+    {
+      "section": "03 Main ridge",
+      "model": "CL06_D_Buttress",
+      "x": -619.876,
+      "z": 115.886,
+      "yaw": -57.967,
+      "sx": 1.02,
+      "sy": 1.04,
+      "sz": 1.05
+    },
+    {
+      "section": "03 Main ridge",
+      "model": "CL06_F_Shoulder",
+      "x": -395.364,
+      "z": 57.491,
+      "yaw": -70.967,
+      "sx": 0.9,
+      "sy": 0.86,
+      "sz": 0.95
+    },
+    {
+      "section": "03 Main ridge",
+      "model": "CL06_H_Slab",
+      "x": -347.914,
+      "z": 11.616,
+      "yaw": -7.967,
+      "sx": 0.92,
+      "sy": 1.05,
+      "sz": 1
+    },
+    {
+      "section": "04 Main ridge",
+      "model": "CL06_C_Fracture",
+      "x": -301.732,
+      "z": 125.506,
+      "yaw": -62.922,
+      "sx": 1.08,
+      "sy": 0.78,
+      "sz": 1.13
+    },
+    {
+      "section": "04 Main ridge",
+      "model": "CL06_A_Bastion",
+      "x": -440.383,
+      "z": 259.763,
+      "yaw": -28.922,
+      "sx": 1.08,
+      "sy": 0.78,
+      "sz": 1.13
+    },
+    {
+      "section": "04 Main ridge",
+      "model": "CL06_D_Buttress",
+      "x": -374.683,
+      "z": 354.926,
+      "yaw": -13.922,
+      "sx": 1.02,
+      "sy": 0.9,
+      "sz": 1.05
+    },
+    {
+      "section": "04 Main ridge",
+      "model": "CL06_F_Shoulder",
+      "x": -163.867,
+      "z": 309.571,
+      "yaw": -33.922,
+      "sx": 0.9,
+      "sy": 1.04,
+      "sz": 0.95
+    },
+    {
+      "section": "04 Main ridge",
+      "model": "CL06_F_Shoulder",
+      "x": -288.15,
+      "z": 429.916,
+      "yaw": -57.922,
+      "sx": 0.9,
+      "sy": 1.04,
+      "sz": 0.95
+    },
+    {
+      "section": "04 Main ridge",
+      "model": "CL06_G_Boulder",
+      "x": -335.565,
+      "z": 475.827,
+      "yaw": -83.922,
+      "sx": 0.92,
+      "sy": 1.05,
+      "sz": 1
+    },
+    {
+      "section": "04 Main ridge",
+      "model": "CL06_A_Bastion",
+      "x": -70.869,
+      "z": 378.3,
+      "yaw": -70.922,
+      "sx": 1.08,
+      "sy": 0.86,
+      "sz": 1.13
+    },
+    {
+      "section": "04 Main ridge",
+      "model": "CL06_C_Fracture",
+      "x": -223.169,
+      "z": 525.774,
+      "yaw": -20.922,
+      "sx": 1.08,
+      "sy": 0.86,
+      "sz": 1.13
+    },
+    {
+      "section": "05 Main ridge",
+      "model": "CL06_D_Buttress",
+      "x": 1.571,
+      "z": 464.877,
+      "yaw": -62.0,
+      "sx": 1.02,
+      "sy": 0.78,
+      "sz": 1.05
+    },
+    {
+      "section": "05 Main ridge",
+      "model": "CL06_F_Shoulder",
+      "x": 96.371,
+      "z": 531.393,
+      "yaw": -77.0,
+      "sx": 0.9,
+      "sy": 0.9,
+      "sz": 0.95
+    },
+    {
+      "section": "05 Main ridge",
+      "model": "CL06_F_Shoulder",
+      "x": -40.101,
+      "z": 667.864,
+      "yaw": -13.0,
+      "sx": 0.9,
+      "sy": 0.9,
+      "sz": 0.95
+    },
+    {
+      "section": "05 Main ridge",
+      "model": "CL06_H_Slab",
+      "x": 128.897,
+      "z": 498.866,
+      "yaw": -7.0,
+      "sx": 0.92,
+      "sy": 1.05,
+      "sz": 1
+    },
+    {
+      "section": "05 Main ridge",
+      "model": "CL06_A_Bastion",
+      "x": 27.122,
+      "z": 761.957,
+      "yaw": -57.0,
+      "sx": 1.08,
+      "sy": 1.04,
+      "sz": 1.13
+    },
+    {
+      "section": "06 Main ridge",
+      "model": "CL06_D_Buttress",
+      "x": 237.402,
+      "z": 714.695,
+      "yaw": -70.846,
+      "sx": 1.02,
+      "sy": 0.86,
+      "sz": 1.05
+    },
+    {
+      "section": "06 Main ridge",
+      "model": "CL06_D_Buttress",
+      "x": 113.281,
+      "z": 835.206,
+      "yaw": -20.846,
+      "sx": 1.02,
+      "sy": 0.86,
+      "sz": 1.05
+    },
+    {
+      "section": "06 Main ridge",
+      "model": "CL06_F_Shoulder",
+      "x": 330.493,
+      "z": 783.299,
+      "yaw": -62.846,
+      "sx": 0.9,
+      "sy": 0.78,
+      "sz": 0.95
+    },
+    {
+      "section": "06 Main ridge",
+      "model": "CL06_F_Shoulder",
+      "x": 178.39,
+      "z": 930.977,
+      "yaw": -28.846,
+      "sx": 0.9,
+      "sy": 0.78,
+      "sz": 0.95
+    },
+    {
+      "section": "06 Main ridge",
+      "model": "CL06_G_Boulder",
+      "x": 145.387,
+      "z": 963.02,
+      "yaw": -83.846,
+      "sx": 0.92,
+      "sy": 1.05,
+      "sz": 1
+    },
+    {
+      "section": "06 Main ridge",
+      "model": "CL06_A_Bastion",
+      "x": 402.777,
+      "z": 872.105,
+      "yaw": -77.846,
+      "sx": 1.08,
+      "sy": 0.9,
+      "sz": 1.13
+    },
+    {
+      "section": "07 Main ridge",
+      "model": "CL06_D_Buttress",
+      "x": 490.068,
+      "z": 931.483,
+      "yaw": -28.379,
+      "sx": 1.02,
+      "sy": 1.04,
+      "sz": 1.05
+    },
+    {
+      "section": "07 Main ridge",
+      "model": "CL06_D_Buttress",
+      "x": 365.035,
+      "z": 1078.506,
+      "yaw": -52.379,
+      "sx": 1.02,
+      "sy": 1.04,
+      "sz": 1.05
+    },
+    {
+      "section": "07 Main ridge",
+      "model": "CL06_F_Shoulder",
+      "x": 439.62,
+      "z": 1166.877,
+      "yaw": -15.379,
+      "sx": 0.9,
+      "sy": 0.86,
+      "sz": 0.95
+    },
+    {
+      "section": "07 Main ridge",
+      "model": "CL06_H_Slab",
+      "x": 606.762,
+      "z": 970.338,
+      "yaw": -2.379,
+      "sx": 0.92,
+      "sy": 1.05,
+      "sz": 1
+    },
+    {
+      "section": "07 Main ridge",
+      "model": "CL06_C_Fracture",
+      "x": 645.069,
+      "z": 1101.369,
+      "yaw": -57.379,
+      "sx": 1.08,
+      "sy": 0.78,
+      "sz": 1.13
+    },
+    {
+      "section": "07 Main ridge",
+      "model": "CL06_A_Bastion",
+      "x": 532.993,
+      "z": 1233.156,
+      "yaw": -23.379,
+      "sx": 1.08,
+      "sy": 0.78,
+      "sz": 1.13
+    },
+    {
+      "section": "08 Lower spur",
+      "model": "CL06_B_Pillar",
+      "x": 1100,
+      "z": -1115,
+      "yaw": -51,
+      "sx": 1.23,
+      "sy": 1,
+      "sz": 1.18
+    },
+    {
+      "section": "08 Lower spur",
+      "model": "CL06_D_Buttress",
+      "x": 1162,
+      "z": -1177,
+      "yaw": -68,
+      "sx": 1.06,
+      "sy": 0.92,
+      "sz": 1.05
+    },
+    {
+      "section": "08 Lower spur",
+      "model": "CL06_F_Shoulder",
+      "x": 1038,
+      "z": -1053,
+      "yaw": -18,
+      "sx": 1.06,
+      "sy": 0.92,
+      "sz": 1.05
+    },
+    {
+      "section": "08 Lower spur",
+      "model": "CL06_A_Bastion",
+      "x": 1180,
+      "z": -1020,
+      "yaw": -37,
+      "sx": 1.23,
+      "sy": 1,
+      "sz": 1.18
+    },
+    {
+      "section": "08 Lower spur",
+      "model": "CL06_F_Shoulder",
+      "x": 1242,
+      "z": -1082,
+      "yaw": -68,
+      "sx": 1.06,
+      "sy": 0.92,
+      "sz": 1.05
+    },
+    {
+      "section": "08 Lower spur",
+      "model": "CL06_A_Bastion",
+      "x": 1118,
+      "z": -958,
+      "yaw": -18,
+      "sx": 1.06,
+      "sy": 0.92,
+      "sz": 1.05
+    },
+    {
+      "section": "08 Lower spur",
+      "model": "CL06_C_Fracture",
+      "x": 1260,
+      "z": -925,
+      "yaw": -55,
+      "sx": 1.23,
+      "sy": 1,
+      "sz": 1.18
+    },
+    {
+      "section": "08 Lower spur",
+      "model": "CL06_A_Bastion",
+      "x": 1322,
+      "z": -987,
+      "yaw": -68,
+      "sx": 1.06,
+      "sy": 0.92,
+      "sz": 1.05
+    },
+    {
+      "section": "08 Lower spur",
+      "model": "CL06_D_Buttress",
+      "x": 1198,
+      "z": -863,
+      "yaw": -18,
+      "sx": 1.06,
+      "sy": 0.92,
+      "sz": 1.05
+    },
+    {
+      "section": "08 Lower spur",
+      "model": "CL06_E_Crown",
+      "x": 1320,
+      "z": -830,
+      "yaw": -39,
+      "sx": 1.23,
+      "sy": 1,
+      "sz": 1.18
+    },
+    {
+      "section": "08 Lower spur",
+      "model": "CL06_D_Buttress",
+      "x": 1382,
+      "z": -892,
+      "yaw": -68,
+      "sx": 1.06,
+      "sy": 0.92,
+      "sz": 1.05
+    },
+    {
+      "section": "08 Lower spur",
+      "model": "CL06_F_Shoulder",
+      "x": 1258,
+      "z": -768,
+      "yaw": -18,
+      "sx": 1.06,
+      "sy": 0.92,
+      "sz": 1.05
+    },
+    {
+      "section": "08 Lower spur",
+      "model": "CL06_A_Bastion",
+      "x": 1390,
+      "z": -750,
+      "yaw": -26,
+      "sx": 1.23,
+      "sy": 1,
+      "sz": 1.18
+    },
+    {
+      "section": "08 Lower spur",
+      "model": "CL06_F_Shoulder",
+      "x": 1452,
+      "z": -812,
+      "yaw": -68,
+      "sx": 1.06,
+      "sy": 0.92,
+      "sz": 1.05
+    },
+    {
+      "section": "08 Lower spur",
+      "model": "CL06_G_Boulder",
+      "x": 1462,
+      "z": -812,
+      "yaw": 23,
+      "sx": 1.1,
+      "sy": 1,
+      "sz": 1
+    }
+  ]
+}
