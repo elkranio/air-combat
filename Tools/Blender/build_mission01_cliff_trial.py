@@ -9,26 +9,47 @@ from math import sqrt
 ROOT = Path(__file__).resolve().parents[2]
 OUT = ROOT / 'Assets/_Project/Art/Environment/Mission01_FirstSortie/CliffTrial'
 PALETTE = {'Foot': (165,145,122), 'Wall': (112,92,77), 'Crown': (160,143,123)}
-# Ordered counterclockwise in XZ. Deliberate buttresses, not random surface noise.
-outline = [(160,-18),(151,35),(110,79),(44,95),(-31,80),(-107,88),
-           (-155,45),(-170,-12),(-139,-65),(-65,-88),(10,-72),(85,-91),(144,-56)]
+# Counterclockwise XZ outline. Eight extra corners are authored breaks in the
+# wall silhouette, not uniform subdivision. Retain the original outer envelope.
+outline = [(160,-18),(157,9),(151,35),(110,79),(77,84),(44,95),
+           (7,83),(-31,80),(-75,77),(-107,88),(-155,45),(-163,17),
+           (-170,-12),(-139,-65),(-105,-76),(-65,-88),(10,-72),
+           (48,-87),(85,-91),(144,-56),(147,-36)]
 n = len(outline)
-# scale XZ, center offset X/Z, elevation per vertex. The narrow ledge separates two steep tiers.
+# Each level has its own radial profile. Continuous rock faces are broken by
+# large buttresses; the ledge varies from broad shelf to a near-vanishing lip.
+# Keep vertical ordering even on the lowest notches.
+foot = [12,14,15,12,16,18,14,13,16,15,12,14,15,12,14,16,12,13,15,12,14]
+wall_top = [93,96,101,95,89,103,96,91,95,98,86,92,97,90,96,103,92,89,98,93,95]
+ledge_scale = [.72,.77,.83,.74,.70,.73,.81,.75,.69,.74,.82,.76,.70,.73,.80,.71,.76,.83,.71,.74,.80]
+upper_top = [136,141,146,137,134,149,139,133,142,145,129,137,141,132,141,149,135,131,143,137,140]
+crown = [142,146,150,144,139,154,145,140,148,149,137,143,147,140,146,154,143,139,149,143,145]
+
+def uniform(value):
+    return [value] * n
+
+# The two additional rings are genuine changes in the side profile, not coplanar
+# triangles. Most of both tiers remain steep, with no extra material bands.
 levels = [
-    (1.00,0,0,[0]*n),
-    (.91,0,0,[12,15,12,18,13,15,12,15,12,16,12,15,12]),
-    (.86,-3,1,[93,101,95,103,91,98,86,97,90,103,92,98,93]),
-    (.72,-5,3,[96,104,98,106,94,101,89,100,93,106,95,101,96]),
-    (.66,-8,6,[136,146,137,149,133,145,129,141,132,149,135,143,137]),
-    (.59,-8,6,[142,150,144,154,140,149,137,147,140,154,143,149,143]),
+    (uniform(1.0),0,0,[0]*n),
+    (uniform(.91),0,0,foot),
+    ([.89,.91,.88,.86,.92,.89,.87,.90,.93,.87,.90,.88,.92,.88,.90,.89,.86,.92,.89,.87,.90],
+     -1,1,[50,43,56,48,60,54,47,58,49,55,42,54,48,57,49,61,45,53,56,47,52]),
+    (uniform(.86),-3,1,wall_top),
+    (ledge_scale,-5,3,[y+3+(i%3) for i,y in enumerate(wall_top)]),
+    ([s-.025+(i%3-1)*.012 for i,s in enumerate(ledge_scale)],-6,4,
+     [116,123,126,117,112,128,121,113,123,125,110,118,122,113,121,129,116,111,124,118,120]),
+    ([min(.68,s-.07) for s in ledge_scale],-8,6,upper_top),
+    ([min(.61,s-.055) for s in ledge_scale],-8,6,crown),
 ]
-verts = [(x*s+ox, ys[i], z*s+oz) for s,ox,oz,ys in levels for i,(x,z) in enumerate(outline)]
+verts = [(x*scales[i]+ox, ys[i], z*scales[i]+oz)
+         for scales,ox,oz,ys in levels for i,(x,z) in enumerate(outline)]
 faces = {g: [] for g in PALETTE}
 
 def add(group,a,b,c):
     faces[group].append((a,b,c))
 
-for k,group in enumerate(('Foot','Wall','Crown','Wall','Crown')):
+for k,group in enumerate(('Foot','Wall','Wall','Crown','Wall','Wall','Crown')):
     for i in range(n):
         j=(i+1)%n
         a,b,c,d=k*n+i,(k+1)*n+i,(k+1)*n+j,k*n+j
@@ -39,7 +60,7 @@ top=len(verts); verts.append((-8,151,6))
 for i in range(n):
     j=(i+1)%n
     add('Foot',bottom,i,j)
-    add('Crown',top,5*n+j,5*n+i)
+    add('Crown',top,(len(levels)-1)*n+j,(len(levels)-1)*n+i)
 
 def normal(f):
     a,b,c=(verts[i] for i in f)
