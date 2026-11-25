@@ -20,6 +20,92 @@ namespace AirCombat
         private const float FacetSize = 2000f / 70f;
         private static readonly Vector3 Origin = new Vector3(-1000f, 0f, -1000f);
 
+        private const string CliffBarrierName = "Mission01 / Cliff barrier v4";
+
+        // H2B: replace only the experimental relief, keeping the authored ground
+        // and independent cliff prefab instances. This is a one-time scene edit.
+        [MenuItem("Air Combat/Missions/Place Mission 01 Cliff Barrier v4")]
+        private static void PlaceCliffBarrier()
+        {
+            if (EditorApplication.isPlayingOrWillChangePlaymode) return;
+            const string undoName = "Mission 01 cliff barrier v4";
+            const string prefabs = "Assets/_Project/Prefabs/Environment/Cliffs/";
+            try
+            {
+                var scene = GetScene();
+                if (scene.GetRootGameObjects().Any(g => g.name == CliffBarrierName))
+                {
+                    Debug.Log("MISSION-01H2B: barrier already placed; edit its children directly.");
+                    return;
+                }
+                GetSurface(scene, out var terrain, out var mesh);
+                var data = terrain.terrainData;
+                if ((data.size - new Vector3(MapSize, 180f, MapSize)).sqrMagnitude > .01f)
+                    throw new InvalidOperationException("Expected the expanded 3200 x 3200 mission terrain.");
+                var trial = Root(scene, "Mission01 / Cliff mesh trial");
+                var names = new[] { "CL01_Fan", "CL02_Spur", "CL02_Spur", "CL03_Ridge", "CL03_Ridge", "CL04_Citadel" };
+                var labels = new[] { "01 South fan", "02 East buttress", "03 West buttress", "04 Lower ridge", "05 Upper ridge", "06 North citadel" };
+                var positions = new[] {
+                    new Vector3(650,0,-800), new Vector3(1160,0,-960), new Vector3(300,0,-900),
+                    new Vector3(650,0,-240), new Vector3(700,0,390), new Vector3(730,0,1010)
+                };
+                var yaws = new[] { 0f, 25f, -27f, -8f, 8f, -9f };
+                var scales = new[] {
+                    new Vector3(1.48f,1f,1.15f), new Vector3(1.35f,1.08f,.85f), new Vector3(.95f,1.10f,.9f),
+                    new Vector3(1.23f,1f,1.10f), new Vector3(1.24f,1.02f,1.10f), new Vector3(1.03f,1f,1.24f)
+                };
+                var models = names.Select(n => AssetDatabase.LoadAssetAtPath<GameObject>(prefabs + n + ".prefab")).ToArray();
+                foreach (var model in models)
+                {
+                    if (model == null || model.GetComponent<RadarTerrainObstacle>() == null)
+                        throw new InvalidOperationException("Missing cliff prefab or radar component; build cliff module prefabs first.");
+                    var filters = model.GetComponentsInChildren<MeshFilter>(true);
+                    if (filters.Length == 0 || filters.Any(f => f.sharedMesh == null || !f.sharedMesh.isReadable))
+                        throw new InvalidOperationException("Missing or unreadable cliff mesh: " + model.name);
+                }
+
+                Undo.IncrementCurrentGroup();
+                int group = Undo.GetCurrentGroup();
+                Undo.SetCurrentGroupName(undoName);
+                try
+                {
+                    var root = new GameObject(CliffBarrierName);
+                    SceneManager.MoveGameObjectToScene(root, scene);
+                    Undo.RegisterCreatedObjectUndo(root, undoName);
+                    for (int i = 0; i < models.Length; i++)
+                    {
+                        var instance = (GameObject)PrefabUtility.InstantiatePrefab(models[i], root.transform);
+                        if (instance == null) throw new InvalidOperationException("Could not instantiate " + names[i]);
+                        Undo.RegisterCreatedObjectUndo(instance, undoName);
+                        instance.name = labels[i] + " / " + names[i];
+                        instance.transform.localPosition = positions[i];
+                        instance.transform.localRotation = Quaternion.Euler(0, yaws[i], 0);
+                        instance.transform.localScale = scales[i];
+                        PrefabUtility.RecordPrefabInstancePropertyModifications(instance);
+                        PrefabUtility.RecordPrefabInstancePropertyModifications(instance.transform);
+                    }
+                    // All new instances exist before removing the old geometry.
+                    // Keep TerrainData and the sand renderer: only the old relief is retired.
+                    Undo.RegisterCompleteObjectUndo(data, undoName);
+                    Undo.RegisterCompleteObjectUndo(mesh, undoName);
+                    int n = data.heightmapResolution;
+                    data.SetHeights(0, 0, new float[n,n]);
+                    Bake(data, mesh);
+                    Undo.DestroyObjectImmediate(trial);
+                    Undo.CollapseUndoOperations(group);
+                    EditorSceneManager.MarkSceneDirty(scene);
+                    Selection.activeGameObject = root;
+                    Debug.Log("MISSION-01H2B: six editable cliff instances; old ridge flattened and trial removed. Save scene and terrain/facet assets. SAM and recon planning markers unchanged.");
+                }
+                catch
+                {
+                    Undo.RevertAllDownToGroup(group);
+                    throw;
+                }
+            }
+            catch (Exception ex) { Debug.LogError("MISSION-01H2B: " + ex); }
+        }
+
         [MenuItem("Air Combat/Missions/Apply Mission 01 Map Layout")]
         private static void Apply()
         {
