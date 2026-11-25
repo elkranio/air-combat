@@ -32,6 +32,7 @@ namespace AirCombat
         private float nextLaunchBeepAt;
         private int hp;
         private bool missionMode, missionArmed;
+        private PicketRailPresentation railPresentation;
         private float missionWarningStarted = -1f;
         [SerializeField, Min(.5f)] private float prelaunchWarningSeconds = .65f;
 
@@ -86,6 +87,7 @@ namespace AirCombat
         {
             missionMode = true;
             missionArmed = false;
+            if (railPresentation == null) railPresentation = PicketRailPresentation.TryBind(transform);
             BindTarget(aircraft, health, sensor);
         }
 
@@ -152,6 +154,7 @@ namespace AirCombat
             nextLaunchBeepAt = 0f;
             if (warningAudio != null) warningAudio.Stop();
             LaunchedCount = 0;
+            railPresentation?.Reset();
             LastFlightReport = "NO LAUNCH";
         }
 
@@ -160,6 +163,7 @@ namespace AirCombat
             if (Time.deltaTime <= 0f) return;
             ownedMissiles.RemoveAll(shot => shot == null || !shot.IsFlying);
             if (missionMode && !missionArmed) { ClearAcquisition(); return; }
+            if (missionMode && !IsDown) railPresentation?.TickReload(Time.time);
             if (!missionMode) PlayLaunchSignal();
             // Picket fires independently of previous shots; preserve the old lab rule.
             if (!missionMode && HasIncomingMissile)
@@ -180,6 +184,9 @@ namespace AirCombat
                 ClearAcquisition();
                 return;
             }
+
+            // Cosmetic tracking only: the accepted acquisition/reload clock is unchanged.
+            railPresentation?.Track(target.position, Time.deltaTime);
 
             // Mission reload is the minimum launch-to-launch interval. Acquisition
             // may overlap its tail, but neither launch nor warning can occur early.
@@ -220,6 +227,7 @@ namespace AirCombat
                 Quaternion.LookRotation(Vector3.up, Vector3.forward));
             ownedMissiles.Add(missile);
             missile.Launch(target, hitPoints, radar, transform, OnMissileFinished);
+            railPresentation?.PresentLaunch(missile, Time.time, reloadSeconds);
             // The mission already played its three pre-launch beeps.
             if (!missionMode)
             {
