@@ -49,16 +49,6 @@ namespace AirCombat
         [SerializeField, Min(10f)] private float landingTouchdownOffset = 65f;
         [SerializeField, Min(5f)] private float landingAutoTouchdownSpeed = 65f;
 
-        [Header("Emergency air evasion (COLL-03)")]
-        [SerializeField] private bool visualAirSeparation = true;
-        [SerializeField, Min(0f)] private float airEvasionLift = 4f;
-        [SerializeField, Min(0f)] private float airEvasionSideOffset = 18f;
-        [Tooltip("Distance required to rearm a previously evaded contact.")]
-        [SerializeField, Min(1f)] private float airSeparationStartDistance = 56f;
-        [Tooltip("Predicted closest approach that triggers evasion.")]
-        [SerializeField, Min(1f)] private float airSeparationFullDistance = 23f;
-        private Mission01AirSeparation airSeparation;
-
         private Mission01Landing landing;
         private Mission01ReconEncounter reconEncounter;
         private bool landingTestOnly;
@@ -132,7 +122,6 @@ namespace AirCombat
             reconEncounter = GetComponent<Mission01ReconEncounter>();
             samRadar = aircraft.GetComponent<AircraftRadar>();
             playerHealth = aircraft.GetComponent<PlayerHitPoints>();
-            airSeparation = new Mission01AirSeparation(aircraft, visual);
             if (samSites != null && samSites.Length > 0)
             {
                 if (samRadar == null || playerHealth == null)
@@ -272,14 +261,6 @@ namespace AirCombat
                     previousFlightPosition = next;
                     boundary.Tick(next);
                     TickLandingApproach();
-                    if (State == Phase.Flight && visualAirSeparation &&
-                        (playerHealth == null || playerHealth.IsAlive))
-                    {
-                        airSeparation?.Tick(Time.deltaTime, airEvasionLift, airEvasionSideOffset,
-                            airSeparationStartDistance, airSeparationFullDistance, flight.CurrentSpeed);
-                        weaponTrigger.SetFireInhibited(airSeparation != null && airSeparation.IsEvading);
-                    }
-                    else ClearAirSeparation();
                 }
                 return;
             }
@@ -323,17 +304,10 @@ namespace AirCombat
                 { round.enabled = false; Destroy(round.gameObject); }
         }
 
-        private void ClearAirSeparation()
-        {
-            airSeparation?.Clear();
-            if (weaponTrigger != null) weaponTrigger.SetFireInhibited(false);
-        }
-
         private void Crash(Vector3 impact)
         {
             if (State != Phase.Flight) return;
             State = Phase.Crashed;
-            ClearAirSeparation();
             landing?.Clear();
             boundary?.Clear();
             SetSamArmed(false);
@@ -352,7 +326,6 @@ namespace AirCombat
         {
             if (State != Phase.Flight) return;
             State = Phase.BoundaryFailed;
-            ClearAirSeparation();
             landing?.Clear();
             aircraft.position = stop;
             previousFlightPosition = stop;
@@ -425,7 +398,6 @@ namespace AirCombat
 
         private void ResetToReady()
         {
-            ClearAirSeparation();
             ReleaseBoundaryPause();
             boundary?.Clear();
             landing?.Clear();
@@ -462,7 +434,6 @@ namespace AirCombat
 
         private void OnDisable()
         {
-            ClearAirSeparation();
             ReleaseBoundaryPause();
             boundary?.Clear();
             landing?.Clear();

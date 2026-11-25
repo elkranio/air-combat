@@ -16,16 +16,6 @@ namespace AirCombat
         private int selectedIndex;
         private bool dualSlots;
         private MonoBehaviour secondaryComponent;
-        private bool fireInhibited;
-
-        // A mission may briefly inhibit weapons without unequipping them or
-        // resetting cadence, ammo, HUD bindings or existing projectiles.
-        public void SetFireInhibited(bool inhibited)
-        {
-            if (fireInhibited == inhibited) return;
-            fireInhibited = inhibited;
-            if (inhibited) StopFiring();
-        }
 
         public bool UsesDualSlots => dualSlots;
         public IWeaponHudStatus PrimaryHudStatus => PrimaryWeapon as IWeaponHudStatus;
@@ -97,12 +87,6 @@ namespace AirCombat
         private void LateUpdate()
         {
             if (TacticalMapView.IsOpenFor(gameObject.scene)) return;
-            if (fireInhibited)
-            {
-                // A false trigger alone does not cancel an already queued burst.
-                StopFiring();
-                return;
-            }
             var mouse = Mouse.current;
             if (dualSlots)
             {
@@ -127,12 +111,6 @@ namespace AirCombat
         }
 
         private void OnDisable()
-        {
-            fireInhibited = false;
-            StopFiring();
-        }
-
-        private void StopFiring()
         {
             if (dualSlots)
             {
