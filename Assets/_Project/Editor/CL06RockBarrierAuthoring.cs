@@ -108,7 +108,12 @@ namespace AirCombat
         }
 
         [MenuItem("Air Combat/Missions/Replace Mission 01 Barrier with CL06")]
-        private static void Replace()
+        private static void Replace() => Install(false);
+
+        [MenuItem("Air Combat/Missions/Densify Mission 01 CL06 Barrier")]
+        private static void Densify() => Install(true);
+
+        private static void Install(bool densify)
         {
             if (EditorApplication.isPlayingOrWillChangePlaymode) return;
             try
@@ -116,12 +121,30 @@ namespace AirCombat
                 var scene = SceneManager.GetActiveScene();
                 if (!scene.isLoaded || scene.path != ScenePath) throw new InvalidOperationException("Open Mission01_FirstSortie first.");
                 var roots = scene.GetRootGameObjects();
-                if (roots.Any(g => g.name == NewBarrier))
-                { Debug.Log("CL06 already installed. Edit the scene directly."); return; }
-                var old = roots.SingleOrDefault(g => g.name == OldBarrier);
-                if (old == null)
-                    throw new InvalidOperationException("Camera layout v2 not found. Run Air Combat > Missions > Apply Mission 01 Camera Layout v2 first, then retry.");
-                if (old.transform.childCount != 8) throw new InvalidOperationException("Expected eight v2 cliff instances; inspect scene before replacement.");
+                var current = roots.SingleOrDefault(g => g.name == NewBarrier);
+                var layout = ReadLayout();
+                GameObject old;
+                if (densify)
+                {
+                    if (current == null)
+                        throw new InvalidOperationException("Expected the installed CL06 barrier. Use Replace Mission 01 Barrier with CL06 for first installation.");
+                    int count = current.GetComponentsInChildren<RadarTerrainObstacle>(true).Length;
+                    if (count == layout.placements.Length)
+                    { Selection.activeGameObject = current; Debug.Log("CL06 dense barrier already installed. Edit the scene directly."); return; }
+                    if (count != 85 || current.transform.childCount != 8 || roots.Any(g => g.name == OldBarrier))
+                        throw new InvalidOperationException("Expected original 85-rock CL06 with eight groups. Inspect scene before replacement.");
+                    old = current;
+                }
+                else
+                {
+                    if (current != null)
+                    { Debug.Log("CL06 already installed. Use Densify Mission 01 CL06 Barrier for the original recipe."); return; }
+                    old = roots.SingleOrDefault(g => g.name == OldBarrier);
+                    if (old == null)
+                        throw new InvalidOperationException("Camera layout v2 not found. Run Air Combat > Missions > Apply Mission 01 Camera Layout v2 first, then retry.");
+                    if (old.transform.childCount != 8)
+                        throw new InvalidOperationException("Expected eight v2 cliff instances; inspect scene before replacement.");
+                }
                 var objectives = roots.Single(g => g.name == "Mission01 / Objectives");
                 if (!Enumerable.Range(0, objectives.transform.childCount).Any(i => objectives.transform.GetChild(i).name == "H2C / Camera layout v2 (visual only)"))
                     throw new InvalidOperationException("Expected v2 objective layout; no changes made.");
@@ -131,7 +154,6 @@ namespace AirCombat
                 var trial = roots.SingleOrDefault(g => g.name == "Mission01 / CL05 rock trial");
                 if (trial != null && PrefabUtility.GetPrefabAssetPathOfNearestInstanceRoot(trial) != Prefabs + "/CL05_TestRock.prefab")
                     throw new InvalidOperationException("Unexpected CL05 trial object; inspect scene before replacement.");
-                var layout = ReadLayout();
                 var library = Build(layout);
                 Undo.IncrementCurrentGroup();
                 int group = Undo.GetCurrentGroup();

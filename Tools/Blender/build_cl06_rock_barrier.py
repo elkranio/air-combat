@@ -56,25 +56,41 @@ def recipe():
     for i in range(n+1):
         x,z,u,v,seg=at(total*i/n); yaw=-degrees(atan2(v,u)); side=[-9,11,-3,14,-11,5][i%6]
         kind=[0,2,1,0,4,2,3,1,0][i%9]
+        if i==23: x-=3; z-=1  # close a tiny internal seam at cruise height
         # D is still >Y78 at its lower cap. Slight offset / yaw breaks the facade.
         add(f'{seg+1:02d} Main ridge',kind,x-v*side,z+u*side,yaw+[-9,12,-18,5,17,-6,3][i%7], [1.10,1.06,1.18,1.12][i%4],[1,.97,1.04,.95,1.02][i%5],[1.13,1.05,1.15][i%3])
-    n2=ceil(total/116)
-    for i in range(n2):
-        x,z,u,v,seg=at(total*(i+.47)/n2); yaw=-degrees(atan2(v,u));
-        for side in (-1,1):
-            if (i+int(side>0)*2)%5==4: continue
-            k=[3,5,2,3,5,0][(i+int(side>0)*3)%6]; off=side*[82,101,91,111,88][(i+int(side>0)*2)%5]
-            add(f'{seg+1:02d} Main ridge',k,x-v*off,z+u*off,yaw+side*[17,32,-12,25][i%4], [1.02,.90,1.08][i%3], [.78,.9,1.04,.86][i%4], [1.05,.95,1.13][i%3])
-        if i%3==1:
-            side=-1 if i%2 else 1; off=side*157
-            add(f'{seg+1:02d} Main ridge',6+i%2,x-v*off,z+u*off,yaw+38*(1 if i%2 else -1),.92,1.05,1)
+    # Continuous flanks: keep each compact block close to an authored smooth
+    # edge, overlap longitudinally, and vary the height rather than leaving
+    # missing stones. The two sides have distinct rhythms.
+    n2=ceil(total/65)
+    for side in (-1,1):
+        for i in range(n2+1):
+            d=total*max(0,min(1,(i+(0.28 if side>0 else 0))/n2))
+            x,z,u,v,seg=at(d); yaw=-degrees(atan2(v,u))
+            # A broad gentle bend, small local offsets; taper only at the end.
+            envelope=94+13*sin(d/270+side*.7)+6*sin(d/135+side)
+            taper=max(.48,min(1,(total-d+75)/260))
+            off=side*envelope*taper
+            k=[3,2,0,3,1,2,3,0][(i+(3 if side>0 else 0))%8]
+            add(f'{seg+1:02d} Main ridge',k,x-v*off,z+u*off,
+                yaw+side*[8,-12,17,-5,13,-16][i%6],
+                [1.03,.97,1.05,1.0][i%4], [.96,.89,.84,1.02,.9][i%5],
+                [1.02,.98,1.08,.96][(i+(1 if side>0 else 0))%4])
+        # Low isolated slabs close to the edge, no new tall false passages.
+        for i in range(3, n2-2, 8):
+            d=total*i/n2; x,z,u,v,seg=at(d); yaw=-degrees(atan2(v,u))
+            off=side*(148+10*sin(d/270+side*.7))
+            add(f'{seg+1:02d} Main ridge',6+(i+int(side>0))%2,
+                x-v*off,z+u*off,yaw+side*27,.88,1,.93)
     # Lower spur follows the old CL02 region. Close the south edge at Y78.
-    spur=[(1100,-1115),(1180,-1020),(1260,-925),(1320,-830),(1390,-750)]
+    spur=[(1100,-1115),(1145,-1060),(1190,-1005),(1235,-950),
+          (1280,-895),(1320,-840),(1360,-790),(1390,-750)]
     for i,(x,z) in enumerate(spur):
-        add('08 Lower spur',[1,0,2,4,0][i],x,z,-43+[-8,6,-12,4,17][i],1.23,1,1.18)
+        add('08 Lower spur',[1,0,2,4,0][i%5],x,z,-43+[-8,6,-12,4,17][i%5],1.13,1,1.10)
         for side in (-1,1):
-            if i==4 and side==1: continue
-            add('08 Lower spur',[3,5,0,3,5][(i+int(side>0))%5],x-side*62,z+side*62,-43+side*25,1.06,.92,1.05)
+            off=side*(44 if i>=6 else 63)
+            add('08 Lower spur',[3,2,0,3,2][(i+int(side>0))%5],
+                x-off,z+off,-43+side*15,1.02,.94,1.03)
     add('08 Lower spur',6,1462,-812,23,1.1,1,1)
     return placements
 
