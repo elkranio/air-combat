@@ -11,7 +11,7 @@
 
 ## Next atoms
 
-1. MAP-01: scene-derived static tactical map with shared terrain silhouettes and mission world-to-map transform; north-up, full mission extent.
+1. [MAP-01](MISSION_MAP.md): static scene-derived geography baker implemented; bake and review the generated asset in Unity.
 2. MAP-02: M toggle, player position/heading, objective/status data. Pause behavior and UX to be tested; no authored route overlay for the player.
 3. Mission boundaries, live introductory SAMs (same range source for map and gameplay), three recon air units, optional objective.
 4. Mission flow: objective tracking, return, landing/result, retry. Add landmarks and environmental detail after flight paths are tested.

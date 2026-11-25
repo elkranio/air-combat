@@ -9,7 +9,7 @@ namespace AirCombat
     // One cached union for stationary authored obstacles. Exact source section
     // segments, not a raster approximation, hull, or XOR of overlapping rocks.
     // During altitude changes the HUD uses its culled per-rock path instead.
-    internal static class TerrainSectionUnion
+    public static class TerrainSectionUnion
     {
         private const float StableSeconds = .25f;
         private const float HeightTolerance = .001f;
@@ -43,7 +43,7 @@ namespace AirCombat
             if (attempted || now - since < StableSeconds) return false;
             attempted = true;
             using (BuildMarker.Auto())
-                ready = Build(scene, height);
+                ready = Build(scene, height, RadarTerrainObstacle.Active, Edges, Fill);
             if (!ready)
             {
                 Edges.Clear(); Fill.Clear();
@@ -51,6 +51,32 @@ namespace AirCombat
             }
             return ready;
         }
+
+#if UNITY_EDITOR
+        // Explicit, synchronous edit-mode snapshot. Same geometry algorithm as
+        // runtime, but separate output buffers and no live registration/cache.
+        public static bool TryBakeForAuthoring(Scene scene, float altitude,
+            out Vector2[] edges, out Vector2[] fill, out int obstacleCount)
+        {
+            edges = Array.Empty<Vector2>(); fill = Array.Empty<Vector2>(); obstacleCount = 0;
+            if (Application.isPlaying || !scene.IsValid() || !scene.isLoaded ||
+                float.IsNaN(altitude) || float.IsInfinity(altitude)) return false;
+            var rocks = new List<RadarTerrainObstacle>();
+            foreach (var root in scene.GetRootGameObjects())
+                foreach (var rock in root.GetComponentsInChildren<RadarTerrainObstacle>())
+                {
+                    if (!rock.enabled || !rock.gameObject.activeInHierarchy) continue;
+                    if (!rock.ReadGeometry()) return false;
+                    rocks.Add(rock);
+                }
+            obstacleCount = rocks.Count;
+            var edgeBuffer = new List<Vector2>();
+            var fillBuffer = new List<Vector2>();
+            if (!Build(scene, altitude, rocks, edgeBuffer, fillBuffer)) return false;
+            edges = edgeBuffer.ToArray(); fill = fillBuffer.ToArray();
+            return true;
+        }
+#endif
 
         private struct Edge
         {
@@ -86,12 +112,13 @@ namespace AirCombat
             public Span(int l, int r, double start) { Left = l; Right = r; Start = start; }
         }
 
-        private static bool Build(Scene scene, float altitude)
+        private static bool Build(Scene scene, float altitude, IEnumerable<RadarTerrainObstacle> rocks,
+            List<Vector2> outputEdges, List<Vector2> outputFill)
         {
             var edges = new List<Edge>();
             var events = new List<double>();
             int solids = 0;
-            foreach (var rock in RadarTerrainObstacle.Active)
+            foreach (var rock in rocks)
             {
                 if (rock == null || rock.gameObject.scene != scene || !rock.ContainsHeight(altitude)) continue;
                 rock.Slice(altitude);
@@ -175,8 +202,8 @@ namespace AirCombat
                 if (coverage != 0 || left != -1) return false;
                 // Horizontal boundaries exist only where coverage changes at the
                 // shared event line; do not draw the internal triangulation strips.
-                HorizontalDifference(previous, current, edges, lo);
-                HorizontalDifference(current, previous, edges, lo);
+                HorizontalDifference(previous, current, edges, lo, outputEdges);
+                HorizontalDifference(current, previous, edges, lo, outputEdges);
                 // Coalesce adjacent strips with identical sides, for a small HUD mesh.
                 continued.Clear();
                 for (int i = 0; i < previous.Count; i++) continued.Add(false);
@@ -191,19 +218,19 @@ namespace AirCombat
                     }
                 }
                 for (int i = 0; i < previous.Count; i++)
-                    if (!continued[i]) Emit(previous[i], edges, lo);
+                    if (!continued[i]) Emit(previous[i], edges, lo, outputEdges, outputFill);
                 var swap = previous; previous = current; current = swap;
             }
             double end = events[unique - 1];
             current.Clear();
-            HorizontalDifference(previous, current, edges, end);
-            foreach (Span span in previous) Emit(span, edges, end);
+            HorizontalDifference(previous, current, edges, end, outputEdges);
+            foreach (Span span in previous) Emit(span, edges, end, outputEdges, outputFill);
             return true;
         }
 
         // A minus B at one event height. Both span lists are in X order;
         // intervals may collapse to points at a vertex/crossing.
-        private static void HorizontalDifference(List<Span> a, List<Span> b, List<Edge> edges, double z)
+        private static void HorizontalDifference(List<Span> a, List<Span> b, List<Edge> edges, double z, List<Vector2> outputEdges)
         {
             int start = 0;
             foreach (Span span in a)
@@ -215,30 +242,31 @@ namespace AirCombat
                 {
                     double bl = edges[b[i].Left].At(z), br = edges[b[i].Right].At(z);
                     if (bl >= r - EventEpsilon) break;
-                    if (bl > cursor + EdgeEpsilon) AddEdge(Point(cursor,z), Point(Math.Min(bl,r),z));
+                    if (bl > cursor + EdgeEpsilon) AddEdge(Point(cursor,z), Point(Math.Min(bl,r),z), outputEdges);
                     cursor = Math.Max(cursor, br);
                     if (cursor >= r - EventEpsilon) break;
                 }
-                if (r > cursor + EdgeEpsilon) AddEdge(Point(cursor,z), Point(r,z));
+                if (r > cursor + EdgeEpsilon) AddEdge(Point(cursor,z), Point(r,z), outputEdges);
             }
         }
 
-        private static void Emit(Span span, List<Edge> edges, double end)
+        private static void Emit(Span span, List<Edge> edges, double end,
+            List<Vector2> outputEdges, List<Vector2> outputFill)
         {
             if (end - span.Start <= EventEpsilon) return;
             Edge l = edges[span.Left], r = edges[span.Right];
             Vector2 a = Point(l.At(span.Start), span.Start), b = Point(r.At(span.Start), span.Start);
             Vector2 c = Point(r.At(end), end), d = Point(l.At(end), end);
-            Fill.Add(a); Fill.Add(b); Fill.Add(c);
-            Fill.Add(a); Fill.Add(c); Fill.Add(d);
-            AddEdge(a,d); AddEdge(b,c);
+            outputFill.Add(a); outputFill.Add(b); outputFill.Add(c);
+            outputFill.Add(a); outputFill.Add(c); outputFill.Add(d);
+            AddEdge(a,d,outputEdges); AddEdge(b,c,outputEdges);
         }
 
         private static Vector2 Point(double x, double z) => new Vector2((float)x,(float)z);
-        private static void AddEdge(Vector2 a, Vector2 b)
+        private static void AddEdge(Vector2 a, Vector2 b, List<Vector2> outputEdges)
         {
             if ((a-b).sqrMagnitude <= 1e-10f) return;
-            Edges.Add(a); Edges.Add(b);
+            outputEdges.Add(a); outputEdges.Add(b);
         }
     }
 }

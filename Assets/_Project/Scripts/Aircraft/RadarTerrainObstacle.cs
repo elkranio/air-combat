@@ -127,6 +127,14 @@ namespace AirCombat
 
         private void OnEnable()
         {
+            if (!ReadGeometry()) return;
+            if (!Active.Contains(this)) { Active.Add(this); Revision++; }
+        }
+
+        // Shared by runtime registration and the explicit editor map baker.
+        // Reading a mesh does not register it in the live obstacle list.
+        internal bool ReadGeometry()
+        {
             triangles.Clear();
             Edges.Clear(); Fill.Clear(); cachedHeight = float.NaN;
             warned = false;
@@ -136,16 +144,16 @@ namespace AirCombat
                 if (mesh == null || !mesh.isReadable)
                 {
                     Debug.LogWarning("Terrain radar requires readable closed meshes.", this);
-                    triangles.Clear(); return;
+                    triangles.Clear(); return false;
                 }
                 var vertices = mesh.vertices;
                 foreach (int index in mesh.triangles)
                     triangles.Add(filter.transform.TransformPoint(vertices[index]));
             }
-            if (triangles.Count == 0) return;
+            if (triangles.Count == 0) return false;
             bounds = new Bounds(triangles[0], Vector3.zero);
             foreach (var vertex in triangles) bounds.Encapsulate(vertex);
-            if (!Active.Contains(this)) { Active.Add(this); Revision++; }
+            return true;
         }
 
         private void OnDisable() { if (Active.Remove(this)) Revision++; }
