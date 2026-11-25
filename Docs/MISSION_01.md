@@ -1,6 +1,8 @@
 # MISSION-01 — First Sortie (WIP)
 
-The first campaign mission is a development slice, not a finished design. Aim: a full sortie from intro and takeoff to intercepting a slow reconnaissance airship, returning to base and landing. A few Mantis units may provide light pressure along the route; the initial loadout is cannon only. Mission geography, timings, difficulty and assets remain open for playtesting.
+The first campaign mission is a development slice, not a finished design. Aim: a full sortie from intro and takeoff to intercepting a slow reconnaissance airship, returning to base and landing. Mobile Dominion SAM pickets are the current introductory ground-threat candidate; Mantis is deferred to a later mission. The number and composition of reconnaissance targets remain open; the initial loadout is cannon only. Mission geography, timings, difficulty and assets remain open for playtesting.
+
+**Authoring baseline:** The saved `Assets/_Project/Scenes/Mission01_FirstSortie.unity` is the source of truth. Open it directly. The one-time Mission 01 authoring commands described below are historical and were retired in [CLEANUP-02](CLEANUP_02.md); do not rerun them on the accepted scene.
 
 ## MISSION-01A — Empty map
 
