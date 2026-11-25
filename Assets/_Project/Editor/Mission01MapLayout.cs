@@ -183,6 +183,120 @@ namespace AirCombat
             return mass * crest;
         }
 
+        private const string RockPalettePath = Art + "Mission01_RockPalette.asset";
+        private const int PaletteWidth = 64;
+        private const int PaletteHeight = 32;
+
+        [MenuItem("Air Combat/Missions/Apply Mission 01 Rock Palette")]
+        private static void ApplyRockPalette()
+        {
+            if (EditorApplication.isPlayingOrWillChangePlaymode) return;
+            try
+            {
+                var scene = GetScene();
+                GetSurface(scene, out var terrain, out var mesh);
+                var material = GetSurfaceMaterial(scene);
+                var palette = AssetDatabase.LoadAssetAtPath<Texture2D>(RockPalettePath);
+                if (material.GetTexture("_BaseMap") != null && material.GetTexture("_BaseMap") != palette)
+                    throw new InvalidOperationException("Unexpected existing terrain texture; refusing to replace it.");
+                // Compute UVs first: the current mesh geometry is not rebuilt or modified.
+                var uv = MakeRockUV(mesh);
+                if (palette == null)
+                {
+                    if (AssetDatabase.LoadMainAssetAtPath(RockPalettePath) != null)
+                        throw new InvalidOperationException("Rock palette path already occupied.");
+                    palette = new Texture2D(PaletteWidth, PaletteHeight, TextureFormat.RGBA32, false, false)
+                    {
+                        name = "Mission01 Rock Palette", filterMode = FilterMode.Point,
+                        wrapMode = TextureWrapMode.Clamp, anisoLevel = 0
+                    };
+                    palette.SetPixels32(MakeRockPalette());
+                    palette.Apply(false, false);
+                    AssetDatabase.CreateAsset(palette, RockPalettePath);
+                }
+                else if (palette.width != PaletteWidth || palette.height != PaletteHeight)
+                    throw new InvalidOperationException("Unexpected rock palette dimensions.");
+
+                const string undoName = "Mission 01 rock palette";
+                Undo.IncrementCurrentGroup();
+                int group = Undo.GetCurrentGroup();
+                Undo.SetCurrentGroupName(undoName);
+                Undo.RegisterCompleteObjectUndo(mesh, undoName);
+                Undo.RegisterCompleteObjectUndo(material, undoName);
+                try
+                {
+                    mesh.uv = uv;
+                    material.SetTexture("_BaseMap", palette);
+                    material.SetTextureScale("_BaseMap", Vector2.one);
+                    material.SetTextureOffset("_BaseMap", Vector2.zero);
+                    material.SetColor("_BaseColor", Color.white);
+                    EditorUtility.SetDirty(material);
+                    EditorUtility.SetDirty(mesh);
+                    AssetDatabase.SaveAssets();
+                    Undo.CollapseUndoOperations(group);
+                    Selection.activeGameObject = terrain.gameObject;
+                    Debug.Log("MISSION-01H1a: rock palette applied; heights, vertices and triangles unchanged.");
+                }
+                catch
+                {
+                    Undo.RevertAllDownToGroup(group);
+                    throw;
+                }
+            }
+            catch (Exception ex) { Debug.LogError("MISSION-01H1a: " + ex); }
+        }
+
+        private static Material GetSurfaceMaterial(Scene scene)
+        {
+            var renderer = Root(scene, "Mission01 / Faceted surface").GetComponent<MeshRenderer>();
+            var material = AssetDatabase.LoadAssetAtPath<Material>(Art + "Mission01_Sand.mat");
+            if (renderer == null || material == null || renderer.sharedMaterial != material ||
+                !material.HasProperty("_BaseMap") || !material.HasProperty("_BaseColor"))
+                throw new InvalidOperationException("Expected the mission-only sand material on the faceted surface.");
+            return material;
+        }
+
+        private static Color32[] MakeRockPalette()
+        {
+            // sRGB palette: preserve the original sand albedo at x=0.
+            Color32 sand = new Color32(184, 169, 147, 255);
+            Color32 crest = new Color32(137, 121, 108, 255);
+            Color32 steep = new Color32(97, 82, 72, 255);
+            var pixels = new Color32[PaletteWidth * PaletteHeight];
+            for (int y = 0; y < PaletteHeight; y++)
+            {
+                Color32 rock = Color32.Lerp(crest, steep, y / (float)(PaletteHeight - 1));
+                for (int x = 0; x < PaletteWidth; x++)
+                    pixels[y * PaletteWidth + x] = Color32.Lerp(sand, rock, x / (float)(PaletteWidth - 1));
+            }
+            return pixels;
+        }
+
+        private static Vector2[] MakeRockUV(Mesh mesh)
+        {
+            var vertices = mesh.vertices;
+            var indices = mesh.triangles;
+            if (mesh.subMeshCount != 1 || indices.Length != vertices.Length || indices.Length % 3 != 0)
+                throw new InvalidOperationException("Expected one flat-shaded mesh with unique vertices per triangle.");
+            var uv = new Vector2[vertices.Length];
+            for (int i = 0; i < indices.Length; i += 3)
+            {
+                if (indices[i] != i || indices[i + 1] != i + 1 || indices[i + 2] != i + 2)
+                    throw new InvalidOperationException("Unexpected facet vertex ordering.");
+                Vector3 a = vertices[i], b = vertices[i + 1], c = vertices[i + 2];
+                float height = (a.y + b.y + c.y) / 3f;
+                float normalY = Vector3.Cross(b - a, c - a).normalized.y;
+                // Fully rock well before the Y78 cruise level. No tint on flat sand.
+                float rock = Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(2f, 42f, height));
+                float slope = Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(.025f, .32f, 1f - normalY));
+                int x = Mathf.RoundToInt(rock * (PaletteWidth - 1));
+                int y = Mathf.RoundToInt(slope * (PaletteHeight - 1));
+                var sample = new Vector2((x + .5f) / PaletteWidth, (y + .5f) / PaletteHeight);
+                uv[i] = uv[i + 1] = uv[i + 2] = sample;
+            }
+            return uv;
+        }
+
         // Reusable after sculpting or resizing the TerrainData in the Inspector.
         // No changes to the heightmap, actors, materials, or scene positions.
         [MenuItem("Air Combat/Missions/Rebake Mission 01 Terrain")]
@@ -232,6 +346,11 @@ namespace AirCombat
             Vector3 size = data.size;
             int cells = Mathf.Clamp(Mathf.RoundToInt(Mathf.Max(size.x, size.z) / FacetSize), 1, 256);
             Terrain01Playground.FillMesh(mesh, data, cells);
+            // Once H1a is installed, all later terrain bakes preserve its color rules.
+            var material = AssetDatabase.LoadAssetAtPath<Material>(Art + "Mission01_Sand.mat");
+            var palette = AssetDatabase.LoadAssetAtPath<Texture2D>(RockPalettePath);
+            if (material != null && palette != null && material.GetTexture("_BaseMap") == palette)
+                mesh.uv = MakeRockUV(mesh);
             EditorUtility.SetDirty(data);
             EditorUtility.SetDirty(mesh);
         }
