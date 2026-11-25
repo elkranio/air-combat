@@ -112,10 +112,15 @@ namespace AirCombat
         }
 
         [MenuItem("Air Combat/Missions/Apply Mission 01 Central Ridge")]
-        private static void ApplyCentralRidge()
+        private static void ApplyCentralRidge() => ApplyRidgeProfile(false);
+
+        [MenuItem("Air Combat/Missions/Apply Mission 01 Cliff Profile")]
+        private static void ApplyCliffProfile() => ApplyRidgeProfile(true);
+
+        private static void ApplyRidgeProfile(bool cliff)
         {
             if (EditorApplication.isPlayingOrWillChangePlaymode) return;
-            const string undoName = "Mission 01 central ridge";
+            string undoName = cliff ? "Mission 01 cliff profile" : "Mission 01 central ridge";
             try
             {
                 var scene = GetScene();
@@ -130,21 +135,37 @@ namespace AirCombat
                 if ((data.size - new Vector3(3200f, 180f, 3200f)).sqrMagnitude > .01f)
                     throw new InvalidOperationException("Expected expanded H terrain, actual size: " + data.size);
                 int n = data.heightmapResolution;
-                foreach (float height in data.GetHeights(0, 0, n, n))
-                    if (Mathf.Abs(height) > .00001f)
-                        throw new InvalidOperationException("Expected flat terrain. Sculpt or Undo the existing relief before rerunning this trial.");
                 Vector3 center = ridge.position;
                 if (center.x - 575f < Origin.x || center.x + 575f > Origin.x + data.size.x ||
                     center.z - 340f < Origin.z || center.z + 340f > Origin.z + data.size.z)
                     throw new InvalidOperationException("Central ridge footprint lies outside the terrain.");
-                var heights = new float[n, n];
+                var heights = data.GetHeights(0, 0, n, n);
+                // Validate the entire source before editing. Unity stores normalized
+                // heights with limited precision; allow a small quantization margin.
+                // Preserve other relief outside the central footprint on the cliff pass.
+                const float tolerance = .0003f;
+                bool matchesOld = true, matchesCliff = true;
                 for (int z = 0; z < n; z++)
                 for (int x = 0; x < n; x++)
                 {
                     float dx = Origin.x + x * data.size.x / (n - 1) - center.x;
                     float dz = Origin.z + z * data.size.z / (n - 1) - center.z;
-                    heights[z, x] = CentralRidgeHeight(dx, dz) / data.size.y;
+                    if (!cliff)
+                    {
+                        if (Mathf.Abs(heights[z, x]) > .00001f)
+                            throw new InvalidOperationException("Expected flat terrain. Use the cliff profile command for the existing ridge.");
+                        heights[z, x] = CentralRidgeHeight(dx, dz) / data.size.y;
+                        continue;
+                    }
+                    if (Mathf.Abs(dx) >= 575f || Mathf.Abs(dz) >= 340f) continue;
+                    float oldHeight = CentralRidgeHeight(dx, dz) / data.size.y;
+                    float newHeight = CliffRidgeHeight(dx, dz) / data.size.y;
+                    matchesOld &= Mathf.Abs(heights[z, x] - oldHeight) <= tolerance;
+                    matchesCliff &= Mathf.Abs(heights[z, x] - newHeight) <= tolerance;
+                    heights[z, x] = newHeight;
                 }
+                if (cliff && !matchesOld && !matchesCliff)
+                    throw new InvalidOperationException("Central ridge differs from the H1/H1b generated profile. Refusing to overwrite custom sculpting.");
                 Undo.IncrementCurrentGroup();
                 int group = Undo.GetCurrentGroup();
                 Undo.SetCurrentGroupName(undoName);
@@ -157,7 +178,8 @@ namespace AirCombat
                     Undo.CollapseUndoOperations(group);
                     EditorSceneManager.MarkSceneDirty(scene);
                     Selection.activeGameObject = terrain.gameObject;
-                    Debug.Log("MISSION-01H1: central ridge baked. Save terrain and facet assets; visual trial only.");
+                    Debug.Log(cliff ? "MISSION-01H1b: cliff profile baked; save terrain and facet assets." :
+                        "MISSION-01H1: central ridge baked. Save terrain and facet assets; visual trial only.");
                 }
                 catch
                 {
@@ -165,7 +187,7 @@ namespace AirCombat
                     throw;
                 }
             }
-            catch (Exception ex) { Debug.LogError("MISSION-01H1: " + ex); }
+            catch (Exception ex) { Debug.LogError((cliff ? "MISSION-01H1b: " : "MISSION-01H1: ") + ex); }
         }
 
         // A single elongated massif with a broad, crooked crest. Only low-frequency
@@ -181,6 +203,26 @@ namespace AirCombat
             float mass = Mathf.SmoothStep(0f, 1f, Mathf.Clamp01((1f - radius) / .72f));
             float crest = 155f + 10f * Mathf.Cos(u * Mathf.PI * 2.4f) + 5f * Mathf.Sin(u * Mathf.PI * 1.3f);
             return mass * crest;
+        }
+
+        // Same bounded footprint, but a low apron, steep escarpment and broken
+        // crest. Low-frequency variation only; no scattering or density changes.
+        private static float CliffRidgeHeight(float dx, float dz)
+        {
+            float u = dx / 575f;
+            if (Mathf.Abs(u) >= 1f || Mathf.Abs(dz) >= 340f) return 0f;
+            float bend = 30f * Mathf.Sin(u * Mathf.PI * 1.15f) + 13f * Mathf.Sin(u * Mathf.PI * 3f);
+            float width = 250f + 27f * Mathf.Cos(u * Mathf.PI * 2f + .6f)
+                + 14f * Mathf.Sin(u * Mathf.PI * 4f);
+            float v = (dz - bend) / width;
+            float radius = Mathf.Sqrt(u * u + v * v);
+            float apron = 18f * Mathf.SmoothStep(0f, 1f, Mathf.Clamp01((1f - radius) / .22f));
+            float wall = Mathf.SmoothStep(0f, 1f, Mathf.Clamp01((.82f - radius) / .34f));
+            float crest = 140f + 29f * Mathf.PingPong((u + 1f) * 3.3f, 1f)
+                + 4f * Mathf.Sin(u * Mathf.PI * 1.3f);
+            // A slightly pitched top, rather than a flat mesa cap.
+            crest -= 15f * Mathf.Clamp01(Mathf.Abs(v) / .48f);
+            return apron + wall * (crest - 18f);
         }
 
         private const string RockPalettePath = Art + "Mission01_RockPalette.asset";
