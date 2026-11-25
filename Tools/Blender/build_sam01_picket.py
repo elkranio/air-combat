@@ -2,7 +2,7 @@
 """Dominion SAM-01 Picket, original visual-only low-poly game prop.
 Run with Python to export Y-up OBJs, or Blender --background --factory-startup
 --python Tools/Blender/build_sam01_picket.py for the editable .blend as well.
-+Z forward, ground Y=0. Imperial Olive palette trial; geometry unchanged from B.
++Z forward, ground Y=0. Imperial Olive palette; single raised launcher visual trial (C).
 """
 from pathlib import Path
 from math import sin, cos, pi, radians
@@ -105,25 +105,43 @@ for j,z in enumerate((.73,-3.72)):
         box('Outrigger upright '+tag,'Equipment',s*2.73,.69,z,.46,1.28,.48)
         box('Outrigger foot '+tag,'Metal',s*2.73,.10,z,.94,.20,.96)
 module_start = len(PARTS)
-# Compact turret-like equipment block. Four closed fictional launcher boxes.
-rings('Turntable graphic','Metal',[(1.70,0,-1.75,1.10),(1.96,0,-1.75,1.10)],axis='y')
-box('Module base','Equipment',0,2.16,-1.75,1.92,.46,2.15)
-box('Central cabinet','Hull',0,2.66,-1.58,.89,.75,1.64)
-box('Module crossbar','Metal',0,2.36,-1.89,3.18,.28,.50)
-# Angled silhouettes only; sealed caps and a simple cosmetic support mass.
-angle=radians(27)
+# SAM-01C: a single raised, fictional launcher silhouette. The fixed base
+# stays in Metal/Equipment; all moving art is in Launcher and Accent so a
+# later Unity yaw pivot can rotate both groups together without repainting.
+rings('Fixed turntable','Metal',[(1.70,0,-1.75,1.10),(1.96,0,-1.75,1.10)],axis='y')
+box('Fixed deck collar','Equipment',0,2.05,-1.75,1.88,.24,1.88)
+box('Rotating saddle','Launcher',0,2.27,-1.75,1.72,.34,1.62)
+for side in (-1,1):
+    box(f'Saddle cheek {side}','Launcher',side*.64,2.66,-1.75,.31,.70,.92)
+    box(f'Saddle accent {side}','Accent',side*.81,2.59,-1.75,.04,.22,.50)
+
+# Deliberately oversized low-poly art, not functional launcher construction.
+# All tube art shares the same cosmetic axis and transform.
+angle=radians(60)
 def tilt(p):
-    x,y,z=p; return (x,2.64+y*cos(angle)+z*sin(angle),-1.89-y*sin(angle)+z*cos(angle))
-for s in (-1,1):
-    for k in range(2):
-        x=s*(.78+k*.55)
-        box(f'Canister {s} {k}','Launcher',x,0,0,.49,.52,2.72,tilt)
-        box(f'End cap {s} {k}','Accent',x,0,1.385,.50,.53,.09,tilt)
-        box(f'Rear cap {s} {k}','Metal',x,0,-1.385,.50,.53,.09,tilt)
-# Compact raised sensor silhouette, deliberately much smaller than the truck.
-box('Sensor plinth','Metal',0,3.13,-2.76,.46,.30,.48)
-box('Sensor housing','Hull',0,3.46,-2.76,1.03,.48,.33)
-box('Sensor face','Glass',0,3.46,-2.57,.91,.35,.06)
+    x,y,z=p; return (x,3.02+y*cos(angle)+z*sin(angle),-1.75-y*sin(angle)+z*cos(angle))
+
+def barrel_solid(name,g,z0,z1,radius,sides=12):
+    v=[(radius*cos(2*pi*i/sides),radius*sin(2*pi*i/sides),z)
+       for z in (z0,z1) for i in range(sides)]
+    faces=[tuple(range(sides)),tuple(range(sides,2*sides))]
+    faces += [(i,(i+1)%sides,(i+1)%sides+sides,i+sides) for i in range(sides)]
+    solid(name,g,v,faces,tilt)
+
+def recessed_rim(name,g,z0,z1,outer,inner,sides=12):
+    # Convex faceted pieces provide a short visible recess in the prop tip.
+    for i in range(sides):
+        a=2*pi*i/sides; b=2*pi*(i+1)/sides
+        v=[(r*cos(theta),r*sin(theta),z) for z in (z0,z1)
+           for r,theta in ((inner,a),(outer,a),(outer,b),(inner,b))]
+        solid(f'{name} {i}',g,v,[(0,1,2,3),(4,5,6,7),(0,1,5,4),
+              (1,2,6,5),(2,3,7,6),(3,0,4,7)],tilt)
+
+barrel_solid('Single raised tube','Launcher',-1.0,1.44,.61)
+barrel_solid('Wide rear collar','Launcher',-1.09,-.77,.72)
+barrel_solid('Mid collar','Launcher',-.24,.04,.68)
+recessed_rim('Raised mouth','Launcher',1.44,1.79,.69,.43)
+recessed_rim('Red identification rim','Accent',1.79,1.91,.70,.43)
 
 
 # ART-SAM-01B: exaggerated, readable game silhouettes rather than scale realism.
