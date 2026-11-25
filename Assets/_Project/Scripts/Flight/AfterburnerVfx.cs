@@ -13,8 +13,6 @@ namespace AirCombat
         [SerializeField] private JetChassis chassis; // optional; old scenes keep nozzlePositions
         [SerializeField, Min(0.05f)] private float flameRadius = 0.42f;
         [SerializeField, Min(0.1f)] private float flameLength = 7f;
-        [SerializeField] private bool playIgnitionSound;
-        [SerializeField, Range(0f, 1f)] private float ignitionVolume = 0.18f;
         [Header("Tight turn feedback")]
         [SerializeField, Range(.1f, 1f)] private float maneuverLengthScale = .82f;
         [SerializeField, Range(.1f, 1f)] private float maneuverWidthScale = .95f;
@@ -22,9 +20,6 @@ namespace AirCombat
         private Transform[] plumes;
         private Mesh flameMesh;
         private Mesh maneuverMesh;
-        private AudioSource source;
-        private AudioClip ignition;
-        private bool wasActive;
         private bool wasManeuvering;
         private bool maneuverFlames;
 
@@ -52,13 +47,6 @@ namespace AirCombat
                 plumes[i] = plume.transform;
                 plume.SetActive(false);
             }
-            if (playIgnitionSound)
-            {
-                source = gameObject.AddComponent<AudioSource>();
-                source.playOnAwake = false;
-                source.spatialBlend = 0f;
-                ignition = MakeIgnition();
-            }
         }
 
         private void LateUpdate()
@@ -68,8 +56,6 @@ namespace AirCombat
             // smaller jets. Legacy Q/E retains the original straight boost effect.
             bool tight = !maneuverFlames && afterburner != null && afterburner.IsManeuvering;
             bool active = tight || maneuverFlames || (afterburner != null && afterburner.IsActive);
-            if (active && (!wasActive || tight != wasManeuvering) && source != null)
-                source.PlayOneShot(ignition, ignitionVolume);
             if (tight && maneuverMesh == null)
             {
                 maneuverMesh = Instantiate(flameMesh);
@@ -103,15 +89,12 @@ namespace AirCombat
                 plume.localScale = new Vector3(width, width,
                     length * (1f + (tight ? .20f : .14f) * Mathf.Sin(t)));
             }
-            wasActive = active;
             wasManeuvering = tight;
         }
 
         private void OnDisable()
         {
             maneuverFlames = false;
-            wasActive = false;
-            if (source != null) source.Stop();
             if (plumes != null)
                 foreach (var plume in plumes)
                 {
@@ -129,8 +112,6 @@ namespace AirCombat
                 foreach (var plume in plumes) if (plume != null) Destroy(plume.gameObject);
             if (flameMesh != null) Destroy(flameMesh);
             if (maneuverMesh != null) Destroy(maneuverMesh);
-            if (ignition != null) Destroy(ignition);
-            if (source != null) Destroy(source);
         }
 
         private static Mesh BuildFlame()
@@ -162,24 +143,6 @@ namespace AirCombat
             mesh.triangles = triangles;
             mesh.RecalculateBounds();
             return mesh;
-        }
-
-        private static AudioClip MakeIgnition()
-        {
-            const int rate = 22050;
-            var data = new float[rate / 2];
-            var random = new System.Random(190);
-            float filtered = 0f;
-            for (int i = 0; i < data.Length; i++)
-            {
-                float t = i / (float)rate;
-                filtered = Mathf.Lerp(filtered, (float)(random.NextDouble() * 2 - 1), 0.19f);
-                float envelope = Mathf.Clamp01(t / 0.055f) * Mathf.Clamp01((0.5f - t) / 0.29f);
-                data[i] = (filtered * 0.8f + Mathf.Sin(2f * Mathf.PI * (87f * t + 85f * t * t)) * 0.24f) * envelope;
-            }
-            var clip = AudioClip.Create("Afterburner ignition", data.Length, 1, rate, false);
-            clip.SetData(data, 0);
-            return clip;
         }
     }
 }
