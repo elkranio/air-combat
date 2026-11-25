@@ -10,6 +10,7 @@ import sys
 # Blender --python does not necessarily add the script directory to sys.path.
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from build_cl05_test_rock import SPECS, build, norm, PALETTE
+from cl06_fracture_geometry import fracture
 
 ROOT=Path(__file__).resolve().parents[2]
 OUT=ROOT/'Assets/_Project/Art/Environment/Mission01_FirstSortie/CL06_RockBarrier'
@@ -31,10 +32,12 @@ EXTRA_ROUTE=[(1582,1090),(1573,1342),(1356,1532),(1117,1672),(846,1771),(580,177
 
 def models():
     result={}
-    for name,t,wx,wz,h,tone,lean,slope in SHAPES:
+    for index,(name,t,wx,wz,h,tone,lean,slope) in enumerate(SHAPES):
         src=SPECS[t]; outline=[(x*wx,z*wz) for x,z in src[-2]]
         spec=(name,(0,0),h,tone,lean,slope,outline,src[-1])
-        result[name]=build(spec)
+        v,f,tone=build(spec)
+        v,f=fracture(v,f,index)
+        result[name]=v,f,tone
     return result
 
 def recipe():
