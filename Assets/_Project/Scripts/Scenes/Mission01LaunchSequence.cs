@@ -49,6 +49,13 @@ namespace AirCombat
         [SerializeField, Min(10f)] private float landingTouchdownOffset = 65f;
         [SerializeField, Min(5f)] private float landingAutoTouchdownSpeed = 65f;
 
+        [Header("Visual air separation (COLL-01)")]
+        [SerializeField] private bool visualAirSeparation = true;
+        [SerializeField, Min(0f)] private float airSeparationLift = 16f;
+        [SerializeField, Min(1f)] private float airSeparationStartDistance = 56f;
+        [SerializeField, Min(1f)] private float airSeparationFullDistance = 23f;
+        private Mission01AirSeparation airSeparation;
+
         private Mission01Landing landing;
         private Mission01ReconEncounter reconEncounter;
         private bool landingTestOnly;
@@ -122,6 +129,7 @@ namespace AirCombat
             reconEncounter = GetComponent<Mission01ReconEncounter>();
             samRadar = aircraft.GetComponent<AircraftRadar>();
             playerHealth = aircraft.GetComponent<PlayerHitPoints>();
+            airSeparation = new Mission01AirSeparation(aircraft, visual);
             if (samSites != null && samSites.Length > 0)
             {
                 if (samRadar == null || playerHealth == null)
@@ -261,6 +269,10 @@ namespace AirCombat
                     previousFlightPosition = next;
                     boundary.Tick(next);
                     TickLandingApproach();
+                    if (State == Phase.Flight && visualAirSeparation)
+                        airSeparation?.Tick(Time.deltaTime, airSeparationLift,
+                            airSeparationStartDistance, airSeparationFullDistance);
+                    else airSeparation?.Clear();
                 }
                 return;
             }
@@ -308,6 +320,7 @@ namespace AirCombat
         {
             if (State != Phase.Flight) return;
             State = Phase.Crashed;
+            airSeparation?.Clear();
             landing?.Clear();
             boundary?.Clear();
             SetSamArmed(false);
@@ -326,6 +339,7 @@ namespace AirCombat
         {
             if (State != Phase.Flight) return;
             State = Phase.BoundaryFailed;
+            airSeparation?.Clear();
             landing?.Clear();
             aircraft.position = stop;
             previousFlightPosition = stop;
@@ -398,6 +412,7 @@ namespace AirCombat
 
         private void ResetToReady()
         {
+            airSeparation?.Clear();
             ReleaseBoundaryPause();
             boundary?.Clear();
             landing?.Clear();
@@ -434,6 +449,7 @@ namespace AirCombat
 
         private void OnDisable()
         {
+            airSeparation?.Clear();
             ReleaseBoundaryPause();
             boundary?.Clear();
             landing?.Clear();
