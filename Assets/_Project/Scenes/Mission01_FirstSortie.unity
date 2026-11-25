@@ -52498,6 +52498,7 @@ MonoBehaviour:
   - {fileID: 1859142576}
   debugAirStart: 1
   debugNoClip: 0
+  debugLandingNearAirfield: 1
   terrainCrashRadius: 3.5
   operationBounds:
     serializedVersion: 2
@@ -52511,6 +52512,14 @@ MonoBehaviour:
   climbSeconds: 2.5
   cruiseAltitude: 78
   maxPitch: 18
+  landingRevealDistance: 550
+  landingCorridorNear: 150
+  landingCorridorFar: 350
+  landingCorridorWidthScale: 1
+  landingCaptureHeadingTolerance: 15
+  landingCaptureSeconds: 1
+  landingTouchdownOffset: 65
+  landingAutoTouchdownSpeed: 65
 --- !u!114 &2020064469
 MonoBehaviour:
   m_ObjectHideFlags: 0
