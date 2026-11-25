@@ -2,7 +2,7 @@
 """Dominion SAM-01 Picket, original visual-only low-poly game prop.
 Run with Python to export Y-up OBJs, or Blender --background --factory-startup
 --python Tools/Blender/build_sam01_picket.py for the editable .blend as well.
-+Z forward, ground Y=0. Imperial Olive palette; single raised launcher visual trial (C).
++Z forward, ground Y=0. Imperial Olive palette; twin open-rail visual trial (C2).
 """
 from pathlib import Path
 from math import sin, cos, pi, radians
@@ -14,6 +14,8 @@ PALETTE = {'Hull':(98/255,107/255,66/255), 'Equipment':(75/255,80/255,59/255),
            'Metal':(52/255,59/255,50/255), 'Rubber':(35/255,37/255,34/255),
            'Glass':(40/255,53/255,58/255), 'Caps':(182/255,180/255,156/255),
            'Launcher':(160/255,161/255,124/255), 'Accent':(184/255,59/255,50/255)}
+# New OBJ groups reuse the existing Metal and Caps palette in Unity.
+PALETTE.update(LauncherDark=PALETTE['Metal'], MissileL=PALETTE['Caps'], MissileR=PALETTE['Caps'])
 PARTS = []
 
 def sub(a,b): return tuple(x-y for x,y in zip(a,b))
@@ -105,43 +107,42 @@ for j,z in enumerate((.73,-3.72)):
         box('Outrigger upright '+tag,'Equipment',s*2.73,.69,z,.46,1.28,.48)
         box('Outrigger foot '+tag,'Metal',s*2.73,.10,z,.94,.20,.96)
 module_start = len(PARTS)
-# SAM-01C: a single raised, fictional launcher silhouette. The fixed base
-# stays in Metal/Equipment; all moving art is in Launcher and Accent so a
-# later Unity yaw pivot can rotate both groups together without repainting.
+# SAM-01C2: stylized open launcher artwork. Keep the fixed deck in the
+# original groups; moving art has its own groups and each display rocket
+# is a separate OBJ, so the later animation can hide them independently.
 rings('Fixed turntable','Metal',[(1.70,0,-1.75,1.10),(1.96,0,-1.75,1.10)],axis='y')
 box('Fixed deck collar','Equipment',0,2.05,-1.75,1.88,.24,1.88)
-box('Rotating saddle','Launcher',0,2.27,-1.75,1.72,.34,1.62)
+box('Rotating base','Launcher',0,2.24,-1.75,2.12,.34,1.92)
+box('Raised central saddle','Launcher',0,2.74,-1.75,1.02,.78,1.22)
 for side in (-1,1):
-    box(f'Saddle cheek {side}','Launcher',side*.64,2.66,-1.75,.31,.70,.92)
-    box(f'Saddle accent {side}','Accent',side*.81,2.59,-1.75,.04,.22,.50)
+    box(f'Saddle side {side}','LauncherDark',side*.58,2.65,-1.75,.30,.64,.98)
+    box(f'Faction plate {side}','Accent',side*1.075,2.30,-1.75,.04,.20,.70)
 
-# Deliberately oversized low-poly art, not functional launcher construction.
-# All tube art shares the same cosmetic axis and transform.
-angle=radians(60)
+# Purely visual, exaggerated silhouettes for the fixed arcade camera.
+angle=radians(35)
 def tilt(p):
-    x,y,z=p; return (x,3.02+y*cos(angle)+z*sin(angle),-1.75-y*sin(angle)+z*cos(angle))
+    x,y,z=p; return (x,3.50+y*cos(angle)+z*sin(angle),-1.75-y*sin(angle)+z*cos(angle))
 
-def barrel_solid(name,g,z0,z1,radius,sides=12):
-    v=[(radius*cos(2*pi*i/sides),radius*sin(2*pi*i/sides),z)
-       for z in (z0,z1) for i in range(sides)]
-    faces=[tuple(range(sides)),tuple(range(sides,2*sides))]
-    faces += [(i,(i+1)%sides,(i+1)%sides+sides,i+sides) for i in range(sides)]
-    solid(name,g,v,faces,tilt)
-
-def recessed_rim(name,g,z0,z1,outer,inner,sides=12):
-    # Convex faceted pieces provide a short visible recess in the prop tip.
-    for i in range(sides):
-        a=2*pi*i/sides; b=2*pi*(i+1)/sides
-        v=[(r*cos(theta),r*sin(theta),z) for z in (z0,z1)
-           for r,theta in ((inner,a),(outer,a),(outer,b),(inner,b))]
-        solid(f'{name} {i}',g,v,[(0,1,2,3),(4,5,6,7),(0,1,5,4),
-              (1,2,6,5),(2,3,7,6),(3,0,4,7)],tilt)
-
-barrel_solid('Single raised tube','Launcher',-1.0,1.44,.61)
-barrel_solid('Wide rear collar','Launcher',-1.09,-.77,.72)
-barrel_solid('Mid collar','Launcher',-.24,.04,.68)
-recessed_rim('Raised mouth','Launcher',1.44,1.79,.69,.43)
-recessed_rim('Red identification rim','Accent',1.79,1.91,.70,.43)
+for side in (-1,1):
+    x=side*.78
+    group='MissileL' if side<0 else 'MissileR'
+    box(f'Open rail {side}','LauncherDark',x,-.47,-.20,.43,.24,3.25,tilt)
+    box(f'Rail side panel {side}','Launcher',x,-.64,-.20,.60,.18,2.90,tilt)
+    box(f'Rail marking {side}','Accent',x,-.65,.84,.62,.10,.18,tilt)
+    # Smooth faceted display prop, pointed nose, broad readable tail silhouette.
+    n=12
+    sections=[(-1.84,.21),(-1.52,.30),(1.02,.30),(2.12,.025)]
+    v=[(x+r*cos(2*pi*i/n),r*sin(2*pi*i/n),z) for z,r in sections for i in range(n)]
+    faces=[tuple(range(n)),tuple(range((len(sections)-1)*n,len(sections)*n))]
+    for j in range(len(sections)-1):
+        faces.extend((j*n+i,j*n+(i+1)%n,(j+1)*n+(i+1)%n,(j+1)*n+i) for i in range(n))
+    solid(f'Display rocket {side}',group,v,faces,tilt)
+    # Each fin is a solid graphic silhouette, merged into its display OBJ.
+    for k in range(4):
+        t=pi/4+k*pi/2
+        outline=[(.20,-1.74),(.53,-1.74),(.50,-1.31),(.20,-.84)]
+        v=[(x+r*cos(t)-w*sin(t),r*sin(t)+w*cos(t),z) for w in (-.045,.045) for r,z in outline]
+        solid(f'Display fin {side} {k}',group,v,[(0,1,2,3),(4,5,6,7),(0,1,5,4),(1,2,6,5),(2,3,7,6),(3,0,4,7)],tilt)
 
 
 # ART-SAM-01B: exaggerated, readable game silhouettes rather than scale realism.

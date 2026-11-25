@@ -52695,8 +52695,8 @@ MonoBehaviour:
   - {fileID: 2145265484}
   - {fileID: 765515993}
   - {fileID: 1859142576}
-  debugAirStart: 0
-  debugNoClip: 0
+  debugAirStart: 1
+  debugNoClip: 1
   debugLandingNearAirfield: 0
   terrainCrashRadius: 3.5
   operationBounds:
