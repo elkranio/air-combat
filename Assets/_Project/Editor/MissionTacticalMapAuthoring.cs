@@ -13,6 +13,16 @@ namespace AirCombat
     // Future missions can configure TacticalMapView directly in the inspector.
     internal static class MissionTacticalMapAuthoring
     {
+        // Transform.Find interprets '/' as a hierarchy separator. Authored names
+        // contain literal slashes, so match direct child names instead.
+        private static Transform DirectChild(Transform parent, string name)
+        {
+            var matches=parent.Cast<Transform>().Where(t=>t.name==name).ToArray();
+            if(matches.Length==1) return matches[0];
+            throw new InvalidOperationException($"Expected one direct child '{name}' under '{parent.name}', found {matches.Length}. Children: " +
+                string.Join(", ",parent.Cast<Transform>().Select(t=>t.name)));
+        }
+
         [MenuItem("Air Combat/Missions/Install Tactical Map")]
         private static void Install()
         {
@@ -30,12 +40,11 @@ namespace AirCombat
                 var launch=roots.SelectMany(g=>g.GetComponentsInChildren<Mission01LaunchSequence>(true)).Single();
                 var player=new SerializedObject(launch).FindProperty("flight").objectReferenceValue as FlightController;
                 if (player==null) throw new InvalidOperationException("Missing mission player.");
-                var plan=roots.Single(g=>g.name=="Mission01 / Objectives").transform.Find("M01 / Rock layout v3 (visual only)");
-                if (plan==null) throw new InvalidOperationException("Missing current v3 objective plan.");
-                var samRoot=plan.Find("01 / SAM sites - visual only");
-                var reconRoot=plan.Find("02 / Recon zone - empty markers");
-                var extra=plan.Find("03 / Optional objective - empty marker");
-                if(samRoot==null || reconRoot==null || extra==null) throw new InvalidOperationException("Incomplete mission markers.");
+                var objectives=roots.Single(g=>g.name=="Mission01 / Objectives").transform;
+                var plan=DirectChild(objectives,"M01 / Rock layout v3 (visual only)");
+                var samRoot=DirectChild(plan,"01 / SAM sites - visual only");
+                var reconRoot=DirectChild(plan,"02 / Recon zone - empty markers");
+                var extra=DirectChild(plan,"03 / Optional objective - empty marker");
                 var sites=samRoot.Cast<Transform>().Select(t=>{
                     var match=Regex.Match(t.name,@"^(SAM [A-Z]) - visual \(R([0-9]+)\)$");
                     if(!match.Success) throw new InvalidOperationException("Cannot read planned radius from "+t.name);

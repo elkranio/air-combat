@@ -33652,6 +33652,7 @@ GameObject:
   - component: {fileID: 2020064467}
   - component: {fileID: 2020064466}
   - component: {fileID: 2020064468}
+  - component: {fileID: 2020064469}
   m_Layer: 0
   m_Name: E1 / Flight session (no combat)
   m_TagString: Untagged
@@ -33719,6 +33720,45 @@ MonoBehaviour:
   climbSeconds: 2.5
   cruiseAltitude: 78
   maxPitch: 18
+--- !u!114 &2020064469
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2020064465}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: adac87d0a39d4f2a804571afa67058f6, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::AirCombat.TacticalMapView
+  map: {fileID: 11400000, guid: 7247b9d3e02c67c48bbd944b8f9ce148, type: 2}
+  player: {fileID: 1109986514}
+  missionTitle: FIRST SORTIE
+  plannedSam:
+  - site: {fileID: 110365900}
+    radius: 430
+    label: SAM A
+  - site: {fileID: 1472988484}
+    radius: 470
+    label: SAM B
+  - site: {fileID: 859663210}
+    radius: 430
+    label: SAM C
+  - site: {fileID: 50544490}
+    radius: 440
+    label: SAM D
+  - site: {fileID: 127586940}
+    radius: 460
+    label: SAM E
+  - site: {fileID: 662207921}
+    radius: 430
+    label: SAM F
+  recon:
+  - {fileID: 2050479383}
+  - {fileID: 412902718}
+  - {fileID: 1287307451}
+  optionalTarget: {fileID: 798103819}
 --- !u!1 &2024757286
 GameObject:
   m_ObjectHideFlags: 0

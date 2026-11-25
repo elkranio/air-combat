@@ -49,32 +49,85 @@ namespace AirCombat
             map = data; player = aircraft; plannedSam = sites; recon = targets; optionalTarget = extra; missionTitle = title;
         }
 #endif
+        private string buildStage = "not started";
+        private bool reportCanvas;
+        private void OnEnable()
+        {
+            Debug.Log("[MAP DEBUG] Enabled: " + gameObject.name + " | " + DescribeState(), this);
+        }
+        private string DescribeState()
+        {
+            return $"focus={Application.isFocused}, keyboard={Keyboard.current != null}, " +
+                $"map={map != null}, texture={map != null && map.Geography != null}, " +
+                $"bounds={(map != null ? map.WorldBounds.ToString() : "none")}, player={player != null}, " +
+                $"timeScale={Time.timeScale}, owner={(active == null ? "none" : active.gameObject.name)}";
+        }
         private void Update()
         {
             var keys = Keyboard.current;
-            if (!Application.isFocused || keys == null) return;
-            if (IsOpen && (!HasMap || keys.tabKey.wasPressedThisFrame || keys.escapeKey.wasPressedThisFrame))
-            { Close(); return; }
-            if (keys.tabKey.wasPressedThisFrame && HasMap && active == null && Time.timeScale > 0f)
+            if (reportCanvas)
             {
-                try { BuildCanvas(); }
-                catch (Exception ex)
+                reportCanvas = false;
+                if (canvas != null && frame != null)
+                    Debug.Log($"[MAP DEBUG] Next frame: canvasEnabled={canvas.isActiveAndEnabled}, " +
+                        $"display={canvas.targetDisplay}, pixelRect={canvas.pixelRect}, " +
+                        $"frame={frame.rect}, scale={frame.localScale}, screen={Screen.width}x{Screen.height}, " +
+                        $"graphics={canvas.GetComponentsInChildren<Graphic>(true).Length}", this);
+            }
+            if (keys != null && keys.tabKey.wasPressedThisFrame)
+            {
+                Debug.Log("[MAP DEBUG] Tab received | " + DescribeState(), this);
+                if (!Application.isFocused)
                 {
-                    DisposeCanvas();
-                    Debug.LogException(ex, this);
+                    Debug.LogWarning("[MAP DEBUG] Tab rejected: application not focused.", this);
                     return;
                 }
-                previousTimeScale = Time.timeScale;
-                previousAudioPause = AudioListener.pause;
-                active = this;
-                Time.timeScale = 0f;
-                AudioListener.pause = true;
+                if (IsOpen) Close(); else TryOpen();
+                return;
             }
+            if (IsOpen && (!HasMap || (Application.isFocused && keys != null && keys.escapeKey.wasPressedThisFrame)))
+            { Close(); return; }
             if (IsOpen) FitFrame();
+        }
+        [ContextMenu("DEBUG / Toggle map (Play Mode)")]
+        private void DebugToggle()
+        {
+            if (!Application.isPlaying || !isActiveAndEnabled)
+            { Debug.LogWarning("[MAP DEBUG] Use an enabled component in Play Mode.", this); return; }
+            Debug.Log("[MAP DEBUG] Forced toggle | " + DescribeState(), this);
+            if (IsOpen) Close(); else TryOpen();
+        }
+        private void TryOpen()
+        {
+            if (!HasMap || active != null || Time.timeScale <= 0f)
+            {
+                Debug.LogWarning("[MAP DEBUG] Open rejected | " + DescribeState(), this);
+                return;
+            }
+            try
+            {
+                BuildCanvas();
+                Debug.Log("[MAP DEBUG] Canvas built successfully", this);
+            }
+            catch (Exception ex)
+            {
+                Debug.LogError("[MAP DEBUG] Build failed at " + buildStage + ": " + ex, this);
+                DisposeCanvas();
+                return;
+            }
+            previousTimeScale = Time.timeScale;
+            previousAudioPause = AudioListener.pause;
+            active = this;
+            Time.timeScale = 0f;
+            AudioListener.pause = true;
+            reportCanvas = true;
+            Debug.Log("[MAP DEBUG] Open complete; paused", this);
         }
         private void Close()
         {
             if (!IsOpen) return;
+            Debug.Log("[MAP DEBUG] Closing map", this);
+            reportCanvas = false;
             active = null;
             Time.timeScale = previousTimeScale;
             AudioListener.pause = previousAudioPause;
@@ -100,10 +153,13 @@ namespace AirCombat
         private void BuildCanvas()
         {
             DisposeCanvas();
+            buildStage = "font and textures";
             EnsureGraphics();
+            Debug.Log("[MAP DEBUG] Font and textures ready", this);
+            buildStage = "canvas root";
             var go = new GameObject("Tactical Map Canvas", typeof(RectTransform), typeof(Canvas));
-            SceneManager.MoveGameObjectToScene(go, gameObject.scene);
             canvas = go.GetComponent<Canvas>();
+            SceneManager.MoveGameObjectToScene(go, gameObject.scene);
             canvas.renderMode = RenderMode.ScreenSpaceOverlay;
             canvas.sortingOrder = 30000;
             var root = (RectTransform)go.transform;
@@ -122,6 +178,7 @@ namespace AirCombat
             screenWidth = screenHeight = -1;
             FitFrame();
             drawParent = frame;
+            buildStage = "header and layout";
             Text(new Rect(28,19,780,36), "OPERATION / " + missionTitle, 27, Ink, true);
             Text(new Rect(855,25,237,28), "TACTICAL MAP  /  PAUSED", 15, Cyan, false, TextAnchor.MiddleRight);
             Solid(new Rect(28,66,1064,1), new Color(.25f,.38f,.39f));
@@ -130,11 +187,13 @@ namespace AirCombat
             float w = Mathf.Min(area.width,area.height*ratio), h = w/ratio;
             Rect panel = new Rect(area.center.x-w*.5f,area.center.y-h*.5f,w,h);
             Solid(new Rect(panel.x-2,panel.y-2,panel.width+4,panel.height+4), new Color(.31f,.46f,.46f));
+            buildStage = "geography and markers";
             drawParent = CreateRect("Geography and markers", panel);
             drawParent.gameObject.AddComponent<RectMask2D>();
             Texture(new Rect(0,0,w,h),map.Geography,Color.white);
             DrawMap(new Rect(0,0,w,h));
             drawParent = frame;
+            buildStage = "mission data and footer";
             DrawMissionData(new Rect(718,90,374,618));
             Text(new Rect(28,721,660,26), "NORTH UP   /   CRUISE Y"+map.SectionAltitude.ToString("0")+"   /   "+map.WorldBounds.width.ToString("0")+" × "+map.WorldBounds.height.ToString("0"), 14, Muted);
             Text(new Rect(718,721,374,26), "[ TAB ] CLOSE MAP", 18, Cyan, true, TextAnchor.MiddleRight);
