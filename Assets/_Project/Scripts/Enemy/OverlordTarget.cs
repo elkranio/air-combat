@@ -17,9 +17,11 @@ namespace AirCombat
         [SerializeField] private float groundY;
         [SerializeField, Min(1)] private int maxHp = 18;
         [SerializeField, Min(10f)] private float patrolRadius = 65f;
+        [SerializeField, Min(10f)] private float patrolStraightHalfLength = 95f;
         [SerializeField, Min(1f)] private float detectionRadius = 450f;
         [SerializeField, Min(.1f)] private float preparationSeconds = 22f;
         [SerializeField, Min(.1f)] private float boostSeconds = 2.5f;
+        [SerializeField, Min(.1f)] private float boostAccelerationSeconds = 1.6f;
         [SerializeField, Range(.1f, 1f)] private float patrolSpeedRatio = .35f;
         [SerializeField, Range(.1f, 1f)] private float escapeSpeedRatio = .5f;
         [SerializeField, Min(1f)] private float boostSpeedRatio = 4f;
@@ -34,9 +36,11 @@ namespace AirCombat
         private Afterburner playerBoost;
         private Renderer[] glow = new Renderer[2];
         private MaterialPropertyBlock properties;
+        private OverlordEscapeVfx escapeVfx;
         private Vector3 authoredCenter, center, escapeHeading, deathStart, deathForward;
         private Quaternion rest, deathPose;
-        private float angle, speed, timer, smokeDebt, deathSpeed;
+        private float patrolDistance, speed, timer, smokeDebt, deathSpeed;
+        private float chargeDuration, chargeProgress, boostStartSpeed, boostTargetSpeed, boostRampSeconds;
         private int hp;
         private bool ready, falling, burst;
         public Phase State { get; private set; } = Phase.Patrol;
@@ -69,6 +73,7 @@ namespace AirCombat
             glow[0] = l != null ? l.GetComponent<Renderer>() : null;
             glow[1] = r != null ? r.GetComponent<Renderer>() : null;
             properties = new MaterialPropertyBlock();
+            escapeVfx = new OverlordEscapeVfx(visual);
             ready = true;
             ResetTarget();
             radar?.Register(this);
@@ -90,7 +95,8 @@ namespace AirCombat
 #endif
             hp = Mathf.Max(1, maxHp);
             State = Phase.Patrol;
-            angle = .25f; timer = smokeDebt = 0f;
+            patrolDistance = Mathf.Max(10f, patrolStraightHalfLength);
+            timer = smokeDebt = 0f;
             falling = burst = false;
             speed = Mathf.Max(1f, player.CruiseSpeed * patrolSpeedRatio);
             visual.gameObject.SetActive(true);
@@ -99,14 +105,85 @@ namespace AirCombat
             if (pivot != null) pivot.localRotation = Quaternion.identity;
             foreach (var box in hitboxes) box.enabled = true;
             SetGlow(0f);
-            PlaceOnPatrol();
+            escapeVfx?.Clear();
+            PlaceOnPatrol(0f);
         }
 
-        private void PlaceOnPatrol()
+        // Equal-speed racetrack: long east/west straights joined by tangent
+        // semicircles. No teleport or heading reversal at either endpoint.
+        private void PlaceOnPatrol(float dt)
         {
-            Vector3 offset = new Vector3(Mathf.Cos(angle), 0f, Mathf.Sin(angle));
-            Vector3 tangent = new Vector3(-Mathf.Sin(angle), 0f, Mathf.Cos(angle));
-            transform.SetPositionAndRotation(center + offset * Mathf.Max(10f, patrolRadius), Quaternion.LookRotation(tangent, Vector3.up));
+            float h = Mathf.Max(10f, patrolStraightHalfLength);
+            float r = Mathf.Max(10f, patrolRadius);
+            float straight = 2f * h, arc = Mathf.PI * r;
+            patrolDistance = Mathf.Repeat(patrolDistance + speed * dt, 2f * (straight + arc));
+            float d = patrolDistance;
+            Vector3 offset, tangent;
+            bool turning = false;
+            if (d < straight)
+            {
+                offset = new Vector3(-h + d, 0f, r);
+                tangent = Vector3.right;
+            }
+            else if ((d -= straight) < arc)
+            {
+                float a = d / r;
+                offset = new Vector3(h + r * Mathf.Sin(a), 0f, r * Mathf.Cos(a));
+                tangent = new Vector3(Mathf.Cos(a), 0f, -Mathf.Sin(a));
+                turning = true;
+            }
+            else if ((d -= arc) < straight)
+            {
+                offset = new Vector3(h - d, 0f, -r);
+                tangent = Vector3.left;
+            }
+            else
+            {
+                float a = (d - straight) / r;
+                offset = new Vector3(-h - r * Mathf.Sin(a), 0f, -r * Mathf.Cos(a));
+                tangent = new Vector3(-Mathf.Cos(a), 0f, Mathf.Sin(a));
+                turning = true;
+            }
+            transform.SetPositionAndRotation(center + offset, Quaternion.LookRotation(tangent, Vector3.up));
+            visual.localRotation = Quaternion.RotateTowards(visual.localRotation,
+                rest * Quaternion.Euler(0f, 0f, turning ? -8f : 0f), 35f * dt);
+        }
+
+        private float EscapeSpeed => Mathf.Max(1f, player.CruiseSpeed * escapeSpeedRatio);
+        private float BoostTargetSpeed => Mathf.Max(player.CruiseSpeed * boostSpeedRatio,
+            (playerBoost != null ? playerBoost.BoostSpeed : player.CruiseSpeed) * 2.5f);
+        private float BoostDuration => Mathf.Max(.1f, boostSeconds);
+        private float BoostRamp => Mathf.Clamp(boostAccelerationSeconds, .05f, BoostDuration * .8f);
+
+        // Integral of v0 + (v1-v0) * smoothstep(t/ramp). Continuous speed
+        // and acceleration at ignition and end of ramp, independent of FPS.
+        private static float BoostDistance(float t, float initial, float target, float ramp)
+        {
+            float u = Mathf.Clamp01(t / ramp);
+            return initial * t + (target - initial) *
+                (ramp * (u * u * u - .5f * u * u * u * u) + Mathf.Max(0f, t - ramp));
+        }
+
+        private float RequiredBoostRoom => BoostDistance(BoostDuration, EscapeSpeed, BoostTargetSpeed, BoostRamp) + 12f;
+
+        private void BeginPreparation()
+        {
+            State = Phase.Preparing;
+            timer = chargeProgress = 0f;
+            // Budget charge time before the chase, so the glow reaches full
+            // intensity even when the authored outbound reserve is tight.
+            float room = DistanceToEdge(transform.position, escapeHeading) - edgeReserve;
+            chargeDuration = Mathf.Clamp((room - RequiredBoostRoom) / EscapeSpeed,
+                .1f, Mathf.Max(.1f, preparationSeconds));
+        }
+
+        private void BeginBoost()
+        {
+            State = Phase.Boost;
+            timer = 0f;
+            boostStartSpeed = speed;
+            boostTargetSpeed = Mathf.Max(speed, BoostTargetSpeed);
+            boostRampSeconds = BoostRamp;
         }
 
         private void Update()
@@ -120,48 +197,52 @@ namespace AirCombat
             if (State == Phase.Destroyed) { if (falling) TickWreck(dt); return; }
             if (!IsAlive) return;
             Vector3 toPlayer = player.transform.position - transform.position; toPlayer.y = 0f;
-            if (State == Phase.Patrol)
-            {
-                if (toPlayer.sqrMagnitude <= detectionRadius * detectionRadius)
-                { State = Phase.Preparing; timer = 0f; }
-                else
-                {
-                    angle = Mathf.Repeat(angle + speed / Mathf.Max(10f, patrolRadius) * dt, 2f * Mathf.PI);
-                    PlaceOnPatrol();
-                    visual.localRotation = rest * Quaternion.Euler(0f, 0f, -5f);
-                }
-            }
-            if (State == Phase.Preparing)
+            if (State == Phase.Patrol && toPlayer.sqrMagnitude <= detectionRadius * detectionRadius)
+                BeginPreparation();
+            if (State == Phase.Patrol) PlaceOnPatrol(dt);
+            else if (State == Phase.Preparing)
             {
                 timer += dt;
                 float turn = Vector3.SignedAngle(transform.forward, escapeHeading, Vector3.up);
                 float yaw = Mathf.Clamp(turn, -turnRate * dt, turnRate * dt);
                 transform.Rotate(Vector3.up, yaw, Space.World);
-                speed = Mathf.MoveTowards(speed, player.CruiseSpeed * escapeSpeedRatio, player.CruiseSpeed * dt);
+                speed = Mathf.MoveTowards(speed, EscapeSpeed, player.CruiseSpeed * dt);
                 visual.localRotation = Quaternion.RotateTowards(visual.localRotation,
                     rest * Quaternion.Euler(0f, 0f, -Mathf.Clamp(turn, -15f, 15f)), 70f * dt);
-                // Do not start a chase toward the player's boundary warning.
-                // If the available outbound space is tight, ignite sooner.
-                float charge = Mathf.Clamp01(timer / Mathf.Max(.1f, preparationSeconds));
-                SetGlow(charge * (.8f + .2f * Mathf.Sin(timer * (5f + 9f * charge))));
-                if (timer >= preparationSeconds || DistanceToEdge(transform.position, escapeHeading) <= edgeReserve + 420f)
-                { State = Phase.Boost; timer = 0f; }
-                else MoveForward(speed * dt);
+                float room = DistanceToEdge(transform.position, escapeHeading) - edgeReserve;
+                float charge = Mathf.Clamp01(timer / chargeDuration);
+                // Approach the end of the charge if clearance shrinks earlier
+                // than predicted. Keep the reserve; never force a boundary chase.
+                float remaining = Mathf.Max(0f, room - RequiredBoostRoom);
+                chargeProgress = Mathf.Max(chargeProgress, Mathf.Max(charge,
+                    1f - remaining / Mathf.Max(1f, EscapeSpeed * chargeDuration)));
+                charge = chargeProgress;
+                float pulse = .82f + .18f * Mathf.Sin(2f * Mathf.PI * timer * (1f + 1.5f * charge));
+                SetGlow(charge * pulse * 1.8f);
+                escapeVfx?.Charge(charge, pulse);
+                // This frame belongs to preparation; move once at the current
+                // speed, then start the boost clock on the next frame.
+                float travelRoom = DistanceToEdge(transform.position, transform.forward) - edgeReserve;
+                MoveForward(Mathf.Min(speed * dt, Mathf.Max(0f, travelRoom)));
+                if (timer >= chargeDuration || room <= RequiredBoostRoom + speed * dt)
+                    BeginBoost();
             }
-            if (State == Phase.Boost)
+            else if (State == Phase.Boost)
             {
-                timer += dt;
+                float previous = timer;
+                timer = Mathf.Min(BoostDuration, timer + dt);
                 transform.rotation = Quaternion.RotateTowards(transform.rotation, Quaternion.LookRotation(escapeHeading, Vector3.up), turnRate * 2f * dt);
-                float maxPlayer = playerBoost != null ? playerBoost.BoostSpeed : player.CruiseSpeed;
-                float boostSpeed = Mathf.Max(player.CruiseSpeed * boostSpeedRatio, maxPlayer * 2.5f);
-                speed = Mathf.MoveTowards(speed, boostSpeed, boostSpeed * dt / .9f);
+                float thrust = Mathf.SmoothStep(0f, 1f, Mathf.Clamp01(timer / boostRampSeconds));
+                speed = Mathf.Lerp(boostStartSpeed, boostTargetSpeed, thrust);
                 visual.localRotation = Quaternion.RotateTowards(visual.localRotation, rest, 100f * dt);
-                SetGlow(2.5f);
-                // Finish before entering the boundary guard. The visible acceleration
-                // is the reason the contact is lost, never a player boundary failure.
+                SetGlow(Mathf.Lerp(1.8f, 3.1f, thrust));
+                escapeVfx?.Boost(thrust, timer);
+                float distance = BoostDistance(timer, boostStartSpeed, boostTargetSpeed, boostRampSeconds)
+                    - BoostDistance(previous, boostStartSpeed, boostTargetSpeed, boostRampSeconds);
+                // Terminal state is still a successful escape, not a kill.
                 float room = DistanceToEdge(transform.position, transform.forward) - edgeReserve;
-                MoveForward(Mathf.Min(speed * dt, Mathf.Max(0f, room)));
-                if (timer >= boostSeconds || room <= speed * dt) Escape();
+                MoveForward(Mathf.Min(distance, Mathf.Max(0f, room)));
+                if (timer >= BoostDuration || room <= distance) Escape();
             }
             if (IsAlive && hp <= maxHp * .6f) Trail(dt, 7f, false);
         }
@@ -181,6 +262,8 @@ namespace AirCombat
         private void Escape()
         {
             State = Phase.Escaped;
+            SetGlow(0f);
+            escapeVfx?.Clear();
             foreach (var box in hitboxes) box.enabled = false;
             visual.gameObject.SetActive(false);
         }
@@ -200,7 +283,7 @@ namespace AirCombat
         {
             if (!IsAlive || damage <= 0 || launch.State != Mission01LaunchSequence.Phase.Flight) return false;
             hp = Mathf.Max(0, hp - damage);
-            if (State == Phase.Patrol && hp > 0) { State = Phase.Preparing; timer = 0f; }
+            if (State == Phase.Patrol && hp > 0) BeginPreparation();
             if (hp == 0)
             {
                 State = Phase.Destroyed; falling = true; timer = smokeDebt = 0f;
@@ -208,6 +291,7 @@ namespace AirCombat
                 deathSpeed = Mathf.Min(speed, player.CruiseSpeed * 1.2f);
                 foreach (var box in hitboxes) box.enabled = false;
                 SetGlow(0f);
+                escapeVfx?.Clear();
                 effects.AirBurst(point, deathForward);
             }
             return true;
@@ -255,6 +339,12 @@ namespace AirCombat
             GUI.Label(new Rect(20, 55, 620, 35), message, style);
         }
 
-        private void OnDestroy() { if (radar != null) radar.Unregister(this); }
+        private void OnDisable() { escapeVfx?.Clear(); }
+
+        private void OnDestroy()
+        {
+            escapeVfx?.Dispose();
+            if (radar != null) radar.Unregister(this);
+        }
     }
 }
