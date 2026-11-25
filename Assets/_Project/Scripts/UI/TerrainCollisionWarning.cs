@@ -1,3 +1,5 @@
+using System.Collections.Generic;
+using Unity.Profiling;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -11,6 +13,7 @@ namespace AirCombat
     {
         private const float SideClearance = 22.5f; // H1i proximity x1.25; no prediction.
         private const float Epsilon = .0001f;
+        private static readonly ProfilerMarker QueryMarker = new ProfilerMarker("AirCombat.TerrainWarning.Query");
         private FlightController flight;
         private Camera viewCamera;
         private AudioSource speaker;
@@ -97,25 +100,46 @@ namespace AirCombat
         // flight altitude. Heading, throttle and editor fast travel do not affect it.
         private bool FindDanger(Vector2 origin, float altitude, out Vector2 point, out float urgency)
         {
-            point = default; urgency = 0f;
-            float best = float.PositiveInfinity;
-            foreach (var rock in RadarTerrainObstacle.Active)
+            using (QueryMarker.Auto())
             {
-                if (rock == null || rock.gameObject.scene != flight.gameObject.scene) continue;
-                rock.Slice(altitude);
-                var edges = rock.Edges;
-                for (int i = 0; i + 1 < edges.Count; i += 2)
+                point = default; urgency = 0f;
+                float best = float.PositiveInfinity;
+                var scene = flight.gameObject.scene;
+                if (TerrainSectionUnion.IsCached(scene, altitude))
+                    ScanEdges(origin, TerrainSectionUnion.Edges, ref best, ref point);
+                else
                 {
-                    Vector2 nearest = Closest(origin, edges[i], edges[i + 1]);
-                    float distanceSq = (origin - nearest).sqrMagnitude;
-                    if (distanceSq > SideClearance * SideClearance || distanceSq >= best) continue;
-                    best = distanceSq;
-                    point = nearest;
+                    foreach (var rock in RadarTerrainObstacle.Active)
+                    {
+                        if (rock == null || rock.gameObject.scene != scene ||
+                            !rock.IsNear(origin, SideClearance, altitude)) continue;
+                        rock.Slice(altitude);
+                        ScanEdges(origin, rock.Edges, ref best, ref point);
+                    }
                 }
+                if (float.IsPositiveInfinity(best)) return false;
+                urgency = Mathf.Lerp(1f, .5f, Mathf.Sqrt(best) / SideClearance);
+                return true;
             }
-            if (float.IsPositiveInfinity(best)) return false;
-            urgency = Mathf.Lerp(1f, .5f, Mathf.Sqrt(best) / SideClearance);
-            return true;
+        }
+
+        private static void ScanEdges(Vector2 origin, List<Vector2> edges, ref float best, ref Vector2 point)
+        {
+            float limit = SideClearance;
+            for (int i = 0; i + 1 < edges.Count; i += 2)
+            {
+                Vector2 a = edges[i], b = edges[i + 1];
+                if ((a.x < origin.x-limit && b.x < origin.x-limit) ||
+                    (a.x > origin.x+limit && b.x > origin.x+limit) ||
+                    (a.y < origin.y-limit && b.y < origin.y-limit) ||
+                    (a.y > origin.y+limit && b.y > origin.y+limit)) continue;
+                Vector2 nearest = Closest(origin, a, b);
+                float distanceSq = (origin - nearest).sqrMagnitude;
+                if (distanceSq > SideClearance * SideClearance || distanceSq >= best) continue;
+                best = distanceSq;
+                point = nearest;
+                limit = Mathf.Sqrt(best);
+            }
         }
 
         private static Vector2 Closest(Vector2 p, Vector2 a, Vector2 b)
