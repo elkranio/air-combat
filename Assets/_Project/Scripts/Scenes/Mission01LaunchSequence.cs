@@ -8,7 +8,7 @@ namespace AirCombat
     [DefaultExecutionOrder(-40)] // Before normal flight; E1 session initializes first.
     public sealed class Mission01LaunchSequence : MonoBehaviour
     {
-        public enum Phase { Intro, Ready, Takeoff, Flight, Crashed }
+        public enum Phase { Intro, Ready, Takeoff, Flight, Crashed, BoundaryFailed }
 
         [SerializeField] private FlightController flight;
         [SerializeField] private PlayerWeaponTrigger weaponTrigger;
@@ -27,6 +27,11 @@ namespace AirCombat
         [Header("Terrain crash")]
         [SerializeField, Min(.1f)] private float terrainCrashRadius = 3.5f;
 
+        [Header("Operation boundary (XZ)")]
+        [SerializeField] private Rect operationBounds = new Rect(-1000f, -1000f, 3200f, 3200f);
+        [SerializeField, Min(1f)] private float boundaryCautionDistance = 250f;
+        [SerializeField, Min(1f)] private float boundaryCriticalDistance = 100f;
+
         [Header("Automatic takeoff (WIP)")]
         [SerializeField, Min(.1f)] private float rollSeconds = 2.2f;
         [SerializeField, Min(.1f)] private float climbSeconds = 2.5f;
@@ -44,6 +49,10 @@ namespace AirCombat
         private bool initialized;
         private Vector3 previousFlightPosition;
         private CombatHitFeedback crashFeedback;
+        private MissionBoundaryGuard boundary;
+        private bool ownsBoundaryPause;
+        private float previousTimeScale;
+        private bool previousAudioPause;
 
         public Phase State { get; private set; } = Phase.Intro;
 
@@ -81,6 +90,9 @@ namespace AirCombat
             visualRest = visual.localRotation;
             flight.enabled = false;
             weaponTrigger.enabled = false;
+            // Keep the authored operation rectangle independent of decorative ground.
+            boundary = new MissionBoundaryGuard(transform, operationBounds,
+                boundaryCautionDistance, boundaryCriticalDistance);
             initialized = true;
             State = Phase.Intro;
         }
@@ -142,7 +154,11 @@ namespace AirCombat
 
         private void Update()
         {
-            if (TacticalMapView.IsOpenFor(gameObject.scene)) return;
+            if (TacticalMapView.IsOpenFor(gameObject.scene))
+            {
+                boundary?.Clear();
+                return;
+            }
             var keyboard = Keyboard.current;
             if (Application.isFocused && keyboard != null && keyboard.rKey.wasPressedThisFrame)
             {
@@ -203,13 +219,22 @@ namespace AirCombat
                 // Flight motor has already moved; camera and weapon LateUpdate
                 // run later. Sweep before they see the next aircraft position.
                 Vector3 next = aircraft.position;
+                bool exited = boundary.TryClipExit(previousFlightPosition, next, out Vector3 stop);
+                // Test the reachable segment only: a rock before the boundary
+                // still wins, but a rock beyond the operation cannot cause a crash.
+                bool checkTerrain = true;
 #if UNITY_EDITOR
-                if (debugNoClip) { previousFlightPosition = next; return; }
+                checkTerrain = !debugNoClip;
 #endif
-                if (TerrainFlightCollision.TryHit(aircraft.gameObject.scene,
-                    previousFlightPosition, next, Mathf.Max(.1f, terrainCrashRadius), out Vector3 impact))
+                if (checkTerrain && TerrainFlightCollision.TryHit(aircraft.gameObject.scene,
+                    previousFlightPosition, stop, Mathf.Max(.1f, terrainCrashRadius), out Vector3 impact))
                     Crash(impact);
-                else previousFlightPosition = next;
+                else if (exited) FailBoundary(stop);
+                else
+                {
+                    previousFlightPosition = next;
+                    boundary.Tick(next);
+                }
                 return;
             }
             if (State != Phase.Takeoff || !handoverPending) return;
@@ -221,6 +246,7 @@ namespace AirCombat
         {
             if (State != Phase.Flight) return;
             State = Phase.Crashed;
+            boundary?.Clear();
             SetSamArmed(false);
             aircraft.position = impact;
             flight.enabled = false;
@@ -231,6 +257,35 @@ namespace AirCombat
             if (health != null && health.IsAlive) health.ApplyDamage(impact, health.Hp);
             visual.gameObject.SetActive(false);
             crashFeedback?.EmitTerrainCrash(impact);
+        }
+
+        private void FailBoundary(Vector3 stop)
+        {
+            if (State != Phase.Flight) return;
+            State = Phase.BoundaryFailed;
+            aircraft.position = stop;
+            previousFlightPosition = stop;
+            flight.enabled = false;
+            weaponTrigger.enabled = false;
+            boost.enabled = false;
+            flames.SetManeuverFlames(false);
+            boundary.Clear();
+            SetSamArmed(false);
+            // No synthetic crash, damage or explosion. Freeze the failed sortie;
+            // the existing R input runs even at timeScale zero.
+            previousTimeScale = Time.timeScale;
+            previousAudioPause = AudioListener.pause;
+            ownsBoundaryPause = true;
+            Time.timeScale = 0f;
+            AudioListener.pause = true;
+        }
+
+        private void ReleaseBoundaryPause()
+        {
+            if (!ownsBoundaryPause) return;
+            ownsBoundaryPause = false;
+            Time.timeScale = previousTimeScale;
+            AudioListener.pause = previousAudioPause;
         }
 
 #if UNITY_EDITOR
@@ -255,6 +310,11 @@ namespace AirCombat
             flight.PrepareCruiseHandover();
             previousFlightPosition = aircraft.position;
             State = Phase.Flight;
+            if (boundary.TryClipExit(aircraft.position, aircraft.position, out Vector3 stop))
+            {
+                FailBoundary(stop);
+                return;
+            }
             SetSamArmed(true);
             flight.enabled = true;
             Debug.Log($"Mission01: flight handover at Y{aircraft.position.y:F1}, speed {flight.CurrentSpeed:F1}.", this);
@@ -274,6 +334,8 @@ namespace AirCombat
 
         private void ResetToReady()
         {
+            ReleaseBoundaryPause();
+            boundary?.Clear();
             SetSamArmed(false);
             if (samSites != null) foreach (var site in samSites)
                 if (site != null) site.ResetEncounter();
@@ -296,12 +358,16 @@ namespace AirCombat
 
         private void OnDestroy()
         {
+            ReleaseBoundaryPause();
+            boundary?.Dispose();
             if (samRadar != null && samSites != null) foreach (var site in samSites)
                 if (site != null) samRadar.Unregister(site);
         }
 
         private void OnDisable()
         {
+            ReleaseBoundaryPause();
+            boundary?.Clear();
             SetSamArmed(false);
             if (initialized && flames != null) flames.SetManeuverFlames(false);
 #if UNITY_EDITOR
@@ -311,10 +377,16 @@ namespace AirCombat
 
         private void OnGUI()
         {
-            if (Event.current.type != EventType.Repaint || State == Phase.Flight) return;
+            if (Event.current.type != EventType.Repaint || TacticalMapView.IsOpenFor(gameObject.scene)) return;
+            if (State == Phase.Flight)
+            {
+                boundary?.DrawWarning();
+                return;
+            }
             string message = State == Phase.Intro ? "MISSION INTRO" :
                 State == Phase.Ready ? "PRESS W TO TAKE OFF" :
-                State == Phase.Crashed ? "AIRCRAFT LOST  /  PRESS R TO RETRY" : "TAKEOFF";
+                State == Phase.Crashed ? "AIRCRAFT LOST  /  PRESS R TO RETRY" :
+                State == Phase.BoundaryFailed ? "MISSION FAILED — OPERATION AREA ABANDONED  /  PRESS R TO RETRY" : "TAKEOFF";
             var style = new GUIStyle(GUI.skin.label)
             {
                 alignment = TextAnchor.MiddleCenter,
@@ -326,7 +398,7 @@ namespace AirCombat
             GUI.color = Color.white;
             style.normal.textColor = new Color(.05f, .07f, .09f, .9f);
             GUI.Label(new Rect(rect.x + 2f, rect.y + 2f, rect.width, rect.height), message, style);
-            style.normal.textColor = Color.white;
+            style.normal.textColor = State == Phase.BoundaryFailed ? new Color(1f, .40f, .32f) : Color.white;
             GUI.Label(rect, message, style);
             GUI.color = previous;
         }
