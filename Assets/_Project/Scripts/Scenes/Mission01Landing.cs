@@ -10,10 +10,11 @@ namespace AirCombat
         private readonly Vector3 origin, runwayForward, right;
         private readonly Quaternion landingRotation, visualRest;
         private readonly Rect bounds;
-        private readonly float altitude, near, far, halfWidth, reveal, headingDot, holdSeconds, touchdownOffset, touchdownSpeed;
+        private readonly float cueY, near, far, halfWidth, reveal, headingDot, holdSeconds, touchdownOffset, touchdownSpeed;
         private readonly GameObject cue;
         private readonly Material material;
         private readonly LineRenderer[] lines;
+        private readonly LineRenderer groundMarker;
         private float held, elapsed, duration, rollout;
         private bool visible, aligned;
         private Vector3 p0, p1, p2, p3;
@@ -21,20 +22,33 @@ namespace AirCombat
         private GUIStyle label;
 
         public Mission01Landing(Transform owner, Vector3 runwayPosition, Quaternion runwayRotation,
-            Quaternion visualRest, float altitude, Rect bounds, float near, float far, float width,
+            Quaternion visualRest, Rect bounds, float near, float far, float widthScale,
             float reveal, float headingTolerance, float holdSeconds, float touchdownOffset, float touchdownSpeed)
         {
             origin = runwayPosition;
             runwayForward = Vector3.ProjectOnPlane(runwayRotation * Vector3.forward, Vector3.up).normalized;
+            float physicalWidth = 24f;
+            cueY = runwayPosition.y + .2f;
+            float threshold = near;
+            if (TryResolveRunway(owner, runwayPosition, runwayForward, out Vector3 center,
+                out Vector3 axis, out float actualWidth, out Vector3 entry))
+            {
+                runwayForward = axis;
+                Vector3 lateral = Vector3.Cross(Vector3.up, axis);
+                origin += lateral * Vector3.Dot(center - origin, lateral);
+                physicalWidth = actualWidth;
+                threshold = Vector3.Dot(entry - origin, axis);
+                cueY = entry.y + .2f;
+            }
+            else Debug.LogWarning("LAND-01A: pavement not resolved; using 24-unit runway and configured approach offsets.");
             right = Vector3.Cross(Vector3.up, runwayForward);
             landingRotation = Quaternion.LookRotation(-runwayForward, Vector3.up);
             this.visualRest = visualRest;
-            this.altitude = altitude;
             this.bounds = bounds;
             this.touchdownOffset = Mathf.Max(10f, touchdownOffset);
-            this.near = Mathf.Max(this.touchdownOffset + 30f, near);
-            this.far = Mathf.Max(this.near + 30f, far);
-            halfWidth = Mathf.Max(10f, width * .5f);
+            this.near = Mathf.Max(this.touchdownOffset + 30f, threshold);
+            this.far = this.near + Mathf.Max(30f, far - near);
+            halfWidth = Mathf.Max(2f, physicalWidth * Mathf.Clamp(widthScale, .25f, 4f) * .5f);
             this.reveal = Mathf.Max(this.far + 30f, reveal);
             headingDot = Mathf.Cos(Mathf.Clamp(headingTolerance, 5f, 60f) * Mathf.Deg2Rad);
             this.holdSeconds = Mathf.Max(.15f, holdSeconds);
@@ -52,19 +66,55 @@ namespace AirCombat
             {
                 material = new Material(shader) { name = "Landing corridor (runtime)" };
                 lines = new[] {
-                    Line("Left", At(near, -halfWidth), At(far, -halfWidth)),
-                    Line("Right", At(near, halfWidth), At(far, halfWidth)),
-                    Line("Entry", At(far, -halfWidth), At(far, halfWidth)),
-                    Arrow(Mathf.Lerp(near, far, .33f)), Arrow(Mathf.Lerp(near, far, .72f))
+                    Line("Left", At(this.near, -halfWidth), At(this.far, -halfWidth)),
+                    Line("Right", At(this.near, halfWidth), At(this.far, halfWidth)),
+                    Line("Entry", At(this.far, -halfWidth), At(this.far, halfWidth)),
+                    Arrow(Mathf.Lerp(this.near, this.far, .33f)), Arrow(Mathf.Lerp(this.near, this.far, .72f))
                 };
+                // The corridor is on the ground. This diamond shows the exact
+                // aircraft XZ used by the capture check, not the offset shadow.
+                groundMarker = Line("Aircraft ground projection", new Vector3[5]);
+                groundMarker.widthMultiplier = .65f;
             }
             cue.SetActive(false);
+        }
+
+        // Accepted Mission01_AirfieldPavement mesh: runway local X 113..137,
+        // Z -120..120. The apron is part of the same mesh, so its aggregate
+        // bounds cannot be used as runway bounds. Transform the runway anchors
+        // into world space; do not assume the scene's yaw, scale or translation.
+        private static bool TryResolveRunway(Transform owner, Vector3 spawn, Vector3 takeoff,
+            out Vector3 center, out Vector3 axis, out float width, out Vector3 entry)
+        {
+            center = axis = entry = Vector3.zero;
+            width = 0f;
+            MeshFilter pavement = null;
+            foreach (var root in owner.gameObject.scene.GetRootGameObjects())
+                foreach (var filter in root.GetComponentsInChildren<MeshFilter>())
+                {
+                    if (filter.sharedMesh == null || filter.sharedMesh.name != "Mission01_AirfieldPavement") continue;
+                    if (pavement != null) return false;
+                    pavement = filter;
+                }
+            if (pavement == null) return false;
+            Transform t = pavement.transform;
+            Vector3 a = t.TransformPoint(new Vector3(125f, 0f, -120f));
+            Vector3 b = t.TransformPoint(new Vector3(125f, 0f, 120f));
+            center = (a + b) * .5f;
+            axis = Vector3.ProjectOnPlane(b - a, Vector3.up).normalized;
+            if (Vector3.Dot(axis, takeoff) < 0f) { axis = -axis; entry = a; }
+            else entry = b;
+            Vector3 lateral = Vector3.Cross(Vector3.up, axis);
+            Vector3 edge = t.TransformVector(new Vector3(24f, 0f, 0f));
+            width = Mathf.Abs(Vector3.Dot(edge, lateral));
+            return width > 2f && Vector3.Dot(axis, takeoff) > .95f &&
+                Mathf.Abs(Vector3.Dot(spawn - center, lateral)) <= width * .5f + 2f;
         }
 
         private Vector3 At(float along, float side)
         {
             Vector3 p = origin + runwayForward * along + right * side;
-            p.y = altitude;
+            p.y = cueY;
             return p;
         }
 
@@ -83,8 +133,26 @@ namespace AirCombat
             return line;
         }
 
-        private LineRenderer Arrow(float along) => Line("Inbound chevron",
-            At(along + 8f, -8f), At(along, 0f), At(along + 8f, 8f));
+        private LineRenderer Arrow(float along)
+        {
+            float size = Mathf.Min(8f, halfWidth * .55f);
+            return Line("Inbound chevron", At(along + size, -size), At(along, 0f), At(along + size, size));
+        }
+
+        private void DrawGroundMarker(Vector3 position, Color ink)
+        {
+            if (groundMarker == null) return;
+            position.y = cueY + .08f;
+            const float size = 2.2f;
+            Vector3 front = position + runwayForward * size;
+            groundMarker.SetPosition(0, front);
+            groundMarker.SetPosition(1, position + right * size);
+            groundMarker.SetPosition(2, position - runwayForward * size);
+            groundMarker.SetPosition(3, position - right * size);
+            groundMarker.SetPosition(4, front);
+            ink.a = 1f;
+            groundMarker.startColor = groundMarker.endColor = ink;
+        }
 
         // Called after the normal flight motor and all boundary/rock checks.
         // Holding S is an explicit consent cue; it does not depend on fuel.
@@ -103,6 +171,7 @@ namespace AirCombat
             cue.SetActive(true);
             var ink = aligned ? new Color(.43f, 1f, .78f, .84f) : new Color(.45f, .9f, 1f, .55f);
             foreach (var line in lines) { line.startColor = ink; line.endColor = ink; }
+            DrawGroundMarker(aircraft.position, ink);
             if (held < holdSeconds) return false;
 
             // Cubic horizontal path with exact entry and touchdown tangents.

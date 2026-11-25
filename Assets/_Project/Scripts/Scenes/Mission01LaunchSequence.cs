@@ -43,7 +43,7 @@ namespace AirCombat
         [SerializeField, Min(1f)] private float landingRevealDistance = 550f;
         [SerializeField, Min(1f)] private float landingCorridorNear = 150f;
         [SerializeField, Min(1f)] private float landingCorridorFar = 350f;
-        [SerializeField, Min(1f)] private float landingCorridorWidth = 90f;
+        [SerializeField, Range(.25f, 4f)] private float landingCorridorWidthScale = 1f;
         [SerializeField, Range(5f, 60f)] private float landingHeadingTolerance = 35f;
         [SerializeField, Min(.15f)] private float landingHoldSeconds = .8f;
         [SerializeField, Min(10f)] private float landingTouchdownOffset = 65f;
@@ -110,7 +110,7 @@ namespace AirCombat
             boundary = new MissionBoundaryGuard(transform, operationBounds,
                 boundaryCautionDistance, boundaryCriticalDistance);
             landing = new Mission01Landing(transform, runwayPosition, runwayRotation, visualRest,
-                cruiseAltitude, operationBounds, landingCorridorNear, landingCorridorFar, landingCorridorWidth,
+                operationBounds, landingCorridorNear, landingCorridorFar, landingCorridorWidthScale,
                 landingRevealDistance, landingHeadingTolerance, landingHoldSeconds, landingTouchdownOffset,
                 landingTouchdownSpeed);
             initialized = true;
