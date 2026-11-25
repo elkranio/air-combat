@@ -9,3 +9,7 @@ Base `a395efc`. Local density H1c did not improve the silhouette at game zoom. K
 ## MISSION-01H1f — Rock geometry polish (WIP)
 
 Base `b16a441`. Replace only the three existing OBJ geometries and their deterministic Blender source. Twenty-one authored outline corners instead of thirteen, two additional irregular wall rings, variable-width intermediate shelf and a broken crown; 336 triangles instead of 156. Keep the original outer envelope, maximum height 154, material groups, names, GUIDs and scene placement. No extra material bands or random triangulation. Existing scene instances reimport automatically; do not place another trial. Review at the same flight height from both sides, checking that the foot, wall, shelf and crown still read clearly. No camera, palette, collision, radar or Terrain changes. Unity/Blender execution is local; the combined topology is validated by the generator.
+
+## MISSION-01H1g — Flat plateau (WIP)
+
+Base `2e0ca64`. Level the uppermost crown ring and its center at Y154; all cap triangles now share an upward normal. Preserve the irregular XZ outline, lower rings, wall and foot meshes, materials, placement and triangle count. Only the crown bevel and cap geometry change. Existing scene instances reimport automatically. No camera, terrain, collision or radar changes. Check in Unity from above and beside the cliff.

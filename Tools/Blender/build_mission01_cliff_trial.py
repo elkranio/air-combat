@@ -23,7 +23,10 @@ foot = [12,14,15,12,16,18,14,13,16,15,12,14,15,12,14,16,12,13,15,12,14]
 wall_top = [93,96,101,95,89,103,96,91,95,98,86,92,97,90,96,103,92,89,98,93,95]
 ledge_scale = [.72,.77,.83,.74,.70,.73,.81,.75,.69,.74,.82,.76,.70,.73,.80,.71,.76,.83,.71,.74,.80]
 upper_top = [136,141,146,137,134,149,139,133,142,145,129,137,141,132,141,149,135,131,143,137,140]
-crown = [142,146,150,144,139,154,145,140,148,149,137,143,147,140,146,154,143,139,149,143,145]
+# Coplanar crown: preserve the irregular XZ edge and original maximum height.
+# A level cap has identical normals on every triangle, eliminating the radial fan shading.
+crown_height = 154
+crown = [crown_height] * n
 
 def uniform(value):
     return [value] * n
@@ -56,7 +59,7 @@ for k,group in enumerate(('Foot','Wall','Wall','Crown','Wall','Wall','Crown')):
         add(group,a,b,c); add(group,a,c,d)
 # top and bottom fan, wound outward
 bottom=len(verts); verts.append((0,0,0))
-top=len(verts); verts.append((-8,151,6))
+top=len(verts); verts.append((-8,crown_height,6))
 for i in range(n):
     j=(i+1)%n
     add('Foot',bottom,i,j)
