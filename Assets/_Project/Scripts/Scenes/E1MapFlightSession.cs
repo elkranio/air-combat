@@ -105,6 +105,7 @@ namespace AirCombat
 
         private void Update()
         {
+            if (TacticalMapView.IsOpenFor(gameObject.scene)) return;
             if (!Application.isFocused) return;
             var keyboard = Keyboard.current;
             if (keyboard != null && keyboard.hKey.wasPressedThisFrame) showLegend = !showLegend;

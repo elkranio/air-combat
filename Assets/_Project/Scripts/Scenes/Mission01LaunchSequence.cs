@@ -118,6 +118,7 @@ namespace AirCombat
 
         private void Update()
         {
+            if (TacticalMapView.IsOpenFor(gameObject.scene)) return;
             var keyboard = Keyboard.current;
             if (Application.isFocused && keyboard != null && keyboard.rKey.wasPressedThisFrame)
             {
@@ -166,6 +167,7 @@ namespace AirCombat
 
         private void LateUpdate()
         {
+            if (TacticalMapView.IsOpenFor(gameObject.scene)) return;
             if (State == Phase.Flight)
             {
                 // Flight motor has already moved; camera and weapon LateUpdate

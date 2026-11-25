@@ -86,6 +86,7 @@ namespace AirCombat
 
         private void LateUpdate()
         {
+            if (TacticalMapView.IsOpenFor(gameObject.scene)) return;
             var mouse = Mouse.current;
             if (dualSlots)
             {
