@@ -15,6 +15,11 @@ namespace AirCombat
         [SerializeField] private bool skipIntro = true;
         [SerializeField] private CombatHud missionHud;
 
+#if UNITY_EDITOR
+        [Header("Temporary terrain test (Editor only)")]
+        [SerializeField] private bool debugAirStart = true;
+#endif
+
         [Header("Automatic takeoff (WIP)")]
         [SerializeField, Min(.1f)] private float rollSeconds = 2.2f;
         [SerializeField, Min(.1f)] private float climbSeconds = 2.5f;
@@ -78,6 +83,14 @@ namespace AirCombat
                 weaponTrigger.ConfigureDualSlots(null);
                 missionHud.gameObject.SetActive(false);
             }
+#if UNITY_EDITOR
+            flight.DebugFastTravel = debugAirStart;
+            if (debugAirStart)
+            {
+                StartAirborne();
+                return;
+            }
+#endif
             if (skipIntro) CompleteIntro();
         }
 
@@ -93,6 +106,9 @@ namespace AirCombat
             if (Application.isFocused && keyboard != null && keyboard.rKey.wasPressedThisFrame)
             {
                 ResetToReady();
+#if UNITY_EDITOR
+                if (debugAirStart) StartAirborne();
+#endif
                 return;
             }
             if (State == Phase.Ready && Application.isFocused && keyboard != null && keyboard.wKey.wasPressedThisFrame)
@@ -136,6 +152,25 @@ namespace AirCombat
         {
             if (State != Phase.Takeoff || !handoverPending) return;
             // Enable after Update so the motor cannot translate twice on this frame.
+            EnterFlight();
+        }
+
+#if UNITY_EDITOR
+        private void StartAirborne()
+        {
+            // Exact endpoint of the scripted takeoff, without waiting for it.
+            float distance = flight.CruiseSpeed * (.5f * Mathf.Max(.1f, rollSeconds) + Mathf.Max(.1f, climbSeconds));
+            Vector3 position = runwayPosition + runwayRotation * Vector3.forward * distance;
+            position.y = Mathf.Max(runwayPosition.y, cruiseAltitude);
+            aircraft.SetPositionAndRotation(position, runwayRotation);
+            EnterFlight();
+            var camera = FindFirstObjectByType<ArcadeCameraFollow>();
+            if (camera != null) camera.SnapToAircraft();
+        }
+#endif
+
+        private void EnterFlight()
+        {
             handoverPending = false;
             visual.localRotation = visualRest;
             flames.SetManeuverFlames(false);
@@ -174,6 +209,9 @@ namespace AirCombat
         private void OnDisable()
         {
             if (initialized && flames != null) flames.SetManeuverFlames(false);
+#if UNITY_EDITOR
+            if (flight != null) flight.DebugFastTravel = false;
+#endif
         }
 
         private void OnGUI()

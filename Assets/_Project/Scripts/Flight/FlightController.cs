@@ -27,6 +27,10 @@ namespace AirCombat
         public float CurrentSpeed => motor != null ? motor.CurrentSpeed : cruiseSpeed;
         public float CruiseSpeed => Mathf.Clamp(cruiseSpeed, minSpeed, maxSpeed);
         public Transform Visual => visual; // Shared with optional flight maneuvers.
+#if UNITY_EDITOR
+        // Explicit opt-in from Mission01LaunchSequence only; absent from builds.
+        public bool DebugFastTravel { get; set; }
+#endif
         private AircraftMotor motor;
         private BreakTurn breakTurn;
         private CabrageManeuver cabrage;
@@ -155,6 +159,11 @@ namespace AirCombat
             // The motor still owns smooth speed and bank. Steering is never
             // committed to an angle or locked for a maneuver duration.
             motor.Tick(target, steer, accel, maneuverResponse, yaw, maxBank, bankRate, dt);
+#if UNITY_EDITOR
+            // Add twice the nominal displacement; no extra steering, fuel or time ticks.
+            if (DebugFastTravel && focused && keyboard.spaceKey.isPressed)
+                transform.position += transform.forward * (2f * motor.CurrentSpeed * dt);
+#endif
         }
     }
 }
