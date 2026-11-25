@@ -28,7 +28,7 @@ namespace AirCombat
                 var scene = GetScene();
                 GetSurface(scene, out var terrain, out var mesh);
                 var objectives = Root(scene, "Mission01 / Objectives");
-                if (objectives.transform.Find(PlanName) != null)
+                if (DirectChild(objectives.transform, PlanName) != null)
                 {
                     Debug.Log("MISSION-01H: route plan already installed; use Rebake Mission 01 Terrain for subsequent terrain edits.");
                     return;
@@ -111,6 +111,78 @@ namespace AirCombat
             catch (Exception ex) { Debug.LogError("MISSION-01H: " + ex); }
         }
 
+        [MenuItem("Air Combat/Missions/Apply Mission 01 Central Ridge")]
+        private static void ApplyCentralRidge()
+        {
+            if (EditorApplication.isPlayingOrWillChangePlaymode) return;
+            const string undoName = "Mission 01 central ridge";
+            try
+            {
+                var scene = GetScene();
+                GetSurface(scene, out var terrain, out var mesh);
+                var data = terrain.terrainData;
+                var objectives = Root(scene, "Mission01 / Objectives");
+                var plan = DirectChild(objectives.transform, PlanName);
+                var relief = DirectChild(plan, "03 / Future relief - empty markers");
+                var ridge = DirectChild(relief, "Central ridge - planned footprint 1150 x 680");
+                if (ridge == null)
+                    throw new InvalidOperationException("Central ridge marker missing under the H route plan.");
+                if ((data.size - new Vector3(3200f, 180f, 3200f)).sqrMagnitude > .01f)
+                    throw new InvalidOperationException("Expected expanded H terrain, actual size: " + data.size);
+                int n = data.heightmapResolution;
+                foreach (float height in data.GetHeights(0, 0, n, n))
+                    if (Mathf.Abs(height) > .00001f)
+                        throw new InvalidOperationException("Expected flat terrain. Sculpt or Undo the existing relief before rerunning this trial.");
+                Vector3 center = ridge.position;
+                if (center.x - 575f < Origin.x || center.x + 575f > Origin.x + data.size.x ||
+                    center.z - 340f < Origin.z || center.z + 340f > Origin.z + data.size.z)
+                    throw new InvalidOperationException("Central ridge footprint lies outside the terrain.");
+                var heights = new float[n, n];
+                for (int z = 0; z < n; z++)
+                for (int x = 0; x < n; x++)
+                {
+                    float dx = Origin.x + x * data.size.x / (n - 1) - center.x;
+                    float dz = Origin.z + z * data.size.z / (n - 1) - center.z;
+                    heights[z, x] = CentralRidgeHeight(dx, dz) / data.size.y;
+                }
+                Undo.IncrementCurrentGroup();
+                int group = Undo.GetCurrentGroup();
+                Undo.SetCurrentGroupName(undoName);
+                try
+                {
+                    Undo.RegisterCompleteObjectUndo(data, undoName);
+                    Undo.RegisterCompleteObjectUndo(mesh, undoName);
+                    data.SetHeights(0, 0, heights);
+                    Bake(data, mesh);
+                    Undo.CollapseUndoOperations(group);
+                    EditorSceneManager.MarkSceneDirty(scene);
+                    Selection.activeGameObject = terrain.gameObject;
+                    Debug.Log("MISSION-01H1: central ridge baked. Save terrain and facet assets; visual trial only.");
+                }
+                catch
+                {
+                    Undo.RevertAllDownToGroup(group);
+                    throw;
+                }
+            }
+            catch (Exception ex) { Debug.LogError("MISSION-01H1: " + ex); }
+        }
+
+        // A single elongated massif with a broad, crooked crest. Only low-frequency
+        // shape changes: no noise over the rest of the mission, no independent rocks.
+        private static float CentralRidgeHeight(float dx, float dz)
+        {
+            float u = dx / 575f;
+            if (Mathf.Abs(u) >= 1f || Mathf.Abs(dz) >= 340f) return 0f;
+            float bend = 38f * Mathf.Sin(u * Mathf.PI * 1.15f);
+            float width = 265f + 30f * Mathf.Cos(u * Mathf.PI * 2f + .6f);
+            float v = (dz - bend) / width;
+            float radius = Mathf.Sqrt(u * u + v * v);
+            float mass = Mathf.SmoothStep(0f, 1f, Mathf.Clamp01((1f - radius) / .72f));
+            float crest = 155f + 10f * Mathf.Cos(u * Mathf.PI * 2.4f) + 5f * Mathf.Sin(u * Mathf.PI * 1.3f);
+            return mass * crest;
+        }
+
         // Reusable after sculpting or resizing the TerrainData in the Inspector.
         // No changes to the heightmap, actors, materials, or scene positions.
         [MenuItem("Air Combat/Missions/Rebake Mission 01 Terrain")]
@@ -162,6 +234,19 @@ namespace AirCombat
             Terrain01Playground.FillMesh(mesh, data, cells);
             EditorUtility.SetDirty(data);
             EditorUtility.SetDirty(mesh);
+        }
+
+        // Names in the authored hierarchy contain literal slashes. Transform.Find
+        // interprets those as path separators; match direct child names instead.
+        private static Transform DirectChild(Transform parent, string name)
+        {
+            if (parent == null) return null;
+            for (int i = 0; i < parent.childCount; i++)
+            {
+                var child = parent.GetChild(i);
+                if (child.name == name) return child;
+            }
+            return null;
         }
 
         private static Transform Anchor(Transform parent, string name, Vector3 worldPosition)
