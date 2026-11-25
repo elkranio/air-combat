@@ -17,8 +17,11 @@ namespace AirCombat
         [SerializeField] private float groundY;
         [SerializeField, Min(1)] private int maxHp = 18;
         [SerializeField, Min(10f)] private float patrolRadius = 65f;
-        [SerializeField, Min(10f)] private float patrolStraightHalfLength = 95f;
-        [SerializeField, Min(1f)] private float detectionRadius = 450f;
+        // New field names intentionally replace the older serialized defaults.
+        [SerializeField, Min(10f)] private float patrolLegHalfLength = 55f;
+        [SerializeField] private Vector2 patrolCenterOffset = new Vector2(-70f, 300f);
+        [SerializeField, Min(1f)] private float visualDetectionRadius = 220f;
+        [SerializeField, Range(.1f, .9f)] private float southeastTurnFraction = .65f;
         [SerializeField, Min(.1f)] private float preparationSeconds = 22f;
         [SerializeField, Min(.1f)] private float boostSeconds = 2.5f;
         [SerializeField, Min(.1f)] private float boostAccelerationSeconds = 1.6f;
@@ -34,6 +37,9 @@ namespace AirCombat
         private BoxCollider[] hitboxes;
         private AircraftRadar radar;
         private Afterburner playerBoost;
+        private Camera viewCamera;
+        private bool useMissionEscapeRoute;
+        private Vector3 escapeDestination;
         private Renderer[] glow = new Renderer[2];
         private MaterialPropertyBlock properties;
         private OverlordEscapeVfx escapeVfx;
@@ -69,6 +75,16 @@ namespace AirCombat
             rest = visual.localRotation;
             radar = player.GetComponent<AircraftRadar>();
             playerBoost = player.GetComponent<Afterburner>();
+            // Resolve the same fixed-world flight camera used by the combat HUD.
+            foreach (var root in gameObject.scene.GetRootGameObjects())
+            {
+                var follow = root.GetComponentInChildren<ArcadeCameraFollow>(true);
+                if (follow == null) continue;
+                viewCamera = follow.GetComponent<Camera>();
+                if (viewCamera != null) break;
+            }
+            if (viewCamera == null)
+                Debug.LogWarning("AE01D: flight camera missing; damage can still trigger escape.", this);
             var l = visual.Find("GlowL"); var r = visual.Find("GlowR");
             glow[0] = l != null ? l.GetComponent<Renderer>() : null;
             glow[1] = r != null ? r.GetComponent<Renderer>() : null;
@@ -81,8 +97,14 @@ namespace AirCombat
 
         private void ResetTarget()
         {
-            center = authoredCenter;
-            escapeHeading = Vector3.back; // Authored east-sector outbound direction.
+            // Move the existing marker's runtime patrol north/west to leave
+            // enough room for the full charge and the diagonal boost.
+            center = authoredCenter + new Vector3(patrolCenterOffset.x, 0f, patrolCenterOffset.y);
+            useMissionEscapeRoute = true;
+            escapeHeading = Vector3.back;
+            Rect operation = launch.OperationBounds;
+            float inset = Mathf.Max(0f, edgeReserve) + 30f;
+            escapeDestination = new Vector3(operation.xMax - inset, center.y, operation.yMin + inset);
 #if UNITY_EDITOR
             if (debugNearPlayer)
             {
@@ -91,11 +113,12 @@ namespace AirCombat
                 center = player.transform.position + forward * 165f;
                 center.y = authoredCenter.y;
                 escapeHeading = forward;
+                useMissionEscapeRoute = false;
             }
 #endif
             hp = Mathf.Max(1, maxHp);
             State = Phase.Patrol;
-            patrolDistance = Mathf.Max(10f, patrolStraightHalfLength);
+            patrolDistance = Mathf.Max(10f, patrolLegHalfLength);
             timer = smokeDebt = 0f;
             falling = burst = false;
             speed = Mathf.Max(1f, player.CruiseSpeed * patrolSpeedRatio);
@@ -113,7 +136,7 @@ namespace AirCombat
         // semicircles. No teleport or heading reversal at either endpoint.
         private void PlaceOnPatrol(float dt)
         {
-            float h = Mathf.Max(10f, patrolStraightHalfLength);
+            float h = Mathf.Max(10f, patrolLegHalfLength);
             float r = Mathf.Max(10f, patrolRadius);
             float straight = 2f * h, arc = Mathf.PI * r;
             patrolDistance = Mathf.Repeat(patrolDistance + speed * dt, 2f * (straight + arc));
@@ -166,6 +189,14 @@ namespace AirCombat
 
         private float RequiredBoostRoom => BoostDistance(BoostDuration, EscapeSpeed, BoostTargetSpeed, BoostRamp) + 12f;
 
+        private bool VisibleToPlayer()
+        {
+            if (viewCamera == null || !viewCamera.isActiveAndEnabled) return false;
+            Vector3 p = viewCamera.WorldToViewportPoint(transform.position);
+            return p.z >= viewCamera.nearClipPlane && p.z <= viewCamera.farClipPlane &&
+                p.x >= 0f && p.x <= 1f && p.y >= 0f && p.y <= 1f;
+        }
+
         private void BeginPreparation()
         {
             State = Phase.Preparing;
@@ -197,12 +228,21 @@ namespace AirCombat
             if (State == Phase.Destroyed) { if (falling) TickWreck(dt); return; }
             if (!IsAlive) return;
             Vector3 toPlayer = player.transform.position - transform.position; toPlayer.y = 0f;
-            if (State == Phase.Patrol && toPlayer.sqrMagnitude <= detectionRadius * detectionRadius)
-                BeginPreparation();
+            if (State == Phase.Patrol && toPlayer.sqrMagnitude <= visualDetectionRadius * visualDetectionRadius &&
+                VisibleToPlayer()) BeginPreparation();
             if (State == Phase.Patrol) PlaceOnPatrol(dt);
             else if (State == Phase.Preparing)
             {
                 timer += dt;
+                // First break south, then bank onto the safe southeast bearing.
+                // Freeze this bearing on ignition; the boost stays a straight run.
+                if (useMissionEscapeRoute && timer >= chargeDuration * southeastTurnFraction)
+                {
+                    Vector3 outbound = escapeDestination - transform.position;
+                    outbound.y = 0f;
+                    if (outbound.sqrMagnitude > 1f && outbound.z < 0f)
+                        escapeHeading = outbound.normalized;
+                }
                 float turn = Vector3.SignedAngle(transform.forward, escapeHeading, Vector3.up);
                 float yaw = Mathf.Clamp(turn, -turnRate * dt, turnRate * dt);
                 transform.Rotate(Vector3.up, yaw, Space.World);
