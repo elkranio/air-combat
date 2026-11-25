@@ -15,22 +15,26 @@ namespace AirCombat
             public bool Latched;
         }
 
-        private readonly Transform aircraft;
+        private readonly Transform aircraft, visualRoot;
+        private readonly Quaternion visualRest;
         private readonly Transform[] parts;
         private readonly Vector3[] rest;
         private readonly List<Contact> contacts = new List<Contact>();
         private readonly Quaternion[] restRotation;
-        private const float ClimbSeconds = .35f;
-        private const float CrestSeconds = .20f;
-        private const float DescentSeconds = .45f;
-        private const float Duration = ClimbSeconds + CrestSeconds + DescentSeconds;
-        private const float PredictionSeconds = ClimbSeconds + CrestSeconds * .5f;
-        private float elapsed, maneuverLift;
+        private const float BreakSeconds = .45f;
+        private const float PassSeconds = .20f;
+        private const float ReturnSeconds = .55f;
+        private const float Duration = BreakSeconds + PassSeconds + ReturnSeconds;
+        private const float PredictionSeconds = BreakSeconds + PassSeconds * .5f;
+        private const float BreakBank = 55f;
+        private float elapsed, maneuverLift, maneuverSide;
         public bool IsEvading { get; private set; }
 
         public Mission01AirSeparation(Transform aircraft, Transform visual)
         {
             this.aircraft = aircraft;
+            visualRoot = visual;
+            visualRest = visual.localRotation;
             var assembly = aircraft.GetComponent<JetAssembly>();
             var chassis = assembly != null ? assembly.Chassis : null;
             // The accepted Lynx prefab has a separate mesh branch beside Sockets.
@@ -65,13 +69,16 @@ namespace AirCombat
         // A predicted crossing starts one finite maneuver. Mere proximity,
         // parallel flight and a receding contact do not start it. Rearm only
         // once the same contact has cleared the outer envelope.
-        public void Tick(float dt, float lift, float startDistance, float fullDistance, float forwardSpeed)
+        public void Tick(float dt, float lift, float sideOffset, float startDistance, float fullDistance, float forwardSpeed)
         {
             if (parts == null || dt <= 0f) return;
             lift = Mathf.Max(0f, lift);
+            sideOffset = Mathf.Max(0f, sideOffset);
             fullDistance = Mathf.Max(1f, fullDistance);
             startDistance = Mathf.Max(fullDistance + 1f, startDistance);
             bool start = false;
+            float selectedSide = 1f, bestDistance = float.PositiveInfinity;
+            Vector2 right = new Vector2(aircraft.right.x, aircraft.right.z).normalized;
             foreach (var contact in contacts)
             {
                 var target = contact.Target;
@@ -82,7 +89,7 @@ namespace AirCombat
                 { contact.HasPrevious = contact.Latched = false; continue; }
                 var relative = new Vector2(delta.x, delta.z);
                 if (relative.sqrMagnitude > startDistance * startDistance) contact.Latched = false;
-                if (!IsEvading && !contact.Latched && lift > 0f && contact.HasPrevious && dt > .0001f)
+                if (!IsEvading && !contact.Latched && (lift > 0f || sideOffset > 0f) && contact.HasPrevious && dt > .0001f)
                 {
                     Vector2 segment = relative - contact.Previous;
                     Vector2 velocity = segment / dt;
@@ -103,6 +110,18 @@ namespace AirCombat
                         {
                             contact.Latched = true;
                             start = true;
+                            Vector2 closest = crossed ? contact.Previous + segment * sweptT
+                                : relative + velocity * closestTime;
+                            // Keep the chosen side for the complete maneuver. If the
+                            // predicted impact is centered, prefer the side opposite
+                            // the current contact, then right for a symmetric pass.
+                            if (closest.sqrMagnitude < bestDistance)
+                            {
+                                bestDistance = closest.sqrMagnitude;
+                                float lateral = Vector2.Dot(closest, right);
+                                if (Mathf.Abs(lateral) < 1f) lateral = Vector2.Dot(relative, right);
+                                selectedSide = lateral > 1f ? -1f : 1f;
+                            }
                         }
                     }
                 }
@@ -116,56 +135,74 @@ namespace AirCombat
                 IsEvading = true;
                 elapsed = 0f;
                 maneuverLift = lift;
+                maneuverSide = sideOffset * selectedSide;
             }
             else elapsed = Mathf.Min(Duration, elapsed + dt);
 
             if (elapsed >= Duration)
             {
                 IsEvading = false;
-                ApplyPose(0f, 0f);
+                ApplyPose(Vector3.zero, Quaternion.identity);
                 return;
             }
 
-            float height, verticalSpeed, pitchLimit;
-            if (elapsed < ClimbSeconds)
+            // Lateral offset and tiny lift share a C1-continuous envelope.
+            // Bank is the main visual gesture; the return uses a softer counterbank.
+            float envelope, derivative, bank;
+            float direction = maneuverSide < 0f ? -1f : 1f;
+            if (elapsed < BreakSeconds)
             {
-                float u = elapsed / ClimbSeconds;
-                height = maneuverLift * Smooth(u);
-                verticalSpeed = maneuverLift * 6f * u * (1f - u) / ClimbSeconds;
-                pitchLimit = 25f;
+                float u = elapsed / BreakSeconds;
+                envelope = Smooth(u);
+                derivative = 6f * u * (1f - u) / BreakSeconds;
+                bank = -direction * BreakBank * Smooth(Mathf.Clamp01(u / .55f));
             }
-            else if (elapsed < ClimbSeconds + CrestSeconds)
+            else if (elapsed < BreakSeconds + PassSeconds)
             {
-                height = maneuverLift;
-                verticalSpeed = 0f;
-                pitchLimit = 25f;
+                float u = (elapsed - BreakSeconds) / PassSeconds;
+                envelope = 1f;
+                derivative = 0f;
+                bank = -direction * Mathf.Lerp(BreakBank, 25f, Smooth(u));
             }
             else
             {
-                float u = Mathf.Clamp01((elapsed - ClimbSeconds - CrestSeconds) / DescentSeconds);
-                height = maneuverLift * (1f - Smooth(u));
-                verticalSpeed = -maneuverLift * 6f * u * (1f - u) / DescentSeconds;
-                pitchLimit = 20f;
+                float u = Mathf.Clamp01((elapsed - BreakSeconds - PassSeconds) / ReturnSeconds);
+                envelope = 1f - Smooth(u);
+                derivative = -6f * u * (1f - u) / ReturnSeconds;
+                bank = direction * (u < .4f ? Mathf.Lerp(-25f, 25f, Smooth(u / .4f))
+                    : Mathf.Lerp(25f, 0f, Smooth((u - .4f) / .6f)));
             }
-            // Nose follows the visual trajectory, with an arcade pitch cap.
-            // Smoothstep has zero vertical speed at every phase boundary.
-            float pitch = Mathf.Clamp(Mathf.Atan2(verticalSpeed, Mathf.Max(1f, forwardSpeed)) * Mathf.Rad2Deg,
-                -pitchLimit, pitchLimit);
-            ApplyPose(height, pitch);
+            float yaw = Mathf.Clamp(Mathf.Atan2(maneuverSide * derivative, Mathf.Max(1f, forwardSpeed))
+                * Mathf.Rad2Deg, -16f, 16f);
+            float noseUp = Mathf.Clamp(Mathf.Atan2(maneuverLift * derivative, Mathf.Max(1f, forwardSpeed))
+                * Mathf.Rad2Deg, -8f, 8f);
+            Vector3 offset = aircraft.right * (maneuverSide * envelope) + Vector3.up * (maneuverLift * envelope);
+
+            // Blend to an absolute visual bank instead of adding 55 degrees to
+            // the flight motor's existing bank. Fade back to the live motor pose.
+            Quaternion baseRotation = visualRoot.parent != null
+                ? visualRoot.parent.rotation * visualRest : visualRest;
+            Quaternion attitude = Quaternion.AngleAxis(yaw, Vector3.up)
+                * Quaternion.AngleAxis(-noseUp, aircraft.right)
+                * Quaternion.AngleAxis(bank, aircraft.forward);
+            float weight = Smooth(Mathf.Clamp01(elapsed / .18f))
+                * Smooth(Mathf.Clamp01((Duration - elapsed) / .22f));
+            Quaternion correction = Quaternion.Slerp(Quaternion.identity,
+                attitude * baseRotation * Quaternion.Inverse(visualRoot.rotation), weight);
+            ApplyPose(offset, correction);
         }
 
         private static float Smooth(float u) => u * u * (3f - 2f * u);
 
-        private void ApplyPose(float height, float noseUp)
+        private void ApplyPose(Vector3 offset, Quaternion correction)
         {
             if (parts == null) return;
-            Quaternion pitch = Quaternion.AngleAxis(-noseUp, aircraft.right);
             Vector3 pivot = aircraft.position;
             for (int i = 0; i < parts.Length; i++)
             {
                 Transform part = parts[i];
                 if (part == null || part.parent == null) continue;
-                if (height == 0f && noseUp == 0f)
+                if (offset.sqrMagnitude == 0f && correction == Quaternion.identity)
                 {
                     part.localPosition = rest[i];
                     part.localRotation = restRotation[i];
@@ -175,17 +212,17 @@ namespace AirCombat
                 // Rotate both the mesh and separate exhaust sockets around the
                 // same aircraft pivot, not around their individual local origins.
                 Vector3 worldRest = parent.TransformPoint(rest[i]);
-                part.localPosition = parent.InverseTransformPoint(pivot + pitch * (worldRest - pivot) + Vector3.up * height);
-                part.localRotation = Quaternion.Inverse(parent.rotation) * pitch * parent.rotation * restRotation[i];
+                part.localPosition = parent.InverseTransformPoint(pivot + correction * (worldRest - pivot) + offset);
+                part.localRotation = Quaternion.Inverse(parent.rotation) * correction * parent.rotation * restRotation[i];
             }
         }
 
         public void Clear()
         {
             IsEvading = false;
-            elapsed = maneuverLift = 0f;
+            elapsed = maneuverLift = maneuverSide = 0f;
             foreach (var contact in contacts) contact.HasPrevious = contact.Latched = false;
-            ApplyPose(0f, 0f);
+            ApplyPose(Vector3.zero, Quaternion.identity);
         }
     }
 }

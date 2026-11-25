@@ -49,9 +49,10 @@ namespace AirCombat
         [SerializeField, Min(10f)] private float landingTouchdownOffset = 65f;
         [SerializeField, Min(5f)] private float landingAutoTouchdownSpeed = 65f;
 
-        [Header("Emergency air evasion (COLL-02)")]
+        [Header("Emergency air evasion (COLL-03)")]
         [SerializeField] private bool visualAirSeparation = true;
-        [SerializeField, Min(0f)] private float airSeparationLift = 16f;
+        [SerializeField, Min(0f)] private float airEvasionLift = 4f;
+        [SerializeField, Min(0f)] private float airEvasionSideOffset = 18f;
         [Tooltip("Distance required to rearm a previously evaded contact.")]
         [SerializeField, Min(1f)] private float airSeparationStartDistance = 56f;
         [Tooltip("Predicted closest approach that triggers evasion.")]
@@ -274,7 +275,7 @@ namespace AirCombat
                     if (State == Phase.Flight && visualAirSeparation &&
                         (playerHealth == null || playerHealth.IsAlive))
                     {
-                        airSeparation?.Tick(Time.deltaTime, airSeparationLift,
+                        airSeparation?.Tick(Time.deltaTime, airEvasionLift, airEvasionSideOffset,
                             airSeparationStartDistance, airSeparationFullDistance, flight.CurrentSpeed);
                         weaponTrigger.SetFireInhibited(airSeparation != null && airSeparation.IsEvading);
                     }
