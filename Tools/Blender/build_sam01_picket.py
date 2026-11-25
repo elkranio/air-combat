@@ -2,7 +2,7 @@
 """Dominion SAM-01 Picket, original visual-only low-poly game prop.
 Run with Python to export Y-up OBJs, or Blender --background --factory-startup
 --python Tools/Blender/build_sam01_picket.py for the editable .blend as well.
-+Z forward, ground Y=0. Geometry-only pass; colors are neutral clay placeholders.
++Z forward, ground Y=0. Imperial Olive palette trial; geometry unchanged from B.
 """
 from pathlib import Path
 from math import sin, cos, pi, radians
@@ -10,9 +10,10 @@ from collections import Counter
 
 ROOT = Path(__file__).resolve().parents[2]
 OUT = ROOT / 'Assets/_Project/Art/Environment/Dominion/SAM01_Picket'
-PALETTE = {'Hull':(.51,.51,.51), 'Equipment':(.41,.41,.41),
-           'Metal':(.30,.30,.30), 'Rubber':(.16,.16,.16),
-           'Glass':(.22,.24,.25), 'Caps':(.65,.65,.65)}
+PALETTE = {'Hull':(98/255,107/255,66/255), 'Equipment':(75/255,80/255,59/255),
+           'Metal':(52/255,59/255,50/255), 'Rubber':(35/255,37/255,34/255),
+           'Glass':(40/255,53/255,58/255), 'Caps':(182/255,180/255,156/255),
+           'Launcher':(160/255,161/255,124/255), 'Accent':(184/255,59/255,50/255)}
 PARTS = []
 
 def sub(a,b): return tuple(x-y for x,y in zip(a,b))
@@ -116,8 +117,8 @@ def tilt(p):
 for s in (-1,1):
     for k in range(2):
         x=s*(.78+k*.55)
-        box(f'Canister {s} {k}','Equipment',x,0,0,.49,.52,2.72,tilt)
-        box(f'End cap {s} {k}','Caps',x,0,1.385,.50,.53,.09,tilt)
+        box(f'Canister {s} {k}','Launcher',x,0,0,.49,.52,2.72,tilt)
+        box(f'End cap {s} {k}','Accent',x,0,1.385,.50,.53,.09,tilt)
         box(f'Rear cap {s} {k}','Metal',x,0,-1.385,.50,.53,.09,tilt)
 # Compact raised sensor silhouette, deliberately much smaller than the truck.
 box('Sensor plinth','Metal',0,3.13,-2.76,.46,.30,.48)

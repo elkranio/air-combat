@@ -9,11 +9,12 @@ namespace AirCombat
     {
         private const string Art = "Assets/_Project/Art/Environment/Dominion/SAM01_Picket/";
         private const string Prefab = "Assets/_Project/Prefabs/Environment/SAM01_Picket.prefab";
-        private static readonly string[] Parts = { "Hull", "Equipment", "Metal", "Rubber", "Glass", "Caps" };
-        private static readonly Color[] Clay = {
-            new Color(.51f,.51f,.51f), new Color(.41f,.41f,.41f),
-            new Color(.30f,.30f,.30f), new Color(.16f,.16f,.16f),
-            new Color(.22f,.24f,.25f), new Color(.65f,.65f,.65f)
+        private static readonly string[] Parts = { "Hull", "Equipment", "Metal", "Rubber", "Glass", "Caps", "Launcher", "Accent" };
+        private static readonly Color32[] ImperialOlive = {
+            new Color32(98,107,66,255), new Color32(75,80,59,255),
+            new Color32(52,59,50,255), new Color32(35,37,34,255),
+            new Color32(40,53,58,255), new Color32(182,180,156,255),
+            new Color32(160,161,124,255), new Color32(184,59,50,255)
         };
 
         [MenuItem("Air Combat/Art/Create SAM01 Picket Preview")]
@@ -22,6 +23,13 @@ namespace AirCombat
             if (EditorApplication.isPlayingOrWillChangePlaymode) return;
             var existing = AssetDatabase.LoadAssetAtPath<GameObject>(Prefab);
             if (existing != null) { Selection.activeObject = existing; EditorGUIUtility.PingObject(existing); return; }
+            ApplyImperialOlive();
+        }
+
+        [MenuItem("Air Combat/Art/Apply SAM01 Imperial Olive")]
+        private static void ApplyImperialOlive()
+        {
+            if (EditorApplication.isPlayingOrWillChangePlaymode) return;
             var shader = Shader.Find("Universal Render Pipeline/Lit");
             if (shader == null) { Debug.LogError("SAM01: URP Lit missing."); return; }
             var models = new GameObject[Parts.Length];
@@ -31,10 +39,21 @@ namespace AirCombat
                 if (models[i] == null || models[i].GetComponentInChildren<MeshFilter>(true) == null)
                 { Debug.LogError("SAM01: missing OBJ: " + Parts[i]); return; }
             }
+            bool existing = AssetDatabase.LoadAssetAtPath<GameObject>(Prefab) != null;
             GameObject root = null;
             try
             {
-                root = new GameObject("SAM01_Picket");
+                root = existing ? PrefabUtility.LoadPrefabContents(Prefab) : new GameObject("SAM01_Picket");
+                // Verify existing parts before touching any materials. Only the two
+                // new paint groups may be absent from the previous visual prefab.
+                for (int i = 0; i < Parts.Length; i++)
+                {
+                    var child = root.transform.Find(Parts[i]);
+                    if (existing && i < 6 && child == null)
+                        throw new InvalidOperationException("Missing existing part " + Parts[i]);
+                    if (child != null && PrefabUtility.GetPrefabAssetPathOfNearestInstanceRoot(child.gameObject) != AssetDatabase.GetAssetPath(models[i]))
+                        throw new InvalidOperationException("Unexpected mesh source for " + Parts[i]);
+                }
                 for (int i = 0; i < Parts.Length; i++)
                 {
                     string materialPath = Art + "SAM01_" + Parts[i] + ".mat";
@@ -42,23 +61,28 @@ namespace AirCombat
                     if (mat == null)
                     {
                         mat = new Material(shader) { name = "SAM01_" + Parts[i] };
-                        mat.SetColor("_BaseColor", Clay[i]);
-                        mat.SetFloat("_Metallic", 0f);
-                        mat.SetFloat("_Smoothness", 0f);
-                        mat.SetFloat("_SpecularHighlights", 0f);
-                        mat.EnableKeyword("_SPECULARHIGHLIGHTS_OFF");
-                        mat.SetFloat("_EnvironmentReflections", 0f);
-                        mat.EnableKeyword("_ENVIRONMENTREFLECTIONS_OFF");
                         AssetDatabase.CreateAsset(mat, materialPath);
                     }
-                    var part = (GameObject)PrefabUtility.InstantiatePrefab(models[i], root.transform);
+                    mat.SetColor("_BaseColor", ImperialOlive[i]);
+                    mat.SetFloat("_Metallic", 0f);
+                    mat.SetFloat("_Smoothness", 0f);
+                    mat.SetFloat("_SpecularHighlights", 0f);
+                    mat.EnableKeyword("_SPECULARHIGHLIGHTS_OFF");
+                    mat.SetFloat("_EnvironmentReflections", 0f);
+                    mat.EnableKeyword("_ENVIRONMENTREFLECTIONS_OFF");
+                    EditorUtility.SetDirty(mat);
+                    var child = root.transform.Find(Parts[i]);
+                    var part = child != null ? child.gameObject : (GameObject)PrefabUtility.InstantiatePrefab(models[i], root.transform);
                     if (part == null) throw new InvalidOperationException("Could not instantiate " + Parts[i]);
-                    part.name = Parts[i];
-                    part.transform.localPosition = Vector3.zero;
-                    part.transform.localRotation = Quaternion.identity;
-                    part.transform.localScale = Vector3.one;
-                    PrefabUtility.RecordPrefabInstancePropertyModifications(part);
-                    PrefabUtility.RecordPrefabInstancePropertyModifications(part.transform);
+                    if (child == null)
+                    {
+                        part.name = Parts[i];
+                        part.transform.localPosition = Vector3.zero;
+                        part.transform.localRotation = Quaternion.identity;
+                        part.transform.localScale = Vector3.one;
+                        PrefabUtility.RecordPrefabInstancePropertyModifications(part);
+                        PrefabUtility.RecordPrefabInstancePropertyModifications(part.transform);
+                    }
                     foreach (var renderer in part.GetComponentsInChildren<MeshRenderer>(true))
                     {
                         var materials = renderer.sharedMaterials;
@@ -72,10 +96,17 @@ namespace AirCombat
                 AssetDatabase.SaveAssets();
                 Selection.activeObject = prefab;
                 EditorGUIUtility.PingObject(prefab);
-                Debug.Log("SAM01: visual prefab created. Open in Prefab Mode or drag into a test scene. No mission changes.");
+                Debug.Log("SAM01: Imperial Olive applied. Existing scene instances use updated prefab unless overridden. No scene edits.");
             }
             catch (Exception ex) { Debug.LogError("SAM01: " + ex); }
-            finally { if (root != null) UnityEngine.Object.DestroyImmediate(root); }
+            finally
+            {
+                if (root != null)
+                {
+                    if (existing) PrefabUtility.UnloadPrefabContents(root);
+                    else UnityEngine.Object.DestroyImmediate(root);
+                }
+            }
         }
     }
 }
