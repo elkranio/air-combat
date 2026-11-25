@@ -59,6 +59,26 @@ namespace AirCombat
         }
         private static bool Fits(Placement p,Rect area,List<Rect> blocked)=>area.Contains(p.rect.min)&&area.Contains(p.rect.max)&&!blocked.Any(b=>b.Overlaps(p.rect));
 
+        // Try the authored offset first, then nearby alternatives. Only a genuinely
+        // crowded site needs the wider search; do not move existing scene objects.
+        private static Placement FindProp(int model,Bounds[] bounds,Vector3 origin,float heading,
+            float x,float z,float yaw,Rect area,List<Rect> blocked,bool wide)
+        {
+            var preferred=At(model,bounds,origin,heading,x,z,yaw,1,.035f);
+            if(Fits(preferred,area,blocked))return preferred;
+            float radius=Mathf.Sqrt(x*x+z*z),angle=Mathf.Atan2(z,x);
+            // Alternate sides of the preferred bearing, rather than uniformly scattering.
+            foreach(float extra in (wide?new[]{0f,3f,6f,10f,16f,24f,32f}:new[]{0f,3f,6f}))
+                for(int j=0;j<16;j++)
+                {
+                    int step=j==0?0:(j%2==1?1:-1)*((j+1)/2);
+                    float a=angle+step*Mathf.PI/8f,r=radius+extra;
+                    var p=At(model,bounds,origin,heading,Mathf.Cos(a)*r,Mathf.Sin(a)*r,yaw,1,.035f);
+                    if(Fits(p,area,blocked))return p;
+                }
+            return null;
+        }
+
         [MenuItem("Air Combat/Art/Apply Mission01 Field Sites v0")]
         private static void Apply()
         {
@@ -82,23 +102,23 @@ namespace AirCombat
                     if(r.bounds.min.y<15&&!sites.Any(s=>r.transform.IsChildOf(s.transform)))blocked.Add(Footprint(r.bounds,2));
                 var siteBounds=sites.Select(s=>Footprint(Combine(Renderers(s.gameObject)),.8f)).ToArray();
                 var library=BuildLibrary();var local=library.Select(LocalBounds).ToArray();
-                var layouts=new List<Placement[]>();int trackCount=0;
-                // Six authored asymmetrical compositions, tested against current scene geometry.
+                var layouts=new List<Placement[]>();int trackCount=0,padCount=0,radarCount=0;
+                // Prefer full, compact compositions. A blocked optional item must
+                // not prevent all six sites from being dressed.
                 for(int i=0;i<sites.Length;i++)
                 {
                     var site=sites[i];var origin=new Vector3(site.transform.position.x,world.center.y,site.transform.position.z);
                     var obstacles=new List<Rect>(blocked);for(int j=0;j<sites.Length;j++)if(i!=j)obstacles.Add(siteBounds[j]);
                     var propBlocked=new List<Rect>(obstacles){siteBounds[i]};
-                    Placement[] chosen=null;
-                    for(int attempt=0;attempt<32&&chosen==null;attempt++)
+                    Placement[] chosen=Array.Empty<Placement>();int bestScore=-1;
+                    for(int attempt=0;attempt<32;attempt++)
                     {
                         float heading=site.transform.eulerAngles.y+new[]{0f,35f,-25f,70f,-55f,105f}[i]+(attempt%16)*22.5f;
                         float size=attempt<16?1f:.84f;
                         float side=i%2==0?1:-1;
                         var pad=At(5+i%2,local,origin,heading,0,0,0,size,.035f);
-                        if(!Fits(pad,area,obstacles))continue;
+                        bool padFits=Fits(pad,area,obstacles);
                         var props=new List<Placement>();
-                        // Place the radar off to one side; the launcher remains the focal point.
                         var desired=new[]{
                             (model:0,x:side*9.2f,z:2.7f+(i%3-1)*2f,yaw:25f+i*19f),
                             (model:1+i%3,x:-side*7.8f,z:3.8f,yaw:12f+i*7f),
@@ -106,22 +126,33 @@ namespace AirCombat
                             (model:i%2==0?4:1,x:side*5.7f,z:8.8f,yaw:-18f+i*9f)
                         };
                         var reserved=new List<Rect>(propBlocked);
-                        foreach(var d in desired.Take(i%3==0?4:3))
+                        int wanted=i%3==0?4:3;
+                        foreach(var d in desired.Take(wanted))
                         {
-                            var p=At(d.model,local,origin,heading,d.x,d.z,d.yaw,1,.035f);
-                            if(!Fits(p,area,reserved))continue;
+                            // Only the radar may use the wider fallback. Keep boxes close.
+                            var p=FindProp(d.model,local,origin,heading,d.x,d.z,d.yaw,area,reserved,d.model==0&&attempt>=16);
+                            if(p==null)continue;
                             props.Add(p);reserved.Add(p.rect);
                         }
-                        if(!props.Any(p=>p.model==0)||props.Count<3)continue;
+                        bool hasRadar=props.Any(p=>p.model==0);
                         var track=At(7,local,origin,heading,side*(i%3-1)*1.5f,-10.5f*size,0,.85f,.055f);
-                        // Optional if the exit would cut across existing rocks/vegetation.
                         bool trackFits=Fits(track,area,obstacles)&&!props.Any(p=>p.rect.Overlaps(track.rect))&&!siteBounds[i].Overlaps(track.rect);
-                        chosen=new[]{pad}.Concat(props).Concat(trackFits?new[]{track}:Array.Empty<Placement>()).ToArray();
-                        if(trackFits)trackCount++;
+                        int score=(hasRadar?100:0)+props.Count*10+(padFits?5:0)+(trackFits?1:0)-(attempt>=16?2:0);
+                        if(score<=bestScore)continue;
+                        bestScore=score;
+                        chosen=(padFits?new[]{pad}:Array.Empty<Placement>()).Concat(props).Concat(trackFits?new[]{track}:Array.Empty<Placement>()).ToArray();
+                        if(hasRadar&&props.Count==wanted&&padFits&&trackFits)break;
                     }
-                    if(chosen==null)throw new InvalidOperationException("No clear field-site composition near "+site.name+". Scene unchanged; adjust nearby decoration.");
+                    bool radarPlaced=chosen.Any(p=>p.model==0),padPlaced=chosen.Any(p=>p.model==5||p.model==6);
+                    int extras=chosen.Count(p=>p.model>0&&p.model<5);
+                    if(radarPlaced)radarCount++;
+                    if(padPlaced)padCount++;
+                    if(chosen.Any(p=>p.model==7))trackCount++;
+                    if(!radarPlaced||!padPlaced||extras<2)
+                        Debug.LogWarning($"ENV04: {site.name}: tight clearance; radar={radarPlaced}, pad={padPlaced}, props={extras}. Existing scenery kept.",site);
                     layouts.Add(chosen);blocked.AddRange(chosen.Select(p=>p.rect));
                 }
+                if(layouts.All(l=>l.Length==0))throw new InvalidOperationException("No free field-site placements in this scene.");
                 Undo.IncrementCurrentGroup();int group=Undo.GetCurrentGroup();Undo.SetCurrentGroupName("Apply ENV04 field sites");
                 var old=Root(scene,LayerName);if(old!=null)Undo.DestroyObjectImmediate(old);
                 var layer=new GameObject(LayerName);SceneManager.MoveGameObjectToScene(layer,scene);Undo.RegisterCreatedObjectUndo(layer,"Create ENV04 layer");
@@ -136,7 +167,7 @@ namespace AirCombat
                     }
                 }
                 Undo.CollapseUndoOperations(group);EditorSceneManager.MarkSceneDirty(scene);Selection.activeGameObject=layer;
-                Debug.Log($"ENV04: six field sites, {layouts.Sum(l=>l.Length)} modules, {trackCount} clear track approaches. Save scene after review.");
+                Debug.Log($"ENV04: six sites checked, {radarCount} radars, {padCount} pads, {layouts.Sum(l=>l.Length)} modules, {trackCount} clear track approaches. Save scene after review.");
             }
             catch(Exception ex){Debug.LogError("ENV04: "+ex);}
         }
