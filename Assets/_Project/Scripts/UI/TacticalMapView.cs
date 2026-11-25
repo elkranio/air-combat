@@ -2,6 +2,7 @@ using System;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.SceneManagement;
+using UnityEngine.UI;
 
 namespace AirCombat
 {
@@ -27,7 +28,10 @@ namespace AirCombat
         private float previousTimeScale;
         private bool previousAudioPause;
         private Texture2D ring, arrow;
-        private GUIStyle label;
+        private Canvas canvas;
+        private RectTransform frame, drawParent;
+        private Font font;
+        private int screenWidth, screenHeight;
         private static readonly Color Ink = new Color(.80f,.89f,.87f);
         private static readonly Color Muted = new Color(.53f,.66f,.65f);
         private static readonly Color Cyan = new Color(.48f,.92f,.94f);
@@ -53,12 +57,20 @@ namespace AirCombat
             { Close(); return; }
             if (keys.tabKey.wasPressedThisFrame && HasMap && active == null && Time.timeScale > 0f)
             {
+                try { BuildCanvas(); }
+                catch (Exception ex)
+                {
+                    DisposeCanvas();
+                    Debug.LogException(ex, this);
+                    return;
+                }
                 previousTimeScale = Time.timeScale;
                 previousAudioPause = AudioListener.pause;
                 active = this;
                 Time.timeScale = 0f;
                 AudioListener.pause = true;
             }
+            if (IsOpen) FitFrame();
         }
         private void Close()
         {
@@ -66,6 +78,14 @@ namespace AirCombat
             active = null;
             Time.timeScale = previousTimeScale;
             AudioListener.pause = previousAudioPause;
+            DisposeCanvas();
+        }
+        private void DisposeCanvas()
+        {
+            if (canvas == null) return;
+            canvas.gameObject.SetActive(false);
+            Destroy(canvas.gameObject);
+            canvas = null; frame = null; drawParent = null;
         }
         private void OnDisable() => Close();
         private void OnDestroy()
@@ -75,36 +95,74 @@ namespace AirCombat
             if (arrow != null) Destroy(arrow);
         }
 
-        private void OnGUI()
+        // Screen-space overlay uses the same uGUI render path as the combat HUD.
+        // Construct once on open (positions are a snapshot of the paused world).
+        private void BuildCanvas()
         {
-            if (!IsOpen || !HasMap || Event.current.type != EventType.Repaint) return;
+            DisposeCanvas();
             EnsureGraphics();
-            int depth = GUI.depth; Matrix4x4 matrix = GUI.matrix; Color color = GUI.color;
-            try
-            {
-                GUI.depth = -1000;
-                GUI.matrix = Matrix4x4.identity;
-                Solid(new Rect(0,0,Screen.width,Screen.height), new Color(.047f,.075f,.085f));
-                float scale = Mathf.Min(Screen.width / 1120f, Screen.height / 760f);
-                GUI.matrix = Matrix4x4.TRS(new Vector3((Screen.width-1120*scale)*.5f,(Screen.height-760*scale)*.5f,0),Quaternion.identity,new Vector3(scale,scale,1));
-                Text(new Rect(28,19,780,36), "OPERATION / " + missionTitle, 27, Ink, true);
-                Text(new Rect(855,25,237,28), "TACTICAL MAP  /  PAUSED", 15, Cyan, false, TextAnchor.MiddleRight);
-                Solid(new Rect(28,66,1064,1), new Color(.25f,.38f,.39f));
-                Rect area = new Rect(28,88,660,620);
-                float ratio = map.WorldBounds.width/map.WorldBounds.height;
-                float w = Mathf.Min(area.width,area.height*ratio), h = w/ratio;
-                Rect panel = new Rect(area.center.x-w*.5f,area.center.y-h*.5f,w,h);
-                Solid(new Rect(panel.x-2,panel.y-2,panel.width+4,panel.height+4), new Color(.31f,.46f,.46f));
-                GUI.color = Color.white;
-                GUI.DrawTexture(panel,map.Geography,ScaleMode.StretchToFill,false);
-                GUI.BeginGroup(panel);
-                try { DrawMap(new Rect(0,0,w,h)); }
-                finally { GUI.EndGroup(); }
-                DrawMissionData(new Rect(718,90,374,618));
-                Text(new Rect(28,721,660,26), "NORTH UP   /   CRUISE Y"+map.SectionAltitude.ToString("0")+"   /   "+map.WorldBounds.width.ToString("0")+" × "+map.WorldBounds.height.ToString("0"), 14, Muted);
-                Text(new Rect(718,721,374,26), "[ TAB ] CLOSE MAP", 18, Cyan, true, TextAnchor.MiddleRight);
-            }
-            finally { GUI.matrix = matrix; GUI.color = color; GUI.depth = depth; }
+            var go = new GameObject("Tactical Map Canvas", typeof(RectTransform), typeof(Canvas));
+            SceneManager.MoveGameObjectToScene(go, gameObject.scene);
+            canvas = go.GetComponent<Canvas>();
+            canvas.renderMode = RenderMode.ScreenSpaceOverlay;
+            canvas.sortingOrder = 30000;
+            var root = (RectTransform)go.transform;
+            drawParent = root;
+            var bg = CreateRect("Backdrop", new Rect(0,0,0,0));
+            bg.anchorMin = Vector2.zero; bg.anchorMax = Vector2.one;
+            bg.offsetMin = Vector2.zero; bg.offsetMax = Vector2.zero;
+            var background = bg.gameObject.AddComponent<RawImage>();
+            background.texture = Texture2D.whiteTexture;
+            background.color = new Color(.047f,.075f,.085f);
+            background.raycastTarget = false;
+            frame = CreateRect("Map layout", new Rect(0,0,1120,760));
+            frame.anchorMin = frame.anchorMax = new Vector2(.5f,.5f);
+            frame.pivot = new Vector2(.5f,.5f);
+            frame.anchoredPosition = Vector2.zero;
+            screenWidth = screenHeight = -1;
+            FitFrame();
+            drawParent = frame;
+            Text(new Rect(28,19,780,36), "OPERATION / " + missionTitle, 27, Ink, true);
+            Text(new Rect(855,25,237,28), "TACTICAL MAP  /  PAUSED", 15, Cyan, false, TextAnchor.MiddleRight);
+            Solid(new Rect(28,66,1064,1), new Color(.25f,.38f,.39f));
+            Rect area = new Rect(28,88,660,620);
+            float ratio = map.WorldBounds.width/map.WorldBounds.height;
+            float w = Mathf.Min(area.width,area.height*ratio), h = w/ratio;
+            Rect panel = new Rect(area.center.x-w*.5f,area.center.y-h*.5f,w,h);
+            Solid(new Rect(panel.x-2,panel.y-2,panel.width+4,panel.height+4), new Color(.31f,.46f,.46f));
+            drawParent = CreateRect("Geography and markers", panel);
+            drawParent.gameObject.AddComponent<RectMask2D>();
+            Texture(new Rect(0,0,w,h),map.Geography,Color.white);
+            DrawMap(new Rect(0,0,w,h));
+            drawParent = frame;
+            DrawMissionData(new Rect(718,90,374,618));
+            Text(new Rect(28,721,660,26), "NORTH UP   /   CRUISE Y"+map.SectionAltitude.ToString("0")+"   /   "+map.WorldBounds.width.ToString("0")+" × "+map.WorldBounds.height.ToString("0"), 14, Muted);
+            Text(new Rect(718,721,374,26), "[ TAB ] CLOSE MAP", 18, Cyan, true, TextAnchor.MiddleRight);
+        }
+        private void FitFrame()
+        {
+            if (frame == null || (screenWidth == Screen.width && screenHeight == Screen.height)) return;
+            screenWidth = Screen.width; screenHeight = Screen.height;
+            float scale = Mathf.Min(screenWidth / 1120f, screenHeight / 760f);
+            frame.localScale = new Vector3(scale,scale,1f);
+        }
+        private RectTransform CreateRect(string name, Rect rect)
+        {
+            var go = new GameObject(name, typeof(RectTransform));
+            var t = (RectTransform)go.transform;
+            t.SetParent(drawParent,false);
+            t.anchorMin = t.anchorMax = new Vector2(0,1);
+            t.pivot = new Vector2(0,1);
+            t.sizeDelta = rect.size;
+            t.anchoredPosition = new Vector2(rect.x,-rect.y);
+            return t;
+        }
+        private RectTransform Texture(Rect r, UnityEngine.Texture texture, Color color)
+        {
+            var t = CreateRect("Map graphic",r);
+            var image = t.gameObject.AddComponent<RawImage>();
+            image.texture = texture; image.color = color; image.raycastTarget = false;
+            return t;
         }
 
         private Vector2 Point(Rect rect, Vector2 uv) => new Vector2(rect.x+uv.x*rect.width,rect.y+(1-uv.y)*rect.height);
@@ -118,8 +176,7 @@ namespace AirCombat
                 Vector2 p = Point(rect,sam.site);
                 float rx = sam.radius/map.WorldBounds.width*rect.width;
                 float ry = sam.radius/map.WorldBounds.height*rect.height;
-                GUI.color = Red;
-                GUI.DrawTexture(new Rect(p.x-rx,p.y-ry,rx*2,ry*2),ring);
+                Texture(new Rect(p.x-rx,p.y-ry,rx*2,ry*2),ring,Red);
             }
             if (map.HasAirfield && Inside(map.WorldToUV(map.AirfieldPosition)))
             {
@@ -142,11 +199,7 @@ namespace AirCombat
             Vector2 pos=Point(rect,new Vector2(Mathf.Clamp(uv.x,.025f,.975f),Mathf.Clamp(uv.y,.025f,.975f)));
             Vector3 heading=player.forward;
             float angle=Mathf.Atan2(heading.x,heading.z)*Mathf.Rad2Deg;
-            var matrix=GUI.matrix;
-            GUIUtility.RotateAroundPivot(angle,pos);
-            GUI.color=Cyan;
-            GUI.DrawTexture(new Rect(pos.x-11,pos.y-11,22,22),arrow);
-            GUI.matrix=matrix;
+            Rotate(Texture(new Rect(pos.x-11,pos.y-11,22,22),arrow,Cyan),pos,-angle);
             Text(new Rect(pos.x+13,pos.y-11,96,22),Inside(uv)?"YOU":"OUTSIDE",12,Cyan,true);
             Text(new Rect(rect.width-47,7,38,25),"N ↑",18,Ink,true);
         }
@@ -177,24 +230,32 @@ namespace AirCombat
         { Solid(new Rect(x,y+5,15,15),c); Text(new Rect(x+25,y,300,25),text,15,Ink); }
         private void Text(Rect r,string value,int size,Color c,bool bold=false,TextAnchor alignment=TextAnchor.MiddleLeft)
         {
-            GUI.color=Color.white; label.fontSize=size; label.fontStyle=bold?FontStyle.Bold:FontStyle.Normal;
-            label.normal.textColor=c; label.alignment=alignment; GUI.Label(r,value,label);
+            var t = CreateRect("Label: " + value,r).gameObject.AddComponent<Text>();
+            t.font = font; t.fontSize = size; t.fontStyle = bold ? FontStyle.Bold : FontStyle.Normal;
+            t.alignment = alignment; t.color = c; t.text = value;
+            t.horizontalOverflow = HorizontalWrapMode.Overflow; t.verticalOverflow = VerticalWrapMode.Overflow;
+            t.raycastTarget = false;
         }
-        private static void Solid(Rect r,Color c) { GUI.color=c; GUI.DrawTexture(r,Texture2D.whiteTexture); }
-        private static void Stroke(Vector2 a,Vector2 b,float width,Color c)
+        private void Solid(Rect r,Color c) => Texture(r,Texture2D.whiteTexture,c);
+        private static void Rotate(RectTransform t,Vector2 center,float angle)
         {
-            Matrix4x4 matrix=GUI.matrix; Vector2 d=b-a;
-            GUIUtility.RotateAroundPivot(Mathf.Atan2(d.y,d.x)*Mathf.Rad2Deg,a);
-            Solid(new Rect(a.x,a.y-width*.5f,d.magnitude,width),c); GUI.matrix=matrix;
+            t.pivot = new Vector2(.5f,.5f);
+            t.anchoredPosition = new Vector2(center.x,-center.y);
+            t.localRotation = Quaternion.Euler(0,0,angle);
         }
-        private static void Diamond(Vector2 p,float size,Color c)
+        private void Stroke(Vector2 a,Vector2 b,float width,Color c)
         {
-            var matrix=GUI.matrix; GUIUtility.RotateAroundPivot(45,p);
-            Solid(new Rect(p.x-size*.7f,p.y-size*.7f,size*1.4f,size*1.4f),c); GUI.matrix=matrix;
+            Vector2 d=b-a, mid=(a+b)*.5f;
+            Rotate(Texture(new Rect(0,0,d.magnitude,width),Texture2D.whiteTexture,c),mid,-Mathf.Atan2(d.y,d.x)*Mathf.Rad2Deg);
+        }
+        private void Diamond(Vector2 p,float size,Color c)
+        {
+            Rotate(Texture(new Rect(0,0,size*1.4f,size*1.4f),Texture2D.whiteTexture,c),p,45);
         }
         private void EnsureGraphics()
         {
-            if (label==null) label=new GUIStyle(GUI.skin.label){padding=new RectOffset(0,0,0,0)};
+            if (font==null) font=Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+            if (font==null) throw new InvalidOperationException("Tactical map font unavailable.");
             if (ring==null) ring=Mask(256,(x,y)=>{float r=Mathf.Sqrt(x*x+y*y); return r>.995f?0f:r>.97f?.85f:.19f;});
             if (arrow==null) arrow=Mask(64,(x,y)=> y>-.75f && y<.95f && Mathf.Abs(x)<(.95f-y)*.54f && y>-.28f-Mathf.Abs(x)*.62f?1f:0f);
         }
