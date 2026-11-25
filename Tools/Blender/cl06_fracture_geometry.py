@@ -72,11 +72,11 @@ def plane_cut(v,faces,angle,depth,floor,slope):
 
 # Per-stone authored cut directions, depths, slopes and wall fracture indices.
 # Different corners are chosen for different rocks, never a continuous belt.
-CUTS=[((32,23,.53),(212,13,.74)),((115,27,.61),(310,15,.66)),
-      ((-42,22,.51),(144,11,.72)),((201,14,.47),),
-      ((68,31,.52),(247,19,.59)),((155,15,.49),),
-      ((-24,12,.54),),((70,10,.63),)]
-WALLS=[(0,5,9),(1,4,8),(0,4,7),(2,6,10),(1,5,10),(0,4,7),(1,5),(0,4)]
+CUTS=[((32,43,.34),(212,34,.40)),((115,53,.41),(310,39,.30)),
+      ((-42,36,.24),(144,28,.31)),((201,23,.22),(34,18,.34)),
+      ((68,59,.39),(247,45,.34)),((155,22,.32),),
+      ((-24,17,.42),),((70,14,.48),)]
+WALLS=[(0,5),(1,4),(0,7),(2,6),(1,10),(0,7),(1,5),(0,4)]
 
 
 def fissure(v, f, max_y, depth):
@@ -86,7 +86,7 @@ def fissure(v, f, max_y, depth):
     pts=[v[i] for i in f]; low=min(pts,key=lambda p:p[1]); high=max(p[1] for p in pts)
     if high-low[1]<15: return [f]
     center=tuple(sum(p[k] for p in pts)/3 for k in range(3))
-    inner=[blend(center,p,.57) for p in pts]
+    inner=[blend(center,p,.74) for p in pts]
     # Stay below the navigation band. Shrink towards the low corner, if needed.
     top=max(p[1] for p in inner)
     if top>max_y:
@@ -95,7 +95,7 @@ def fissure(v, f, max_y, depth):
     # blend toward a point on the long diagonal at the same height.
     hi=max(pts,key=lambda p:p[1])
     for i,p in enumerate(inner):
-        spine=blend(low,hi,(p[1]-low[1])/(hi[1]-low[1])); inner[i]=blend(p,spine,.22)
+        spine=blend(low,hi,(p[1]-low[1])/(hi[1]-low[1])); inner[i]=blend(p,spine,.08)
     n=norm(v,f); horiz=sqrt(n[0]*n[0]+n[2]*n[2]); assert horiz>.8
     mid=tuple(sum(p[k] for p in inner)/3 for k in range(3))
     tip=(mid[0]-n[0]/horiz*depth,mid[1],mid[2]-n[2]/horiz*depth)
@@ -113,7 +113,7 @@ def fracture(v,faces,index):
     selected={2*i+(j%2) for j,i in enumerate(WALLS[index]) if i<n}
     for i,f in enumerate(faces):
         if i in selected and abs(norm(v,f)[1])<.25:
-            out.extend(fissure(v,f, min(68,max(p[1] for p in v[:3*n])*.65), (5.5,6.5,4.8,5.0,5.8,4.4,3,2.7)[index]))
+            out.extend(fissure(v,f, min(68,max(p[1] for p in v[:3*n])*.65), (12.5,14.5,11.5,12.0,13.5,8.5,4.5,4.0)[index]))
         else: out.append(f)
     # A..E: cut only above all known local cruise slice heights (75..93).
     # F is unused by the dense recipe; protect Y78 for future unit-scale use.
