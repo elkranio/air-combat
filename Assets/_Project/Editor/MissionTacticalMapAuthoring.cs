@@ -46,9 +46,9 @@ namespace AirCombat
                     var missile = root.GetComponent<SurfaceToAirMissile>();
                     if (missile == null) throw new InvalidOperationException("SAM1Missile component missing.");
                     var p = new SerializedObject(missile);
-                    p.FindProperty("speed").floatValue = 115f;
-                    p.FindProperty("turnRate").floatValue = 90f;
-                    p.FindProperty("totalTurnBudget").floatValue = 120f;
+                    p.FindProperty("speed").floatValue = 125f;
+                    p.FindProperty("turnRate").floatValue = 100f;
+                    p.FindProperty("totalTurnBudget").floatValue = 140f;
                     p.FindProperty("lifetime").floatValue = 6.5f;
                     p.FindProperty("hitRadius").floatValue = 3.5f;
                     p.FindProperty("damage").intValue = 4;
@@ -106,7 +106,7 @@ namespace AirCombat
                     if (projectile.objectReferenceValue == null)
                     {
                         settings.FindProperty("lockSeconds").floatValue=2f;
-                        settings.FindProperty("reloadSeconds").floatValue=9f;
+                        settings.FindProperty("reloadSeconds").floatValue=5f;
                         projectile.objectReferenceValue=missileProfile;
                     }
                     if (socket.objectReferenceValue == null)

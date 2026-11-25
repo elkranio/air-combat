@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace AirCombat
@@ -21,6 +22,7 @@ namespace AirCombat
         private PlayerHitPoints hitPoints;
         private AircraftRadar radar;
         private SurfaceToAirMissile missile;
+        private readonly List<SurfaceToAirMissile> ownedMissiles = new List<SurfaceToAirMissile>();
         private AudioSource warningAudio;
         private AudioClip warningClip;
         private float lockProgress;
@@ -40,7 +42,15 @@ namespace AirCombat
         public bool IsDown => hp <= 0;
         public int LaunchedCount { get; private set; }
         public string LastFlightReport { get; private set; } = "NO LAUNCH";
-        public bool HasIncomingMissile => missile != null && missile.IsFlying;
+        public bool HasIncomingMissile
+        {
+            get
+            {
+                foreach (var shot in ownedMissiles)
+                    if (shot != null && shot.IsFlying) return true;
+                return false;
+            }
+        }
         public float LockProgress01 => Mathf.Clamp01(lockProgress / Mathf.Max(.1f, lockSeconds));
         public float ReloadLeft => Mathf.Max(0f, nextLaunchAt - Time.time);
         public string StatusLabel
@@ -48,7 +58,7 @@ namespace AirCombat
             get
             {
                 if (IsDown) return "DESTROYED";
-                if (HasIncomingMissile) return "LAUNCHED / " + missile.PhaseLabel;
+                if (!missionMode && HasIncomingMissile) return "LAUNCHED / " + missile.PhaseLabel;
                 if (missilePrefab == null || launchSocket == null) return "UNCONFIGURED";
                 if (target == null || hitPoints == null || !hitPoints.IsAlive) return "NO TARGET";
                 Vector3 flat = target.position - transform.position;
@@ -117,12 +127,16 @@ namespace AirCombat
 
         public void ResetEncounter()
         {
+            // All overlapping shots belong to this encounter, not just the latest.
             // Disable immediately: Destroy alone is deferred until end of frame.
-            if (missile != null)
+            foreach (var shot in ownedMissiles)
             {
-                missile.gameObject.SetActive(false);
-                Destroy(missile.gameObject);
+                if (shot == null) continue;
+                radar?.Unregister(shot);
+                shot.gameObject.SetActive(false);
+                Destroy(shot.gameObject);
             }
+            ownedMissiles.Clear();
             missile = null;
             hp = maxHp;
             lockProgress = 0f;
@@ -139,9 +153,11 @@ namespace AirCombat
         private void LateUpdate()
         {
             if (Time.deltaTime <= 0f) return;
+            ownedMissiles.RemoveAll(shot => shot == null || !shot.IsFlying);
             if (missionMode && !missionArmed) { ClearAcquisition(); return; }
             if (!missionMode) PlayLaunchSignal();
-            if (HasIncomingMissile)
+            // Picket fires independently of previous shots; preserve the old lab rule.
+            if (!missionMode && HasIncomingMissile)
             {
                 ClearAcquisition();
                 return;
@@ -160,7 +176,10 @@ namespace AirCombat
                 return;
             }
 
-            if (Time.time < nextLaunchAt)
+            // Mission reload is the minimum launch-to-launch interval. Acquisition
+            // may overlap its tail, but neither launch nor warning can occur early.
+            float acquisitionWindow = missionMode ? Mathf.Max(lockSeconds, Mathf.Max(.5f, prelaunchWarningSeconds)) : 0f;
+            if (Time.time < nextLaunchAt - acquisitionWindow)
             {
                 ClearAcquisition();
                 return;
@@ -170,14 +189,15 @@ namespace AirCombat
             {
                 // Silent acquisition, then a cancelable pre-launch cue.
                 float lead = Mathf.Max(.5f, prelaunchWarningSeconds);
-                if (missionWarningStarted < 0f && lockProgress >= Mathf.Max(0f, lockSeconds - lead))
+                if (missionWarningStarted < 0f && Time.time >= nextLaunchAt - lead &&
+                    lockProgress >= Mathf.Max(0f, lockSeconds - lead))
                 {
                     missionWarningStarted = Time.time;
                     launchBeepsRemaining = 3;
                     nextLaunchBeepAt = Time.time;
                 }
                 if (missionWarningStarted >= 0f) PlayLaunchSignal();
-                if (lockProgress < lockSeconds || missionWarningStarted < 0f ||
+                if (Time.time < nextLaunchAt || lockProgress < lockSeconds || missionWarningStarted < 0f ||
                     Time.time - missionWarningStarted < lead || launchBeepsRemaining > 0) return;
             }
             else if (lockProgress < lockSeconds)
@@ -193,6 +213,7 @@ namespace AirCombat
             Vector3 launchPosition = launchSocket.position;
             missile = Instantiate(missilePrefab, launchPosition,
                 Quaternion.LookRotation(Vector3.up, Vector3.forward));
+            ownedMissiles.Add(missile);
             missile.Launch(target, hitPoints, radar, transform, OnMissileFinished);
             // The mission already played its three pre-launch beeps.
             if (!missionMode)

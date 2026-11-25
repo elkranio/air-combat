@@ -12479,7 +12479,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::AirCombat.SurfaceToAirLauncher
   engagementRange: 460
   lockSeconds: 2
-  reloadSeconds: 9
+  reloadSeconds: 5
   maxHp: 6
   launchSocket: {fileID: 702136630}
   missilePrefab: {fileID: 1779592964779880733, guid: d10f88d96b7721c4aa0b97e99032c38d, type: 3}
@@ -19973,7 +19973,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::AirCombat.SurfaceToAirLauncher
   engagementRange: 430
   lockSeconds: 2
-  reloadSeconds: 9
+  reloadSeconds: 5
   maxHp: 6
   launchSocket: {fileID: 1937331881}
   missilePrefab: {fileID: 1779592964779880733, guid: d10f88d96b7721c4aa0b97e99032c38d, type: 3}
@@ -20714,7 +20714,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::AirCombat.SurfaceToAirLauncher
   engagementRange: 430
   lockSeconds: 2
-  reloadSeconds: 9
+  reloadSeconds: 5
   maxHp: 6
   launchSocket: {fileID: 278925427}
   missilePrefab: {fileID: 1779592964779880733, guid: d10f88d96b7721c4aa0b97e99032c38d, type: 3}
@@ -31159,7 +31159,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::AirCombat.SurfaceToAirLauncher
   engagementRange: 430
   lockSeconds: 2
-  reloadSeconds: 9
+  reloadSeconds: 5
   maxHp: 6
   launchSocket: {fileID: 390231311}
   missilePrefab: {fileID: 1779592964779880733, guid: d10f88d96b7721c4aa0b97e99032c38d, type: 3}
@@ -31257,7 +31257,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::AirCombat.SurfaceToAirLauncher
   engagementRange: 470
   lockSeconds: 2
-  reloadSeconds: 9
+  reloadSeconds: 5
   maxHp: 6
   launchSocket: {fileID: 1998038989}
   missilePrefab: {fileID: 1779592964779880733, guid: d10f88d96b7721c4aa0b97e99032c38d, type: 3}
@@ -36472,7 +36472,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::AirCombat.SurfaceToAirLauncher
   engagementRange: 440
   lockSeconds: 2
-  reloadSeconds: 9
+  reloadSeconds: 5
   maxHp: 6
   launchSocket: {fileID: 736538823}
   missilePrefab: {fileID: 1779592964779880733, guid: d10f88d96b7721c4aa0b97e99032c38d, type: 3}
