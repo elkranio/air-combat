@@ -17,6 +17,13 @@ namespace AirCombat
             new Color32(160,161,124,255), new Color32(184,59,50,255)
         };
 
+        private static readonly Color32[] IndustrialEmpire = {
+            new Color32(102,107,104,255), new Color32(73,78,77,255),
+            new Color32(41,45,48,255), new Color32(30,32,33,255),
+            new Color32(35,48,54,255), new Color32(194,197,186,255),
+            new Color32(174,181,177,255), new Color32(184,48,43,255)
+        };
+
         [MenuItem("Air Combat/Art/Create SAM01 Picket Preview")]
         private static void Create()
         {
@@ -27,7 +34,12 @@ namespace AirCombat
         }
 
         [MenuItem("Air Combat/Art/Apply SAM01 Imperial Olive")]
-        private static void ApplyImperialOlive()
+        private static void ApplyImperialOlive() => ApplyPalette(ImperialOlive, "Imperial Olive (A)");
+
+        [MenuItem("Air Combat/Art/Apply SAM01 Industrial Empire")]
+        private static void ApplyIndustrialEmpire() => ApplyPalette(IndustrialEmpire, "Industrial Empire (B)");
+
+        private static void ApplyPalette(Color32[] palette, string paletteName)
         {
             if (EditorApplication.isPlayingOrWillChangePlaymode) return;
             var shader = Shader.Find("Universal Render Pipeline/Lit");
@@ -63,7 +75,7 @@ namespace AirCombat
                         mat = new Material(shader) { name = "SAM01_" + Parts[i] };
                         AssetDatabase.CreateAsset(mat, materialPath);
                     }
-                    mat.SetColor("_BaseColor", ImperialOlive[i]);
+                    mat.SetColor("_BaseColor", palette[i]);
                     mat.SetFloat("_Metallic", 0f);
                     mat.SetFloat("_Smoothness", 0f);
                     mat.SetFloat("_SpecularHighlights", 0f);
@@ -96,7 +108,7 @@ namespace AirCombat
                 AssetDatabase.SaveAssets();
                 Selection.activeObject = prefab;
                 EditorGUIUtility.PingObject(prefab);
-                Debug.Log("SAM01: Imperial Olive applied. Existing scene instances use updated prefab unless overridden. No scene edits.");
+                Debug.Log($"SAM01: {paletteName} applied. Existing scene instances use updated prefab unless overridden. No scene edits.");
             }
             catch (Exception ex) { Debug.LogError("SAM01: " + ex); }
             finally
