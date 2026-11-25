@@ -183,22 +183,26 @@ namespace AirCombat
                 center - heading * 5f + right * 4.2f, new Color(.68f, 1f, .94f, .98f));
         }
 
-        private void GetDisplayAxes(out Vector2 right, out Vector2 up)
+        private void GetDisplayAxes(out Vector2 right, out Vector2 up) =>
+            GetDisplayAxes(presentationCamera, out right, out up);
+
+        // Shared with TacticalMapView; keep both instruments in the same axes.
+        internal static void GetDisplayAxes(Camera camera, out Vector2 right, out Vector2 up)
         {
             right = Vector2.right;
             up = Vector2.up;
-            if (presentationCamera == null) return; // Other labs stay north-up.
+            if (camera == null) return; // Other labs stay north-up.
 
             // Project the actual camera screen axes onto the horizontal X/Z
             // plane; normalize away pitch foreshortening for a readable 2D radar.
             // No guesswork about heading lock, smoothing or fixed yaw offset.
-            Vector3 cameraRight = presentationCamera.transform.right;
-            Vector3 cameraUp = presentationCamera.transform.up;
+            Vector3 cameraRight = camera.transform.right;
+            Vector3 cameraUp = camera.transform.up;
             right = new Vector2(cameraRight.x, cameraRight.z).normalized;
             up = new Vector2(cameraUp.x, cameraUp.z).normalized;
         }
 
-        private static Vector2 RelativeOnDisplay(Vector2 offset, Vector2 right, Vector2 up)
+        internal static Vector2 RelativeOnDisplay(Vector2 offset, Vector2 right, Vector2 up)
         {
             return new Vector2(Vector2.Dot(offset, right), Vector2.Dot(offset, up));
         }

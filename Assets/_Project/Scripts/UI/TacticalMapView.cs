@@ -32,6 +32,10 @@ namespace AirCombat
         private RectTransform frame, drawParent;
         private Font font;
         private int screenWidth, screenHeight;
+        // A snapshot of the same ground-plane axes as the combat radar.
+        private Vector2 mapRight, mapUp;
+        private float mapScale;
+        private bool cameraUp;
         private static readonly Color Ink = new Color(.80f,.89f,.87f);
         private static readonly Color Muted = new Color(.53f,.66f,.65f);
         private static readonly Color Cyan = new Color(.48f,.92f,.94f);
@@ -50,38 +54,11 @@ namespace AirCombat
         }
 #endif
         private string buildStage = "not started";
-        private bool reportCanvas;
-        private void OnEnable()
-        {
-            Debug.Log("[MAP DEBUG] Enabled: " + gameObject.name + " | " + DescribeState(), this);
-        }
-        private string DescribeState()
-        {
-            return $"focus={Application.isFocused}, keyboard={Keyboard.current != null}, " +
-                $"map={map != null}, texture={map != null && map.Geography != null}, " +
-                $"bounds={(map != null ? map.WorldBounds.ToString() : "none")}, player={player != null}, " +
-                $"timeScale={Time.timeScale}, owner={(active == null ? "none" : active.gameObject.name)}";
-        }
         private void Update()
         {
             var keys = Keyboard.current;
-            if (reportCanvas)
+            if (Application.isFocused && keys != null && keys.tabKey.wasPressedThisFrame)
             {
-                reportCanvas = false;
-                if (canvas != null && frame != null)
-                    Debug.Log($"[MAP DEBUG] Next frame: canvasEnabled={canvas.isActiveAndEnabled}, " +
-                        $"display={canvas.targetDisplay}, pixelRect={canvas.pixelRect}, " +
-                        $"frame={frame.rect}, scale={frame.localScale}, screen={Screen.width}x{Screen.height}, " +
-                        $"graphics={canvas.GetComponentsInChildren<Graphic>(true).Length}", this);
-            }
-            if (keys != null && keys.tabKey.wasPressedThisFrame)
-            {
-                Debug.Log("[MAP DEBUG] Tab received | " + DescribeState(), this);
-                if (!Application.isFocused)
-                {
-                    Debug.LogWarning("[MAP DEBUG] Tab rejected: application not focused.", this);
-                    return;
-                }
                 if (IsOpen) Close(); else TryOpen();
                 return;
             }
@@ -89,29 +66,21 @@ namespace AirCombat
             { Close(); return; }
             if (IsOpen) FitFrame();
         }
-        [ContextMenu("DEBUG / Toggle map (Play Mode)")]
-        private void DebugToggle()
-        {
-            if (!Application.isPlaying || !isActiveAndEnabled)
-            { Debug.LogWarning("[MAP DEBUG] Use an enabled component in Play Mode.", this); return; }
-            Debug.Log("[MAP DEBUG] Forced toggle | " + DescribeState(), this);
-            if (IsOpen) Close(); else TryOpen();
-        }
         private void TryOpen()
         {
-            if (!HasMap || active != null || Time.timeScale <= 0f)
+            if (!HasMap)
             {
-                Debug.LogWarning("[MAP DEBUG] Open rejected | " + DescribeState(), this);
+                Debug.LogWarning("Tactical map: missing geography or player reference.", this);
                 return;
             }
+            if (active != null || Time.timeScale <= 0f) return;
             try
             {
                 BuildCanvas();
-                Debug.Log("[MAP DEBUG] Canvas built successfully", this);
             }
             catch (Exception ex)
             {
-                Debug.LogError("[MAP DEBUG] Build failed at " + buildStage + ": " + ex, this);
+                Debug.LogError("Tactical map: build failed at " + buildStage + ": " + ex, this);
                 DisposeCanvas();
                 return;
             }
@@ -120,14 +89,10 @@ namespace AirCombat
             active = this;
             Time.timeScale = 0f;
             AudioListener.pause = true;
-            reportCanvas = true;
-            Debug.Log("[MAP DEBUG] Open complete; paused", this);
         }
         private void Close()
         {
             if (!IsOpen) return;
-            Debug.Log("[MAP DEBUG] Closing map", this);
-            reportCanvas = false;
             active = null;
             Time.timeScale = previousTimeScale;
             AudioListener.pause = previousAudioPause;
@@ -155,7 +120,6 @@ namespace AirCombat
             DisposeCanvas();
             buildStage = "font and textures";
             EnsureGraphics();
-            Debug.Log("[MAP DEBUG] Font and textures ready", this);
             buildStage = "canvas root";
             var go = new GameObject("Tactical Map Canvas", typeof(RectTransform), typeof(Canvas));
             canvas = go.GetComponent<Canvas>();
@@ -183,19 +147,16 @@ namespace AirCombat
             Text(new Rect(855,25,237,28), "TACTICAL MAP  /  PAUSED", 15, Cyan, false, TextAnchor.MiddleRight);
             Solid(new Rect(28,66,1064,1), new Color(.25f,.38f,.39f));
             Rect area = new Rect(28,88,660,620);
-            float ratio = map.WorldBounds.width/map.WorldBounds.height;
-            float w = Mathf.Min(area.width,area.height*ratio), h = w/ratio;
-            Rect panel = new Rect(area.center.x-w*.5f,area.center.y-h*.5f,w,h);
-            Solid(new Rect(panel.x-2,panel.y-2,panel.width+4,panel.height+4), new Color(.31f,.46f,.46f));
             buildStage = "geography and markers";
-            drawParent = CreateRect("Geography and markers", panel);
-            drawParent.gameObject.AddComponent<RectMask2D>();
-            Texture(new Rect(0,0,w,h),map.Geography,Color.white);
-            DrawMap(new Rect(0,0,w,h));
+            var panel = CreateRect("Geography and markers", area);
+            panel.gameObject.AddComponent<RectMask2D>();
+            drawParent = panel;
+            DrawGeography(new Rect(0,0,area.width,area.height));
+            DrawMap(new Rect(0,0,area.width,area.height));
             drawParent = frame;
             buildStage = "mission data and footer";
             DrawMissionData(new Rect(718,90,374,618));
-            Text(new Rect(28,721,660,26), "NORTH UP   /   CRUISE Y"+map.SectionAltitude.ToString("0")+"   /   "+map.WorldBounds.width.ToString("0")+" × "+map.WorldBounds.height.ToString("0"), 14, Muted);
+            Text(new Rect(28,721,660,26), (cameraUp ? "CAMERA UP" : "NORTH UP")+"   /   CRUISE Y"+map.SectionAltitude.ToString("0")+"   /   "+map.WorldBounds.width.ToString("0")+" × "+map.WorldBounds.height.ToString("0"), 14, Muted);
             Text(new Rect(718,721,374,26), "[ TAB ] CLOSE MAP", 18, Cyan, true, TextAnchor.MiddleRight);
         }
         private void FitFrame()
@@ -224,23 +185,74 @@ namespace AirCombat
             return t;
         }
 
-        private Vector2 Point(Rect rect, Vector2 uv) => new Vector2(rect.x+uv.x*rect.width,rect.y+(1-uv.y)*rect.height);
+        // Read the current mission camera, not a hard-coded yaw or aircraft heading.
+        private Camera ResolveCamera()
+        {
+            foreach (var root in gameObject.scene.GetRootGameObjects())
+                foreach (var rig in root.GetComponentsInChildren<ArcadeCameraFollow>())
+                {
+                    var camera = rig.GetComponent<Camera>();
+                    if (rig.isActiveAndEnabled && camera != null && camera.isActiveAndEnabled)
+                        return camera;
+                }
+            return null; // Non-oblique scenes stay north-up, like the radar.
+        }
+        private Vector2 Display(Vector2 xz) => RadarHud.RelativeOnDisplay(xz,mapRight,mapUp);
+        private Vector2 Point(Rect rect, Vector2 uv)
+        {
+            Vector2 d = Display(Vector2.Scale(uv-new Vector2(.5f,.5f),map.WorldBounds.size))*mapScale;
+            return rect.center + new Vector2(d.x,-d.y);
+        }
         private Vector2 Point(Rect rect, Transform t) => Point(rect,map.WorldToUV(t.position));
         private static bool Inside(Vector2 uv) => uv.x >= 0f && uv.x <= 1f && uv.y >= 0f && uv.y <= 1f;
-        private void DrawMap(Rect rect)
+
+        private void DrawGeography(Rect area)
         {
+            Camera camera = ResolveCamera();
+            cameraUp = camera != null;
+            RadarHud.GetDisplayAxes(camera,out mapRight,out mapUp);
+            Vector2 world = map.WorldBounds.size;
+            // Fixed-yaw, unrolled camera: fit the entire rotated rectangle,
+            // preserving world scale in both axes (including non-square maps).
+            float spanX = Mathf.Abs(mapRight.x)*world.x + Mathf.Abs(mapRight.y)*world.y;
+            float spanY = Mathf.Abs(mapUp.x)*world.x + Mathf.Abs(mapUp.y)*world.y;
+            mapScale = Mathf.Min((area.width-16)/spanX,(area.height-16)/spanY);
+            float w=world.x*mapScale, h=world.y*mapScale;
+            var panel=drawParent;
+            var layer=CreateRect("Rotated static geography and coverage",new Rect(0,0,w,h));
+            Vector2 east=Display(Vector2.right);
+            Rotate(layer,area.center,Mathf.Atan2(east.y,east.x)*Mathf.Rad2Deg);
+            drawParent=layer;
+            Solid(new Rect(-2,-2,w+4,h+4),new Color(.31f,.46f,.46f));
+            Texture(new Rect(0,0,w,h),map.Geography,Color.white);
             if (plannedSam != null) foreach (var sam in plannedSam)
             {
                 if (sam.site == null || sam.radius <= 0f) continue;
-                Vector2 p = Point(rect,sam.site);
-                float rx = sam.radius/map.WorldBounds.width*rect.width;
-                float ry = sam.radius/map.WorldBounds.height*rect.height;
-                Texture(new Rect(p.x-rx,p.y-ry,rx*2,ry*2),ring,Red);
+                Vector2 uv=map.WorldToUV(sam.site.position);
+                Vector2 p=new Vector2(uv.x*w,(1-uv.y)*h);
+                float r=sam.radius*mapScale;
+                DrawClippedRing(new Rect(p.x-r,p.y-r,r*2,r*2),w,h);
             }
+            drawParent=panel;
+        }
+        // Crop in original map coordinates before rotating the layer. Unlike
+        // a screen-aligned RectMask, this clips to the actual mission boundary.
+        private void DrawClippedRing(Rect full,float w,float h)
+        {
+            float x0=Mathf.Max(0,full.xMin), x1=Mathf.Min(w,full.xMax);
+            float y0=Mathf.Max(0,full.yMin), y1=Mathf.Min(h,full.yMax);
+            if (x1<=x0 || y1<=y0) return;
+            var clipped=Rect.MinMaxRect(x0,y0,x1,y1);
+            var graphic=Texture(clipped,ring,Red).GetComponent<RawImage>();
+            graphic.uvRect=new Rect((x0-full.xMin)/full.width,(full.yMax-y1)/full.height,
+                clipped.width/full.width,clipped.height/full.height);
+        }
+        private void DrawMap(Rect rect)
+        {
             if (map.HasAirfield && Inside(map.WorldToUV(map.AirfieldPosition)))
             {
                 Vector2 p = Point(rect,map.WorldToUV(map.AirfieldPosition));
-                Vector2 f = map.AirfieldForward.normalized;
+                Vector2 f = Display(map.AirfieldForward).normalized;
                 Stroke(p-new Vector2(f.x,-f.y)*12,p+new Vector2(f.x,-f.y)*12,5,Cyan);
                 Text(new Rect(p.x+12,p.y-10,96,20),"AIRFIELD",12,Ink,true);
             }
@@ -257,10 +269,15 @@ namespace AirCombat
             Vector2 uv=map.WorldToUV(player.position);
             Vector2 pos=Point(rect,new Vector2(Mathf.Clamp(uv.x,.025f,.975f),Mathf.Clamp(uv.y,.025f,.975f)));
             Vector3 heading=player.forward;
-            float angle=Mathf.Atan2(heading.x,heading.z)*Mathf.Rad2Deg;
+            Vector2 projected=Display(new Vector2(heading.x,heading.z));
+            float angle=Mathf.Atan2(projected.x,projected.y)*Mathf.Rad2Deg;
             Rotate(Texture(new Rect(pos.x-11,pos.y-11,22,22),arrow,Cyan),pos,-angle);
             Text(new Rect(pos.x+13,pos.y-11,96,22),Inside(uv)?"YOU":"OUTSIDE",12,Cyan,true);
-            Text(new Rect(rect.width-47,7,38,25),"N ↑",18,Ink,true);
+            Vector2 north=Display(Vector2.up);
+            Vector2 compass=new Vector2(rect.width-35,27);
+            Rotate(Texture(new Rect(0,0,19,19),arrow,Ink),compass,
+                -Mathf.Atan2(north.x,north.y)*Mathf.Rad2Deg);
+            Text(new Rect(compass.x-10,compass.y+12,20,20),"N",14,Ink,true,TextAnchor.MiddleCenter);
         }
         private void DrawMissionData(Rect rect)
         {
