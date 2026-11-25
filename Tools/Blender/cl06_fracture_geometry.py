@@ -106,6 +106,50 @@ def fissure(v, f, max_y, depth):
     return out
 
 
+# CL06G: bring the crest heights of the five wall stones into the same
+# narrow band. Split triangles at the protected height before remapping;
+# simply moving their upper vertices would also move cruise-level sections.
+PLATEAU_BASE = 96.5
+PLATEAU_CRESTS = (115.0, 117.0, 114.0, 112.0, 118.0)
+
+
+def level_plateau(v, faces, index):
+    if index >= len(PLATEAU_CRESTS):
+        return v, faces  # keep shoulder and the two debris meshes untouched
+    base = PLATEAU_BASE
+    factor = (PLATEAU_CRESTS[index]-base)/(max(p[1] for p in v)-base)
+    # Plane-cut vertices can be within roundoff of the hinge. Classify
+    # them consistently and reuse them, rather than emitting sliver faces.
+    vv = [(x,base if abs(y-base)<1e-8 else y,z) for x,y,z in v]
+    heights = [p[1]-base for p in vv]
+    hits = {}
+    out = []
+
+    def hit(a,b):
+        if heights[a]==0: return a
+        if heights[b]==0: return b
+        key = tuple(sorted((a,b)))
+        if key not in hits:
+            x,_,z = blend(vv[a],vv[b],heights[a]/(heights[a]-heights[b]))
+            hits[key] = len(vv)
+            vv.append((x,base,z))
+        return hits[key]
+
+    for face in faces:
+        if min(heights[i] for i in face)>=0 or max(heights[i] for i in face)<=0:
+            out.append(face)
+            continue
+        for side in (-1,1):
+            poly = []
+            for a,b in zip(face,face[1:]+face[:1]):
+                if heights[a]*side>=0: poly.append(a)
+                if heights[a]*heights[b]<0: poly.append(hit(a,b))
+            for j in range(1,len(poly)-1):
+                out.append((poly[0],poly[j],poly[j+1]))
+    vv = [(x,base+(y-base)*factor if y>base else y,z) for x,y,z in vv]
+    return vv,out
+
+
 def fracture(v,faces,index):
     v=v[:]; n=(len(v)-2)//3; out=[]
     # First ring of wall triangles only; use alternating sides of each wall,
@@ -119,6 +163,7 @@ def fracture(v,faces,index):
     # F is unused by the dense recipe; protect Y78 for future unit-scale use.
     floor=96.5 if index<5 else 79.0 if index==5 else 15.0
     for angle,depth,slope in CUTS[index]: v,out=plane_cut(v,out,angle,depth,floor,slope)
+    v,out=level_plateau(v,out,index)
     edges=Counter((a,b) for f in out for a,b in zip(f,f[1:]+f[:1]))
     assert all(count==1 and edges[b,a]==1 for (a,b),count in edges.items())
     for f in out: norm(v,f)
