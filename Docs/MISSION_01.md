@@ -104,6 +104,10 @@ Base `768901f`. Open Mission01_FirstSortie and select **Air Combat > Missions > 
 
 Base `b005aca`. With the saved E scene open, press Play; no installer or new scene objects. W starts a scripted takeoff: 2.2 s linear acceleration to the existing cruise speed, 2.5 s smooth climb to Y78, visual-only nose pitch up to 18 degrees, and straight afterburner plumes throughout without consuming the combat boost tank. The existing camera follows the player. At handover the visual returns to its rest rotation and the flight motor is re-seeded at cruise speed; normal WASD resumes, and W must be released before a new boost if held through handover. Weapons remain disabled. R returns to the runway Ready state (including a full boost tank) from any phase. Tuning is on Mission01LaunchSequence in the Inspector. No change to the shared flight tuning or other scenes; verify in Unity.
 
+## MISSION-01G — Combat HUD and cannon-only loadout (WIP)
+
+Base `d578593`. Open the saved mission scene and run **Air Combat > Missions > Install Mission 01 Combat HUD**. Reuse `CombatHUD.prefab`, bind via E1MapFlightSession with no test encounter or radar contacts. The launch sequence explicitly selects dual slots with the authored autocannon as primary and no secondary. After handover, show the existing HP/BOOST bar, both weapon slots (LMB cannon, RMB EMPTY), radar and existing target-marker presentation; enable firing only in Flight. R disables the HUD and firing and restores health/boost at the runway. Save and commit the scene. No changes to shared HUD, flight, weapons, radar or prefabs. The decorative SAM trial remains a non-contact. Verify locally.
+
 ## Next work (order flexible, all WIP)
 
 Current visual trial: [ART-CT-01 — Compact control tower](ART_CT_01.md).

@@ -13,6 +13,7 @@ namespace AirCombat
         [SerializeField] private FlightController flight;
         [SerializeField] private PlayerWeaponTrigger weaponTrigger;
         [SerializeField] private bool skipIntro = true;
+        [SerializeField] private CombatHud missionHud;
 
         [Header("Automatic takeoff (WIP)")]
         [SerializeField, Min(.1f)] private float rollSeconds = 2.2f;
@@ -38,6 +39,8 @@ namespace AirCombat
             flight = controller;
             weaponTrigger = trigger;
         }
+
+        public void ConfigureHudForAuthoring(CombatHud hud) { missionHud = hud; }
 #endif
 
         private void Awake()
@@ -69,6 +72,12 @@ namespace AirCombat
 
         private void Start()
         {
+            if (missionHud != null)
+            {
+                // Explicit cannon-only loadout. The empty secondary uses the existing HUD label.
+                weaponTrigger.ConfigureDualSlots(null);
+                missionHud.gameObject.SetActive(false);
+            }
             if (skipIntro) CompleteIntro();
         }
 
@@ -134,7 +143,12 @@ namespace AirCombat
             State = Phase.Flight;
             flight.enabled = true;
             Debug.Log($"Mission01: flight handover at Y{aircraft.position.y:F1}, speed {flight.CurrentSpeed:F1}.", this);
-            // Weapons stay disabled until the mission loadout/objective atom.
+            // The mission HUD opt-in also equips the cannon-only loadout.
+            if (missionHud != null)
+            {
+                weaponTrigger.enabled = true;
+                missionHud.gameObject.SetActive(true);
+            }
         }
 
         private void ResetToReady()
@@ -144,6 +158,11 @@ namespace AirCombat
             flight.enabled = false;
             weaponTrigger.enabled = false;
             flames.SetManeuverFlames(false);
+            if (missionHud != null)
+            {
+                missionHud.gameObject.SetActive(false);
+                aircraft.GetComponent<PlayerHitPoints>()?.ResetHealth();
+            }
             // A repeat sortie starts with a full tank, as a fresh mission does.
             boost.enabled = false;
             boost.enabled = true;
