@@ -36,10 +36,8 @@ namespace AirCombat
         private float remainingTurn;
         private bool flying;
         private System.Action<string> onFinished;
-        // Optional Picket render-only handoff; gameplay root remains unchanged.
-        private Transform railVisual;
-        private Vector3 railStart, railEnd, railDirection, railRight;
-        private float railBlendSeconds;
+        // Picket uses the authored rail pose instead of a vertical ejection.
+        private bool railLaunch;
         private static readonly RaycastHit[] HitBuffer = new RaycastHit[24];
         private static int lastPhysicsSyncFrame = -1;
 
@@ -70,6 +68,7 @@ namespace AirCombat
             previousTargetPosition = target != null ? target.position : transform.position;
             remainingTurn = totalTurnBudget;
             age = phaseElapsed = 0f;
+            railLaunch = false;
             phase = FlightPhase.Vertical;
             transform.rotation = Quaternion.LookRotation(Vector3.up, Vector3.forward);
             flying = true;
@@ -77,23 +76,22 @@ namespace AirCombat
             radar?.Register(this); // Only hostile missiles, not player's ordnance.
         }
 
-        // The display mesh is shared with the loaded rail prop. Only its renderer
-        // and trail are replaced; no physics, radar or pursuit settings change.
+        // The display mesh is shared with the loaded rail prop. Start the game
+        // projectile at that same pose and enter the existing pitch-over phase.
         internal bool AttachRailVisual(Transform source, Vector3 center, Quaternion rotation, float tailLength)
         {
             var filter = source.GetComponent<MeshFilter>();
             var renderer = source.GetComponent<MeshRenderer>();
             if (filter == null || filter.sharedMesh == null || renderer == null) return false;
-            railBlendSeconds = Mathf.Min(.28f, verticalSeconds * .85f);
-            if (railBlendSeconds <= .001f) return false;
-            railStart = center;
-            railDirection = rotation * Vector3.forward;
-            railRight = rotation * Vector3.right;
-            railEnd = transform.position + transform.forward * speed * railBlendSeconds;
+            railLaunch = true;
+            phase = FlightPhase.PitchOver;
+            phaseElapsed = 0f;
+            transform.SetPositionAndRotation(center, rotation);
             foreach (var old in GetComponentsInChildren<MeshRenderer>(true)) old.enabled = false;
-            railVisual = new GameObject("Picket flight visual").transform;
+            var railVisual = new GameObject("Picket flight visual").transform;
             railVisual.SetParent(transform, false);
-            railVisual.SetPositionAndRotation(center, rotation);
+            railVisual.localPosition = Vector3.zero;
+            railVisual.localRotation = Quaternion.identity;
             var mesh = new GameObject("Rail rocket", typeof(MeshFilter), typeof(MeshRenderer));
             mesh.transform.SetParent(railVisual, false);
             mesh.transform.SetPositionAndRotation(source.position, source.rotation);
@@ -111,26 +109,6 @@ namespace AirCombat
                 exhaust.Clear();
             }
             return true;
-        }
-
-        private void UpdateRailVisual()
-        {
-            if (railVisual == null) return;
-            if (age >= railBlendSeconds)
-            {
-                railVisual.localPosition = Vector3.zero;
-                railVisual.localRotation = Quaternion.identity;
-                return;
-            }
-            float t = Mathf.Clamp01(age / railBlendSeconds), v = 1f - t;
-            float handle = speed * railBlendSeconds / 3f;
-            Vector3 p1 = railStart + railDirection * handle;
-            Vector3 p2 = railEnd - Vector3.up * handle;
-            Vector3 p = v*v*v*railStart + 3f*v*v*t*p1 + 3f*v*t*t*p2 + t*t*t*railEnd;
-            Vector3 tangent = v*v*(p1-railStart) + 2f*v*t*(p2-p1) + t*t*(railEnd-p2);
-            Quaternion heading = Quaternion.LookRotation(tangent, Vector3.Cross(tangent, railRight));
-            heading = Quaternion.Slerp(heading, transform.rotation, Mathf.SmoothStep(0f, 1f, t));
-            railVisual.SetPositionAndRotation(p, heading);
         }
 
         private void LateUpdate()
@@ -207,10 +185,9 @@ namespace AirCombat
             float obstacleAt = float.PositiveInfinity;
             Vector3 obstaclePoint = default;
             string obstacleName = null;
-            // The first vertical ejection is a cold launch: collision isn't armed
-            // until the rocket clears the fixed silo. This prevents accidental
-            // launch-frame impacts on surrounding level geometry.
-            if (travel > .0001f && age >= verticalSeconds)
+            // Legacy cold launch keeps its grace period. Picket starts at the
+            // rail and ignores only its own launcher through the filter below.
+            if (travel > .0001f && (railLaunch || age >= verticalSeconds))
             {
                 int count = Physics.RaycastNonAlloc(from, (to - from) / travel,
                     HitBuffer, travel, ~0, QueryTriggerInteraction.Ignore);
@@ -253,7 +230,6 @@ namespace AirCombat
             }
             transform.position = to;
             age += dt;
-            UpdateRailVisual();
             if (age >= lifetime) Finish(transform.position, false, "EXPIRED");
         }
 
