@@ -89,7 +89,11 @@ namespace AirCombat
                 delta.y = 0f;
                 bool inRange = delta.sqrMagnitude <= rangeSquared;
                 var air = contact as IRadarAirContact;
-                if (!inRange && air == null && !(contact is IRadarBearingContact)) continue;
+                float threatRadius = Mathf.Max(0f, contact.RadarThreatRadius);
+                float reach = Range + threatRadius;
+                bool coverageInRange = contact.RadarKind == RadarContactType.GroundDefense &&
+                    threatRadius > 0f && delta.sqrMagnitude <= reach * reach;
+                if (!inRange && !coverageInRange && air == null && !(contact is IRadarBearingContact)) continue;
 
                 Vector2 heading = Vector2.zero;
                 if (air != null)
@@ -98,7 +102,7 @@ namespace AirCombat
                     heading = new Vector2(forward.x, forward.z).normalized;
                 }
                 results.Add(new RadarDetection(new Vector2(delta.x, delta.z),
-                    Mathf.Max(0f, contact.RadarThreatRadius), contact.RadarKind,
+                    threatRadius, contact.RadarKind,
                     heading, inRange, contact.RadarPosition));
             }
         }

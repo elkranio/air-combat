@@ -164,6 +164,10 @@ namespace AirCombat
                     }
                     else
                     {
+                        // A coverage-only contact contributes its ring, not an off-disc dot.
+                        if (!contact.InRange) continue;
+                        if (offset.magnitude > radius - 5.2f)
+                            at = center + offset.normalized * (radius - 5.2f);
                         Disk(mesh, at, 5.2f, new Color(1f, .22f, .15f, .20f));
                         Disk(mesh, at, 2.65f, new Color(1f, .31f, .20f, .95f));
                     }

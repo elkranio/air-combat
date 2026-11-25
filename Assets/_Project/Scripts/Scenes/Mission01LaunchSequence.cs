@@ -14,6 +14,8 @@ namespace AirCombat
         [SerializeField] private PlayerWeaponTrigger weaponTrigger;
         [SerializeField] private bool skipIntro = true;
         [SerializeField] private CombatHud missionHud;
+        [SerializeField] private SurfaceToAirLauncher[] samSites; // AA1: registered, not armed.
+        private AircraftRadar samRadar;
 
 #if UNITY_EDITOR
         [Header("Temporary terrain test (Editor only)")]
@@ -52,6 +54,7 @@ namespace AirCombat
         }
 
         public void ConfigureHudForAuthoring(CombatHud hud) { missionHud = hud; }
+        public void ConfigureSamSitesForAuthoring(SurfaceToAirLauncher[] sites) { samSites = sites; }
 #endif
 
         private void Awake()
@@ -83,6 +86,13 @@ namespace AirCombat
 
         private void Start()
         {
+            samRadar = aircraft.GetComponent<AircraftRadar>();
+            if (samSites != null && samSites.Length > 0)
+            {
+                if (samRadar == null) Debug.LogError("Mission01: missing SAM radar receiver.", this);
+                else foreach (var site in samSites)
+                    if (site != null) samRadar.Register(site);
+            }
             // Dedicated scene-owned FX, not parented to the aircraft visual.
             var effects = new GameObject("Mission01 / terrain crash FX");
             effects.transform.SetParent(transform, false);
@@ -236,6 +246,8 @@ namespace AirCombat
 
         private void ResetToReady()
         {
+            if (samSites != null) foreach (var site in samSites)
+                if (site != null) site.ResetEncounter();
             handoverPending = false;
             elapsed = 0d;
             flight.enabled = false;
@@ -251,6 +263,12 @@ namespace AirCombat
             aircraft.SetPositionAndRotation(runwayPosition, runwayRotation);
             visual.localRotation = visualRest;
             State = Phase.Ready;
+        }
+
+        private void OnDestroy()
+        {
+            if (samRadar != null && samSites != null) foreach (var site in samSites)
+                if (site != null) samRadar.Unregister(site);
         }
 
         private void OnDisable()

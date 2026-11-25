@@ -15,8 +15,12 @@ namespace AirCombat
         [Serializable] public struct PlannedSam
         {
             public Transform site;
-            [Min(0f)] public float radius;
+            [HideInInspector, Min(0f)] public float radius; // Legacy planning fallback only.
             public string label;
+            public SurfaceToAirLauncher Launcher => site != null ? site.GetComponent<SurfaceToAirLauncher>() : null;
+            public float Radius => Launcher != null ? Launcher.RadarThreatRadius : radius;
+            public bool Visible => site != null && site.gameObject.activeInHierarchy &&
+                (Launcher == null || Launcher.IsRadarVisible);
         }
         [SerializeField] private MissionMapData map;
         [SerializeField] private Transform player;
@@ -227,10 +231,10 @@ namespace AirCombat
             Texture(new Rect(0,0,w,h),map.Geography,Color.white);
             if (plannedSam != null) foreach (var sam in plannedSam)
             {
-                if (sam.site == null || sam.radius <= 0f) continue;
+                if (!sam.Visible || sam.Radius <= 0f) continue;
                 Vector2 uv=map.WorldToUV(sam.site.position);
                 Vector2 p=new Vector2(uv.x*w,(1-uv.y)*h);
-                float r=sam.radius*mapScale;
+                float r=sam.Radius*mapScale;
                 DrawClippedRing(new Rect(p.x-r,p.y-r,r*2,r*2),w,h);
             }
             drawParent=panel;
@@ -258,7 +262,7 @@ namespace AirCombat
             }
             if (plannedSam != null) foreach (var sam in plannedSam)
             {
-                if (sam.site == null || !Inside(map.WorldToUV(sam.site.position))) continue;
+                if (!sam.Visible || !Inside(map.WorldToUV(sam.site.position))) continue;
                 Vector2 p=Point(rect,sam.site);
                 Solid(new Rect(p.x-4,p.y-4,8,8),Red);
                 Text(new Rect(p.x+7,p.y-10,54,20),sam.label,12,Ink,true);
@@ -294,13 +298,15 @@ namespace AirCombat
             Solid(new Rect(x,y+230,w,1),new Color(.23f,.34f,.35f));
             Text(new Rect(x,y+244,w,26),"LEGEND",16,Ink,true);
             Legend(x,y+282,new Color(.28f,.26f,.22f),"Terrain obstruction");
-            Legend(x,y+315,Red,"Planned SAM coverage");
+            bool linked = plannedSam != null && plannedSam.Length > 0 &&
+                Array.TrueForAll(plannedSam, sam => sam.Launcher != null);
+            Legend(x,y+315,Red,linked ? "SAM coverage" : "Planned SAM coverage");
             Legend(x,y+348,Ink,"Recon target marker");
             Legend(x,y+381,Gold,"Optional target marker");
             Legend(x,y+414,Cyan,"Player / airfield");
             Solid(new Rect(x,y+454,w,1),new Color(.23f,.34f,.35f));
-            Text(new Rect(x,y+469,w,25),"PLANNING DATA / NOT LIVE",14,Gold,true);
-            Text(new Rect(x,y+500,w,28),"SAMs and objectives are placeholders.",14,Muted);
+            Text(new Rect(x,y+469,w,25),linked ? "MISSION PROTOTYPE" : "PLANNING DATA / NOT LIVE",14,Gold,true);
+            Text(new Rect(x,y+500,w,28),linked ? "SAM sites linked; combat pending." : "SAMs and objectives are placeholders.",14,Muted);
         }
         private void Legend(float x,float y,Color c,string text)
         { Solid(new Rect(x,y+5,15,15),c); Text(new Rect(x+25,y,300,25),text,15,Ink); }

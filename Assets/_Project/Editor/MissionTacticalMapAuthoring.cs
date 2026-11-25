@@ -54,12 +54,28 @@ namespace AirCombat
                 if(sites.Length!=6 || targets.Length!=3) throw new InvalidOperationException("Unexpected marker count; inspect scene.");
                 var existing=roots.SelectMany(g=>g.GetComponentsInChildren<TacticalMapView>(true)).ToArray();
                 if(existing.Length>1) throw new InvalidOperationException("Multiple tactical map views.");
+                // Only new sites inherit the planned radius. Reinstall preserves tuning.
+                var launchers=sites.Select(s=>{
+                    var site=s.site.GetComponent<SurfaceToAirLauncher>();
+                    if(site!=null) return site;
+                    site=Undo.AddComponent<SurfaceToAirLauncher>(s.site.gameObject);
+                    var settings=new SerializedObject(site);
+                    settings.FindProperty("engagementRange").floatValue=s.radius;
+                    settings.ApplyModifiedProperties();
+                    PrefabUtility.RecordPrefabInstancePropertyModifications(site);
+                    EditorUtility.SetDirty(site);
+                    return site;
+                }).ToArray();
+                Undo.RecordObject(launch,"Bind mission SAM sites");
+                launch.ConfigureSamSitesForAuthoring(launchers);
+                EditorUtility.SetDirty(launch);
+                PrefabUtility.RecordPrefabInstancePropertyModifications(launch);
                 var view=existing.Length==1?existing[0]:Undo.AddComponent<TacticalMapView>(launch.gameObject);
                 Undo.RecordObject(view,"Bind tactical map");
                 view.ConfigureForAuthoring(data,player.transform,sites,targets,extra,"FIRST SORTIE");
                 EditorUtility.SetDirty(view); PrefabUtility.RecordPrefabInstancePropertyModifications(view);
                 EditorSceneManager.MarkSceneDirty(scene); Selection.activeObject=view;
-                Debug.Log("MAP-02: tactical map installed. Tab opens/closes in Play Mode. Save scene after review.");
+                Debug.Log("M01-AA1: tactical map and six SAM radar sites installed. Weapons not armed yet. Save scene after review.");
             }
             catch(Exception ex){Debug.LogError("Install Tactical Map: "+ex.Message);}
         }

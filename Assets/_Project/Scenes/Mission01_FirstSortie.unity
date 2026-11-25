@@ -612,7 +612,10 @@ PrefabInstance:
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 8389977542807089187, guid: 4758bfb984f508a4c82af3323d448857, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 2145265484}
   m_SourcePrefab: {fileID: 100100000, guid: 4758bfb984f508a4c82af3323d448857, type: 3}
 --- !u!4 &50544490 stripped
 Transform:
@@ -1763,7 +1766,10 @@ PrefabInstance:
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 8389977542807089187, guid: 4758bfb984f508a4c82af3323d448857, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1298626541}
   m_SourcePrefab: {fileID: 100100000, guid: 4758bfb984f508a4c82af3323d448857, type: 3}
 --- !u!4 &110365900 stripped
 Transform:
@@ -2186,7 +2192,10 @@ PrefabInstance:
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 8389977542807089187, guid: 4758bfb984f508a4c82af3323d448857, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 765515993}
   m_SourcePrefab: {fileID: 100100000, guid: 4758bfb984f508a4c82af3323d448857, type: 3}
 --- !u!4 &127586940 stripped
 Transform:
@@ -10877,7 +10886,10 @@ PrefabInstance:
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 8389977542807089187, guid: 4758bfb984f508a4c82af3323d448857, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1859142576}
   m_SourcePrefab: {fileID: 100100000, guid: 4758bfb984f508a4c82af3323d448857, type: 3}
 --- !u!4 &662207921 stripped
 Transform:
@@ -12312,6 +12324,29 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 6269255357571356716, guid: 431ae5e7d4f8c1744ab38da14fc27ba5, type: 3}
   m_PrefabInstance: {fileID: 759330039}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &765515992 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 8389977542807089187, guid: 4758bfb984f508a4c82af3323d448857, type: 3}
+  m_PrefabInstance: {fileID: 127586939}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &765515993
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 765515992}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 36c5cfde3c4d43458bcb45ef9c32fb4b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::AirCombat.SurfaceToAirLauncher
+  engagementRange: 460
+  lockSeconds: 1.4
+  reloadSeconds: 7
+  maxHp: 6
+  launchSocket: {fileID: 0}
+  missilePrefab: {fileID: 0}
 --- !u!1001 &788664928
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -12920,7 +12955,10 @@ PrefabInstance:
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 8389977542807089187, guid: 4758bfb984f508a4c82af3323d448857, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1248412888}
   m_SourcePrefab: {fileID: 100100000, guid: 4758bfb984f508a4c82af3323d448857, type: 3}
 --- !u!4 &859663210 stripped
 Transform:
@@ -16089,13 +16127,13 @@ PrefabInstance:
       value: E1 / Main Camera
       objectReference: {fileID: 0}
     - target: {fileID: 5299753384366365605, guid: 371922c97e367a140876da6ab486cf44, type: 3}
-      propertyPath: aircraft
-      value: 
-      objectReference: {fileID: 1109986514}
-    - target: {fileID: 5299753384366365605, guid: 371922c97e367a140876da6ab486cf44, type: 3}
       propertyPath: yaw
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 5299753384366365605, guid: 371922c97e367a140876da6ab486cf44, type: 3}
+      propertyPath: aircraft
+      value: 
+      objectReference: {fileID: 1109986514}
     - target: {fileID: 8568083544143274404, guid: 371922c97e367a140876da6ab486cf44, type: 3}
       propertyPath: m_Enabled
       value: 0
@@ -19776,6 +19814,29 @@ Transform:
   m_Children: []
   m_Father: {fileID: 1980495062}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &1248412887 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 8389977542807089187, guid: 4758bfb984f508a4c82af3323d448857, type: 3}
+  m_PrefabInstance: {fileID: 859663209}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &1248412888
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1248412887}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 36c5cfde3c4d43458bcb45ef9c32fb4b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::AirCombat.SurfaceToAirLauncher
+  engagementRange: 430
+  lockSeconds: 1.4
+  reloadSeconds: 7
+  maxHp: 6
+  launchSocket: {fileID: 0}
+  missilePrefab: {fileID: 0}
 --- !u!1001 &1249933517
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -20493,6 +20554,29 @@ Transform:
   m_Children: []
   m_Father: {fileID: 1980495062}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &1298626540 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 8389977542807089187, guid: 4758bfb984f508a4c82af3323d448857, type: 3}
+  m_PrefabInstance: {fileID: 110365899}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &1298626541
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1298626540}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 36c5cfde3c4d43458bcb45ef9c32fb4b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::AirCombat.SurfaceToAirLauncher
+  engagementRange: 430
+  lockSeconds: 1.4
+  reloadSeconds: 7
+  maxHp: 6
+  launchSocket: {fileID: 0}
+  missilePrefab: {fileID: 0}
 --- !u!1 &1302393582
 GameObject:
   m_ObjectHideFlags: 0
@@ -24441,7 +24525,10 @@ PrefabInstance:
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 8389977542807089187, guid: 4758bfb984f508a4c82af3323d448857, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1863431011}
   m_SourcePrefab: {fileID: 100100000, guid: 4758bfb984f508a4c82af3323d448857, type: 3}
 --- !u!4 &1472988484 stripped
 Transform:
@@ -30908,6 +30995,29 @@ Transform:
   m_Children: []
   m_Father: {fileID: 1980495062}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &1859142575 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 8389977542807089187, guid: 4758bfb984f508a4c82af3323d448857, type: 3}
+  m_PrefabInstance: {fileID: 662207920}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &1859142576
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1859142575}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 36c5cfde3c4d43458bcb45ef9c32fb4b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::AirCombat.SurfaceToAirLauncher
+  engagementRange: 430
+  lockSeconds: 1.4
+  reloadSeconds: 7
+  maxHp: 6
+  launchSocket: {fileID: 0}
+  missilePrefab: {fileID: 0}
 --- !u!1001 &1859389735
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -30982,6 +31092,29 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 522574437189222094, guid: ad9b9d933f0cb6d41a8bc012112939f4, type: 3}
   m_PrefabInstance: {fileID: 1859389735}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &1863431010 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 8389977542807089187, guid: 4758bfb984f508a4c82af3323d448857, type: 3}
+  m_PrefabInstance: {fileID: 1472988483}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &1863431011
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1863431010}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 36c5cfde3c4d43458bcb45ef9c32fb4b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::AirCombat.SurfaceToAirLauncher
+  engagementRange: 470
+  lockSeconds: 1.4
+  reloadSeconds: 7
+  maxHp: 6
+  launchSocket: {fileID: 0}
+  missilePrefab: {fileID: 0}
 --- !u!1001 &1868661091
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -33717,6 +33850,13 @@ MonoBehaviour:
   weaponTrigger: {fileID: 1109986515}
   skipIntro: 1
   missionHud: {fileID: 353488189}
+  samSites:
+  - {fileID: 1298626541}
+  - {fileID: 1863431011}
+  - {fileID: 1248412888}
+  - {fileID: 2145265484}
+  - {fileID: 765515993}
+  - {fileID: 1859142576}
   debugAirStart: 1
   debugNoClip: 0
   terrainCrashRadius: 3.5
@@ -36104,6 +36244,29 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 522574437189222094, guid: ad9b9d933f0cb6d41a8bc012112939f4, type: 3}
   m_PrefabInstance: {fileID: 2143984679}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &2145265483 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 8389977542807089187, guid: 4758bfb984f508a4c82af3323d448857, type: 3}
+  m_PrefabInstance: {fileID: 50544489}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &2145265484
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2145265483}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 36c5cfde3c4d43458bcb45ef9c32fb4b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::AirCombat.SurfaceToAirLauncher
+  engagementRange: 440
+  lockSeconds: 1.4
+  reloadSeconds: 7
+  maxHp: 6
+  launchSocket: {fileID: 0}
+  missilePrefab: {fileID: 0}
 --- !u!1 &2145984353
 GameObject:
   m_ObjectHideFlags: 0
