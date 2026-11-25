@@ -52627,6 +52627,7 @@ GameObject:
   - component: {fileID: 2020064468}
   - component: {fileID: 2020064469}
   - component: {fileID: 2020064470}
+  - component: {fileID: 2020064471}
   m_Layer: 0
   m_Name: E1 / Flight session (no combat)
   m_TagString: Untagged
@@ -52776,6 +52777,28 @@ MonoBehaviour:
   - {fileID: 412902720}
   - {fileID: 1287307453}
   groundY: 0
+--- !u!114 &2020064471
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2020064465}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1701222d36014cd980e9f8532e57a55a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::AirCombat.Mission01EngineAudio
+  flight: {fileID: 1109986520}
+  cruiseLoop: {fileID: 8300000, guid: e781bafdb5ef9f9489ceb8dd6831ed3b, type: 3}
+  boostLoop: {fileID: 8300000, guid: 84d2506ee0f0a664f8426711bd4cb12b, type: 3}
+  idleVolume: 0.16
+  cruiseVolume: 0.38
+  boostVolume: 0.55
+  attackSeconds: 0.22
+  releaseSeconds: 0.35
+  cruisePitch: 1
+  boostPitch: 1
 --- !u!1 &2024757286
 GameObject:
   m_ObjectHideFlags: 0
