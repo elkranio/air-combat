@@ -1,0 +1,7 @@
+# ENV-03 — Desert stones v0
+
+Base `d0cb518`. Four decorative sandstone modules: exposed slab, rubble scatter, weathered boulder and broken outcrop. Muted warm matte colors, faceted geometry, ground-level pivots; the tallest source mesh is under 6 units. These are not CL06 flight obstacles. No colliders, radar contacts, changes to mission rules or tactical map.
+
+In Mission01 Edit Mode, keep the accepted ENV01 and ENV02 layers and run **Air Combat > Art > Apply Mission01 Desert Stones v0**. The installer builds reusable prefabs/materials, places deterministic loose compositions near existing relief and vegetation, and preserves all other scene roots. It rejects conservative rotated footprints overlapping airfield, rocks, ground objectives, hills or plants, and keeps open expanses. Exact count depends on saved scene content. Re-running replaces only ENV03. **Remove Mission01 Desert Stones** removes only that layer. Save the scene and generated assets/meta after review. No map rebake needed.
+
+`Tools/Blender/build_env03_desert_stones.py` regenerates the four original OBJs with normal Python; run via Blender `--background --factory-startup --python` to also save `Resources/Blender/ENV03_DesertStones.blend`. Flat faces and closed component topology are validated by the generator. Review appearance, density and shadow readability at flight zoom; Unity import and playtest are local checks.
