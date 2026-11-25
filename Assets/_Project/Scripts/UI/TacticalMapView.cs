@@ -305,8 +305,9 @@ namespace AirCombat
             Legend(x,y+381,Gold,"Optional target marker");
             Legend(x,y+414,Cyan,"Player / airfield");
             Solid(new Rect(x,y+454,w,1),new Color(.23f,.34f,.35f));
+            bool armed = linked && Array.TrueForAll(plannedSam, sam => sam.Launcher.IsConfigured);
             Text(new Rect(x,y+469,w,25),linked ? "MISSION PROTOTYPE" : "PLANNING DATA / NOT LIVE",14,Gold,true);
-            Text(new Rect(x,y+500,w,28),linked ? "SAM sites linked; combat pending." : "SAMs and objectives are placeholders.",14,Muted);
+            Text(new Rect(x,y+500,w,28),armed ? "SAMs live; objectives pending." : linked ? "SAM sites linked; combat pending." : "SAMs and objectives are placeholders.",14,Muted);
         }
         private void Legend(float x,float y,Color c,string text)
         { Solid(new Rect(x,y+5,15,15),c); Text(new Rect(x+25,y,300,25),text,15,Ink); }

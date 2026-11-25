@@ -155,7 +155,14 @@ namespace AirCombat
                         if (fromCenter.magnitude > radius - 7f)
                             at = center + fromCenter.normalized * (radius - 7f);
                         Disk(mesh, at, 6.6f, new Color(1f, .67f, .18f, .18f));
-                        Vector2 toward = center - at;
+                        Vector2 toward = contact.HasMissileHeading
+                            ? RelativeOnDisplay(contact.Heading, displayRight, displayUp) : center - at;
+                        // A vertical launch has no ground-plane direction yet.
+                        if (contact.HasMissileHeading && toward.sqrMagnitude <= .0001f)
+                        {
+                            Disk(mesh, at, 3.2f, new Color(1f, .82f, .31f, .98f));
+                            continue;
+                        }
                         toward = toward.sqrMagnitude > .0001f ? toward.normalized : Vector2.up;
                         Vector2 missileRight = new Vector2(toward.y, -toward.x);
                         Triangle(mesh, at + toward * 5.1f, at - toward * 3.4f - missileRight * 4.4f,

@@ -22,6 +22,12 @@ namespace AirCombat
         Vector3 RadarForward { get; }
     }
 
+    // Directional missiles do not implicitly gain off-range bearing visibility.
+    public interface IRadarMissileHeading : IRadarContact
+    {
+        Vector3 RadarForward { get; }
+    }
+
     // Explicit opt-in for incoming threats whose bearing is always known.
     public interface IRadarBearingContact : IRadarContact { }
 
@@ -33,9 +39,10 @@ namespace AirCombat
         public readonly Vector2 Heading;
         public readonly bool InRange;
         public readonly Vector3 WorldPosition;
+        public readonly bool HasMissileHeading;
 
         public RadarDetection(Vector2 relativePosition, float threatRadius, RadarContactType kind,
-            Vector2 heading, bool inRange, Vector3 worldPosition = default)
+            Vector2 heading, bool inRange, Vector3 worldPosition = default, bool hasMissileHeading = false)
         {
             RelativePosition = relativePosition;
             ThreatRadius = threatRadius;
@@ -43,6 +50,7 @@ namespace AirCombat
             Heading = heading;
             InRange = inRange;
             WorldPosition = worldPosition;
+            HasMissileHeading = hasMissileHeading;
         }
     }
 
@@ -95,15 +103,17 @@ namespace AirCombat
                     threatRadius > 0f && delta.sqrMagnitude <= reach * reach;
                 if (!inRange && !coverageInRange && air == null && !(contact is IRadarBearingContact)) continue;
 
+                var directionalMissile = contact as IRadarMissileHeading;
                 Vector2 heading = Vector2.zero;
-                if (air != null)
+                if (air != null || directionalMissile != null)
                 {
-                    Vector3 forward = air.RadarForward;
-                    heading = new Vector2(forward.x, forward.z).normalized;
+                    Vector3 forward = air != null ? air.RadarForward : directionalMissile.RadarForward;
+                    Vector2 flat = new Vector2(forward.x, forward.z);
+                    heading = flat.sqrMagnitude > .0001f ? flat.normalized : Vector2.zero;
                 }
                 results.Add(new RadarDetection(new Vector2(delta.x, delta.z),
                     threatRadius, contact.RadarKind,
-                    heading, inRange, contact.RadarPosition));
+                    heading, inRange, contact.RadarPosition, directionalMissile != null));
             }
         }
     }

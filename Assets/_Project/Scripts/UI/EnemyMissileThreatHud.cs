@@ -12,6 +12,8 @@ namespace AirCombat
             new List<EnemyMissileStressTest.WarningCue>();
         private Camera view;
         private EnemyMissileStressTest threats;
+        private Transform samPlayer;
+        private SurfaceToAirLauncher[] samSites;
         private Texture2D missileIcon;
         [Header("Short vector / reference pixels at 720p")]
         [SerializeField, Min(0f)] private float hullGap = 38f;
@@ -23,12 +25,39 @@ namespace AirCombat
         {
             view = camera;
             threats = source;
+            samPlayer = null;
+            samSites = null;
+        }
+
+        public void BindSam(Camera camera, Transform player, SurfaceToAirLauncher[] sites)
+        {
+            view = camera;
+            threats = null;
+            samPlayer = player;
+            samSites = sites;
+        }
+
+        private bool CollectWarnings(out Vector3 playerPosition)
+        {
+            if (threats != null) return threats.CollectWarnings(warnings, out playerPosition);
+            warnings.Clear();
+            playerPosition = default;
+            if (samPlayer == null || samSites == null) return false;
+            playerPosition = samPlayer.position;
+            foreach (var site in samSites)
+            {
+                if (site == null || !site.IsRadarVisible || site.MissionWarningStarted < 0f) continue;
+                Vector3 bearing = site.transform.position;
+                bearing.y = playerPosition.y; // Show ground-plane bearing, not elevation/parallax.
+                warnings.Add(new EnemyMissileStressTest.WarningCue(bearing, site.MissionWarningStarted));
+            }
+            return warnings.Count > 0;
         }
 
         private void OnGUI()
         {
-            if (Event.current.type != EventType.Repaint || view == null || threats == null ||
-                !threats.CollectWarnings(warnings, out Vector3 playerPosition)) return;
+            if (Event.current.type != EventType.Repaint || view == null ||
+                TacticalMapView.IsOpenFor(gameObject.scene) || !CollectWarnings(out Vector3 playerPosition)) return;
             Rect pixels = view.pixelRect;
             var rect = new Rect(pixels.xMin, Screen.height - pixels.yMax, pixels.width, pixels.height);
             float scale = Mathf.Clamp(rect.height / 720f, .75f, 3f);

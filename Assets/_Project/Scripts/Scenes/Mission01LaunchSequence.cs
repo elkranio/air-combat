@@ -14,8 +14,9 @@ namespace AirCombat
         [SerializeField] private PlayerWeaponTrigger weaponTrigger;
         [SerializeField] private bool skipIntro = true;
         [SerializeField] private CombatHud missionHud;
-        [SerializeField] private SurfaceToAirLauncher[] samSites; // AA1: registered, not armed.
+        [SerializeField] private SurfaceToAirLauncher[] samSites;
         private AircraftRadar samRadar;
+        private PlayerHitPoints playerHealth;
 
 #if UNITY_EDITOR
         [Header("Temporary terrain test (Editor only)")]
@@ -87,11 +88,18 @@ namespace AirCombat
         private void Start()
         {
             samRadar = aircraft.GetComponent<AircraftRadar>();
+            playerHealth = aircraft.GetComponent<PlayerHitPoints>();
             if (samSites != null && samSites.Length > 0)
             {
-                if (samRadar == null) Debug.LogError("Mission01: missing SAM radar receiver.", this);
+                if (samRadar == null || playerHealth == null)
+                    Debug.LogError("Mission01: missing SAM radar receiver or player health.", this);
                 else foreach (var site in samSites)
-                    if (site != null) samRadar.Register(site);
+                {
+                    if (site == null) continue;
+                    samRadar.Register(site);
+                    if (!site.IsConfigured) Debug.LogError("Mission01: SAM not configured; re-run Install Tactical Map.", site);
+                    site.BindMissionTarget(aircraft, playerHealth, samRadar);
+                }
             }
             // Dedicated scene-owned FX, not parented to the aircraft visual.
             var effects = new GameObject("Mission01 / terrain crash FX");
@@ -106,7 +114,13 @@ namespace AirCombat
                 // Mission-only terrain warning uses the already configured flight camera.
                 var follow = FindFirstObjectByType<ArcadeCameraFollow>();
                 if (follow != null)
-                    TerrainCollisionWarning.Create(missionHud.transform, flight, follow.GetComponent<Camera>());
+                {
+                    var camera = follow.GetComponent<Camera>();
+                    TerrainCollisionWarning.Create(missionHud.transform, flight, camera);
+                    var threatHud = missionHud.GetComponent<EnemyMissileThreatHud>();
+                    if (threatHud == null) threatHud = missionHud.gameObject.AddComponent<EnemyMissileThreatHud>();
+                    threatHud.BindSam(camera, aircraft, samSites);
+                }
                 missionHud.gameObject.SetActive(false);
             }
 #if UNITY_EDITOR
@@ -136,6 +150,12 @@ namespace AirCombat
 #if UNITY_EDITOR
                 if (debugAirStart) StartAirborne();
 #endif
+                return;
+            }
+            // A lethal missile hit uses the same mission-loss/retry path as terrain.
+            if (State == Phase.Flight && playerHealth != null && !playerHealth.IsAlive)
+            {
+                Crash(aircraft.position);
                 return;
             }
             if (State == Phase.Ready && Application.isFocused && keyboard != null && keyboard.wKey.wasPressedThisFrame)
@@ -201,6 +221,7 @@ namespace AirCombat
         {
             if (State != Phase.Flight) return;
             State = Phase.Crashed;
+            SetSamArmed(false);
             aircraft.position = impact;
             flight.enabled = false;
             weaponTrigger.enabled = false;
@@ -234,6 +255,7 @@ namespace AirCombat
             flight.PrepareCruiseHandover();
             previousFlightPosition = aircraft.position;
             State = Phase.Flight;
+            SetSamArmed(true);
             flight.enabled = true;
             Debug.Log($"Mission01: flight handover at Y{aircraft.position.y:F1}, speed {flight.CurrentSpeed:F1}.", this);
             // The mission HUD opt-in also equips the cannon-only loadout.
@@ -244,8 +266,15 @@ namespace AirCombat
             }
         }
 
+        private void SetSamArmed(bool armed)
+        {
+            if (samSites != null) foreach (var site in samSites)
+                if (site != null) site.SetMissionArmed(armed);
+        }
+
         private void ResetToReady()
         {
+            SetSamArmed(false);
             if (samSites != null) foreach (var site in samSites)
                 if (site != null) site.ResetEncounter();
             handoverPending = false;
@@ -273,6 +302,7 @@ namespace AirCombat
 
         private void OnDisable()
         {
+            SetSamArmed(false);
             if (initialized && flames != null) flames.SetManeuverFlames(false);
 #if UNITY_EDITOR
             if (flight != null) flight.DebugFastTravel = false;

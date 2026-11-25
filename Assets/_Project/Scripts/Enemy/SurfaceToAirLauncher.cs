@@ -29,7 +29,12 @@ namespace AirCombat
         private int launchBeepsRemaining;
         private float nextLaunchBeepAt;
         private int hp;
+        private bool missionMode, missionArmed;
+        private float missionWarningStarted = -1f;
+        [SerializeField, Min(.5f)] private float prelaunchWarningSeconds = .65f;
 
+        public bool IsConfigured => launchSocket != null && missilePrefab != null;
+        public float MissionWarningStarted => missionArmed && !IsDown ? missionWarningStarted : -1f;
         public int Hp => hp;
         public int MaxHp => maxHp;
         public bool IsDown => hp <= 0;
@@ -66,6 +71,31 @@ namespace AirCombat
             missilePrefab = projectile;
         }
 
+        // Mission opt-in; the legacy lab keeps its existing audio and acquisition.
+        public void BindMissionTarget(Transform aircraft, PlayerHitPoints health, AircraftRadar sensor)
+        {
+            missionMode = true;
+            missionArmed = false;
+            BindTarget(aircraft, health, sensor);
+        }
+
+        public void SetMissionArmed(bool armed)
+        {
+            missionArmed = armed;
+            if (!armed) ClearAcquisition();
+        }
+
+        private void ClearAcquisition()
+        {
+            lockProgress = 0f;
+            if (missionMode && missionWarningStarted >= 0f)
+            {
+                missionWarningStarted = -1f;
+                launchBeepsRemaining = 0;
+                if (warningAudio != null) warningAudio.Stop();
+            }
+        }
+
         public void BindTarget(Transform aircraft, PlayerHitPoints health, AircraftRadar sensor)
         {
             target = aircraft;
@@ -87,10 +117,16 @@ namespace AirCombat
 
         public void ResetEncounter()
         {
-            if (missile != null) Destroy(missile.gameObject);
+            // Disable immediately: Destroy alone is deferred until end of frame.
+            if (missile != null)
+            {
+                missile.gameObject.SetActive(false);
+                Destroy(missile.gameObject);
+            }
             missile = null;
             hp = maxHp;
             lockProgress = 0f;
+            missionWarningStarted = -1f;
             nextLaunchAt = Time.time;
             nextBeepAt = 0f;
             launchBeepsRemaining = 0;
@@ -102,41 +138,55 @@ namespace AirCombat
 
         private void LateUpdate()
         {
-            // Three short launch beeps, then silence during missile flight.
-            PlayLaunchSignal();
+            if (Time.deltaTime <= 0f) return;
+            if (missionMode && !missionArmed) { ClearAcquisition(); return; }
+            if (!missionMode) PlayLaunchSignal();
             if (HasIncomingMissile)
             {
-                lockProgress = 0f;
+                ClearAcquisition();
                 return;
             }
             if (IsDown || target == null || hitPoints == null || !hitPoints.IsAlive ||
                 missilePrefab == null || launchSocket == null)
             {
-                lockProgress = 0f;
+                ClearAcquisition();
                 return;
             }
             Vector3 delta = target.position - transform.position;
             delta.y = 0f;
             if (delta.sqrMagnitude > engagementRange * engagementRange)
             {
-                lockProgress = 0f;
+                ClearAcquisition();
                 return;
             }
 
-            // Range + uninterrupted dwell time are the ONLY lock requirements.
-            // The site has no traverse servo and can fire at a maneuvering jet.
             if (Time.time < nextLaunchAt)
             {
-                lockProgress = 0f;
+                ClearAcquisition();
                 return;
             }
             lockProgress += Time.deltaTime;
-            if (lockProgress < lockSeconds)
+            if (missionMode)
+            {
+                // Silent acquisition, then a cancelable pre-launch cue.
+                float lead = Mathf.Max(.5f, prelaunchWarningSeconds);
+                if (missionWarningStarted < 0f && lockProgress >= Mathf.Max(0f, lockSeconds - lead))
+                {
+                    missionWarningStarted = Time.time;
+                    launchBeepsRemaining = 3;
+                    nextLaunchBeepAt = Time.time;
+                }
+                if (missionWarningStarted >= 0f) PlayLaunchSignal();
+                if (lockProgress < lockSeconds || missionWarningStarted < 0f ||
+                    Time.time - missionWarningStarted < lead || launchBeepsRemaining > 0) return;
+            }
+            else if (lockProgress < lockSeconds)
             {
                 WarningBeep(lockProgress >= lockSeconds * .65f ? .22f : .38f);
                 return;
             }
             lockProgress = 0f;
+            missionWarningStarted = -1f;
             nextLaunchAt = Time.time + reloadSeconds;
             // Force +Y ejection even when upgrading a legacy angled prefab.
             // The missile independently handles the pitch-over and pursuit.
@@ -144,14 +194,17 @@ namespace AirCombat
             missile = Instantiate(missilePrefab, launchPosition,
                 Quaternion.LookRotation(Vector3.up, Vector3.forward));
             missile.Launch(target, hitPoints, radar, transform, OnMissileFinished);
-            // Clear any overlapping acquisition beep and sound the launch exactly three times.
-            if (warningAudio != null) warningAudio.Stop();
-            launchBeepsRemaining = 3;
-            nextLaunchBeepAt = Time.time;
-            PlayLaunchSignal();
+            // The mission already played its three pre-launch beeps.
+            if (!missionMode)
+            {
+                if (warningAudio != null) warningAudio.Stop();
+                launchBeepsRemaining = 3;
+                nextLaunchBeepAt = Time.time;
+                PlayLaunchSignal();
+            }
             LaunchedCount++;
             LastFlightReport = $"SPAWNED #{LaunchedCount} at Y={launchPosition.y:F1}";
-            Debug.Log($"SAM1: {LastFlightReport}; target={target.position}", this);
+            if (!missionMode) Debug.Log($"SAM1: {LastFlightReport}; target={target.position}", this);
         }
 
         private void OnMissileFinished(string report)
@@ -175,7 +228,7 @@ namespace AirCombat
                 Time.time < nextLaunchBeepAt) return;
             warningAudio.PlayOneShot(warningClip);
             launchBeepsRemaining--;
-            nextLaunchBeepAt = Time.time + .15f;
+            nextLaunchBeepAt = Time.time + (missionMode ? EnemyMissileStressTest.WarningPulsePeriod : .15f);
         }
 
         private static AudioClip CreateWarningTone()
@@ -198,7 +251,7 @@ namespace AirCombat
         {
             if (IsDown || damage <= 0) return false;
             hp = Mathf.Max(0, hp - damage);
-            if (IsDown) lockProgress = 0f;
+            if (IsDown) ClearAcquisition();
             return true;
         }
 

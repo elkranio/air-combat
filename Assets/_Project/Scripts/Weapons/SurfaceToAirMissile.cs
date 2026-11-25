@@ -8,7 +8,7 @@ namespace AirCombat
     // Once homing, finite turn speed and TOTAL turning budget make Q/E useful.
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(210)]
-    public sealed class SurfaceToAirMissile : MonoBehaviour, IRadarContact
+    public sealed class SurfaceToAirMissile : MonoBehaviour, IRadarMissileHeading
     {
         [SerializeField, Min(1f)] private float speed = 150f;
         [Header("Vertical launch (no pursuit budget spent)")]
@@ -45,6 +45,7 @@ namespace AirCombat
         public float RemainingTurnBudget => remainingTurn;
         public RadarContactType RadarKind => RadarContactType.IncomingMissile;
         public Vector3 RadarPosition => transform.position;
+        public Vector3 RadarForward => transform.forward;
         public float RadarThreatRadius => 0f;
         public bool IsRadarVisible => flying && isActiveAndEnabled;
 
@@ -74,7 +75,7 @@ namespace AirCombat
 
         private void LateUpdate()
         {
-            if (!flying) return;
+            if (!flying || Time.deltaTime <= 0f) return;
             if (lastPhysicsSyncFrame != Time.frameCount)
             {
                 Physics.SyncTransforms(); // Player moves via Transform, without Rigidbody.

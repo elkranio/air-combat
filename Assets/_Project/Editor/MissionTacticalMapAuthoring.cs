@@ -23,6 +23,45 @@ namespace AirCombat
                 string.Join(", ",parent.Cast<Transform>().Select(t=>t.name)));
         }
 
+        // A separate missile prefab is the reusable Picket flight profile.
+        // Never modify the lab prefab or reset an already tuned profile.
+        private const string MissileSource = "Assets/_Project/Prefabs/Enemies/SAM1Missile.prefab";
+        private const string MissileProfile = "Assets/_Project/Prefabs/Enemies/SAM01_PicketMissile.prefab";
+        private static SurfaceToAirMissile GetOrCreateMissileProfile()
+        {
+            var existing = AssetDatabase.LoadAssetAtPath<GameObject>(MissileProfile);
+            if (existing != null)
+            {
+                var component = existing.GetComponent<SurfaceToAirMissile>();
+                if (component == null) throw new InvalidOperationException("Picket missile profile has no missile component.");
+                return component;
+            }
+            if (!AssetDatabase.CopyAsset(MissileSource, MissileProfile))
+                throw new InvalidOperationException("Cannot create Picket missile profile from SAM1Missile.");
+            try
+            {
+                var root = PrefabUtility.LoadPrefabContents(MissileProfile);
+                try
+                {
+                    var missile = root.GetComponent<SurfaceToAirMissile>();
+                    if (missile == null) throw new InvalidOperationException("SAM1Missile component missing.");
+                    var p = new SerializedObject(missile);
+                    p.FindProperty("speed").floatValue = 115f;
+                    p.FindProperty("turnRate").floatValue = 90f;
+                    p.FindProperty("totalTurnBudget").floatValue = 120f;
+                    p.FindProperty("lifetime").floatValue = 6.5f;
+                    p.FindProperty("hitRadius").floatValue = 3.5f;
+                    p.FindProperty("damage").intValue = 4;
+                    p.ApplyModifiedPropertiesWithoutUndo();
+                    if (PrefabUtility.SaveAsPrefabAsset(root, MissileProfile) == null)
+                        throw new InvalidOperationException("Cannot save Picket missile profile.");
+                }
+                finally { PrefabUtility.UnloadPrefabContents(root); }
+                return AssetDatabase.LoadAssetAtPath<GameObject>(MissileProfile).GetComponent<SurfaceToAirMissile>();
+            }
+            catch { AssetDatabase.DeleteAsset(MissileProfile); throw; }
+        }
+
         [MenuItem("Air Combat/Missions/Install Tactical Map")]
         private static void Install()
         {
@@ -54,13 +93,42 @@ namespace AirCombat
                 if(sites.Length!=6 || targets.Length!=3) throw new InvalidOperationException("Unexpected marker count; inspect scene.");
                 var existing=roots.SelectMany(g=>g.GetComponentsInChildren<TacticalMapView>(true)).ToArray();
                 if(existing.Length>1) throw new InvalidOperationException("Multiple tactical map views.");
+                var missileProfile = GetOrCreateMissileProfile();
                 // Only new sites inherit the planned radius. Reinstall preserves tuning.
                 var launchers=sites.Select(s=>{
                     var site=s.site.GetComponent<SurfaceToAirLauncher>();
-                    if(site!=null) return site;
-                    site=Undo.AddComponent<SurfaceToAirLauncher>(s.site.gameObject);
+                    bool created = site == null;
+                    if (created) site=Undo.AddComponent<SurfaceToAirLauncher>(s.site.gameObject);
                     var settings=new SerializedObject(site);
-                    settings.FindProperty("engagementRange").floatValue=s.radius;
+                    if (created) settings.FindProperty("engagementRange").floatValue=s.radius;
+                    var socket = settings.FindProperty("launchSocket");
+                    var projectile = settings.FindProperty("missilePrefab");
+                    if (projectile.objectReferenceValue == null)
+                    {
+                        settings.FindProperty("lockSeconds").floatValue=2f;
+                        settings.FindProperty("reloadSeconds").floatValue=9f;
+                        projectile.objectReferenceValue=missileProfile;
+                    }
+                    if (socket.objectReferenceValue == null)
+                    {
+                        // Picket has sealed decorative boxes: use a temporary top socket.
+                        // No mesh or scene placement changes in this gameplay atom.
+                        var muzzle = s.site.Cast<Transform>().SingleOrDefault(t=>t.name=="Picket launch socket");
+                        if (muzzle == null)
+                        {
+                            var go = new GameObject("Picket launch socket");
+                            Undo.RegisterCreatedObjectUndo(go,"Create Picket launch socket");
+                            Undo.SetTransformParent(go.transform,s.site,"Parent Picket launch socket");
+                            muzzle=go.transform;
+                            float top=s.site.position.y;
+                            foreach (var renderer in s.site.GetComponentsInChildren<Renderer>(true))
+                                top=Mathf.Max(top,renderer.bounds.max.y);
+                            muzzle.position=new Vector3(s.site.position.x,top+.2f,s.site.position.z);
+                            muzzle.localRotation=Quaternion.identity;
+                            muzzle.localScale=Vector3.one;
+                        }
+                        socket.objectReferenceValue=muzzle;
+                    }
                     settings.ApplyModifiedProperties();
                     PrefabUtility.RecordPrefabInstancePropertyModifications(site);
                     EditorUtility.SetDirty(site);
@@ -75,7 +143,7 @@ namespace AirCombat
                 view.ConfigureForAuthoring(data,player.transform,sites,targets,extra,"FIRST SORTIE");
                 EditorUtility.SetDirty(view); PrefabUtility.RecordPrefabInstancePropertyModifications(view);
                 EditorSceneManager.MarkSceneDirty(scene); Selection.activeObject=view;
-                Debug.Log("M01-AA1: tactical map and six SAM radar sites installed. Weapons not armed yet. Save scene after review.");
+                Debug.Log("M01-AA2: tactical map and six armed Picket sites installed. Save scene after review.");
             }
             catch(Exception ex){Debug.LogError("Install Tactical Map: "+ex.Message);}
         }
