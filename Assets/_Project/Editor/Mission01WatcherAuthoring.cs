@@ -70,8 +70,20 @@ namespace AirCombat
                     var hitbox = marker.GetComponent<BoxCollider>();
                     if (hitbox == null) hitbox = Undo.AddComponent<BoxCollider>(marker.gameObject);
                     Undo.RecordObject(hitbox, "Configure Watcher hitbox");
-                    // Broad arcade hitbox; includes the player gun's slight vertical offset.
-                    hitbox.center = Vector3.zero; hitbox.size = new Vector3(24f, 11f, 34f); hitbox.isTrigger = false; hitbox.enabled = true;
+                    // Three compact boxes, not the empty corners of a full-span rectangle.
+                    var boxes = marker.GetComponents<BoxCollider>().ToList();
+                    while (boxes.Count < 3) boxes.Add(Undo.AddComponent<BoxCollider>(marker.gameObject));
+                    if (boxes.Count != 3) throw new InvalidOperationException("Unexpected Watcher collider count: " + marker.name);
+                    var centers = new[] { new Vector3(0f, 0f, .2f), new Vector3(0f, 0f, .05f), new Vector3(0f, -.3f, -6.6f) };
+                    var sizes = new[] { new Vector3(3.5f, 5f, 18f), new Vector3(25f, 4f, 3.8f), new Vector3(7.5f, 4f, 3.2f) };
+                    for (int j = 0; j < boxes.Count; j++)
+                    {
+                        Undo.RecordObject(boxes[j], "Configure UAV hit zone");
+                        boxes[j].center = centers[j]; boxes[j].size = sizes[j];
+                        boxes[j].isTrigger = false; boxes[j].enabled = true;
+                        EditorUtility.SetDirty(boxes[j]);
+                    }
+                    InstallRotor(visual);
                     var target = marker.GetComponent<WatcherTarget>();
                     if (target == null) target = Undo.AddComponent<WatcherTarget>(marker.gameObject);
                     Undo.RecordObject(target, "Configure Watcher patrol");
@@ -94,6 +106,30 @@ namespace AirCombat
                 if (group >= 0) Undo.RevertAllDownToGroup(group);
                 Debug.LogError("RE01: " + ex);
             }
+        }
+
+        private static void InstallRotor(Transform visual)
+        {
+            var model = AssetDatabase.LoadAssetAtPath<GameObject>(Art + "RE01_Rotor.obj");
+            var filters = model == null ? Array.Empty<MeshFilter>() : model.GetComponentsInChildren<MeshFilter>(true);
+            var material = AssetDatabase.LoadAssetAtPath<Material>(Art + "RE01_Dark.mat");
+            if (filters.Length != 1 || filters[0].sharedMesh == null || material == null)
+                throw new InvalidOperationException("Missing rotor mesh/material. Generate Watcher OBJs first.");
+            var rotor = visual.Find("PusherRotor");
+            if (rotor == null)
+            {
+                var go = new GameObject("PusherRotor", typeof(MeshFilter), typeof(MeshRenderer));
+                Undo.RegisterCreatedObjectUndo(go, "Create Watcher rotor");
+                Undo.SetTransformParent(go.transform, visual, "Mount Watcher rotor");
+                rotor = go.transform;
+            }
+            Undo.RecordObject(rotor, "Align Watcher rotor");
+            rotor.localPosition = new Vector3(0f, .15f, -8.85f);
+            rotor.localRotation = Quaternion.identity; rotor.localScale = Vector3.one;
+            var filter = rotor.GetComponent<MeshFilter>(); var renderer = rotor.GetComponent<MeshRenderer>();
+            Undo.RecordObject(filter, "Set rotor mesh"); Undo.RecordObject(renderer, "Set rotor material");
+            filter.sharedMesh = filters[0].sharedMesh; renderer.sharedMaterial = material;
+            renderer.shadowCastingMode = ShadowCastingMode.Off; renderer.receiveShadows = true;
         }
 
         private static GameObject BuildVisual()

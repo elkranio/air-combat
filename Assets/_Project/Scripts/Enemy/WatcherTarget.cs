@@ -12,7 +12,8 @@ namespace AirCombat
         [SerializeField, Min(10f)] private float patrolRadius = 45f;
         [SerializeField] private float initialAngle;
         [SerializeField] private bool clockwise;
-        private BoxCollider hitbox;
+        private BoxCollider[] hitboxes;
+        private Transform rotor;
         private Mission01ReconEncounter encounter;
         private Vector3 center, fallStart, fallForward;
         private Quaternion visualRest;
@@ -33,8 +34,9 @@ namespace AirCombat
 #endif
         public bool Initialize(Mission01ReconEncounter owner, float cruiseSpeed, float floor)
         {
-            hitbox = GetComponent<BoxCollider>();
-            if (visual == null || hitbox == null) return false;
+            hitboxes = GetComponents<BoxCollider>();
+            if (visual == null || hitboxes.Length == 0) return false;
+            rotor = visual.Find("PusherRotor");
             if (!initialized)
             {
                 center = transform.position;
@@ -57,7 +59,8 @@ namespace AirCombat
             falling = detonated = false;
             visual.gameObject.SetActive(true);
             visual.localRotation = visualRest;
-            hitbox.enabled = true;
+            foreach (var box in hitboxes) box.enabled = true;
+            if (rotor != null) rotor.localRotation = Quaternion.identity;
             PlaceOnPatrol();
         }
 
@@ -76,7 +79,7 @@ namespace AirCombat
             if (hp == 0)
             {
                 // Count this kill immediately; the wreck is no longer a target.
-                hitbox.enabled = false;
+                foreach (var box in hitboxes) box.enabled = false;
                 falling = true;
                 fallTime = smokeDebt = 0f;
                 fallStart = transform.position;
@@ -91,6 +94,7 @@ namespace AirCombat
             if (!initialized || dt <= 0f) return;
             if (IsAlive)
             {
+                if (rotor != null) rotor.Rotate(0f, 0f, 780f * dt, Space.Self);
                 angle = Mathf.Repeat(angle + (clockwise ? -1f : 1f) * speed / Mathf.Max(10f, patrolRadius) * dt, 2f * Mathf.PI);
                 PlaceOnPatrol();
                 float damage = 1f - (float)hp / Mathf.Max(1, maxHp);
@@ -100,11 +104,12 @@ namespace AirCombat
             }
             if (!falling) return;
             fallTime += dt;
+            if (rotor != null) rotor.Rotate(0f, 0f, Mathf.Max(0f, 420f * (1f - fallTime / 2f)) * dt, Space.Self);
             // Short burning glide followed by an accelerating nose-down descent.
             float u = Mathf.Clamp01((fallTime - .65f) / 3.15f);
             float sink = u * u;
             Vector3 next = fallStart + fallForward * (speed * (fallTime + .12f * fallTime * fallTime));
-            next.y = Mathf.Lerp(fallStart.y, groundY + 16f, sink);
+            next.y = Mathf.Lerp(fallStart.y, groundY + 8f, sink);
             transform.position = next;
             float roll = (clockwise ? -1f : 1f) * Mathf.Lerp(8f, 65f, u);
             visual.localRotation = visualRest * Quaternion.Euler(Mathf.Lerp(0f, 58f, u), 0f, roll);
@@ -112,14 +117,14 @@ namespace AirCombat
             if (!detonated && fallTime >= 1.05f)
             {
                 detonated = true;
-                encounter.AirBurst(visual.TransformPoint(new Vector3(-5f, 1f, -4f)), fallForward);
-                encounter.AirBurst(visual.TransformPoint(new Vector3(5f, 0f, -7f)), fallForward);
+                encounter.AirBurst(visual.TransformPoint(new Vector3(-2f, .2f, -.8f)), fallForward);
+                encounter.AirBurst(visual.TransformPoint(new Vector3(.3f, .1f, -5.5f)), fallForward);
             }
             if (u >= 1f)
             {
                 falling = false;
                 visual.gameObject.SetActive(false);
-                Vector3 nose = visual.TransformPoint(new Vector3(0f, .25f, 17f));
+                Vector3 nose = visual.TransformPoint(new Vector3(0f, .25f, 9f));
                 encounter.GroundBurst(new Vector3(nose.x, groundY + 1f, nose.z), fallForward);
             }
         }
@@ -130,7 +135,7 @@ namespace AirCombat
             while (smokeDebt >= 1f)
             {
                 smokeDebt -= 1f;
-                Vector3 p = visual.TransformPoint(new Vector3(Random.Range(-4f, 4f), Random.Range(-1f, 2f), Random.Range(-10f, -4f)));
+                Vector3 p = visual.TransformPoint(new Vector3(Random.Range(-.65f, .65f), Random.Range(-.45f, .65f), Random.Range(-7f, -4f)));
                 encounter.EmitSmoke(p, fire);
             }
         }

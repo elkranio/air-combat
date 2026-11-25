@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Fictional arcade recon airship. Y-up OBJ; optional editable Blender scene.
+"""Fictional arcade recon UAV. Y-up OBJ; optional editable Blender scene.
 Python: python Tools/Blender/build_re01_watcher.py
 Blender: blender -b --factory-startup --python Tools/Blender/build_re01_watcher.py
 """
@@ -58,34 +58,42 @@ def fin(name,g,points,thick=.7):
     solid(name,g,v,[tuple(range(n)),tuple(range(n,2*n))]+[(i,(i+1)%n,(i+1)%n+n,i+n) for i in range(n)])
 
 def paint(p):
-    x,y,z=p
-    if -10.5<z<-7 and y>0: return 'Gold'
-    if y>1.2:return 'Upper'
-    return 'Hull'
+    return 'Upper' if p[1] > .55 else 'Hull'
 
-# Broad lifting body: flat silhouette, a tapered rear, dark belly, one yellow band.
-hull('Lifting envelope','Hull',[(-17,0,.4,1.9,1.15),(-14,0,.3,5.8,2.6),(-10,0,.1,9.7,4.0),(-7,0,0,11.4,4.7),(0,0,0,12.2,5.2),(7,0,0,10.9,4.9),(13,0,.1,7.6,3.8),(17,0,.25,2.3,1.65)],16,paint)
-# Dark lower gondola, angular shoulder engines, capped duct faces.
-hull('Belly gondola','Equipment',[(-10,0,-4.0,1.8,.9),(-7,0,-4.6,3.8,1.5),(5,0,-4.6,3.6,1.5),(9,0,-3.9,1.5,.8)],8)
-box('Sensor window','Dark',0,-4.5,8.9,2.4,.85,.25)
+# Fictional utility UAV: slender fuselage, swollen sensor nose, long wings.
+hull('Fuselage','Hull',[(-8.0,0,.15,.62,.68),(-6.7,0,.12,.95,.88),(-3.0,0,0,1.05,1.0),(1.8,0,0,1.3,1.12),(4.9,0,.18,1.52,1.48),(7.2,0,.32,1.3,1.28),(8.5,0,.21,.82,.79),(9.0,0,.16,.24,.29)],12,paint)
+# A dark optical turret under the nose, with a flattened front lens.
+hull('Sensor turret','Equipment',[(4.9,0,-1.32,.45,.45),(5.45,0,-1.58,.82,.79),(6.35,0,-1.58,.82,.79),(6.9,0,-1.45,.45,.48)],10)
+hull('Sensor lens','Dark',[(6.72,0,-1.48,.48,.41),(7.0,0,-1.48,.39,.34)],8)
+# Distinct gold wing stripes are integral panels, not floating decals.
 for s in (-1,1):
-    x=s*10.2
-    hull('Engine shoulder '+str(s),'Equipment',[(-10,x,-1.5,1.4,1.2),(-8,x,-1.5,2.35,1.75),(-2,x,-1.5,2.3,1.7),(1,x,-1.5,1.2,.95)],8)
-    hull('Dark exhaust '+str(s),'Dark',[(-10.5,x,-1.5,1.4,1.15),(-9.8,x,-1.5,1.45,1.2)],8)
-    # Tail fins share the military olive; broad angular silhouette, not a Zeppelin copy.
-    fin('Tailplane '+str(s),'Equipment',[(s*3,.4,-11),(s*8,.9,-15.0),(s*8,.9,-18),(s*2.5,.4,-16.7)])
-    fin('Tail tip '+str(s),'Gold',[(s*7.3,.9,-15),(s*8.2,.9,-15.7),(s*8.2,.9,-18.1),(s*7.3,.9,-17.9)],.78)
-# Central raised tail spine, visible upper recon sensor panel.
-fin('Vertical tail','Equipment',[(-.75,2.7,-11),(.75,2.7,-11),(.8,4.0,-16.7),(-.8,4.0,-16.7)],2.0)
-box('Upper technical panel','Dark',0,5.03,1.0,3.7,.38,6.8)
-box('Panel cap','Equipment',0,5.28,2.7,2.8,.3,2.9)
-# Simple top markings, high contrast, no text texture. Twin gold ID bars.
-box('ID bar L','Gold',-2.7,4.9,3.5,.7,.24,2.0)
-box('ID bar R','Gold',2.7,4.9,3.5,.7,.24,2.0)
+    def wing(name,g,a,b,lead_a,trail_a,lead_b,trail_b):
+        fin(name+' '+str(s),g,[(s*a,.04,lead_a),(s*b,.04,lead_b),(s*b,.04,trail_b),(s*a,.04,trail_a)],.52)
+    wing('Wing root','Hull',.65,2.5,2.1,-2.3,1.7,-1.9)
+    wing('Main wing','Upper',2.5,9.8,1.7,-1.9,.85,-1.45)
+    wing('Dominion stripe','Gold',9.8,10.85,.85,-1.45,.73,-1.38)
+    wing('Wing tip','Upper',10.85,12.5,.73,-1.38,.48,-1.10)
+    # Inverted V: slope downward from the rear fuselage, clear from above.
+    fin('Tail '+str(s),'Equipment',[(s*.42,.13,-4.9),(s*3.7,-1.65,-6.8),(s*3.7,-1.65,-8.15),(s*.42,.13,-7.55)],.42)
+    # Small dark panel on top of the inner wing, away from the stripe.
+    box('Wing panel '+str(s),'Dark',s*3.2,.33,-.82,1.05,.12,.55)
+# Rear pusher hub and exhausts. Rotor is an independently animated child.
+hull('Pusher hub','Dark',[(-8.85,0,.15,.27,.27),(-8.35,0,.15,.48,.48),(-7.85,0,.15,.50,.50)],10)
+for s in (-1,1):
+    box('Exhaust '+str(s),'Dark',s*.85,.18,-5.7,.30,.43,.96)
+box('Dorsal equipment','Equipment',0,1.18,1.0,.72,.46,2.5)
+
+# Rotor centered on its own pivot, +Z axis. Closed low-poly blades.
+for i in range(3):
+    a=2*pi*i/3
+    def rotor_point(r,t,z):
+        return (r*cos(a)-t*sin(a),r*sin(a)+t*cos(a),z)
+    v=[rotor_point(r,t,z) for z in (-.09,.09) for r,t in ((.18,-.13),(1.65,-.17),(1.91,.03),(1.68,.24),(.18,.20))]
+    solid('Pusher blade '+str(i),'Rotor',v,[(0,1,2,3,4),(5,6,7,8,9)]+[(j,(j+1)%5,(j+1)%5+5,j+5) for j in range(5)])
 
 def export():
     OUT.mkdir(parents=True,exist_ok=True)
-    for group in PALETTE:
+    for group in (*PALETTE, 'Rotor'):
         lines=['# RE01 Watcher / visual-only mesh / Y-up +Z forward',f'o RE01_{group}','s off'];off=0
         for name,g,v,t in PARTS:
             if g!=group:continue
@@ -102,7 +110,8 @@ def export():
         m=bpy.data.materials.new('RE01_'+group);c=tuple(x/255 for x in rgb);m.diffuse_color=(*c,1);m.use_nodes=True
         p=m.node_tree.nodes.get('Principled BSDF');p.inputs['Base Color'].default_value=(*c,1);p.inputs['Roughness'].default_value=.92;mats[group]=m
     for name,g,v,t in PARTS:
-        mesh=bpy.data.meshes.new(name);mesh.from_pydata([(x,-z,y) for x,y,z in v],[],t);mesh.update();mesh.materials.append(mats[g]);ob=bpy.data.objects.new(name,mesh);bpy.context.scene.collection.objects.link(ob)
+        mesh=bpy.data.meshes.new(name);mesh.from_pydata([(x,-z,y) for x,y,z in v],[],t);mesh.update();mesh.materials.append(mats['Dark' if g=='Rotor' else g]);ob=bpy.data.objects.new(name,mesh);bpy.context.scene.collection.objects.link(ob)
+        if g=='Rotor': ob.location=(0,8.85,.15)
         for p in mesh.polygons:p.use_smooth=False
     path=ROOT/'Resources/Blender/RE01_Watcher.blend';path.parent.mkdir(parents=True,exist_ok=True);bpy.ops.wm.save_as_mainfile(filepath=str(path))
 
