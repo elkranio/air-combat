@@ -44,7 +44,7 @@ namespace AirCombat
         [SerializeField, Min(1f)] private float landingCorridorNear = 150f;
         [SerializeField, Min(1f)] private float landingCorridorFar = 350f;
         [SerializeField, Range(.25f, 4f)] private float landingCorridorWidthScale = 1f;
-        [SerializeField, Range(5f, 60f)] private float landingHeadingTolerance = 35f;
+        [SerializeField, Range(5f, 60f)] private float landingCaptureHeadingTolerance = 15f;
         [SerializeField, Min(.15f)] private float landingCaptureSeconds = 1f;
         [SerializeField, Min(10f)] private float landingTouchdownOffset = 65f;
         [SerializeField, Min(5f)] private float landingAutoTouchdownSpeed = 65f;
@@ -111,7 +111,7 @@ namespace AirCombat
                 boundaryCautionDistance, boundaryCriticalDistance);
             landing = new Mission01Landing(transform, runwayPosition, runwayRotation, visualRest,
                 operationBounds, landingCorridorNear, landingCorridorFar, landingCorridorWidthScale,
-                landingRevealDistance, landingHeadingTolerance, landingCaptureSeconds, landingTouchdownOffset,
+                landingRevealDistance, landingCaptureHeadingTolerance, landingCaptureSeconds, landingTouchdownOffset,
                 landingAutoTouchdownSpeed);
             initialized = true;
             State = Phase.Intro;

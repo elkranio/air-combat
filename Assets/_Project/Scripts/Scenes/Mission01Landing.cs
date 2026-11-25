@@ -217,18 +217,17 @@ namespace AirCombat
                 Vector3 p = v * v * v * p0 + 3f * v * v * u * p1 + 3f * v * u * u * p2 + u * u * u * p3;
                 Vector3 tangent = 3f * v * v * (p1 - p0) + 6f * v * u * (p2 - p1) + 3f * u * u * (p3 - p2);
                 tangent.y = 0f;
-                // Delay descent slightly until the captured aircraft is aligning.
-                float descent = Mathf.InverseLerp(.1f, 1f, u);
-                float flare = Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(.55f, 1f, u));
-                float pitch = Mathf.Lerp(3f, FlarePitch, flare);
-                float descentBlend = Mathf.SmoothStep(0f, 1f, descent);
-                p.y = Mathf.Lerp(p0.y, origin.y, descentBlend) + ContactLift(pitch) * descentBlend;
+                // Begin descent and nose-up alignment together at capture.
+                // Hold the landing attitude throughout the glide, not just at flare.
+                float descentBlend = Mathf.SmoothStep(0f, 1f, u);
+                p.y = Mathf.Lerp(p0.y, origin.y + ContactLift(FlarePitch), descentBlend);
                 aircraft.SetPositionAndRotation(p, Quaternion.LookRotation(tangent, Vector3.up));
-                // Negative local X is nose-up (same convention as takeoff).
-                // Finish the blend before touchdown even on a short approach.
+                // Blend the captured bank into nose-up (negative local X).
+                // Reach full pitch within .3 s or the first 20% of the approach.
+                float attitudeBlend = Mathf.SmoothStep(0f, 1f,
+                    elapsed / Mathf.Min(.3f, duration * .2f));
                 visual.localRotation = Quaternion.Slerp(captureVisual,
-                    visualRest * Quaternion.Euler(-pitch, 0f, 0f),
-                    Mathf.SmoothStep(0f, 1f, elapsed / Mathf.Min(.55f, duration)));
+                    visualRest * Quaternion.Euler(-FlarePitch, 0f, 0f), attitudeBlend);
                 return false;
             }
             float r = elapsed >= duration + rollout ? 1f : Mathf.Clamp01((elapsed - duration) / rollout);
