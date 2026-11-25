@@ -13,3 +13,7 @@ Base `b16a441`. Replace only the three existing OBJ geometries and their determi
 ## MISSION-01H1g — Flat plateau (WIP)
 
 Base `2e0ca64`. Level the uppermost crown ring and its center at Y154; all cap triangles now share an upward normal. Preserve the irregular XZ outline, lower rings, wall and foot meshes, materials, placement and triangle count. Only the crown bevel and cap geometry change. Existing scene instances reimport automatically. No camera, terrain, collision or radar changes. Check in Unity from above and beside the cliff.
+
+## MISSION-01H1h — Terrain radar (WIP)
+
+Base `d9d55a0`. In the mission scene run **Air Combat > Missions > Place Mission 01 Cliff Mesh Trial** again; on an existing root it adds only `RadarTerrainObstacle` (Undo supported). Save scene. New stationary cliff modules can opt in with the same component on a root enclosing their readable closed mesh parts. At runtime cache their world triangles, slice at the player's current altitude, fill concave sections using even-odd strips and clip fill/outline to the radar disc. Radar uses the existing camera-projected axes/range and draws terrain underneath contacts and the player. Authoring movement, rotation and scale are captured at Play start; runtime moving/deforming geometry is not supported. The old Terrain ridge is deliberately excluded, as are all unmarked meshes. No collision, camera, palette or combat changes. Check locally from multiple headings, at the radar edge and when flying through the test rock; hiding the rock root hides its radar shape.

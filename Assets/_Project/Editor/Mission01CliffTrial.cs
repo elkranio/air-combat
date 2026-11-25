@@ -30,7 +30,17 @@ namespace AirCombat
             {
                 var roots = scene.GetRootGameObjects();
                 var previous = roots.SingleOrDefault(g => g.name == TrialName);
-                if (previous != null) { Selection.activeGameObject = previous; return; }
+                if (previous != null)
+                {
+                    if (previous.GetComponent<RadarTerrainObstacle>() == null)
+                    {
+                        Undo.AddComponent<RadarTerrainObstacle>(previous);
+                        EditorSceneManager.MarkSceneDirty(scene);
+                    }
+                    Selection.activeGameObject = previous;
+                    Debug.Log("Cliff terrain radar enabled. Save scene.");
+                    return;
+                }
                 var terrain = roots.Single(g => g.name == "Mission01 / Editable terrain").GetComponent<Terrain>();
                 if (terrain == null || terrain.terrainData == null) throw new InvalidOperationException("Mission terrain missing.");
                 // Check the full nominal footprint and a little clearance against the editable source.
@@ -91,11 +101,12 @@ namespace AirCombat
                             PrefabUtility.RecordPrefabInstancePropertyModifications(r);
                         }
                     }
+                    Undo.AddComponent<RadarTerrainObstacle>(root);
                     Undo.CollapseUndoOperations(group);
                     EditorSceneManager.MarkSceneDirty(scene);
                     AssetDatabase.SaveAssets();
                     Selection.activeGameObject = root;
-                    Debug.Log("Mission01 cliff mesh trial placed. Visual only; save scene after review.");
+                    Debug.Log("Mission01 cliff mesh trial placed. Terrain radar enabled; no collision yet. Save scene after review.");
                 }
                 catch { Undo.RevertAllDownToGroup(group); throw; }
             }

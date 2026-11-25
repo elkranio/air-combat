@@ -91,6 +91,12 @@ namespace AirCombat
             Vector2 center = rectTransform.rect.center;
 
             Disk(mesh, center, radius, new Color(.025f, .075f, .095f, .32f));
+            if (radar != null)
+            {
+                GetDisplayAxes(out Vector2 terrainRight, out Vector2 terrainUp);
+                TerrainRadarOverlay.Draw(mesh, radar, center, radius,
+                    terrainRight, terrainUp, opacity * color.a);
+            }
             Ring(mesh, center, radius * .5f, .8f, new Color(.47f, .75f, .77f, .20f));
             Segment(mesh, center + Vector2.left * radius * .92f,
                 center + Vector2.right * radius * .92f, .8f,
