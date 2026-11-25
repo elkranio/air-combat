@@ -1,8 +1,12 @@
 # Air Combat — current handoff
 
-2026-11-24 | CM-04, based on `25b845e`. Cannon and AAM interception confirmed by the player; independent Sparrow sway and cosmetic roll are now a trial pending Play Mode review. Earlier iterations are archived. Inspector values on committed assets take precedence over code defaults.
+2026-11-25 | CLEANUP-03, base `8bfbbb7`.
 
-## Accepted baseline
+## Campaign baseline (current priority)
+
+[Mission01 First Sortie](Docs/MISSION_01.md): v3 geography, Lynx takeoff/flight, cannon, terrain radar union/warning, fatal crash/retry and projectile blocking are accepted. SAMs and objectives are placeholders. Next: tactical map pipeline, boundary enforcement, live SAMs, recon units and optional target, then RTB/landing and results.
+
+## Accepted combat playground baseline
 
 - Main map: `ArcadeDesertE1`, authored 2 km desert, fixed-world oblique camera, flight and radar/HUD. WASD variable maneuverability shares one boost resource between fast and tight turns.
 - Air test: AC-01 BURST on LMB and AAM on RMB, two independently behaving Tigers. Strong opponents accepted; imperfect gun aim and bounded pressure, independent missile cycles (main scene currently overrides cooldown to 2–3.2s; no tuning change in 02b). Player AAM evasion and Short Vector cue accepted. AC-02 retained but not equipped; powerful, needs a later resource/cooldown tradeoff.
@@ -13,14 +17,9 @@
 - Tiger: `EF01_Tiger_Fighter.prefab` owns `ArcadeFighterUnit` and the attack settings formerly serialized on the encounter. The unit prepares its flight/health and owns its independent pilot. The encounter still schedules flight decisions before movement and fire after movement; AAM scheduling and registrations remain shared.
 - Player: `PlayerKestrel_Combat.prefab` owns the flight, boost, chassis, team, health, radar, trigger and mounted weapon modules. The scene selects and binds one secondary; AC-02 remains disabled. The original `PlayerJet.prefab` is retained for the labs. Spawn pose, camera and flight test settings stay on the scene/session.
 
-## Next atoms (in order)
+## Next atoms
 
-1. CM-04 — review [interception playground](Docs/CM_02.md): subtle independent Sparrow motion, AC-01 and AAM hits, lock/radar removal, altitude changes, explosion, escape and R restart. Existing AAM tuning retained. Spatial audio and dedicated sound design deferred; drone model and future mission composition deferred.
-2. JUICE-AA-01 — launch smoke, attitude jets, distinct ignition burst, strong smoke trail, explosion and appropriate sound; evaluate in gameplay camera.
-3. GROUND-01 — NURS damage and destruction of ground vehicles; then JUICE-NURS-01 for meaningful hit/impact feedback.
-4. CONVOY-01 — first mixed mission: moving targets, mobile AA and optional fighter escort. Test the precision-versus-exposure tradeoff; mission completion need not require killing every fighter.
-
-Deferred: enemy aircraft placement/spawn authoring (wait for mission requirements), Attack Intent, AC-02 balance, Q/E selection, wingtip trails, unified visual/audio direction. The two-Tiger test still spawns automatically. No new AI or weapon tuning in cleanup.
+Campaign: see [Mission 01](Docs/MISSION_01.md). The previous combat-lab backlog is retained in [Git history](https://github.com/elkranio/air-combat/blob/8bfbbb7698879b4809812894a5c7ebaba6c623fd/HANDOFF.md); do not prioritize it over the mission slice.
 
 ## Regression gate
 

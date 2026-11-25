@@ -39,3 +39,7 @@ The main-map player uses `Prefabs/Aircraft/PlayerKestrel_Combat.prefab`, indepen
 ## Future boundary
 
 Mission scripts should compose reusable units, routes and objective/trigger data. Do not add mission-specific coordinates or dependencies inside generic weapon/flight code. Prefabize existing behavior before new features. Keep runtime asset lookup and serialized GUID references in mind during resource cleanup; a lack of scene references alone is not proof of disuse.
+
+## Campaign scene
+
+`Mission01_FirstSortie` owns the authored v3 geography and `Mission01LaunchSequence` owns takeoff, flight, terrain crash and retry. `RadarTerrainObstacle` and `TerrainSectionUnion` provide shared terrain geometry for radar/proximity; projectile queries use marked rock surfaces. Mission data and tactical map are the next separate systems, not new responsibilities of the flight controller. See [Mission 01](Docs/MISSION_01.md).

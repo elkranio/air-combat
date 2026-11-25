@@ -11,13 +11,9 @@ namespace AirCombat
     // Scene authoring only. Each rock is a separate reusable, closed radar solid.
     internal static class CL06RockBarrierAuthoring
     {
-        private const string ScenePath = "Assets/_Project/Scenes/Mission01_FirstSortie.unity";
         private const string Art = "Assets/_Project/Art/Environment/Mission01_FirstSortie/";
         private const string Library = Art + "CL06_RockBarrier/";
         private const string Prefabs = "Assets/_Project/Prefabs/Environment/Cliffs";
-        private const string OldBarrier = "Mission01 / Cliff barrier - camera layout v2";
-        private const string NewBarrier = "Mission01 / CL06 rock barrier";
-        private const string UndoName = "Replace Mission 01 rock barrier";
 
         [Serializable] private sealed class Model { public string name; public int tone; }
         [Serializable] private sealed class Placement
@@ -107,102 +103,5 @@ namespace AirCombat
                 throw new InvalidOperationException("Expected one readable closed mesh for " + name);
         }
 
-        [MenuItem("Air Combat/Missions/Replace Mission 01 Barrier with CL06")]
-        private static void Replace() => Install(false);
-
-        [MenuItem("Air Combat/Missions/Densify Mission 01 CL06 Barrier")]
-        private static void Densify() => Install(true);
-
-        private static void Install(bool densify)
-        {
-            if (EditorApplication.isPlayingOrWillChangePlaymode) return;
-            try
-            {
-                var scene = SceneManager.GetActiveScene();
-                if (!scene.isLoaded || scene.path != ScenePath) throw new InvalidOperationException("Open Mission01_FirstSortie first.");
-                var roots = scene.GetRootGameObjects();
-                var current = roots.SingleOrDefault(g => g.name == NewBarrier);
-                var layout = ReadLayout();
-                GameObject old;
-                if (densify)
-                {
-                    if (current == null)
-                        throw new InvalidOperationException("Expected the installed CL06 barrier. Use Replace Mission 01 Barrier with CL06 for first installation.");
-                    int count = current.GetComponentsInChildren<RadarTerrainObstacle>(true).Length;
-                    if (count == layout.placements.Length)
-                    { Selection.activeGameObject = current; Debug.Log("CL06 dense barrier already installed. Edit the scene directly."); return; }
-                    if (count != 85 || current.transform.childCount != 8 || roots.Any(g => g.name == OldBarrier))
-                        throw new InvalidOperationException("Expected original 85-rock CL06 with eight groups. Inspect scene before replacement.");
-                    old = current;
-                }
-                else
-                {
-                    if (current != null)
-                    { Debug.Log("CL06 already installed. Use Densify Mission 01 CL06 Barrier for the original recipe."); return; }
-                    old = roots.SingleOrDefault(g => g.name == OldBarrier);
-                    if (old == null)
-                        throw new InvalidOperationException("Camera layout v2 not found. Run Air Combat > Missions > Apply Mission 01 Camera Layout v2 first, then retry.");
-                    if (old.transform.childCount != 8)
-                        throw new InvalidOperationException("Expected eight v2 cliff instances; inspect scene before replacement.");
-                }
-                var objectives = roots.Single(g => g.name == "Mission01 / Objectives");
-                if (!Enumerable.Range(0, objectives.transform.childCount).Any(i => objectives.transform.GetChild(i).name == "H2C / Camera layout v2 (visual only)"))
-                    throw new InvalidOperationException("Expected v2 objective layout; no changes made.");
-                var ground = roots.Single(g => g.name == "Mission01 / Faceted surface").GetComponent<MeshFilter>();
-                if (ground == null || ground.sharedMesh == null || Mathf.Abs(ground.sharedMesh.bounds.min.y) > .01f || Mathf.Abs(ground.sharedMesh.bounds.max.y) > .01f)
-                    throw new InvalidOperationException("Expected flat mission ground.");
-                var trial = roots.SingleOrDefault(g => g.name == "Mission01 / CL05 rock trial");
-                if (trial != null && PrefabUtility.GetPrefabAssetPathOfNearestInstanceRoot(trial) != Prefabs + "/CL05_TestRock.prefab")
-                    throw new InvalidOperationException("Unexpected CL05 trial object; inspect scene before replacement.");
-                var library = Build(layout);
-                Undo.IncrementCurrentGroup();
-                int group = Undo.GetCurrentGroup();
-                Undo.SetCurrentGroupName(UndoName);
-                try
-                {
-                    var root = NewGroup(scene, null, NewBarrier);
-                    var sections = new Dictionary<string, Transform>();
-                    int index = 0;
-                    foreach (var p in layout.placements)
-                    {
-                        if (!sections.TryGetValue(p.section, out var parent))
-                        {
-                            parent = NewGroup(scene, root, p.section);
-                            sections.Add(p.section, parent);
-                        }
-                        var instance = (GameObject)PrefabUtility.InstantiatePrefab(library[p.model], parent);
-                        if (instance == null) throw new InvalidOperationException("Cannot place " + p.model);
-                        Undo.RegisterCreatedObjectUndo(instance, UndoName);
-                        Undo.RecordObjects(new UnityEngine.Object[] { instance, instance.transform }, UndoName);
-                        instance.name = $"{++index:00} / {p.model}";
-                        instance.transform.localPosition = new Vector3(p.x, 0, p.z);
-                        instance.transform.localRotation = Quaternion.Euler(0, p.yaw, 0);
-                        instance.transform.localScale = new Vector3(p.sx, p.sy, p.sz);
-                        PrefabUtility.RecordPrefabInstancePropertyModifications(instance);
-                        PrefabUtility.RecordPrefabInstancePropertyModifications(instance.transform);
-                    }
-                    Undo.DestroyObjectImmediate(old);
-                    if (trial != null) Undo.DestroyObjectImmediate(trial);
-                    Undo.CollapseUndoOperations(group);
-                    EditorSceneManager.MarkSceneDirty(scene);
-                    Selection.activeGameObject = root.gameObject;
-                    Debug.Log($"CL06: {layout.placements.Length} solid rocks installed in {sections.Count} groups. Save scene after review. Objectives, ground, lights and gameplay unchanged.");
-                }
-                catch { Undo.RevertAllDownToGroup(group); throw; }
-            }
-            catch (Exception ex) { Debug.LogError("CL06: " + ex); }
-        }
-
-        private static Transform NewGroup(Scene scene, Transform parent, string name)
-        {
-            var go = new GameObject(name);
-            SceneManager.MoveGameObjectToScene(go, scene);
-            Undo.RegisterCreatedObjectUndo(go, UndoName);
-            if (parent != null) Undo.SetTransformParent(go.transform, parent, UndoName);
-            go.transform.localPosition = Vector3.zero;
-            go.transform.localRotation = Quaternion.identity;
-            go.transform.localScale = Vector3.one;
-            return go.transform;
-        }
     }
 }
