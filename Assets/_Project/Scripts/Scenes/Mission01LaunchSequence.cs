@@ -145,6 +145,7 @@ namespace AirCombat
                 // Explicit cannon-only loadout. The empty secondary uses the existing HUD label.
                 weaponTrigger.ConfigureDualSlots(null);
                 missionHud.BindOperationBoundary(boundary);
+                if (missionHud.Marker != null) missionHud.Marker.BindNavigationTarget(ReturnNavigationPoint);
                 // Mission-only terrain warning uses the already configured flight camera.
                 var follow = FindFirstObjectByType<ArcadeCameraFollow>();
                 if (follow != null)
@@ -268,9 +269,18 @@ namespace AirCombat
             EnterFlight();
         }
 
+        private bool PrimaryComplete => reconEncounter != null && reconEncounter.Eliminated == 3;
+
+        private Vector3? ReturnNavigationPoint()
+        {
+            if (!isActiveAndEnabled || State != Phase.Flight || !PrimaryComplete || landing == null ||
+                (playerHealth != null && !playerHealth.IsAlive)) return null;
+            return landing.NavigationPoint;
+        }
+
         private void TickLandingApproach()
         {
-            bool primaryComplete = reconEncounter != null && reconEncounter.Eliminated == 3;
+            bool primaryComplete = PrimaryComplete;
             bool available = primaryComplete;
 #if UNITY_EDITOR
             available |= debugLandingNearAirfield;
@@ -414,6 +424,7 @@ namespace AirCombat
 
         private void OnDestroy()
         {
+            if (missionHud != null && missionHud.Marker != null) missionHud.Marker.BindNavigationTarget(null);
             ReleaseBoundaryPause();
             boundary?.Dispose();
             landing?.Dispose();

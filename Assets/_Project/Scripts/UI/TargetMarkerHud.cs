@@ -47,6 +47,7 @@ namespace AirCombat
         private Camera viewCamera;
         private Contact selected;
         private AircraftRadar automaticRadar;
+        private System.Func<Vector3?> navigationTarget;
         private readonly List<RadarDetection> detections = new List<RadarDetection>();
         private readonly List<Vector2> arrowPositions = new List<Vector2>();
 
@@ -62,6 +63,13 @@ namespace AirCombat
             automaticRadar = radar;
             selected = null;
             detections.Clear();
+            SetVerticesDirty();
+        }
+
+        // Mission-owned navigation, separate from hostile contacts and radar range.
+        internal void BindNavigationTarget(System.Func<Vector3?> target)
+        {
+            navigationTarget = target;
             SetVerticesDirty();
         }
 
@@ -119,7 +127,7 @@ namespace AirCombat
                 automaticRadar.Sample(detections);
                 SetVerticesDirty(); // Also clears arrows on kill, reset or range exit.
             }
-            else if (selected != null) SetVerticesDirty(); // Camera and aircraft moved.
+            else if (selected != null || navigationTarget != null) SetVerticesDirty(); // Camera and aircraft moved.
         }
 
         private bool TryGetBounds(Contact contact, out Rect screenBounds)
@@ -164,9 +172,18 @@ namespace AirCombat
         {
             mesh.Clear();
             if (viewCamera == null || Screen.width <= 0 || Screen.height <= 0) return;
+            arrowPositions.Clear();
+            Vector3? destination = navigationTarget?.Invoke();
+            if (destination.HasValue)
+            {
+                Vector3 p = viewCamera.WorldToScreenPoint(destination.Value);
+                Vector2 pixel = new Vector2(p.x, p.y);
+                if (p.z <= viewCamera.nearClipPlane || p.z >= viewCamera.farClipPlane ||
+                    !viewCamera.pixelRect.Contains(pixel))
+                    DrawTrackedArrow(mesh, pixel, p.z, new Color(.45f, .9f, 1f, .92f));
+            }
             if (automaticRadar != null)
             {
-                arrowPositions.Clear();
                 foreach (var detection in detections)
                 {
                     if (!detection.InRange || detection.Kind != RadarContactType.Aircraft) continue;
@@ -175,7 +192,7 @@ namespace AirCombat
                     // No bracket, marker or lock for aircraft visible in the viewport.
                     if (p.z > viewCamera.nearClipPlane && p.z < viewCamera.farClipPlane &&
                         viewCamera.pixelRect.Contains(pixel)) continue;
-                    DrawTrackedArrow(mesh, pixel, p.z);
+                    DrawTrackedArrow(mesh, pixel, p.z, new Color(1f, .49f, .31f, .92f));
                 }
                 return;
             }
@@ -217,7 +234,7 @@ namespace AirCombat
                 at - direction * 6f - wing * 5f, highlight);
         }
 
-        private void DrawTrackedArrow(VertexHelper mesh, Vector2 screen, float depth)
+        private void DrawTrackedArrow(VertexHelper mesh, Vector2 screen, float depth, Color highlight)
         {
             Rect viewport = viewCamera.pixelRect;
             Vector2 direction = screen - viewport.center;
@@ -244,7 +261,6 @@ namespace AirCombat
             arrowPositions.Add(at);
             Vector2 wing = new Vector2(-direction.y, direction.x);
             var shadow = new Color(.07f, .09f, .11f, .68f);
-            var highlight = new Color(1f, .49f, .31f, .92f);
             Triangle(mesh, at + direction * 10f, at - direction * 8f + wing * 8f,
                 at - direction * 8f - wing * 8f, shadow);
             Triangle(mesh, at + direction * 7f, at - direction * 6f + wing * 5f,

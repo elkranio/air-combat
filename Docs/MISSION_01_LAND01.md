@@ -23,3 +23,7 @@ The approach cubic preserves captured horizontal velocity and touchdown tangent,
 Supersedes the late flare and heading tolerance above. The visual blends from its captured bank to 10 degrees nose-up immediately after capture, reaching full pitch within .3 seconds or the first 20% of descent, whichever is shorter. Hold that attitude until touchdown; the existing rear-contact height and .65-second nose lowering remain continuous through rollout. Descent begins at capture, while the existing horizontal cubic aligns to the runway.
 
 `landingCaptureHeadingTolerance` replaces `landingHeadingTolerance` and defaults to 15 degrees on either side of the inbound axis, including existing scenes with saved 35-degree values. Width, capture duration, objective gating, debug landing, and horizontal speed profile are unchanged. Test alignment and early nose-up attitude in Game view.
+
+## LAND-03 — return bearing
+
+After all three Watchers are destroyed, show a cyan screen-edge arrow pointing at the resolved runway touchdown point whenever it is outside the camera viewport. Reuse the hostile bearing glyph and overlap handling, but do not require a radar detection or range. No in-view bracket, no debug-landing shortcut for the arrow, and no return cue after landing capture, failure or retry. Test a complete sortie, approach from several bearings, fly the airfield out of view again, and retry with R.

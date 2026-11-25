@@ -27,6 +27,9 @@ namespace AirCombat
         private Quaternion captureVisual;
         private GUIStyle label;
 
+        // Ground point on the resolved runway, not a separate navigation anchor.
+        internal Vector3 NavigationPoint => At(touchdownOffset, 0f);
+
         public Mission01Landing(Transform owner, Vector3 runwayPosition, Quaternion runwayRotation,
             Quaternion visualRest, Rect bounds, float near, float far, float widthScale,
             float reveal, float headingTolerance, float holdSeconds, float touchdownOffset, float touchdownSpeed)
