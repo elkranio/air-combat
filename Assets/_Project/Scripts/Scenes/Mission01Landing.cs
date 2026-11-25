@@ -11,6 +11,12 @@ namespace AirCombat
         private readonly Quaternion landingRotation, visualRest;
         private readonly Rect bounds;
         private readonly float cueY, near, far, halfWidth, reveal, headingDot, holdSeconds, touchdownOffset, touchdownSpeed;
+        // Arcade landing: keep the handover velocity, then cover the remaining
+        // distance briskly. Pitch is visual and independent of descent velocity.
+        private const float MaxApproachSeconds = 3f;
+        private const float FlarePitch = 10f;
+        private const float NoseLowerSeconds = .65f;
+        private const float RearContactArm = 4f; // Fake main-gear pivot; no gear mesh.
         private readonly GameObject cue;
         private readonly Material material;
         private readonly LineRenderer[] lines;
@@ -155,8 +161,8 @@ namespace AirCombat
         }
 
         // Called after the normal flight motor and all boundary/rock checks.
-        // Holding S is an explicit consent cue; it does not depend on fuel.
-        public bool TickApproach(Transform aircraft, Transform visual, float speed, bool available, bool heldS, float dt)
+        // Continuous aligned flight inside the corridor is the consent cue.
+        public bool TickApproach(Transform aircraft, Transform visual, float speed, bool available, float dt)
         {
             Vector3 delta = aircraft.position - origin;
             delta.y = 0f;
@@ -165,9 +171,12 @@ namespace AirCombat
             float along = Vector3.Dot(delta, runwayForward);
             float side = Vector3.Dot(delta, right);
             Vector3 heading = Vector3.ProjectOnPlane(aircraft.forward, Vector3.up).normalized;
+            bool wasAligned = aligned;
             aligned = along >= near && along <= far && Mathf.Abs(side) <= halfWidth &&
                 Vector3.Dot(heading, -runwayForward) >= headingDot;
-            held = aligned && heldS ? Mathf.Min(holdSeconds, held + Mathf.Max(0f, dt)) : 0f;
+            // The first in-corridor sample starts the timer at zero. A frame
+            // spent outside the corridor must not count toward capture.
+            held = aligned && wasAligned ? Mathf.Min(holdSeconds, held + Mathf.Max(0f, dt)) : 0f;
             cue.SetActive(true);
             var ink = aligned ? new Color(.43f, 1f, .78f, .84f) : new Color(.45f, .9f, 1f, .55f);
             foreach (var line in lines) { line.startColor = ink; line.endColor = ink; }
@@ -175,14 +184,15 @@ namespace AirCombat
             if (held < holdSeconds) return false;
 
             // Cubic horizontal path with exact entry and touchdown tangents.
-            // Choose duration from axial distance and endpoint velocities, so
-            // neither control point overshoots the runway along the approach.
+            // Cap duration instead of inheriting a long slow approach. Keeping
+            // both endpoint derivatives preserves entry and touchdown speed.
+            // The cap can only shorten control handles, never overshoot axially.
             p0 = aircraft.position;
             p3 = origin + runwayForward * touchdownOffset;
             float axial = along - touchdownOffset;
             speed = Mathf.Max(1f, speed);
             float inbound = speed * Vector3.Dot(heading, -runwayForward);
-            duration = 2f * axial / (inbound + touchdownSpeed);
+            duration = Mathf.Min(MaxApproachSeconds, 2f * axial / (inbound + touchdownSpeed));
             p1 = p0 + heading * (speed * duration / 3f);
             p2 = p3 + runwayForward * (touchdownSpeed * duration / 3f);
             // The XZ curve remains in the convex hull of its control points.
@@ -209,20 +219,35 @@ namespace AirCombat
                 tangent.y = 0f;
                 // Delay descent slightly until the captured aircraft is aligning.
                 float descent = Mathf.InverseLerp(.1f, 1f, u);
-                p.y = Mathf.Lerp(p0.y, origin.y, Mathf.SmoothStep(0f, 1f, descent));
+                float flare = Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(.55f, 1f, u));
+                float pitch = Mathf.Lerp(3f, FlarePitch, flare);
+                float descentBlend = Mathf.SmoothStep(0f, 1f, descent);
+                p.y = Mathf.Lerp(p0.y, origin.y, descentBlend) + ContactLift(pitch) * descentBlend;
                 aircraft.SetPositionAndRotation(p, Quaternion.LookRotation(tangent, Vector3.up));
-                float pitch = 15f * Mathf.Sin(Mathf.PI * descent);
+                // Negative local X is nose-up (same convention as takeoff).
+                // Finish the blend before touchdown even on a short approach.
                 visual.localRotation = Quaternion.Slerp(captureVisual,
-                    visualRest * Quaternion.Euler(pitch, 0f, 0f), Mathf.SmoothStep(0f, 1f, elapsed / .55f));
+                    visualRest * Quaternion.Euler(-pitch, 0f, 0f),
+                    Mathf.SmoothStep(0f, 1f, elapsed / Mathf.Min(.55f, duration)));
                 return false;
             }
             float r = elapsed >= duration + rollout ? 1f : Mathf.Clamp01((elapsed - duration) / rollout);
             // Constant deceleration; starts at touchdownSpeed and ends at zero.
             float distance = touchdownOffset * (2f * r - r * r);
-            aircraft.SetPositionAndRotation(origin + runwayForward * (touchdownOffset - distance), landingRotation);
-            visual.localRotation = visualRest;
+            // Keep the nose up at touchdown, then rotate around an imagined
+            // rear contact point. Both pitch and vertical offset reach zero
+            // continuously before the aircraft stops, without a gear model.
+            float lower = Mathf.SmoothStep(0f, 1f,
+                Mathf.Clamp01((elapsed - duration) / Mathf.Min(NoseLowerSeconds, rollout)));
+            float noseUp = Mathf.Lerp(FlarePitch, 0f, lower);
+            Vector3 position = origin + runwayForward * (touchdownOffset - distance);
+            position.y += ContactLift(noseUp);
+            aircraft.SetPositionAndRotation(position, landingRotation);
+            visual.localRotation = visualRest * Quaternion.Euler(-noseUp, 0f, 0f);
             return r >= 1f;
         }
+
+        private static float ContactLift(float noseUp) => RearContactArm * Mathf.Sin(noseUp * Mathf.Deg2Rad);
 
         public void DrawWarning()
         {
@@ -237,7 +262,7 @@ namespace AirCombat
             GUI.DrawTexture(rect, Texture2D.whiteTexture);
             GUI.color = Color.white;
             label.normal.textColor = aligned ? new Color(.5f, 1f, .82f) : new Color(.65f, .94f, 1f);
-            GUI.Label(rect, aligned ? "HOLD S TO LAND" : "LANDING / ENTER APPROACH CORRIDOR", label);
+            GUI.Label(rect, aligned ? "LANDING / MAINTAIN APPROACH" : "LANDING / ENTER APPROACH CORRIDOR", label);
             if (held > 0f)
             {
                 GUI.color = label.normal.textColor;

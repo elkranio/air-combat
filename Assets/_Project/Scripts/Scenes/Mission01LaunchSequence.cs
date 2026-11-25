@@ -45,9 +45,9 @@ namespace AirCombat
         [SerializeField, Min(1f)] private float landingCorridorFar = 350f;
         [SerializeField, Range(.25f, 4f)] private float landingCorridorWidthScale = 1f;
         [SerializeField, Range(5f, 60f)] private float landingHeadingTolerance = 35f;
-        [SerializeField, Min(.15f)] private float landingHoldSeconds = .8f;
+        [SerializeField, Min(.15f)] private float landingCaptureSeconds = 1f;
         [SerializeField, Min(10f)] private float landingTouchdownOffset = 65f;
-        [SerializeField, Min(5f)] private float landingTouchdownSpeed = 27f;
+        [SerializeField, Min(5f)] private float landingAutoTouchdownSpeed = 65f;
 
         private Mission01Landing landing;
         private Mission01ReconEncounter reconEncounter;
@@ -111,8 +111,8 @@ namespace AirCombat
                 boundaryCautionDistance, boundaryCriticalDistance);
             landing = new Mission01Landing(transform, runwayPosition, runwayRotation, visualRest,
                 operationBounds, landingCorridorNear, landingCorridorFar, landingCorridorWidthScale,
-                landingRevealDistance, landingHeadingTolerance, landingHoldSeconds, landingTouchdownOffset,
-                landingTouchdownSpeed);
+                landingRevealDistance, landingHeadingTolerance, landingCaptureSeconds, landingTouchdownOffset,
+                landingAutoTouchdownSpeed);
             initialized = true;
             State = Phase.Intro;
         }
@@ -275,10 +275,9 @@ namespace AirCombat
 #if UNITY_EDITOR
             available |= debugLandingNearAirfield;
 #endif
-            var keys = Keyboard.current;
-            bool hold = Application.isFocused && keys != null && keys.sKey.isPressed;
-            if (playerHealth != null && !playerHealth.IsAlive) { landing.Clear(); return; }
-            if (!landing.TickApproach(aircraft, visual, flight.CurrentSpeed, available, hold, Time.deltaTime)) return;
+            if (!Application.isFocused || (playerHealth != null && !playerHealth.IsAlive))
+            { landing.Clear(); return; }
+            if (!landing.TickApproach(aircraft, visual, flight.CurrentSpeed, available, Time.deltaTime)) return;
             landingTestOnly = !primaryComplete;
             State = Phase.Landing;
             boundary.Clear();
