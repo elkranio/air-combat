@@ -268,7 +268,11 @@ namespace AirCombat
                 Text(new Rect(p.x+7,p.y-10,54,20),sam.label,12,Ink,true);
             }
             if (recon != null) for (int i=0;i<recon.Length;i++)
-                if (recon[i]!=null && Inside(map.WorldToUV(recon[i].position))) Diamond(Point(rect,recon[i]),5,Ink);
+                if (recon[i]!=null && Inside(map.WorldToUV(recon[i].position)))
+                {
+                    var target = recon[i].GetComponent<WatcherTarget>();
+                    if (target == null || target.IsAlive) Diamond(Point(rect,recon[i]),5,Ink);
+                }
             if (optionalTarget != null && Inside(map.WorldToUV(optionalTarget.position))) Diamond(Point(rect,optionalTarget),7,Gold);
             Vector2 uv=map.WorldToUV(player.position);
             Vector2 pos=Point(rect,new Vector2(Mathf.Clamp(uv.x,.025f,.975f),Mathf.Clamp(uv.y,.025f,.975f)));
@@ -290,7 +294,11 @@ namespace AirCombat
             Text(new Rect(x,y,w,30),"MISSION DATA",20,Ink,true);
             Text(new Rect(x,y+36,w,24),"PRIMARY OBJECTIVE",15,Cyan,true);
             Text(new Rect(x,y+66,w,24),"Destroy reconnaissance units",18,Ink);
-            Text(new Rect(x,y+94,w,22),"Planned targets: "+(recon==null?0:recon.Length),14,Muted);
+            bool reconLive = recon != null && recon.Length > 0 &&
+                Array.TrueForAll(recon, t => t != null && t.GetComponent<WatcherTarget>() != null);
+            int destroyed = 0;
+            if (reconLive) foreach (var t in recon) if (!t.GetComponent<WatcherTarget>().IsAlive) destroyed++;
+            Text(new Rect(x,y+94,w,22),reconLive ? $"Destroyed: {destroyed} / {recon.Length}" : "Planned targets: "+(recon==null?0:recon.Length),14,Muted);
             Solid(new Rect(x,y+126,w,1),new Color(.23f,.34f,.35f));
             Text(new Rect(x,y+142,w,24),"SECONDARY OBJECTIVE",15,Gold,true);
             Text(new Rect(x,y+171,w,24),"Destroy optional target",18,Ink);
@@ -307,7 +315,7 @@ namespace AirCombat
             Solid(new Rect(x,y+454,w,1),new Color(.23f,.34f,.35f));
             bool armed = linked && Array.TrueForAll(plannedSam, sam => sam.Launcher.IsConfigured);
             Text(new Rect(x,y+469,w,25),linked ? "MISSION PROTOTYPE" : "PLANNING DATA / NOT LIVE",14,Gold,true);
-            Text(new Rect(x,y+500,w,28),armed ? "SAMs live; objectives pending." : linked ? "SAM sites linked; combat pending." : "SAMs and objectives are placeholders.",14,Muted);
+            Text(new Rect(x,y+500,w,28),armed ? (reconLive ? "SAMs and recon live; optional pending." : "SAMs live; objectives pending.") : linked ? "SAM sites linked; combat pending." : "SAMs and objectives are placeholders.",14,Muted);
         }
         private void Legend(float x,float y,Color c,string text)
         { Solid(new Rect(x,y+5,15,15),c); Text(new Rect(x+25,y,300,25),text,15,Ink); }

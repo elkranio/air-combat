@@ -10127,6 +10127,9 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 412902718}
+  - component: {fileID: 412902721}
+  - component: {fileID: 412902720}
+  - component: {fileID: 412902719}
   m_Layer: 0
   m_Name: Recon 02
   m_TagString: Untagged
@@ -10146,9 +10149,61 @@ Transform:
   m_LocalPosition: {x: -3.333313, y: 0, z: 40}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
-  m_Children: []
+  m_Children:
+  - {fileID: 1316988389}
   m_Father: {fileID: 1171446036}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &412902719
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 412902717}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 13e0136ac66b4a7a87603b9f8e664311, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::AirCombat.AircraftTeam
+  side: 2
+--- !u!114 &412902720
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 412902717}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6d393d3dd68cb964493cd17bd499a621, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::AirCombat.WatcherTarget
+  visual: {fileID: 1316988389}
+  maxHp: 10
+  patrolRadius: 52
+  initialAngle: 151
+  clockwise: 1
+--- !u!65 &412902721
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 412902717}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 24, y: 11, z: 34}
+  m_Center: {x: 0, y: 0, z: 0}
 --- !u!1001 &414620668
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -30401,6 +30456,9 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1287307451}
+  - component: {fileID: 1287307454}
+  - component: {fileID: 1287307453}
+  - component: {fileID: 1287307452}
   m_Layer: 0
   m_Name: Recon 03
   m_TagString: Untagged
@@ -30420,9 +30478,61 @@ Transform:
   m_LocalPosition: {x: 226.66669, y: 0, z: -30}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
-  m_Children: []
+  m_Children:
+  - {fileID: 1459401488}
   m_Father: {fileID: 1171446036}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1287307452
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1287307450}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 13e0136ac66b4a7a87603b9f8e664311, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::AirCombat.AircraftTeam
+  side: 2
+--- !u!114 &1287307453
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1287307450}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6d393d3dd68cb964493cd17bd499a621, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::AirCombat.WatcherTarget
+  visual: {fileID: 1459401488}
+  maxHp: 10
+  patrolRadius: 46
+  initialAngle: 265
+  clockwise: 0
+--- !u!65 &1287307454
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1287307450}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 24, y: 11, z: 34}
+  m_Center: {x: 0, y: 0, z: 0}
 --- !u!1001 &1287530000
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -30997,6 +31107,68 @@ Transform:
   - {fileID: 1917058237}
   m_Father: {fileID: 485917448}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1001 &1316988388
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 412902718}
+    m_Modifications:
+    - target: {fileID: 3999586388089311690, guid: e420b4844003fb94da94a9d27ea461c0, type: 3}
+      propertyPath: m_Name
+      value: RE01 Watcher visual
+      objectReference: {fileID: 0}
+    - target: {fileID: 8637405734567565376, guid: e420b4844003fb94da94a9d27ea461c0, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8637405734567565376, guid: e420b4844003fb94da94a9d27ea461c0, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8637405734567565376, guid: e420b4844003fb94da94a9d27ea461c0, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8637405734567565376, guid: e420b4844003fb94da94a9d27ea461c0, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 8637405734567565376, guid: e420b4844003fb94da94a9d27ea461c0, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8637405734567565376, guid: e420b4844003fb94da94a9d27ea461c0, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8637405734567565376, guid: e420b4844003fb94da94a9d27ea461c0, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8637405734567565376, guid: e420b4844003fb94da94a9d27ea461c0, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8637405734567565376, guid: e420b4844003fb94da94a9d27ea461c0, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8637405734567565376, guid: e420b4844003fb94da94a9d27ea461c0, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: e420b4844003fb94da94a9d27ea461c0, type: 3}
+--- !u!4 &1316988389 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 8637405734567565376, guid: e420b4844003fb94da94a9d27ea461c0, type: 3}
+  m_PrefabInstance: {fileID: 1316988388}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &1318782514
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -35770,6 +35942,68 @@ PrefabInstance:
 Transform:
   m_CorrespondingSourceObject: {fileID: 522574437189222094, guid: ad9b9d933f0cb6d41a8bc012112939f4, type: 3}
   m_PrefabInstance: {fileID: 1457721625}
+  m_PrefabAsset: {fileID: 0}
+--- !u!1001 &1459401487
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 1287307451}
+    m_Modifications:
+    - target: {fileID: 3999586388089311690, guid: e420b4844003fb94da94a9d27ea461c0, type: 3}
+      propertyPath: m_Name
+      value: RE01 Watcher visual
+      objectReference: {fileID: 0}
+    - target: {fileID: 8637405734567565376, guid: e420b4844003fb94da94a9d27ea461c0, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8637405734567565376, guid: e420b4844003fb94da94a9d27ea461c0, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8637405734567565376, guid: e420b4844003fb94da94a9d27ea461c0, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8637405734567565376, guid: e420b4844003fb94da94a9d27ea461c0, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 8637405734567565376, guid: e420b4844003fb94da94a9d27ea461c0, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8637405734567565376, guid: e420b4844003fb94da94a9d27ea461c0, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8637405734567565376, guid: e420b4844003fb94da94a9d27ea461c0, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8637405734567565376, guid: e420b4844003fb94da94a9d27ea461c0, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8637405734567565376, guid: e420b4844003fb94da94a9d27ea461c0, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8637405734567565376, guid: e420b4844003fb94da94a9d27ea461c0, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: e420b4844003fb94da94a9d27ea461c0, type: 3}
+--- !u!4 &1459401488 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 8637405734567565376, guid: e420b4844003fb94da94a9d27ea461c0, type: 3}
+  m_PrefabInstance: {fileID: 1459401487}
   m_PrefabAsset: {fileID: 0}
 --- !u!1001 &1459739307
 PrefabInstance:
@@ -49537,6 +49771,68 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 4324868879075420780, guid: 0d8ec589f59afba4ab11d99e26674c77, type: 3}
   m_PrefabInstance: {fileID: 1962049153}
   m_PrefabAsset: {fileID: 0}
+--- !u!1001 &1964341009
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 2050479383}
+    m_Modifications:
+    - target: {fileID: 3999586388089311690, guid: e420b4844003fb94da94a9d27ea461c0, type: 3}
+      propertyPath: m_Name
+      value: RE01 Watcher visual
+      objectReference: {fileID: 0}
+    - target: {fileID: 8637405734567565376, guid: e420b4844003fb94da94a9d27ea461c0, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8637405734567565376, guid: e420b4844003fb94da94a9d27ea461c0, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8637405734567565376, guid: e420b4844003fb94da94a9d27ea461c0, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8637405734567565376, guid: e420b4844003fb94da94a9d27ea461c0, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 8637405734567565376, guid: e420b4844003fb94da94a9d27ea461c0, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8637405734567565376, guid: e420b4844003fb94da94a9d27ea461c0, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8637405734567565376, guid: e420b4844003fb94da94a9d27ea461c0, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8637405734567565376, guid: e420b4844003fb94da94a9d27ea461c0, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8637405734567565376, guid: e420b4844003fb94da94a9d27ea461c0, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8637405734567565376, guid: e420b4844003fb94da94a9d27ea461c0, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: e420b4844003fb94da94a9d27ea461c0, type: 3}
+--- !u!4 &1964341010 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 8637405734567565376, guid: e420b4844003fb94da94a9d27ea461c0, type: 3}
+  m_PrefabInstance: {fileID: 1964341009}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &1967168101
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -50984,6 +51280,7 @@ GameObject:
   - component: {fileID: 2020064466}
   - component: {fileID: 2020064468}
   - component: {fileID: 2020064469}
+  - component: {fileID: 2020064470}
   m_Layer: 0
   m_Name: E1 / Flight session (no combat)
   m_TagString: Untagged
@@ -51097,6 +51394,25 @@ MonoBehaviour:
   - {fileID: 412902718}
   - {fileID: 1287307451}
   optionalTarget: {fileID: 798103819}
+--- !u!114 &2020064470
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2020064465}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 008b1d6e0ca05854f8c14bd30fec4dd0, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::AirCombat.Mission01ReconEncounter
+  launch: {fileID: 2020064468}
+  player: {fileID: 1109986520}
+  targets:
+  - {fileID: 2050479385}
+  - {fileID: 412902720}
+  - {fileID: 1287307453}
+  groundY: 0
 --- !u!1 &2024757286
 GameObject:
   m_ObjectHideFlags: 0
@@ -51926,6 +52242,9 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 2050479383}
+  - component: {fileID: 2050479386}
+  - component: {fileID: 2050479385}
+  - component: {fileID: 2050479384}
   m_Layer: 0
   m_Name: Recon 01
   m_TagString: Untagged
@@ -51945,9 +52264,61 @@ Transform:
   m_LocalPosition: {x: -223.33331, y: 0, z: -10}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
-  m_Children: []
+  m_Children:
+  - {fileID: 1964341010}
   m_Father: {fileID: 1171446036}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &2050479384
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2050479382}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 13e0136ac66b4a7a87603b9f8e664311, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::AirCombat.AircraftTeam
+  side: 2
+--- !u!114 &2050479385
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2050479382}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6d393d3dd68cb964493cd17bd499a621, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::AirCombat.WatcherTarget
+  visual: {fileID: 1964341010}
+  maxHp: 10
+  patrolRadius: 42
+  initialAngle: 32
+  clockwise: 0
+--- !u!65 &2050479386
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2050479382}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 24, y: 11, z: 34}
+  m_Center: {x: 0, y: 0, z: 0}
 --- !u!1001 &2057644249
 PrefabInstance:
   m_ObjectHideFlags: 0
