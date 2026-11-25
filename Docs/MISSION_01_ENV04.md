@@ -1,0 +1,7 @@
+# ENV04 — Field sites v0
+
+Visual-only dressing for the six existing Picket launchers. Eight reusable models: compact fictional radar, standard crate, long case, generator, pallet, two irregular hardstands, and broken twin tracks. Existing Picket materials are reused; ground pieces use tinted copies of the original sand material and receive but do not cast shadows. No new colliders, radar contacts, combat components, or changes to the launcher.
+
+Open Mission01_FirstSortie in Edit Mode. Apply ENV01–03 if not already present, then **Air Combat > Art > Apply Mission01 Field Sites v0**. The command tests asymmetric layouts around the saved launcher transforms against current rocks, ground decorations, airfield and other sites. Each position gets a hardstand, radar and at least two props. Tracks are optional where the approach overlaps existing decoration. If no clear layout exists, it stops before replacing the scene layer. Save the scene and new prefab/material assets after review. Repeat replaces only the ENV04 layer; Remove Mission01 Field Sites removes that layer. No map rebake is required.
+
+Source: `Tools/Blender/build_env04_field_sites.py`. Run with Python for Y-up OBJ export; run through Blender for an editable source library. The OBJ files are included in the patch. Radar is a static decorative silhouette, not a separately damageable or functional object. No animation or final road network yet.
