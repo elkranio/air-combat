@@ -1,0 +1,25 @@
+# MISSION-01H — Map layout trial
+
+Base `f669118`. In the saved Mission01_FirstSortie scene, run **Air Combat > Missions > Apply Mission 01 Map Layout** once. Save the scene and changed `Mission01_Terrain.asset` and `Mission01_Facets.asset`. Existing terrain/material/mesh GUIDs are preserved. No runtime or prefab changes. Do not regenerate the original map. The command refuses a non-flat source or an already populated Objectives root.
+
+## Dimensions and route
+
+Expand the flat editable terrain from 2000 x 2000 to 3200 x 3200, keeping the southwest origin (-1000, 0, -1000). World X/Z range is now -1000 to +2200; terrain height range remains 180 and the heightmap resolution remains 257. Rebuild the existing faceted surface at 112 x 112 cells (25,088 triangles; ~28.6-unit facets). No movement of the base, player, camera or HUD. For future edits of the mission TerrainData, **Air Combat > Missions > Rebake Mission 01 Terrain** rebuilds the render mesh from the edited data, without flattening the terrain or moving objects.
+
+World coordinates (X east, Z north), provisional:
+
+| Object | X | Z | Notes |
+| --- | ---: | ---: | --- |
+| Base | -700 | -700 | Existing airfield; unchanged |
+| SAM A | -650 | 350 | Move existing visual truck; planning radius 280 |
+| Central ridge | 525 | 640 | Planned footprint X -50..1100, Z 300..980 |
+| SAM B | 1250 | 1050 | Second visual truck; planning radius 330 |
+| Recon zone | 1550 | 1760 | Three empty markers at Y78 |
+
+Suggested outbound route from the end of takeoff: (-512,-624) -> (-330,100) -> (-290,930) -> (40,1250) -> (800,1400) -> (1550,1760). Approx. 3644 units, 52 seconds at existing cruise speed 70, excluding takeoff, fighting and steering deviations. Direct flight would take about 45 seconds but crosses the planned ridge. Return route is a future playtest decision; do not force a one-way corridor or claim the same path is impossible. Optional north/south ridge anchors are placeholders only.
+
+## Scope and next atom
+
+The two SAMs are non-combat visual instances; their planning circles are not radar contacts. Recon and ridge markers are empty transforms, not target or terrain geometry. No new collision, map-edge behavior, terrain camera changes or forced navigation. Verify the map stays flat and the existing takeoff, HUD, cannon and R reset still work. Review flight distance before sculpting.
+
+Next: test a central ridge sculpted in TerrainData; rebake the existing low-poly surface. For collision, use the visible baked mesh or a carefully verified equivalent collider so the crash threshold matches the silhouette, not an unrelated heightfield approximation. Introduce swept aircraft-vs-terrain checks and mission crash/reset in their own atom. Check camera occlusion and near/far clipping at gameplay height. If the terrain visual is not convincing, a low-poly Blender ridge with matching collision is a valid alternative. All of this is deferred until after the flat layout is reviewed.
