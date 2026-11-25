@@ -326,6 +326,14 @@ namespace AirCombat
             EmitPuffs(point, true);
         }
 
+        // A terrain impact detonates in place; do not spawn a falling wreck
+        // inside the mountain. GroundCrashFeedback is visual/audio only.
+        public void EmitTerrainCrash(Vector3 point)
+        {
+            groundCrash?.Emit(point, audioSource, crashVolume, crashScale);
+            if (cameraFollow != null) cameraFollow.AddHitShake(crashShake, crashShakeSeconds);
+        }
+
         public void ResetEffects()
         {
             foreach (var tracked in targets.Values)

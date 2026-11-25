@@ -8,7 +8,7 @@ namespace AirCombat
     [DefaultExecutionOrder(-40)] // Before normal flight; E1 session initializes first.
     public sealed class Mission01LaunchSequence : MonoBehaviour
     {
-        public enum Phase { Intro, Ready, Takeoff, Flight }
+        public enum Phase { Intro, Ready, Takeoff, Flight, Crashed }
 
         [SerializeField] private FlightController flight;
         [SerializeField] private PlayerWeaponTrigger weaponTrigger;
@@ -18,7 +18,11 @@ namespace AirCombat
 #if UNITY_EDITOR
         [Header("Temporary terrain test (Editor only)")]
         [SerializeField] private bool debugAirStart = true;
+        [SerializeField] private bool debugNoClip;
 #endif
+
+        [Header("Terrain crash")]
+        [SerializeField, Min(.1f)] private float terrainCrashRadius = 3.5f;
 
         [Header("Automatic takeoff (WIP)")]
         [SerializeField, Min(.1f)] private float rollSeconds = 2.2f;
@@ -35,6 +39,8 @@ namespace AirCombat
         private double elapsed;
         private bool handoverPending;
         private bool initialized;
+        private Vector3 previousFlightPosition;
+        private CombatHitFeedback crashFeedback;
 
         public Phase State { get; private set; } = Phase.Intro;
 
@@ -77,6 +83,12 @@ namespace AirCombat
 
         private void Start()
         {
+            // Dedicated scene-owned FX, not parented to the aircraft visual.
+            var effects = new GameObject("Mission01 / terrain crash FX");
+            effects.transform.SetParent(transform, false);
+            crashFeedback = effects.AddComponent<CombatHitFeedback>();
+            var crashCamera = FindFirstObjectByType<ArcadeCameraFollow>();
+            crashFeedback.Bind(crashCamera != null ? crashCamera.GetComponent<Camera>() : null);
             if (missionHud != null)
             {
                 // Explicit cannon-only loadout. The empty secondary uses the existing HUD label.
@@ -154,9 +166,38 @@ namespace AirCombat
 
         private void LateUpdate()
         {
+            if (State == Phase.Flight)
+            {
+                // Flight motor has already moved; camera and weapon LateUpdate
+                // run later. Sweep before they see the next aircraft position.
+                Vector3 next = aircraft.position;
+#if UNITY_EDITOR
+                if (debugNoClip) { previousFlightPosition = next; return; }
+#endif
+                if (TerrainFlightCollision.TryHit(aircraft.gameObject.scene,
+                    previousFlightPosition, next, Mathf.Max(.1f, terrainCrashRadius), out Vector3 impact))
+                    Crash(impact);
+                else previousFlightPosition = next;
+                return;
+            }
             if (State != Phase.Takeoff || !handoverPending) return;
             // Enable after Update so the motor cannot translate twice on this frame.
             EnterFlight();
+        }
+
+        private void Crash(Vector3 impact)
+        {
+            if (State != Phase.Flight) return;
+            State = Phase.Crashed;
+            aircraft.position = impact;
+            flight.enabled = false;
+            weaponTrigger.enabled = false;
+            boost.enabled = false;
+            flames.SetManeuverFlames(false);
+            var health = aircraft.GetComponent<PlayerHitPoints>();
+            if (health != null && health.IsAlive) health.ApplyDamage(impact, health.Hp);
+            visual.gameObject.SetActive(false);
+            crashFeedback?.EmitTerrainCrash(impact);
         }
 
 #if UNITY_EDITOR
@@ -179,6 +220,7 @@ namespace AirCombat
             visual.localRotation = visualRest;
             flames.SetManeuverFlames(false);
             flight.PrepareCruiseHandover();
+            previousFlightPosition = aircraft.position;
             State = Phase.Flight;
             flight.enabled = true;
             Debug.Log($"Mission01: flight handover at Y{aircraft.position.y:F1}, speed {flight.CurrentSpeed:F1}.", this);
@@ -197,11 +239,10 @@ namespace AirCombat
             flight.enabled = false;
             weaponTrigger.enabled = false;
             flames.SetManeuverFlames(false);
-            if (missionHud != null)
-            {
-                missionHud.gameObject.SetActive(false);
-                aircraft.GetComponent<PlayerHitPoints>()?.ResetHealth();
-            }
+            crashFeedback?.ResetEffects();
+            visual.gameObject.SetActive(true);
+            if (missionHud != null) missionHud.gameObject.SetActive(false);
+            aircraft.GetComponent<PlayerHitPoints>()?.ResetHealth();
             // A repeat sortie starts with a full tank, as a fresh mission does.
             boost.enabled = false;
             boost.enabled = true;
@@ -222,7 +263,8 @@ namespace AirCombat
         {
             if (Event.current.type != EventType.Repaint || State == Phase.Flight) return;
             string message = State == Phase.Intro ? "MISSION INTRO" :
-                State == Phase.Ready ? "PRESS W TO TAKE OFF" : "TAKEOFF";
+                State == Phase.Ready ? "PRESS W TO TAKE OFF" :
+                State == Phase.Crashed ? "AIRCRAFT LOST  /  PRESS R TO RETRY" : "TAKEOFF";
             var style = new GUIStyle(GUI.skin.label)
             {
                 alignment = TextAnchor.MiddleCenter,
