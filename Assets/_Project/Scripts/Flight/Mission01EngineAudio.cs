@@ -88,10 +88,13 @@ namespace AirCombat
             float ratio = flying ? flight.CurrentSpeed / Mathf.Max(1f, flight.CruiseSpeed) : 1f;
             float targetPitch = cruisePitch * (takingOff ? 1.06f : flying ? Mathf.Clamp(1f + (ratio - 1f) * .12f, .9f, 1.12f) : .9f);
             pitch = Mathf.MoveTowards(pitch, targetPitch, dt * .65f);
-            // Base stays audible while the extra roar fades over it. Keep headroom.
-            engine.volume = engineLevel * Mathf.Lerp(1f, .8f, blend);
+            // Replace the cruise sound with the boost sound instead of layering them.
+            // Both loops keep their playback heads running; only the short transition
+            // is audible on both channels. At either endpoint one channel is silent.
+            float mix = Mathf.SmoothStep(0f, 1f, blend);
+            engine.volume = engineLevel * (1f - mix);
             engine.pitch = pitch;
-            thrust.volume = boostVolume * Mathf.SmoothStep(0f, 1f, blend);
+            thrust.volume = boostVolume * mix;
             thrust.pitch = boostPitch;
         }
 
