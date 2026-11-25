@@ -9,3 +9,7 @@ The map owns a temporary pause (restores prior time scale and audio pause on clo
 ## MAP-02B — shared camera axes
 
 Base `ce1b3af`. The runtime map uses the same normalized horizontal camera axes and projection as RadarHud. The baked geography stays north-up; the texture and cropped coverage layer rotate together, while runway, targets, player and compass use the shared projection. Labels remain upright, and the full rotated extent fits the map panel. Non-oblique scenes without an active ArcadeCameraFollow fall back to north-up. Existing installed map bindings and baked assets are unchanged. Remove temporary diagnostic logs; keep actionable failure warnings/errors. Tab and pause semantics unchanged. Test actual heading, map/radar alignment, north indicator and all four corners, including edge-clipped SAM rings.
+
+## MAP-02C — Mission01 world alignment
+
+Base `172242c`. Mission01 overrides ArcadeCameraFollow yaw to 0 degrees in the scene only. The existing camera-up projection now coincides with north-up and the map fills its rectangular panel. The flat faceted ground has Cast Shadows off and Receive Shadows on; this removes the self-shadowing stripes observed in the local yaw test while retaining object shadows. No rebake or map reinstall. Keep the functional v0 map presentation; cosmetic polish is deferred. Mission boundaries and live SAM/objective state are next.

@@ -5,6 +5,7 @@
 ## Current slice
 
 - X/Z bounds -1000..2200, cruise Y78. See [rock layout v3](MISSION_01_ROCK_LAYOUT_V3.md) and [technical scheme](MISSION_01_ROCK_LAYOUT_V3.svg).
+- Mission01 camera yaw is 0 degrees (pitch unchanged): world, radar and tactical map share horizontal axes without a diamond-shaped map. The flat faceted ground receives shadows but does not cast them, avoiding the self-shadowing stripes seen during the yaw test. Shared prefabs and lighting settings are unchanged.
 - W starts takeoff, then WASD flight; LMB AC-01; RMB empty. R retries. Terrain warning, fatal crash/explosion, and projectile-terrain blocking are implemented. Decorative base rubble is nonblocking. The radar uses cached united solid sections.
 - Six SAM visual placeholders, three reconnaissance markers, one optional target marker. No live mission objectives or SAM combat yet. Map edge enforcement remains necessary to close the southern bypass.
 - Accepted geography: comfortable left-side route through three SAM coverage gaps, then optional high-risk east-side sortie, return through the north and back to the airfield. No mandatory route rails. Recon unit design and optional target are provisional.

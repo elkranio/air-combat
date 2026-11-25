@@ -4717,7 +4717,7 @@ MeshRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 284207642}
   m_Enabled: 1
-  m_CastShadows: 1
+  m_CastShadows: 0
   m_ReceiveShadows: 1
   m_DynamicOccludee: 1
   m_StaticShadowCaster: 0
@@ -16092,6 +16092,10 @@ PrefabInstance:
       propertyPath: aircraft
       value: 
       objectReference: {fileID: 1109986514}
+    - target: {fileID: 5299753384366365605, guid: 371922c97e367a140876da6ab486cf44, type: 3}
+      propertyPath: yaw
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 8568083544143274404, guid: 371922c97e367a140876da6ab486cf44, type: 3}
       propertyPath: m_Enabled
       value: 0
