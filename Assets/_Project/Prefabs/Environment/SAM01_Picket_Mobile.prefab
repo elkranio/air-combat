@@ -82,7 +82,7 @@ MonoBehaviour:
   rightWheel: {x: 2.2, y: 0.35, z: -4.65}
   metersPerPuff: 1.8
   puffSize: 2.8
-  puffLifetime: 1.05
+  puffLifetime: 0.7875
   dustColor: {r: 0.67, g: 0.58, b: 0.46, a: 0.32}
   surfaceDust: 1
 --- !u!1 &8201000000000000010
