@@ -6,13 +6,10 @@ EditorBuildSettings:
   serializedVersion: 2
   m_Scenes:
   - enabled: 1
+    path: Assets/_Project/Scenes/Mission01_FirstSortie.unity
+    guid: 74e73c684307b71439a4f7511a36b753
+  - enabled: 1
     path: Assets/_Project/Scenes/CombatSandbox.unity
     guid: beb6007b43c7f0640abfcff1ff7e1b7f
-  - enabled: 0
-    path: Assets/_Project/Scenes/WeaponLab.unity
-    guid: 5584378ad16d9204582aaaf0395185b1
-  - enabled: 0
-    path: Assets/_Project/Scenes/GroundAttackLab.unity
-    guid: ac0583bfeeceac74eab21c4db2fe26fc
   m_configObjects:
     com.unity.input.settings.actions: {fileID: -944628639613478452, guid: 052faaac586de48259a63d0c4782560b, type: 3}
