@@ -9,10 +9,10 @@ import json
 
 ROOT = Path(__file__).resolve().parents[2]
 OUT = ROOT / 'Assets/_Project/Editor/Mission02/CA01Geometry.json'
-PALETTE = {'Hull': (181, 139, 53), 'Top': (219, 172, 70),
-           'Frame': (57, 61, 64), 'Steel': (115, 124, 127),
+PALETTE = {'Hull': (153, 160, 164), 'Top': (190, 196, 197),
+           'Frame': (53, 61, 68), 'Steel': (139, 151, 158),
            'Red': (177, 58, 48), 'Dark': (28, 32, 35),
-           'Glass': (44, 77, 82), 'Vent': (236, 190, 62)}  # V9B Industrial
+           'Glass': (44, 77, 82), 'Vent': (218, 113, 42)}  # V9C Logistics
 PARTS = []
 SOCKETS = [(x, 0.0, z) for z in (-4.65,4.65) for x in (-2.45,2.45)]
 
@@ -194,7 +194,7 @@ for i,(x,y,z) in enumerate(SOCKETS,1):
     for sx in (-1,1):
         box('Clamp jaw',asm,'Vent',x+sx*.45,.34,z,.22,.54,1.05)
 
-# V9B paint assignment: dark nacelles, ochre lifting hull, golden upper armor.
+# V9C paint assignment: dark nacelles, cool gray lifting hull, light upper armor.
 PARTS[:] = [(name, asm, ({'Hull':'Frame', 'Top':'Steel'}.get(mat,mat)
                         if asm.startswith('Engine') else mat), v, t)
             for name,asm,mat,v,t in PARTS]
