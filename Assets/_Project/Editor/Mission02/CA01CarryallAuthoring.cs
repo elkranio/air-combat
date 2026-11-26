@@ -78,6 +78,104 @@ namespace AirCombat
             if (!EditorSceneManager.SaveScene(scene)) Debug.LogError("CA01: scene save failed.");
         }
 
+        [MenuItem("Air Combat/Missions/M02 - Apply CA01 Carryall V2")]
+        private static void UpgradeVisual()
+        {
+            if (EditorApplication.isPlayingOrWillChangePlaymode) return;
+            var scene = SceneManager.GetActiveScene();
+            if (scene.path != Mission || scene.isDirty)
+            { Debug.LogError("CA01 V2: open and save M02 first."); return; }
+            GameObject contents = null;
+            var generated = new List<Mesh>();
+            var backups = new List<Mesh>();
+            var originals = new List<Mesh>();
+            bool editing = false;
+            try
+            {
+                var cargo = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/_Project/Prefabs/Environment/CG01_SpecialCargo.prefab");
+                var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(Prefab);
+                if (prefab == null) throw new InvalidOperationException("Build CA01 preview first.");
+                ValidateInterface(prefab, cargo);
+                var asset = AssetDatabase.LoadAssetAtPath<TextAsset>(Geometry);
+                var data = asset != null ? JsonUtility.FromJson<GeometryData>(asset.text) : null;
+                if (data == null || data.assemblies == null || data.assemblies.Length != 12 || data.sockets == null || data.sockets.Length != 4 ||
+                    data.assemblies.Select(p=>p.name).Distinct().Count() != 12)
+                    throw new InvalidOperationException("Invalid CA01 V2 source.");
+                contents = PrefabUtility.LoadPrefabContents(Prefab);
+                ValidateInterface(contents, cargo);
+                var visual = contents.transform.Find("Visual");
+                if (visual == null || visual.childCount != 12) throw new InvalidOperationException("Unexpected CA01 visual hierarchy.");
+                for (int i=0;i<4;i++)
+                    if ((contents.transform.Find($"ClampSockets/Clamp_{i+1:00}").localPosition-data.sockets[i]).sqrMagnitude > .000001f)
+                        throw new InvalidOperationException("V2 source capture socket mismatch.");
+                var mounts = new List<Transform>(); var renderers = new List<MeshRenderer>();
+                var materials = new List<Material[]>();
+                // Preflight every source, target asset and material before changing anything.
+                foreach (var part in data.assemblies)
+                {
+                    var tr = visual.Find(part.name);
+                    var filter = tr != null ? tr.GetComponent<MeshFilter>() : null;
+                    var renderer = tr != null ? tr.GetComponent<MeshRenderer>() : null;
+                    var original = AssetDatabase.LoadAssetAtPath<Mesh>(Art+"/CA01_"+part.name+".asset");
+                    if (filter == null || renderer == null || original == null || filter.sharedMesh != original ||
+                        part.vertices == null || part.slots == null || part.slots.Length == 0 ||
+                        part.slots.Any(s=>s.triangles == null || s.triangles.Length % 3 != 0 || s.triangles.Any(i=>i<0 || i>=part.vertices.Length)))
+                        throw new InvalidOperationException("Invalid CA01 V2 assembly: "+part.name);
+                    var mats = part.slots.Select(s=>AssetDatabase.LoadAssetAtPath<Material>(Art+"/CA01_"+s.material+".mat")).ToArray();
+                    if (mats.Any(m=>m==null)) throw new InvalidOperationException("Missing material: "+part.name);
+                    var vertices = new List<Vector3>(); var triangles = new List<int[]>();
+                    foreach (var slot in part.slots)
+                    {
+                        int start=vertices.Count;
+                        foreach (int index in slot.triangles) vertices.Add(part.vertices[index]);
+                        triangles.Add(Enumerable.Range(start,slot.triangles.Length).ToArray());
+                    }
+                    var mesh = new Mesh { name = original.name, vertices = vertices.ToArray(), subMeshCount = triangles.Count };
+                    for (int i=0;i<triangles.Count;i++) mesh.SetTriangles(triangles[i],i);
+                    mesh.RecalculateNormals(); mesh.RecalculateBounds();
+                    var backup = Object.Instantiate(original); backup.name = original.name;
+                    generated.Add(mesh); originals.Add(original); backups.Add(backup);
+                    mounts.Add(tr); renderers.Add(renderer); materials.Add(mats);
+                }
+                var engineSockets = new List<Transform>(); var enginePositions = new List<Vector3>();
+                foreach (int x in new[] {-1,1}) foreach (int z in new[] {-1,1})
+                {
+                    var socket = contents.transform.Find($"EngineSockets/Exhaust_{(x < 0 ? "L" : "R")}_{(z < 0 ? "Rear" : "Front")}");
+                    if (socket == null) throw new InvalidOperationException("Missing exhaust socket.");
+                    engineSockets.Add(socket); enginePositions.Add(new Vector3(x*8.15f,.45f,z*5.55f));
+                }
+                editing = true;
+                for (int i=0;i<generated.Count;i++)
+                {
+                    // Keep existing mesh asset GUIDs and the prefab hierarchy, so the scene instances update.
+                    EditorUtility.CopySerialized(generated[i],originals[i]); EditorUtility.SetDirty(originals[i]);
+                    mounts[i].localPosition=data.assemblies[i].pivot;
+                    renderers[i].sharedMaterials=materials[i];
+                }
+                for (int i=0;i<engineSockets.Count;i++) engineSockets[i].localPosition=enginePositions[i];
+                ValidateInterface(contents,cargo);
+                PrefabUtility.SaveAsPrefabAsset(contents,Prefab,out bool success);
+                if (!success) throw new InvalidOperationException("CA01 V2 prefab save failed.");
+                AssetDatabase.SaveAssets();
+                Debug.Log("CA01 V2 applied in place. Existing empty/loaded comparisons use the new visual. Cargo interface unchanged.");
+            }
+            catch (Exception ex)
+            {
+                if (editing)
+                {
+                    for (int i=0;i<backups.Count;i++) { EditorUtility.CopySerialized(backups[i], originals[i]); EditorUtility.SetDirty(originals[i]); }
+                    AssetDatabase.SaveAssets();
+                    Debug.LogError("CA01 V2 upgrade interrupted. Check prefab and mesh changes in git before continuing.");
+                }
+                Debug.LogError("CA01 V2: "+ex);
+            }
+            finally
+            {
+                if (contents != null) PrefabUtility.UnloadPrefabContents(contents);
+                foreach (var mesh in generated.Concat(backups)) Object.DestroyImmediate(mesh);
+            }
+        }
+
         private static void ValidateInterface(GameObject lifter, GameObject cargo)
         {
             if (lifter == null || cargo == null) throw new InvalidOperationException("Missing comparison prefab.");
@@ -142,10 +240,10 @@ namespace AirCombat
                         s.triangles.Any(i => i < 0 || i >= part.vertices.Length)))
                     throw new InvalidOperationException("CA01 invalid mesh: " + part.name);
             var points = data.assemblies.SelectMany(p => p.vertices.Select(v => v + p.pivot)).ToArray();
-            if (points.Length == 0 || Mathf.Abs(points.Min(p=>p.x)+11f)>.001f || Mathf.Abs(points.Max(p=>p.x)-11f)>.001f ||
+            if (points.Length == 0 || Mathf.Abs(points.Min(p=>p.x)+10.87f)>.001f || Mathf.Abs(points.Max(p=>p.x)-10.87f)>.001f ||
                 Mathf.Abs(points.Min(p=>p.y))>.001f || Mathf.Abs(points.Max(p=>p.y)-6.2f)>.001f ||
-                Mathf.Abs(points.Min(p=>p.z)+10f)>.001f || Mathf.Abs(points.Max(p=>p.z)-10f)>.001f)
-                throw new InvalidOperationException("CA01 source bounds differ from 22 x 6.2 x 20.");
+                Mathf.Abs(points.Min(p=>p.z)+10.8f)>.001f || Mathf.Abs(points.Max(p=>p.z)-11.2f)>.001f)
+                throw new InvalidOperationException("CA01 source bounds differ from 21.74 x 6.2 x 22.");
             if (string.IsNullOrEmpty(AssetDatabase.CreateFolder(ArtParent, "CA01_Carryall")))
                 throw new InvalidOperationException("CA01 could not create asset folder.");
             GameObject root = null;
@@ -193,7 +291,7 @@ namespace AirCombat
                 {
                     var socket = new GameObject($"Exhaust_{(x < 0 ? "L" : "R")}_{(z < 0 ? "Rear" : "Front")}");
                     socket.transform.SetParent(engines.transform,false);
-                    socket.transform.localPosition = new Vector3(x*8.4f,.52f,z*5.3f);
+                    socket.transform.localPosition = new Vector3(x*8.15f,.45f,z*5.55f);
                     socket.transform.localRotation = Quaternion.Euler(90f,0f,0f);
                 }
                 var prefab = PrefabUtility.SaveAsPrefabAsset(root,Prefab,out bool success);
