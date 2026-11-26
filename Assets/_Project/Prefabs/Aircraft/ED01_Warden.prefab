@@ -133,8 +133,8 @@ MonoBehaviour:
   fireRange: 135
   projectileSpeed: 185
   projectileRange: 220
-  roundsPerSecond: 8
-  burstSeconds: 1.7
+  roundsPerSecond: 11
+  roundsPerBurst: 8
   pauseSeconds: 2.3
   leadSeconds: 0.1
   spreadDegrees: 5.5

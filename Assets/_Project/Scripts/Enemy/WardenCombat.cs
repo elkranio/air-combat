@@ -18,7 +18,7 @@ namespace AirCombat
         [SerializeField, Min(1f)] private float projectileSpeed = 185f;
         [SerializeField, Min(1f)] private float projectileRange = 220f;
         [SerializeField, Min(.1f)] private float roundsPerSecond = 11f;
-        [SerializeField, Min(.1f)] private float burstSeconds = 1.7f;
+        [SerializeField, Min(1)] private int roundsPerBurst = 8;
         [SerializeField, Min(.1f)] private float pauseSeconds = 2.3f;
         [SerializeField, Min(0f)] private float leadSeconds = .10f;
         [SerializeField, Min(0f)] private float spreadDegrees = 5.5f;
@@ -39,7 +39,7 @@ namespace AirCombat
         private readonly float[] flashUntil = new float[2];
         private bool bound, firing, stopped;
         private float nextShot, phaseUntil;
-        private int nextBarrel;
+        private int nextBarrel, roundsRemaining;
         public PlayerHitPoints Health { get; private set; }
         public RadarAirContact Contact { get; private set; }
         public int FiredCount { get; private set; }
@@ -106,7 +106,7 @@ namespace AirCombat
                 flashes[i].enabled = false;
             }
             audioSource.Stop();
-            nextBarrel = FiredCount = HitCount = 0;
+            nextBarrel = FiredCount = HitCount = roundsRemaining = 0;
             firing = stopped = false;
             nextShot = phaseUntil = now + .45f;
         }
@@ -116,6 +116,7 @@ namespace AirCombat
             stopped = true;
             if (patrol != null) patrol.enabled = false;
             firing = false;
+            roundsRemaining = 0;
             if (flashes != null)
                 foreach (var flash in flashes) if (flash != null) flash.enabled = false;
             if (audioSource != null) audioSource.Stop();
@@ -145,15 +146,17 @@ namespace AirCombat
             {
                 if (firing) phaseUntil = now + pauseSeconds;
                 firing = false;
+                roundsRemaining = 0;
                 return;
             }
-            if (now >= phaseUntil)
+            if (!firing)
             {
-                firing = !firing;
-                phaseUntil = now + (firing ? burstSeconds : pauseSeconds);
-                if (firing) nextShot = now;
+                if (now < phaseUntil) return;
+                firing = true;
+                roundsRemaining = Mathf.Max(1, roundsPerBurst);
+                nextShot = now;
             }
-            if (!firing || now < nextShot) return;
+            if (now < nextShot) return;
             int barrel = nextBarrel;
             Vector3 wanted = (aim - muzzle[barrel].position).normalized;
             // Don't fire through a visibly unaligned turret while it slews.
@@ -161,6 +164,11 @@ namespace AirCombat
             nextBarrel = 1 - barrel;
             nextShot = now + 1f / Mathf.Max(.1f, roundsPerSecond);
             Emit(barrel, now, distance);
+            if (--roundsRemaining == 0)
+            {
+                firing = false;
+                phaseUntil = now + pauseSeconds;
+            }
         }
 
         private void AimTurret(int i, Vector3 aim, float dt, bool tracking)
