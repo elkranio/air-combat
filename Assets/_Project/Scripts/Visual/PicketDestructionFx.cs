@@ -180,7 +180,7 @@ namespace AirCombat
             Vector3 direction = (radial + noise * .35f).normalized;
             if (direction.sqrMagnitude < .01f) direction = Vector3.right;
             float speed = wheel ? Next(27f, 42f) : Next(19f, 36f);
-            Vector3 velocity = direction * speed + Vector3.up * Next(12f, 22f) + marchVelocity * .35f;
+            Vector3 velocity = direction * speed + Vector3.up * Next(26f, 36f) + marchVelocity * .35f;
             Vector3 spin;
             if (wheel)
             {
