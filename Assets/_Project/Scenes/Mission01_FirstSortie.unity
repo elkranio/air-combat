@@ -1143,16 +1143,14 @@ PrefabInstance:
       propertyPath: m_Name
       value: SAM D - visual (R440)
       objectReference: {fileID: 0}
+    - target: {fileID: 1298626541, guid: 4758bfb984f508a4c82af3323d448857, type: 3}
+      propertyPath: engagementRange
+      value: 440
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
-    m_AddedGameObjects:
-    - targetCorrespondingSourceObject: {fileID: 7220603420139907564, guid: 4758bfb984f508a4c82af3323d448857, type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 736538823}
-    m_AddedComponents:
-    - targetCorrespondingSourceObject: {fileID: 8389977542807089187, guid: 4758bfb984f508a4c82af3323d448857, type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 2145265484}
+    m_AddedGameObjects: []
+    m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 4758bfb984f508a4c82af3323d448857, type: 3}
 --- !u!4 &50544490 stripped
 Transform:
@@ -2598,14 +2596,8 @@ PrefabInstance:
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
-    m_AddedGameObjects:
-    - targetCorrespondingSourceObject: {fileID: 7220603420139907564, guid: 4758bfb984f508a4c82af3323d448857, type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 278925427}
-    m_AddedComponents:
-    - targetCorrespondingSourceObject: {fileID: 8389977542807089187, guid: 4758bfb984f508a4c82af3323d448857, type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 1298626541}
+    m_AddedGameObjects: []
+    m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 4758bfb984f508a4c82af3323d448857, type: 3}
 --- !u!4 &110365900 stripped
 Transform:
@@ -3395,16 +3387,14 @@ PrefabInstance:
       propertyPath: m_Name
       value: SAM E - visual (R460)
       objectReference: {fileID: 0}
+    - target: {fileID: 1298626541, guid: 4758bfb984f508a4c82af3323d448857, type: 3}
+      propertyPath: engagementRange
+      value: 460
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
-    m_AddedGameObjects:
-    - targetCorrespondingSourceObject: {fileID: 7220603420139907564, guid: 4758bfb984f508a4c82af3323d448857, type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 702136630}
-    m_AddedComponents:
-    - targetCorrespondingSourceObject: {fileID: 8389977542807089187, guid: 4758bfb984f508a4c82af3323d448857, type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 765515993}
+    m_AddedGameObjects: []
+    m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 4758bfb984f508a4c82af3323d448857, type: 3}
 --- !u!4 &127586940 stripped
 Transform:
@@ -6817,37 +6807,6 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 196514113713350218, guid: fe92e8de78464ad4dab5052e47ed8387, type: 3}
   m_PrefabInstance: {fileID: 268564977}
   m_PrefabAsset: {fileID: 0}
---- !u!1 &278925426
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 278925427}
-  m_Layer: 0
-  m_Name: Picket launch socket
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &278925427
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 278925426}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 6.5899997, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 110365900}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1001 &279686110
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -9834,37 +9793,6 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 9073664653475869481, guid: 5db107efdeee5f044a195f236fa39626, type: 3}
   m_PrefabInstance: {fileID: 388934738}
   m_PrefabAsset: {fileID: 0}
---- !u!1 &390231310
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 390231311}
-  m_Layer: 0
-  m_Name: Picket launch socket
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &390231311
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 390231310}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 6.5899997, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 662207921}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1001 &393845988
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -16135,14 +16063,8 @@ PrefabInstance:
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
-    m_AddedGameObjects:
-    - targetCorrespondingSourceObject: {fileID: 7220603420139907564, guid: 4758bfb984f508a4c82af3323d448857, type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 390231311}
-    m_AddedComponents:
-    - targetCorrespondingSourceObject: {fileID: 8389977542807089187, guid: 4758bfb984f508a4c82af3323d448857, type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 1859142576}
+    m_AddedGameObjects: []
+    m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 4758bfb984f508a4c82af3323d448857, type: 3}
 --- !u!4 &662207921 stripped
 Transform:
@@ -17175,37 +17097,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &702136629
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 702136630}
-  m_Layer: 0
-  m_Name: Picket launch socket
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &702136630
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 702136629}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 6.5899997, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 127586940}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1001 &702525234
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -17978,37 +17869,6 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 4393830689007847053, guid: 9a470bcf6a97134418d7c3adbb6e152f, type: 3}
   m_PrefabInstance: {fileID: 733611108}
   m_PrefabAsset: {fileID: 0}
---- !u!1 &736538822
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 736538823}
-  m_Layer: 0
-  m_Name: Picket launch socket
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &736538823
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 736538822}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 6.5899997, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 50544490}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1001 &737221146
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -18536,25 +18396,17 @@ GameObject:
   m_CorrespondingSourceObject: {fileID: 8389977542807089187, guid: 4758bfb984f508a4c82af3323d448857, type: 3}
   m_PrefabInstance: {fileID: 127586939}
   m_PrefabAsset: {fileID: 0}
---- !u!114 &765515993
+--- !u!114 &765515993 stripped
 MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
+  m_CorrespondingSourceObject: {fileID: 1298626541, guid: 4758bfb984f508a4c82af3323d448857, type: 3}
+  m_PrefabInstance: {fileID: 127586939}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 765515992}
+  m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 36c5cfde3c4d43458bcb45ef9c32fb4b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::AirCombat.SurfaceToAirLauncher
-  engagementRange: 460
-  lockSeconds: 2
-  reloadSeconds: 5
-  maxHp: 6
-  launchSocket: {fileID: 702136630}
-  missilePrefab: {fileID: 1779592964779880733, guid: d10f88d96b7721c4aa0b97e99032c38d, type: 3}
-  prelaunchWarningSeconds: 0.65
 --- !u!1001 &769289604
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -20088,14 +19940,8 @@ PrefabInstance:
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
-    m_AddedGameObjects:
-    - targetCorrespondingSourceObject: {fileID: 7220603420139907564, guid: 4758bfb984f508a4c82af3323d448857, type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 1937331881}
-    m_AddedComponents:
-    - targetCorrespondingSourceObject: {fileID: 8389977542807089187, guid: 4758bfb984f508a4c82af3323d448857, type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 1248412888}
+    m_AddedGameObjects: []
+    m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 4758bfb984f508a4c82af3323d448857, type: 3}
 --- !u!4 &859663210 stripped
 Transform:
@@ -30269,25 +30115,17 @@ GameObject:
   m_CorrespondingSourceObject: {fileID: 8389977542807089187, guid: 4758bfb984f508a4c82af3323d448857, type: 3}
   m_PrefabInstance: {fileID: 859663209}
   m_PrefabAsset: {fileID: 0}
---- !u!114 &1248412888
+--- !u!114 &1248412888 stripped
 MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
+  m_CorrespondingSourceObject: {fileID: 1298626541, guid: 4758bfb984f508a4c82af3323d448857, type: 3}
+  m_PrefabInstance: {fileID: 859663209}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1248412887}
+  m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 36c5cfde3c4d43458bcb45ef9c32fb4b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::AirCombat.SurfaceToAirLauncher
-  engagementRange: 430
-  lockSeconds: 2
-  reloadSeconds: 5
-  maxHp: 6
-  launchSocket: {fileID: 1937331881}
-  missilePrefab: {fileID: 1779592964779880733, guid: d10f88d96b7721c4aa0b97e99032c38d, type: 3}
-  prelaunchWarningSeconds: 0.65
 --- !u!1001 &1249933517
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -31553,25 +31391,17 @@ GameObject:
   m_CorrespondingSourceObject: {fileID: 8389977542807089187, guid: 4758bfb984f508a4c82af3323d448857, type: 3}
   m_PrefabInstance: {fileID: 110365899}
   m_PrefabAsset: {fileID: 0}
---- !u!114 &1298626541
+--- !u!114 &1298626541 stripped
 MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
+  m_CorrespondingSourceObject: {fileID: 1298626541, guid: 4758bfb984f508a4c82af3323d448857, type: 3}
+  m_PrefabInstance: {fileID: 110365899}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1298626540}
+  m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 36c5cfde3c4d43458bcb45ef9c32fb4b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::AirCombat.SurfaceToAirLauncher
-  engagementRange: 430
-  lockSeconds: 2
-  reloadSeconds: 5
-  maxHp: 6
-  launchSocket: {fileID: 278925427}
-  missilePrefab: {fileID: 1779592964779880733, guid: d10f88d96b7721c4aa0b97e99032c38d, type: 3}
-  prelaunchWarningSeconds: 0.65
 --- !u!1 &1301164317
 GameObject:
   m_ObjectHideFlags: 0
@@ -37404,16 +37234,14 @@ PrefabInstance:
       propertyPath: m_Name
       value: SAM B - visual (R470)
       objectReference: {fileID: 0}
+    - target: {fileID: 1298626541, guid: 4758bfb984f508a4c82af3323d448857, type: 3}
+      propertyPath: engagementRange
+      value: 470
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
-    m_AddedGameObjects:
-    - targetCorrespondingSourceObject: {fileID: 7220603420139907564, guid: 4758bfb984f508a4c82af3323d448857, type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 1998038989}
-    m_AddedComponents:
-    - targetCorrespondingSourceObject: {fileID: 8389977542807089187, guid: 4758bfb984f508a4c82af3323d448857, type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 1863431011}
+    m_AddedGameObjects: []
+    m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 4758bfb984f508a4c82af3323d448857, type: 3}
 --- !u!4 &1472988484 stripped
 Transform:
@@ -48081,25 +47909,17 @@ GameObject:
   m_CorrespondingSourceObject: {fileID: 8389977542807089187, guid: 4758bfb984f508a4c82af3323d448857, type: 3}
   m_PrefabInstance: {fileID: 662207920}
   m_PrefabAsset: {fileID: 0}
---- !u!114 &1859142576
+--- !u!114 &1859142576 stripped
 MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
+  m_CorrespondingSourceObject: {fileID: 1298626541, guid: 4758bfb984f508a4c82af3323d448857, type: 3}
+  m_PrefabInstance: {fileID: 662207920}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1859142575}
+  m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 36c5cfde3c4d43458bcb45ef9c32fb4b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::AirCombat.SurfaceToAirLauncher
-  engagementRange: 430
-  lockSeconds: 2
-  reloadSeconds: 5
-  maxHp: 6
-  launchSocket: {fileID: 390231311}
-  missilePrefab: {fileID: 1779592964779880733, guid: d10f88d96b7721c4aa0b97e99032c38d, type: 3}
-  prelaunchWarningSeconds: 0.65
 --- !u!1 &1859302601
 GameObject:
   m_ObjectHideFlags: 0
@@ -48215,25 +48035,17 @@ GameObject:
   m_CorrespondingSourceObject: {fileID: 8389977542807089187, guid: 4758bfb984f508a4c82af3323d448857, type: 3}
   m_PrefabInstance: {fileID: 1472988483}
   m_PrefabAsset: {fileID: 0}
---- !u!114 &1863431011
+--- !u!114 &1863431011 stripped
 MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
+  m_CorrespondingSourceObject: {fileID: 1298626541, guid: 4758bfb984f508a4c82af3323d448857, type: 3}
+  m_PrefabInstance: {fileID: 1472988483}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1863431010}
+  m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 36c5cfde3c4d43458bcb45ef9c32fb4b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::AirCombat.SurfaceToAirLauncher
-  engagementRange: 470
-  lockSeconds: 2
-  reloadSeconds: 5
-  maxHp: 6
-  launchSocket: {fileID: 1998038989}
-  missilePrefab: {fileID: 1779592964779880733, guid: d10f88d96b7721c4aa0b97e99032c38d, type: 3}
-  prelaunchWarningSeconds: 0.65
 --- !u!1001 &1865110747
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -49934,37 +49746,6 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 4578631880660888884, guid: 3fdaa3dbe03c0aa4ab2497b86073e20d, type: 3}
   m_PrefabInstance: {fileID: 1937218922}
   m_PrefabAsset: {fileID: 0}
---- !u!1 &1937331880
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 1937331881}
-  m_Layer: 0
-  m_Name: Picket launch socket
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &1937331881
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1937331880}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 6.5899997, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 859663210}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1939416580
 GameObject:
   m_ObjectHideFlags: 0
@@ -52049,37 +51830,6 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 8586879974633367610, guid: 5dc8f365294506f4ab0d0ebb23e34f9e, type: 3}
   m_PrefabInstance: {fileID: 1995765045}
   m_PrefabAsset: {fileID: 0}
---- !u!1 &1998038988
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 1998038989}
-  m_Layer: 0
-  m_Name: Picket launch socket
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &1998038989
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1998038988}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 6.5899997, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 1472988484}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1001 &1998147884
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -56050,25 +55800,17 @@ GameObject:
   m_CorrespondingSourceObject: {fileID: 8389977542807089187, guid: 4758bfb984f508a4c82af3323d448857, type: 3}
   m_PrefabInstance: {fileID: 50544489}
   m_PrefabAsset: {fileID: 0}
---- !u!114 &2145265484
+--- !u!114 &2145265484 stripped
 MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
+  m_CorrespondingSourceObject: {fileID: 1298626541, guid: 4758bfb984f508a4c82af3323d448857, type: 3}
+  m_PrefabInstance: {fileID: 50544489}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2145265483}
+  m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 36c5cfde3c4d43458bcb45ef9c32fb4b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::AirCombat.SurfaceToAirLauncher
-  engagementRange: 440
-  lockSeconds: 2
-  reloadSeconds: 5
-  maxHp: 6
-  launchSocket: {fileID: 736538823}
-  missilePrefab: {fileID: 1779592964779880733, guid: d10f88d96b7721c4aa0b97e99032c38d, type: 3}
-  prelaunchWarningSeconds: 0.65
 --- !u!1 &2145984353
 GameObject:
   m_ObjectHideFlags: 0
