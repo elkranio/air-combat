@@ -78,18 +78,21 @@ namespace AirCombat
             if (!EditorSceneManager.SaveScene(scene)) Debug.LogError("CA01: scene save failed.");
         }
 
-        [MenuItem("Air Combat/Missions/M02 - Apply CA01 Carryall V8")]
+        [MenuItem("Air Combat/Missions/M02 - Apply CA01 Carryall V9A")]
         private static void UpgradeVisual()
         {
             if (EditorApplication.isPlayingOrWillChangePlaymode) return;
             var scene = SceneManager.GetActiveScene();
             if (scene.path != Mission || scene.isDirty)
-            { Debug.LogError("CA01 V8: open and save M02 first."); return; }
+            { Debug.LogError("CA01 V9A: open and save M02 first."); return; }
             GameObject contents = null;
             var generated = new List<Mesh>();
             var backups = new List<Mesh>();
             var originals = new List<Mesh>();
             bool editing = false;
+            var paintAssets = new List<Material>();
+            var previousColors = new List<Color>();
+            var nextColors = new List<Color>();
             try
             {
                 var cargo = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/_Project/Prefabs/Environment/CG01_SpecialCargo.prefab");
@@ -100,14 +103,26 @@ namespace AirCombat
                 var data = asset != null ? JsonUtility.FromJson<GeometryData>(asset.text) : null;
                 if (data == null || data.assemblies == null || data.assemblies.Length != 12 || data.sockets == null || data.sockets.Length != 4 ||
                     data.assemblies.Select(p=>p.name).Distinct().Count() != 12)
-                    throw new InvalidOperationException("Invalid CA01 V8 source.");
+                    throw new InvalidOperationException("Invalid CA01 V9A source.");
+                if (data.palette == null || data.palette.Length != 8 || data.palette.Select(p=>p.name).Distinct().Count()!=8)
+                    throw new InvalidOperationException("Invalid CA01 palette.");
+                foreach (var paint in data.palette)
+                {
+                    var material = AssetDatabase.LoadAssetAtPath<Material>(Art+"/CA01_"+paint.name+".mat");
+                    if (material == null || !material.HasProperty("_BaseColor") || paint.rgb == null ||
+                        paint.rgb.Length != 3 || paint.rgb.Any(c=>c<0 || c>255))
+                        throw new InvalidOperationException("Invalid CA01 material: "+paint.name);
+                    paintAssets.Add(material);
+                    previousColors.Add(material.GetColor("_BaseColor"));
+                    nextColors.Add(new Color32((byte)paint.rgb[0],(byte)paint.rgb[1],(byte)paint.rgb[2],255));
+                }
                 contents = PrefabUtility.LoadPrefabContents(Prefab);
                 ValidateInterface(contents, cargo);
                 var visual = contents.transform.Find("Visual");
                 if (visual == null || visual.childCount != 12) throw new InvalidOperationException("Unexpected CA01 visual hierarchy.");
                 for (int i=0;i<4;i++)
                     if ((contents.transform.Find($"ClampSockets/Clamp_{i+1:00}").localPosition-data.sockets[i]).sqrMagnitude > .000001f)
-                        throw new InvalidOperationException("V8 source capture socket mismatch.");
+                        throw new InvalidOperationException("V9A source capture socket mismatch.");
                 var mounts = new List<Transform>(); var renderers = new List<MeshRenderer>();
                 var materials = new List<Material[]>();
                 // Preflight every source, target asset and material before changing anything.
@@ -120,7 +135,7 @@ namespace AirCombat
                     if (filter == null || renderer == null || original == null || filter.sharedMesh != original ||
                         part.vertices == null || part.slots == null || part.slots.Length == 0 ||
                         part.slots.Any(s=>s.triangles == null || s.triangles.Length % 3 != 0 || s.triangles.Any(i=>i<0 || i>=part.vertices.Length)))
-                        throw new InvalidOperationException("Invalid CA01 V8 assembly: "+part.name);
+                        throw new InvalidOperationException("Invalid CA01 V9A assembly: "+part.name);
                     var mats = part.slots.Select(s=>AssetDatabase.LoadAssetAtPath<Material>(Art+"/CA01_"+s.material+".mat")).ToArray();
                     if (mats.Any(m=>m==null)) throw new InvalidOperationException("Missing material: "+part.name);
                     var vertices = new List<Vector3>(); var triangles = new List<int[]>();
@@ -145,20 +160,25 @@ namespace AirCombat
                     engineSockets.Add(socket); enginePositions.Add(new Vector3(x*10.2f,.75f,z*5.4f));
                 }
                 editing = true;
+                for (int i=0;i<paintAssets.Count;i++)
+                {
+                    paintAssets[i].SetColor("_BaseColor",nextColors[i]);
+                    EditorUtility.SetDirty(paintAssets[i]);
+                }
                 for (int i=0;i<generated.Count;i++)
                 {
                     // Keep existing mesh asset GUIDs and the prefab hierarchy, so the scene instances update.
                     EditorUtility.CopySerialized(generated[i],originals[i]); EditorUtility.SetDirty(originals[i]);
                     if (originals[i].vertexCount != generated[i].vertexCount ||
                         (originals[i].bounds.size - generated[i].bounds.size).sqrMagnitude > .000001f)
-                        throw new InvalidOperationException("V8 mesh update did not persist: " + originals[i].name);
+                        throw new InvalidOperationException("V9A mesh update did not persist: " + originals[i].name);
                     mounts[i].localPosition=data.assemblies[i].pivot;
                     renderers[i].sharedMaterials=materials[i];
                 }
                 for (int i=0;i<engineSockets.Count;i++) engineSockets[i].localPosition=enginePositions[i];
                 ValidateInterface(contents,cargo);
                 PrefabUtility.SaveAsPrefabAsset(contents,Prefab,out bool success);
-                if (!success) throw new InvalidOperationException("CA01 V8 prefab save failed.");
+                if (!success) throw new InvalidOperationException("CA01 V9A prefab save failed.");
                 AssetDatabase.SaveAssets();
                 // Release the isolated prefab scene before refreshing the serialized meshes.
                 // V3 was correct on disk but the Scene view kept old GPU geometry until restart.
@@ -175,20 +195,33 @@ namespace AirCombat
                     var mesh = tr != null ? tr.GetComponent<MeshFilter>().sharedMesh : null;
                     if (mesh == null || mesh.vertexCount != part.slots.Sum(s => s.triangles.Length) ||
                         (tr.localPosition - part.pivot).sqrMagnitude > .000001f)
-                        throw new InvalidOperationException("V8 saved prefab verification failed: " + part.name);
+                        throw new InvalidOperationException("V9A saved prefab verification failed: " + part.name);
+                }
+                for (int i=0;i<paintAssets.Count;i++)
+                {
+                    var path=AssetDatabase.GetAssetPath(paintAssets[i]);
+                    AssetDatabase.ImportAsset(path, ImportAssetOptions.ForceUpdate | ImportAssetOptions.ForceSynchronousImport);
+                    var saved=AssetDatabase.LoadAssetAtPath<Material>(path);
+                    if (saved == null || (Vector4.Distance(saved.GetColor("_BaseColor"),nextColors[i]) > .0001f))
+                        throw new InvalidOperationException("CA01 saved paint verification failed: "+path);
                 }
                 SceneView.RepaintAll();
-                Debug.Log("CA01 V8 applied in place. Verified 12 saved assemblies and CG01 interface. Existing comparisons stay linked. Restart Unity before evaluating the silhouette if the Scene view retains stale geometry.");
+                Debug.Log("CA01 V9A applied in place. Verified 12 saved assemblies and CG01 interface. Existing comparisons stay linked. Restart Unity before evaluating the silhouette if the Scene view retains stale geometry.");
             }
             catch (Exception ex)
             {
                 if (editing)
                 {
+                    for (int i=0;i<paintAssets.Count;i++)
+                    {
+                        paintAssets[i].SetColor("_BaseColor",previousColors[i]);
+                        EditorUtility.SetDirty(paintAssets[i]);
+                    }
                     for (int i=0;i<backups.Count;i++) { EditorUtility.CopySerialized(backups[i], originals[i]); EditorUtility.SetDirty(originals[i]); }
                     AssetDatabase.SaveAssets();
-                    Debug.LogError("CA01 V8 upgrade interrupted. Check prefab and mesh changes in git before continuing.");
+                    Debug.LogError("CA01 V9A upgrade interrupted. Check prefab and mesh changes in git before continuing.");
                 }
-                Debug.LogError("CA01 V8: "+ex);
+                Debug.LogError("CA01 V9A: "+ex);
             }
             finally
             {

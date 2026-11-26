@@ -9,10 +9,10 @@ import json
 
 ROOT = Path(__file__).resolve().parents[2]
 OUT = ROOT / 'Assets/_Project/Editor/Mission02/CA01Geometry.json'
-PALETTE = {'Hull': (81, 91, 69), 'Top': (117, 129, 96),
-           'Frame': (50, 60, 54), 'Steel': (104, 117, 109),
-           'Red': (177, 58, 48), 'Dark': (31, 39, 39),
-           'Glass': (44, 77, 82), 'Vent': (157, 151, 111)}
+PALETTE = {'Hull': (65, 72, 76), 'Top': (104, 116, 123),
+           'Frame': (40, 47, 51), 'Steel': (125, 137, 143),
+           'Red': (177, 58, 48), 'Dark': (28, 32, 35),
+           'Glass': (44, 77, 82), 'Vent': (213, 165, 47)}  # V9A Heavy Duty
 PARTS = []
 SOCKETS = [(x, 0.0, z) for z in (-4.65,4.65) for x in (-2.45,2.45)]
 
@@ -86,7 +86,12 @@ def duct(name,asm,x,z,outer,inner):
         mat='Top' if j in (2,3) else 'Dark' if j in (4,5) else 'Frame' if j in (6,7) else 'Hull'
         for k in range(n):
             l=(k+1)%n;a,b,c,d=j*n+k,j*n+l,q*n+l,q*n+k
-            t=[(a,b,c),(a,c,d)];tris.extend(t);groups.setdefault(mat,[]).extend(t)
+            t=[(a,b,c),(a,c,d)];tris.extend(t)
+            paint = mat
+            if j in (2,3):
+                if k in (0,2,8,10): paint = 'Vent'
+                elif k in (1,9): paint = 'Frame'
+            groups.setdefault(paint,[]).extend(t)
     edges=Counter((a,b) for t in tris for a,b in zip(t,t[1:]+t[:1]))
     assert all(n==1 and edges[b,a]==1 for (a,b),n in edges.items()),name
     vol=sum(dot(v[a],cross(v[b],v[c])) for a,b,c in tris)/6
@@ -175,7 +180,7 @@ for s,side in [(-1,'L'),(1,'R')]:
     # No bridge across the open space between the turbine rims.
     asm='Tail'+side
     # Keep the low rear tail plate, without a fin above the turbine.
-    slab('Rear tail plate',asm,'Top',[(s*3.05,-7.5),(s*7.95,-9.5),(s*9.4,-8.6),(s*7.8,-6.4),(s*4.0,-6.65)],2.55,2.85)
+    slab('Rear tail plate',asm,'Vent',[(s*3.05,-7.5),(s*7.95,-9.5),(s*9.4,-8.6),(s*7.8,-6.4),(s*4.0,-6.65)],2.55,2.85)
 # Move the entire four engine assemblies, keeping their local geometry coherent.
 PARTS[:] = [(name,asm,mat,[(x,y,z+(.9 if asm.startswith('EngineFront') else -.9)) for x,y,z in v],t)
             if asm.startswith('Engine') else (name,asm,mat,v,t)
@@ -187,7 +192,7 @@ for i,(x,y,z) in enumerate(SOCKETS,1):
     box('Clamp shaft',asm,'Steel',x,.57,z,.68,.91,.81)
     chamfer('Capture pad',asm,'Steel',x,.13,z,.68,.26,.77,.06)
     for sx in (-1,1):
-        box('Clamp jaw',asm,'Frame',x+sx*.45,.34,z,.22,.54,1.05)
+        box('Clamp jaw',asm,'Vent',x+sx*.45,.34,z,.22,.54,1.05)
 
 def vector(p): return dict(zip(('x','y','z'),(round(x,6) for x in p)))
 
