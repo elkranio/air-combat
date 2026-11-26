@@ -14,6 +14,7 @@ namespace AirCombat
         private readonly Vector3 start, forward;
         private readonly float spacing, speed, distance;
         private readonly PicketDeploymentVisual[] units = new PicketDeploymentVisual[Count];
+        private readonly PicketHealth[] health = new PicketHealth[Count];
         private readonly MarchContact[] contacts = new MarchContact[Count];
         private float progress;
         private bool ready;
@@ -43,8 +44,28 @@ namespace AirCombat
             this.distance = Mathf.Max(1f, distance);
         }
 
-        public string DebugStatus => !ready ? "CONVOY UNAVAILABLE" :
-            $"Pickets 6/6 | {(progress >= distance ? "STOPPED" : "MARCH")} | {progress:F0}/{distance:F0} m";
+        public int AliveCount
+        {
+            get
+            {
+                int alive = 0;
+                foreach (var unit in health) if (unit != null && unit.IsAlive) alive++;
+                return alive;
+            }
+        }
+
+        public string DebugStatus
+        {
+            get
+            {
+                if (!ready) return "CONVOY UNAVAILABLE";
+                string hp = "";
+                for (int i = 0; i < Count; i++)
+                    hp += (i == 0 ? "" : "/") + (health[i] != null ? health[i].Hp : 0);
+                return $"Pickets {AliveCount}/{Count} | HP {hp} | " +
+                    $"{(progress >= distance ? "STOPPED" : "MARCH")} | {progress:F0}/{distance:F0} m";
+            }
+        }
 
         // Exposed for the next sandbox atom, not a campaign or deployment rule.
         public Vector3 HeadPosition => start + forward * progress;
@@ -54,7 +75,8 @@ namespace AirCombat
         public bool Restart()
         {
             ready = false;
-            if (prefab == null || terrain == null || terrain.terrainData == null || radar == null ||
+            if (prefab == null || prefab.GetComponent<PicketHealth>() == null ||
+                terrain == null || terrain.terrainData == null || radar == null ||
                 !InsideTerrain(start - forward * (spacing * (Count - 1))) ||
                 !InsideTerrain(start + forward * distance))
             {
@@ -70,13 +92,16 @@ namespace AirCombat
                     radar.Unregister(contacts[i]);
                     units[i] = Object.Instantiate(prefab, owner);
                     units[i].name = $"CV02 / Picket {i + 1:00}";
+                    health[i] = units[i].GetComponent<PicketHealth>();
+                    health[i].Killed += OnPicketKilled;
                     contacts[i] = new MarchContact(units[i].transform);
-                    radar.Register(contacts[i]);
                 }
+                health[i].ResetHealth();
+                Place(i);
                 units[i].gameObject.SetActive(true);
                 // Also cancels any opt-in visual deployment preview.
                 units[i].SetDeploymentImmediate(false);
-                Place(i);
+                radar.Register(contacts[i]);
                 units[i].GetComponent<GroundMovementDust>()?.ResetTrail();
             }
             ready = true;
@@ -87,7 +112,19 @@ namespace AirCombat
         {
             if (!ready || dt <= 0f || progress >= distance) return;
             progress = Mathf.Min(distance, progress + speed * dt);
-            for (int i = 0; i < Count; i++) if (units[i] != null) Place(i);
+            for (int i = 0; i < Count; i++)
+                if (units[i] != null && health[i] != null && health[i].IsAlive) Place(i);
+        }
+
+        private void OnPicketKilled(PicketHealth killed)
+        {
+            // Keep the slot empty: do not move or compact surviving vehicles.
+            for (int i = 0; i < Count; i++)
+            {
+                if (health[i] != killed) continue;
+                radar.Unregister(contacts[i]);
+                break;
+            }
         }
 
         private bool InsideTerrain(Vector3 point)
@@ -117,6 +154,8 @@ namespace AirCombat
             {
                 if (radar != null) radar.Unregister(contacts[i]);
                 contacts[i] = null;
+                if (health[i] != null) health[i].Killed -= OnPicketKilled;
+                health[i] = null;
                 if (units[i] != null)
                 {
                     units[i].gameObject.SetActive(false);

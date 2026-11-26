@@ -34,6 +34,7 @@ namespace AirCombat
         [SerializeField, Min(.1f)] private float convoySpeed = 12f;
         [SerializeField, Min(1f)] private float convoyDistance = 650f;
         [Header("CV03 / Warden escort (X lateral, Y along route from head)")]
+        [SerializeField] private bool convoyEscortEnabled = false;
         [SerializeField] private WardenCombat convoyWardenPrefab;
         [SerializeField] private Vector2 escortAlphaOffset = new Vector2(-55f, -45f);
         [SerializeField] private Vector2 escortBravoOffset = new Vector2(55f, -105f);
@@ -188,16 +189,15 @@ namespace AirCombat
             // AC-02 remains a prefab option, not an equipped weapon in this test.
             foreach (var gun in player.GetComponentsInChildren<AutocannonWeapon>(true))
                 if (gun.Preset != null && gun.Preset.Continuous) gun.enabled = false;
-            if (groundMode)
+            if (groundMode || convoyMode)
             {
                 nursLauncher = groundLauncher;
                 nursLauncher.gameObject.SetActive(true);
                 nursLauncher.Bind(playerFlight, playerBoost, playerTrigger, view);
                 playerTrigger.ConfigureDualSlots(nursLauncher);
             }
-            else if (convoyMode)
+            if (convoyMode)
             {
-                playerTrigger.ConfigureDualSlots(null);
                 convoy = new ConvoyMarchPreview(convoyPicketPrefab, convoyTerrain, radar, transform,
                     convoyStart, convoyYaw, convoySpacing, convoySpeed, convoyDistance);
                 // Isolate the previous Warden and Mantis trials in this mode.
@@ -205,7 +205,7 @@ namespace AirCombat
                     if (warden.gameObject.scene == gameObject.scene) warden.gameObject.SetActive(false);
                 foreach (var gun in FindObjectsByType<MantisGun>())
                     if (gun.gameObject.scene == gameObject.scene) gun.gameObject.SetActive(false);
-                if (!SpawnConvoyEscorts()) return;
+                if (convoyEscortEnabled && !SpawnConvoyEscorts()) return;
             }
             else if (wardenMode)
             {
@@ -220,7 +220,7 @@ namespace AirCombat
                 if (wardens.Count == 0)
                     Debug.LogError("Warden sandbox: place an ED01_Warden prefab in the scene.", this);
             }
-            else
+            else if (!groundMode)
             {
                 targetingCursor = view.gameObject.AddComponent<TargetingCursor>();
                 targetingCursor.Bind(view);

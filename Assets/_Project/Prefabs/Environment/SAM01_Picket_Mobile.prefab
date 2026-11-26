@@ -11,6 +11,8 @@ GameObject:
   - component: {fileID: 8201000000000000001}
   - component: {fileID: 8201000000000000004}
   - component: {fileID: 8201000000000000005}
+  - component: {fileID: 8201000000000000006}
+  - component: {fileID: 8201000000000000007}
   m_Layer: 0
   m_Name: SAM01_Picket_Mobile
   m_TagString: Untagged
@@ -85,6 +87,40 @@ MonoBehaviour:
   puffLifetime: 0.7875
   dustColor: {r: 0.67, g: 0.58, b: 0.46, a: 0.32}
   surfaceDust: 1
+--- !u!65 &8201000000000000006
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8201000000000000000}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 5.8, y: 5.6, z: 14.2}
+  m_Center: {x: 0, y: 2.8, z: 0}
+--- !u!114 &8201000000000000007
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8201000000000000000}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 61e8d8104d6c40c8b1680d1d5bac7de1, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::AirCombat.PicketHealth
+  maxHp: 3
 --- !u!1 &8201000000000000010
 GameObject:
   m_ObjectHideFlags: 0
