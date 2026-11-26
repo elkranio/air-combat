@@ -1,0 +1,7 @@
+# M02 V05 — canyon pockets
+
+Requires an installed V04 two-target scene, not just the V04 source patch. Open and save M02, then run **Air Combat > Missions > M02 - Apply Canyon Pockets V05**. The installer replaces only the two southern rock masses, expands the flat ground and operation rectangle 800 units south, moves C1/C2 to the ends of separate blind canyon pockets and rebakes the existing tactical map. The north edge, airfield, A/B, direct route, convoy route, speed, weapons and deployment settings stay unchanged. The original terrain and meshes are kept as assets for rollback; V05 uses separate assets.
+
+Both markers remain parts of one optional objective. No actual destructible objective, deadline, extra SAM or river in this graybox pass. Measure S-C1-C2-B including the two turnarounds, and test the fastest feasible route rather than just following the guides. Compare to the measured V04 flight of 108 s and deployment of 138 s. The centerline distance is about 13,808 units versus about 9,100 before. A 35-unit-clearance 2D visibility graph gives a shortest path through the three legs of about 12,194 units (point-to-point, no turn radius, boost model, or arrival tolerance). It is not a prediction of flight duration.
+
+Tab opens the rebaked tactical map, G toggles guides, R restarts. Commit the saved scene, new terrain and mesh assets, and updated map asset after validating in Unity. If map baking fails, check the Console and restore/rebake the prior scene before playing.
