@@ -1664,8 +1664,8 @@ MonoBehaviour:
   roundsPerSecond: 11
   burstSeconds: 1.7
   pauseSeconds: 1.15
-  leadSeconds: 0.32
-  spreadDegrees: 2.8
+  leadSeconds: 0.1
+  spreadDegrees: 5.5
   turretDegreesPerSecond: 250
   tracerWidth: 0.34
   glowWidth: 0.95
