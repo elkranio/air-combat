@@ -341,7 +341,7 @@ namespace AirCombat
                 {
                     if (line.loop || line.positionCount < 2) continue;
                     Color tint = line.name.StartsWith("A to B") ? Red :
-                        line.name == "S to C" ? Gold : Cyan;
+                        (line.name == "S to C" || line.name == "C1 to C2") ? Gold : Cyan;
                     for (int i = 1; i < line.positionCount; i++)
                     {
                         Vector3 a = line.GetPosition(i-1), b = line.GetPosition(i);
@@ -352,7 +352,8 @@ namespace AirCombat
                 }
             Mark(routeTrial.PointA, "A", Red);
             Mark(routeTrial.PointB, "B", Red);
-            Mark(routeTrial.PointC, "C", Gold);
+            Mark(routeTrial.PointC, routeTrial.HasSecondPoint ? "C1" : "C", Gold);
+            if (routeTrial.HasSecondPoint) Mark(routeTrial.PointC2, "C2", Gold);
             for (int i = 0; i < ConvoyMarchPreview.Count; i++)
                 if (routeTrial.TryGetPicketPosition(i, out Vector3 world))
                 {
@@ -384,17 +385,18 @@ namespace AirCombat
             Text(new Rect(x,y,w,30),"ROUTE TRIAL / M02",20,Ink,true);
             Text(new Rect(x,y+40,w,25),"A — Convoy entry",18,Red,true);
             Text(new Rect(x,y+73,w,25),"B — Supply depot",18,Red,true);
-            Text(new Rect(x,y+106,w,25),"C — Optional objective",18,Gold,true);
+            Text(new Rect(x,y+106,w,25),routeTrial.HasSecondPoint ? "C1 + C2 — One optional task" : "C — Optional objective",18,Gold,true);
             Solid(new Rect(x,y+148,w,1),new Color(.23f,.34f,.35f));
             Legend(x,y+172,Cyan,"Direct / return route and player");
             Legend(x,y+207,Gold,"Optional canyon route");
             Legend(x,y+242,Red,"Convoy route / live Pickets");
             Legend(x,y+277,new Color(.28f,.26f,.22f),"Terrain obstruction");
             Legend(x,y+312,RadarHud.BoundaryInk,"Operation boundary");
-            Text(new Rect(x,y+355,w,22),"CONVOY TRIAL / NO DEPLOYMENT",14,Gold,true);
+            Text(new Rect(x,y+355,w,22),"DEPLOYMENT TRIAL / SAM FIRE OFF",14,Gold,true);
             Text(new Rect(x,y+378,w,22),routeTrial.ConvoyStatus,12,Ink);
-            Text(new Rect(x,y+405,w,22),routeTrial.EscortStatus + " / orange diamonds",14,Ink);
-            Text(new Rect(x,y+435,w,25),"Map pauses flight and timing.",14,Muted);
+            Text(new Rect(x,y+405,w,22),routeTrial.DeploymentStatus,12,Ink);
+            Text(new Rect(x,y+432,w,22),routeTrial.EscortStatus,14,Ink);
+            Text(new Rect(x,y+460,w,25),"Map pauses flight and timing.",14,Muted);
         }
 
         private void DrawMissionData(Rect rect)

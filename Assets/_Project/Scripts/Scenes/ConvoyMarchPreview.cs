@@ -3,7 +3,8 @@ using UnityEngine;
 namespace AirCombat
 {
     // Shared convoy composition. One progress value maintains spacing
-    // independently of frame rate. Units remain in their unarmed march pose.
+    // independently of frame rate. Optional depot spurs preserve each slot;
+    // the sandbox's straight march and unarmed stop remain unchanged.
     internal sealed class ConvoyMarchPreview
     {
         public const int Count = 6;
@@ -19,6 +20,11 @@ namespace AirCombat
         private readonly PicketHealth[] health = new PicketHealth[Count];
         private readonly MarchContact[] contacts = new MarchContact[Count];
         private readonly GameObject[] destruction = new GameObject[Count];
+        private const float DepotRowSpacing = 50f, DepotOffset = 65f, DepotTurnRadius = 18f;
+        private static readonly float DepotArc = DepotTurnRadius * Mathf.PI * .5f;
+        private static readonly float DepotSpur = DepotArc + DepotOffset - DepotTurnRadius;
+        private readonly bool[] parked = new bool[Count];
+        private bool deployAtDepot;
         private float progress;
         private bool ready;
 
@@ -74,6 +80,67 @@ namespace AirCombat
             return route[i - 1] + heading * (Mathf.Min(along, distance) - routeDistances[i - 1]);
         }
 
+        // The final straight segment is the depot approach. Each pair turns
+        // into opposite sides of the road, with three independent parking rows.
+        public bool EnableDepotDeployment(Rect safeArea)
+        {
+            if (ready || route == null || distance - routeDistances[route.Length - 2] <= 2f * DepotRowSpacing)
+                return false;
+            for (int i = 0; i < Count; i++)
+                for (int step = 0; step <= 16; step++)
+                {
+                    Vector3 p = SampleDepot(i, DepotSpur * step / 16f, out _);
+                    if (!safeArea.Contains(new Vector2(p.x, p.z)) || !InsideTerrain(p)) return false;
+                }
+            deployAtDepot = true;
+            return true;
+        }
+
+        private float DepotBranch(int index) => distance - (index / 2) * DepotRowSpacing;
+        private float DepotTravel(int index) => progress - spacing * index - DepotBranch(index);
+        private float MoveLimit
+        {
+            get
+            {
+                if (!deployAtDepot) return distance;
+                float end = distance;
+                for (int i = 0; i < Count; i++)
+                    end = Mathf.Max(end, DepotBranch(i) + spacing * i + DepotSpur);
+                return end;
+            }
+        }
+
+        private Vector3 SampleDepot(int index, float travel, out Vector3 heading)
+        {
+            Vector3 origin = Sample(DepotBranch(index), out Vector3 axis);
+            Vector3 side = Vector3.Cross(Vector3.up, axis) * (index % 2 == 0 ? 1f : -1f);
+            float angle = Mathf.Clamp(travel / DepotTurnRadius, 0f, Mathf.PI * .5f);
+            heading = (axis * Mathf.Cos(angle) + side * Mathf.Sin(angle)).normalized;
+            return origin + axis * (DepotTurnRadius * Mathf.Sin(angle)) + side *
+                (DepotTurnRadius * (1f - Mathf.Cos(angle)) + Mathf.Clamp(travel - DepotArc, 0f, DepotOffset - DepotTurnRadius));
+        }
+
+        public int ParkedCount
+        {
+            get
+            {
+                int count = 0;
+                for (int i = 0; i < Count; i++)
+                    if (parked[i] && health[i] != null && health[i].IsAlive) count++;
+                return count;
+            }
+        }
+        public int DeployedCount
+        {
+            get
+            {
+                int count = 0;
+                for (int i = 0; i < Count; i++)
+                    if (parked[i] && health[i] != null && health[i].IsAlive && units[i] != null && units[i].IsDeployed) count++;
+                return count;
+            }
+        }
+        public bool AllSurvivorsDeployed => ready && deployAtDepot && AliveCount > 0 && DeployedCount == AliveCount;
         public bool ReachedEnd => ready && progress >= distance;
         public float RouteLength => distance;
         public float RemainingDistance => Mathf.Max(0f, distance - progress);
@@ -104,8 +171,9 @@ namespace AirCombat
                 string hp = "";
                 for (int i = 0; i < Count; i++)
                     hp += (i == 0 ? "" : "/") + (health[i] != null ? health[i].Hp : 0);
-                return $"Pickets {AliveCount}/{Count} | HP {hp} | " +
-                    $"{(progress >= distance ? "STOPPED" : "MARCH")} | {progress:F0}/{distance:F0} m";
+                string state = AllSurvivorsDeployed ? "DEPLOYED" : deployAtDepot && progress >= distance ? "DEPOT" :
+                    progress >= distance ? "STOPPED" : "MARCH";
+                return $"Pickets {AliveCount}/{Count} | HP {hp} | {state} | {Mathf.Min(progress, distance):F0}/{distance:F0} m";
             }
         }
 
@@ -129,6 +197,7 @@ namespace AirCombat
                 return false;
             }
             progress = 0f;
+            System.Array.Clear(parked, 0, parked.Length);
             for (int i = 0; i < Count; i++)
             {
                 if (units[i] == null)
@@ -154,10 +223,11 @@ namespace AirCombat
 
         public void Tick(float dt)
         {
-            if (!ready || dt <= 0f || progress >= distance) return;
-            progress = Mathf.Min(distance, progress + speed * dt);
+            float limit = MoveLimit;
+            if (!ready || dt <= 0f || progress >= limit) return;
+            progress = Mathf.Min(limit, progress + speed * dt);
             for (int i = 0; i < Count; i++)
-                if (units[i] != null && health[i] != null && health[i].IsAlive) Place(i);
+                if (!parked[i] && units[i] != null && health[i] != null && health[i].IsAlive) Place(i);
         }
 
         private void OnPicketKilled(PicketHealth killed)
@@ -167,8 +237,9 @@ namespace AirCombat
             {
                 if (health[i] != killed) continue;
                 radar.Unregister(contacts[i]);
+                float movementSpeed = deployAtDepot ? (parked[i] ? 0f : speed) : Speed;
                 destruction[i] = PicketDestructionFx.Spawn(killed.transform, terrain,
-                    killed.transform.forward * Speed);
+                    killed.transform.forward * movementSpeed);
                 break;
             }
         }
@@ -189,7 +260,10 @@ namespace AirCombat
 
         private void Place(int i)
         {
+            float depotTravel = DepotTravel(i);
             Vector3 p = Sample(progress - spacing * i, out Vector3 heading);
+            if (deployAtDepot && depotTravel >= 0f)
+                p = SampleDepot(i, depotTravel, out heading);
             Vector3 origin = terrain.transform.position;
             Vector3 size = terrain.terrainData.size;
             p.y = terrain.SampleHeight(p) + origin.y;
@@ -198,6 +272,13 @@ namespace AirCombat
             Vector3 tangent = Vector3.ProjectOnPlane(heading, normal).normalized;
             if (tangent.sqrMagnitude < .001f) { tangent = heading; normal = Vector3.up; }
             units[i].transform.SetPositionAndRotation(p, Quaternion.LookRotation(tangent, normal));
+            // Stop before unfolding. Allow a small epsilon at the capped final
+            // travel distance to avoid a float-rounding stall on the last slot.
+            if (deployAtDepot && !parked[i] && depotTravel >= DepotSpur - .001f)
+            {
+                parked[i] = true;
+                units[i].SetDeploymentTarget(true);
+            }
         }
 
         private void ClearDestruction()

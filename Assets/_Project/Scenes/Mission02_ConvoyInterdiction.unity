@@ -1791,6 +1791,7 @@ MonoBehaviour:
   convoyRoute: {fileID: 553010178}
   convoySpacing: 30
   convoySpeed: 24
+  escortEnabled: 0
   escortPrefab: {fileID: 8101000000000000325, guid: 70862499e8055692b5d61df5de489a90, type: 3}
   escortLateralRadius: 55
   escortEndClearance: 45

@@ -3,7 +3,7 @@ using UnityEngine.InputSystem;
 
 namespace AirCombat
 {
-    // M02 route and convoy timing trial. No deployment or mission objective state yet.
+    // M02 timing trial. Visual deployment only; no SAM arming or objectives yet.
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-40)]
     public sealed class Mission02RouteTrial : MonoBehaviour, IFlightSessionEncounter
@@ -11,7 +11,9 @@ namespace AirCombat
         [SerializeField] private CombatHud hud;
         [SerializeField] private GameObject guide;
         [SerializeField] private Rect operationBounds = new Rect(-2430f, -1845f, 4860f, 3690f);
-        [SerializeField] private Vector3 a, b, c;
+        [SerializeField] private Vector3 a, b, c; // c is C1 in the two-target layout.
+        [SerializeField] private bool twoPartRoute;
+        [SerializeField] private Vector3 c2;
         [SerializeField, Min(1f)] private float arrivalRadius = 75f;
         [SerializeField] private bool startAirborne;
         [Header("M02D / Convoy march")]
@@ -21,6 +23,7 @@ namespace AirCombat
         [SerializeField, Min(16f)] private float convoySpacing = 30f;
         [SerializeField, Min(.1f)] private float convoySpeed = 24f;
         [Header("M02D2 / Warden escort")]
+        [SerializeField] private bool escortEnabled = true;
         [SerializeField] private WardenCombat escortPrefab;
         [SerializeField, Min(10f)] private float escortLateralRadius = 55f;
         [SerializeField, Min(10f)] private float escortEndClearance = 45f;
@@ -32,6 +35,8 @@ namespace AirCombat
         private PlayerHitPoints playerHealth;
         private CombatHitFeedback hitFeedback;
         private float escortClearedTime = -1f, allClearedTime = -1f;
+        private float firstParkedTime = -1f, deploymentCompleteTime = -1f;
+        private bool escortActive; // Snapshot on restart, not a mid-sortie change.
         private AircraftRadar radar;
         private ArcadeNursLauncher nurs;
         private float sortieTime, contactTime = -1f, arrivalTime = -1f, clearedTime = -1f;
@@ -50,6 +55,7 @@ namespace AirCombat
         private Phase phase;
         private bool bound, handover;
         private float elapsed, timeA = -1f, timeB = -1f, timeC = -1f, timeAfterC = -1f;
+        private float timeC2 = -1f, timeBetweenC = -1f;
         private string failure;
         private GUIStyle textStyle, pointStyle;
 
@@ -57,6 +63,10 @@ namespace AirCombat
         public Vector3 PointA => a;
         public Vector3 PointB => b;
         public Vector3 PointC => c;
+        public Vector3 PointC2 => c2;
+        public bool HasSecondPoint => twoPartRoute;
+        public void ConfigureTwoPartRoute(Vector3 convoyStart, Vector3 depot, Vector3 first, Vector3 second)
+        { a = convoyStart; b = depot; c = first; c2 = second; twoPartRoute = true; }
         public GameObject RouteGuide => guide;
         internal MissionBoundaryGuard Boundary => boundary;
 
@@ -68,7 +78,8 @@ namespace AirCombat
             return convoy != null && convoy.TryGetPosition(index, out position);
         }
 
-        internal string EscortStatus => escort != null ? $"Wardens {escort.AliveCount}/2" : "ESCORT UNAVAILABLE";
+        internal string EscortStatus => escort != null ? $"Wardens {escort.AliveCount}/2" : !escortActive ? "ESCORT OFF" : "ESCORT UNAVAILABLE";
+        internal string DeploymentStatus => convoy != null ? $"Deployed {convoy.DeployedCount}/{convoy.AliveCount} | First {Split(firstParkedTime)} | All {Split(deploymentCompleteTime)}" : "DEPLOYMENT UNAVAILABLE";
         internal bool TryGetWardenPosition(int index, out Vector3 position)
         {
             position = default;
@@ -99,6 +110,12 @@ namespace AirCombat
                 if (!Inside(point)) { Debug.LogError("M02D: route outside safe area.", this); return false; }
             convoy = new ConvoyMarchPreview(convoyPrefab, convoyTerrain, radar, transform,
                 points, convoySpacing, convoySpeed);
+            if (!convoy.EnableDepotDeployment(inset))
+            {
+                Debug.LogError("M02D3: depot needs a clear final segment and parking area inside safe bounds.", this);
+                convoy.Dispose(); convoy = null;
+                return false;
+            }
             return true;
         }
 
@@ -130,7 +147,7 @@ namespace AirCombat
             safety = new MissionFlightSafety(boundary);
             flight.enabled = false; trigger.enabled = false;
             nurs = player.GetComponentInChildren<ArcadeNursLauncher>(true);
-            if (nurs == null || playerHealth == null || escortPrefab == null || !BuildConvoy())
+            if (nurs == null || playerHealth == null || (escortEnabled && escortPrefab == null) || !BuildConvoy())
             { Debug.LogError("M02D: incomplete convoy or NURS binding.", this); enabled = false; return; }
             nurs.gameObject.SetActive(true);
             nurs.Bind(flight, boost, trigger, view);
@@ -169,19 +186,27 @@ namespace AirCombat
             convoy?.Dispose(); convoy = null;
             if (!BuildConvoy() || !convoy.Restart())
             { phase = Phase.Failed; failure = "CONVOY UNAVAILABLE"; return; }
-            escort = new Mission02ConvoyEscort(convoy, escortPrefab, radar, transform,
-                playerHealth, flight, hitFeedback, escortLateralRadius, escortEndClearance,
-                escortPatrolSpeed, escortAlphaAcquireDelay, escortBravoAcquireDelay);
-            if (!escort.Spawn())
-            { phase = Phase.Failed; failure = "ESCORT UNAVAILABLE"; return; }
+            escortActive = escortEnabled;
+            if (escortActive)
+            {
+                if (escortPrefab == null)
+                { phase = Phase.Failed; failure = "ESCORT UNAVAILABLE"; return; }
+                escort = new Mission02ConvoyEscort(convoy, escortPrefab, radar, transform,
+                    playerHealth, flight, hitFeedback, escortLateralRadius, escortEndClearance,
+                    escortPatrolSpeed, escortAlphaAcquireDelay, escortBravoAcquireDelay);
+                if (!escort.Spawn())
+                { phase = Phase.Failed; failure = "ESCORT UNAVAILABLE"; return; }
+            }
             boost.enabled = false; boost.enabled = true;
             flames?.SetManeuverFlames(false);
             aircraft.SetPositionAndRotation(runwayPosition, runwayRotation);
             visual.localRotation = visualRest;
             boundary.Clear(); takeoff.ResetTimer();
             elapsed = sortieTime = 0f; timeA = timeB = timeC = timeAfterC = -1f;
+            timeC2 = timeBetweenC = -1f;
             contactTime = arrivalTime = clearedTime = -1f;
             escortClearedTime = allClearedTime = -1f;
+            firstParkedTime = deploymentCompleteTime = -1f;
             failure = null; handover = false; phase = Phase.Ready;
             if (startAirborne)
             {
@@ -217,6 +242,8 @@ namespace AirCombat
                 {
                     convoy.Tick(Time.deltaTime);
                     if (convoy.ReachedEnd && arrivalTime < 0f) arrivalTime = sortieTime;
+                    if (convoy.ParkedCount > 0 && firstParkedTime < 0f) firstParkedTime = sortieTime;
+                    if (convoy.AllSurvivorsDeployed && deploymentCompleteTime < 0f) deploymentCompleteTime = sortieTime;
                     if (contactTime < 0f)
                         for (int i = 0; i < ConvoyMarchPreview.Count; i++)
                             if (convoy.TryGetPosition(i, out Vector3 p) && Distance(p) <= 250f)
@@ -225,7 +252,7 @@ namespace AirCombat
                 escort?.TickMovement(Time.deltaTime);
                 if (convoy != null && convoy.AliveCount == 0 && clearedTime < 0f) clearedTime = sortieTime;
                 if (escort != null && escort.AliveCount == 0 && escortClearedTime < 0f) escortClearedTime = sortieTime;
-                if (clearedTime >= 0f && escortClearedTime >= 0f && allClearedTime < 0f) allClearedTime = sortieTime;
+                if (clearedTime >= 0f && (!escortActive || escortClearedTime >= 0f) && allClearedTime < 0f) allClearedTime = sortieTime;
             }
             if (phase == Phase.Takeoff)
                 handover = takeoff.Tick(Time.deltaTime, flight.CruiseSpeed, 2.2f, 2.5f, 78f, 18f);
@@ -257,12 +284,18 @@ namespace AirCombat
             { Fail(stop, result == MissionFlightSafety.Result.TerrainImpact ? "TERRAIN IMPACT" : "BOUNDARY EXIT"); return; }
             escort?.TickFire(Time.time, Time.deltaTime);
             elapsed += Time.deltaTime;
-            if (timeA < 0f && Distance(a) <= arrivalRadius) timeA = elapsed;
-            if (timeC < 0f && Distance(c) <= arrivalRadius) timeC = elapsed;
+            if (timeA < 0f && Distance(a) <= arrivalRadius) timeA = sortieTime;
+            if (timeC < 0f && Distance(c) <= arrivalRadius) timeC = sortieTime;
+            if (twoPartRoute && timeC2 < 0f && Distance(c2) <= arrivalRadius)
+            {
+                timeC2 = sortieTime;
+                if (timeC >= 0f) timeBetweenC = timeC2 - timeC;
+            }
             if (Distance(b) <= arrivalRadius)
             {
-                if (timeB < 0f) timeB = elapsed;
-                if (timeC >= 0f && timeAfterC < 0f) timeAfterC = elapsed - timeC;
+                if (timeB < 0f) timeB = sortieTime;
+                float lastOptional = twoPartRoute ? timeC2 : timeC;
+                if (lastOptional >= 0f && timeAfterC < 0f) timeAfterC = sortieTime - lastOptional;
             }
         }
 
@@ -287,17 +320,23 @@ namespace AirCombat
                 textStyle = new GUIStyle(GUI.skin.label) { fontSize = 15, normal = { textColor = Color.white } };
                 pointStyle = new GUIStyle(textStyle) { alignment = TextAnchor.MiddleCenter, fontStyle = FontStyle.Bold, fontSize = 19 };
             }
-            GUI.Box(new Rect(12f, 12f, 470f, 216f), GUIContent.none);
+            GUI.Box(new Rect(12f, 12f, 490f, 239f), GUIContent.none);
             GUI.Label(new Rect(22f, 18f, 315f, 22f), $"M02 / {phase}   {elapsed:F1}s airborne", textStyle);
-            GUI.Label(new Rect(22f, 41f, 315f, 22f), $"A {Split(timeA)}   C {Split(timeC)}   B {Split(timeB)}", textStyle);
-            GUI.Label(new Rect(22f, 64f, 315f, 22f), $"C -> B {Split(timeAfterC)} | Speed {flight.CurrentSpeed:F0}", textStyle);
+            GUI.Label(new Rect(22f, 41f, 470f, 22f), twoPartRoute ?
+                $"From W: A {Split(timeA)} | C1 {Split(timeC)} | C2 {Split(timeC2)} | B {Split(timeB)}" :
+                $"From W: A {Split(timeA)} | C {Split(timeC)} | B {Split(timeB)}", textStyle);
+            GUI.Label(new Rect(22f, 64f, 470f, 22f), twoPartRoute ?
+                $"C1 -> C2 {Split(timeBetweenC)} | C2 -> B {Split(timeAfterC)} | Speed {flight.CurrentSpeed:F0}" :
+                $"C -> B {Split(timeAfterC)} | Speed {flight.CurrentSpeed:F0}", textStyle);
             GUI.Label(new Rect(22f, 88f, 315f, 22f), phase == Phase.Failed ? failure + " — R" :
                 phase == Phase.Ready ? "W takeoff | TAB map | G guides | R" : "TAB map | G guides | R restart", textStyle);
             GUI.Label(new Rect(22f, 112f, 450f, 22f), ConvoyStatus, textStyle);
-            GUI.Label(new Rect(22f, 135f, 450f, 22f), $"Sortie {sortieTime:F1}s | Contact {Split(contactTime)} | Arrival {Split(arrivalTime)}", textStyle);
-            GUI.Label(new Rect(22f, 158f, 450f, 22f), $"All Pickets down {Split(clearedTime)} | ETA {(convoy != null && convoy.AliveCount > 0 && convoySpeed > 0f ? convoy.RemainingDistance / convoySpeed : 0f):F1}s", textStyle);
-            GUI.Label(new Rect(22f, 181f, 450f, 22f), $"{EscortStatus} | Down {Split(escortClearedTime)} | All down {Split(allClearedTime)}", textStyle);
-            DrawPoint(a, "A"); DrawPoint(b, "B"); DrawPoint(c, "C");
+            GUI.Label(new Rect(22f, 135f, 450f, 22f), $"Sortie {sortieTime:F1}s | Contact {Split(contactTime)} | B reached {Split(arrivalTime)}", textStyle);
+            GUI.Label(new Rect(22f, 158f, 450f, 22f), $"All Pickets down {Split(clearedTime)} | B ETA {(convoy != null && convoy.AliveCount > 0 && convoySpeed > 0f ? convoy.RemainingDistance / convoySpeed : 0f):F1}s", textStyle);
+            GUI.Label(new Rect(22f, 181f, 470f, 22f), $"{EscortStatus} | Down {Split(escortClearedTime)} | All down {Split(allClearedTime)}", textStyle);
+            GUI.Label(new Rect(22f, 204f, 470f, 22f), DeploymentStatus, textStyle);
+            DrawPoint(a, "A"); DrawPoint(b, "B"); DrawPoint(c, twoPartRoute ? "C1" : "C");
+            if (twoPartRoute) DrawPoint(c2, "C2");
         }
 
         private void DrawPoint(Vector3 point, string label)
