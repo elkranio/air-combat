@@ -8,7 +8,7 @@ namespace AirCombat
     // World yaw stays fixed; only the smoothed focus follows jet heading/boost.
     [DisallowMultipleComponent]
     [RequireComponent(typeof(Camera))]
-    [DefaultExecutionOrder(105)] // Before TargetLock (200).
+    [DefaultExecutionOrder(105)] // Follow before weapon and HUD updates.
     public sealed class ArcadeCameraFollow : MonoBehaviour
     {
         [SerializeField] private Transform aircraft;

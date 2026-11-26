@@ -73,7 +73,6 @@ namespace AirCombat
             flight.ConfigureVariableManeuverability(tightTurnSpeed, boostTurnMultiplier,
                 tightTurnMultiplier, maneuverResponse);
             cameraRig.BindPlayer(player.transform, boost, false);
-            cameraRig.BindLockTarget(null, 1f, .5f);
 
             encounter = GetComponent<IFlightSessionEncounter>();
             if (combatHud != null || encounter != null)

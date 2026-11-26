@@ -2,18 +2,16 @@ using UnityEngine;
 
 namespace AirCombat
 {
-    // Reusable camera composition; mission chooses player and lock target at runtime.
+    // Reusable camera composition; mission chooses the player at runtime.
     // The camera prefab deliberately has no cross-scene object references.
     [DisallowMultipleComponent]
-    [RequireComponent(typeof(Camera), typeof(TargetLock))]
+    [RequireComponent(typeof(Camera))]
     public sealed class CombatCameraRig : MonoBehaviour
     {
         private Camera viewCamera;
-        private TargetLock targetLock;
         private ArcadeCameraFollow arcadeFollow;
 
         public Camera ViewCamera => viewCamera != null ? viewCamera : GetComponent<Camera>();
-        public TargetLock Lock => targetLock != null ? targetLock : GetComponent<TargetLock>();
 
         public void BindPlayer(Transform player, Afterburner boost, bool allowPitchHotkeys = false)
         {
@@ -24,12 +22,6 @@ namespace AirCombat
             if (arcadeFollow == null || !arcadeFollow.enabled)
                 throw new System.InvalidOperationException("Camera rig is missing an enabled ArcadeCameraFollow.");
             arcadeFollow.Configure(player, boost);
-        }
-
-        public void BindLockTarget(Transform enemy, float lockSeconds, float graceSeconds,
-            ITargetLockEligibility eligibility = null)
-        {
-            Lock.ConfigureTarget(enemy, lockSeconds, graceSeconds, eligibility);
         }
     }
 }

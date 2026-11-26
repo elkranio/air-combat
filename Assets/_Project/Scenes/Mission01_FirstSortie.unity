@@ -19857,10 +19857,6 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
-    - target: {fileID: 520079079370042089, guid: 371922c97e367a140876da6ab486cf44, type: 3}
-      propertyPath: m_Enabled
-      value: 0
-      objectReference: {fileID: 0}
     - target: {fileID: 1939388830250070157, guid: 371922c97e367a140876da6ab486cf44, type: 3}
       propertyPath: m_LocalPosition.x
       value: -362
@@ -19913,10 +19909,6 @@ PrefabInstance:
       propertyPath: aircraft
       value: 
       objectReference: {fileID: 1109986514}
-    - target: {fileID: 8568083544143274404, guid: 371922c97e367a140876da6ab486cf44, type: 3}
-      propertyPath: m_Enabled
-      value: 0
-      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []

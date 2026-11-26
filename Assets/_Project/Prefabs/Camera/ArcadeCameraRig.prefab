@@ -11,9 +11,7 @@ GameObject:
   - component: {fileID: 1939388830250070157}
   - component: {fileID: 4603868502922278211}
   - component: {fileID: 2257434572009365943}
-  - component: {fileID: 8568083544143274404}
   - component: {fileID: 5317231601813129519}
-  - component: {fileID: 520079079370042089}
   - component: {fileID: 5903919868008775733}
   - component: {fileID: 5299753384366365605}
   m_Layer: 0
@@ -97,24 +95,6 @@ AudioListener:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 5155359099652887777}
   m_Enabled: 1
---- !u!114 &8568083544143274404
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5155359099652887777}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 5fe74dc9e8742734ea36f2c6c7f3619d, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::AirCombat.TargetLock
-  target: {fileID: 0}
-  lockSeconds: 1
-  graceSeconds: 0.5
-  aimRadius: 8.5
-  soundEnabled: 1
-  soundVolume: 0.2
 --- !u!114 &5317231601813129519
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -159,18 +139,6 @@ MonoBehaviour:
     m_VarianceClampScale: 0.9
     m_ContrastAdaptiveSharpening: 0
   m_Version: 2
---- !u!114 &520079079370042089
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5155359099652887777}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f46a6cac213419946a815d0fe08f1e7e, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::AirCombat.TargetLockHud
 --- !u!114 &5903919868008775733
 MonoBehaviour:
   m_ObjectHideFlags: 0
