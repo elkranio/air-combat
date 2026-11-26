@@ -18,6 +18,8 @@ namespace AirCombat
         private float age;
         private System.Random rng;
 
+        private enum LaunchProfile { Heavy, Ordinary, High, Side }
+
         private sealed class Piece
         {
             public Transform Pivot;
@@ -61,30 +63,36 @@ namespace AirCombat
             if (hull == null) return;
             charMaterial = new Material(hull) { name = "Picket torn / charred metal" };
             charMaterial.SetColor("_BaseColor", new Color(.13f, .115f, .09f));
+            // Guarantee contrasting trajectories in every explosion, but shuffle
+            // which piece receives each profile within its visual mass group.
+            var heavy = Shuffle(LaunchProfile.Heavy, LaunchProfile.Heavy, LaunchProfile.Ordinary);
+            var light = Shuffle(LaunchProfile.High, LaunchProfile.Side, LaunchProfile.Ordinary,
+                rng.Next(2) == 0 ? LaunchProfile.High : LaunchProfile.Side);
+            var wheels = Shuffle(LaunchProfile.Side, LaunchProfile.Ordinary);
             // The ordered contours are intentionally irregular, with raised
             // corners, a kinked centre and dark torn cross-sections.
-            Plate(vehicle, marchVelocity, "Torn rear deck", V(-1.2f, 2.5f, -3.6f), hull, .38f, .55f,
+            Plate(vehicle, marchVelocity, "Torn rear deck", V(-1.2f, 2.5f, -3.6f), hull, .38f, .55f, heavy[0],
                 V(-1.8f,.1f,-2.1f), V(.15f,-.2f,-2.6f), V(1.6f,.5f,-1.5f),
                 V(1.05f,-.25f,.2f), V(1.8f,.75f,1.55f), V(-.5f,.05f,2.05f), V(-1.6f,-.5f,.7f));
-            Plate(vehicle, marchVelocity, "Ruptured chassis", V(1.15f, 2.2f, -.8f), hull, .48f, -.38f,
+            Plate(vehicle, marchVelocity, "Ruptured chassis", V(1.15f, 2.2f, -.8f), hull, .48f, -.38f, heavy[1],
                 V(-1.65f,.3f,-1.4f), V(.4f,-.3f,-2.1f), V(1.8f,.4f,-.55f),
                 V(.85f,.1f,.45f), V(1.3f,.85f,1.85f), V(-.75f,-.3f,1.4f), V(-1.45f,.45f,.4f));
-            Plate(vehicle, marchVelocity, "Crushed cab", V(-.55f, 3.25f, 3.9f), hull, .85f, .9f,
+            Plate(vehicle, marchVelocity, "Crushed cab", V(-.55f, 3.25f, 3.9f), hull, .85f, .9f, heavy[2],
                 V(-1.65f,-.35f,-1.25f), V(.3f,.25f,-1.55f), V(1.45f,-.4f,-.55f),
                 V(1.1f,.65f,.8f), V(.1f,.5f,1.6f), V(-1.55f,-.1f,.95f));
-            Plate(vehicle, marchVelocity, "Broken launcher rail", V(.85f, 4.6f, -3.8f), rail, .45f, .3f,
+            Plate(vehicle, marchVelocity, "Broken launcher rail", V(.85f, 4.6f, -3.8f), rail, .45f, .3f, light[0],
                 V(-.65f,.1f,-2.15f), V(.55f,-.25f,-1.9f), V(.75f,.4f,-.35f),
                 V(.35f,.9f,1.7f), V(-.55f,.3f,1.1f), V(-.9f,-.2f,-.25f));
-            Plate(vehicle, marchVelocity, "Ripped side armor", V(-2.1f, 2.8f, .9f), hull, .19f, .42f,
+            Plate(vehicle, marchVelocity, "Ripped side armor", V(-2.1f, 2.8f, .9f), hull, .19f, .42f, light[1],
                 V(-.9f,0f,-.85f), V(.65f,.35f,-1.05f), V(.4f,-.4f,.15f), V(.85f,.2f,1f), V(-.55f,.1f,.65f));
-            Plate(vehicle, marchVelocity, "Bent equipment panel", V(2f, 3f, 2.1f), metal, .16f, -.25f,
+            Plate(vehicle, marchVelocity, "Bent equipment panel", V(2f, 3f, 2.1f), metal, .16f, -.25f, light[2],
                 V(-.65f,.2f,-.85f), V(.7f,-.25f,-.6f), V(.45f,.4f,.35f), V(-.1f,.1f,.9f), V(-.75f,-.1f,.35f));
-            Plate(vehicle, marchVelocity, "Torn launcher skin", V(.25f, 4.8f, 1.2f), rail, .16f, .35f,
+            Plate(vehicle, marchVelocity, "Torn launcher skin", V(.25f, 4.8f, 1.2f), rail, .16f, .35f, light[3],
                 V(-.55f,-.1f,-.9f), V(.4f,.25f,-.6f), V(.72f,-.25f,.1f), V(.1f,.5f,.95f), V(-.5f,.1f,.35f));
             AddPiece(vehicle, marchVelocity, "Detached wheel L", V(-2.2f, 1.1f, -1.6f),
-                MakeWheel(), rubber, metal, true);
+                MakeWheel(), rubber, metal, true, wheels[0]);
             AddPiece(vehicle, marchVelocity, "Detached wheel R", V(2.2f, 1.1f, 4.35f),
-                MakeWheel(), rubber, metal, true);
+                MakeWheel(), rubber, metal, true, wheels[1]);
         }
 
         private static Vector3 V(float x, float y, float z) => new Vector3(x, y, z);
@@ -97,7 +105,7 @@ namespace AirCombat
         }
 
         private void Plate(Transform vehicle, Vector3 marchVelocity, string label, Vector3 anchor,
-            Material paint, float thickness, float fold, params Vector3[] rim)
+            Material paint, float thickness, float fold, LaunchProfile profile, params Vector3[] rim)
         {
             // All contours wind counter-clockwise in the X/Z plane. A central
             // fold and a capped underside give actual volume, not paper cards.
@@ -112,7 +120,7 @@ namespace AirCombat
                 mesh.Triangle(a, b, b + depth, true);
                 mesh.Triangle(a, b + depth, a + depth, true);
             }
-            AddPiece(vehicle, marchVelocity, label, anchor, mesh.Build(label), paint, charMaterial, false);
+            AddPiece(vehicle, marchVelocity, label, anchor, mesh.Build(label), paint, charMaterial, false, profile);
         }
 
         private static Mesh MakeWheel()
@@ -164,7 +172,7 @@ namespace AirCombat
         }
 
         private void AddPiece(Transform vehicle, Vector3 marchVelocity, string label, Vector3 anchor,
-            Mesh mesh, Material paint, Material inner, bool wheel)
+            Mesh mesh, Material paint, Material inner, bool wheel, LaunchProfile profile)
         {
             ownedMeshes.Add(mesh);
             var go = new GameObject(label);
@@ -179,8 +187,19 @@ namespace AirCombat
             Vector3 noise = new Vector3(Next(-1f, 1f), 0f, Next(-1f, 1f));
             Vector3 direction = (radial + noise * .35f).normalized;
             if (direction.sqrMagnitude < .01f) direction = Vector3.right;
-            float speed = wheel ? Next(23f, 36f) : Next(16f, 30f);
-            Vector3 velocity = direction * speed + Vector3.up * Next(30f, 42f) + marchVelocity * .35f;
+            float speed, lift;
+            switch (profile)
+            {
+                case LaunchProfile.Heavy:
+                    speed = Next(6f, 12f); lift = Next(10f, 20f); break;
+                case LaunchProfile.High:
+                    speed = Next(5f, 15f); lift = Next(38f, 48f); break;
+                case LaunchProfile.Side:
+                    speed = Next(30f, 42f); lift = Next(8f, 16f); break;
+                default:
+                    speed = Next(18f, 26f); lift = Next(22f, 32f); break;
+            }
+            Vector3 velocity = direction * speed + Vector3.up * lift + marchVelocity * .35f;
             Vector3 spin;
             if (wheel)
             {
@@ -189,6 +208,18 @@ namespace AirCombat
             }
             else spin = new Vector3(Next(-330f, 330f), Next(-240f, 240f), Next(-330f, 330f));
             pieces.Add(new Piece { Pivot = t, Renderer = renderer, Velocity = velocity, Spin = spin, Wheel = wheel });
+        }
+
+        private LaunchProfile[] Shuffle(params LaunchProfile[] profiles)
+        {
+            for (int i = profiles.Length - 1; i > 0; i--)
+            {
+                int j = rng.Next(i + 1);
+                LaunchProfile value = profiles[i];
+                profiles[i] = profiles[j];
+                profiles[j] = value;
+            }
+            return profiles;
         }
 
         private float Next(float min, float max) => Mathf.Lerp(min, max, (float)rng.NextDouble());
