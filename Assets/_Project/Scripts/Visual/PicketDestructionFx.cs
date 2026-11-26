@@ -179,8 +179,8 @@ namespace AirCombat
             Vector3 noise = new Vector3(Next(-1f, 1f), 0f, Next(-1f, 1f));
             Vector3 direction = (radial + noise * .35f).normalized;
             if (direction.sqrMagnitude < .01f) direction = Vector3.right;
-            float speed = wheel ? Next(27f, 42f) : Next(19f, 36f);
-            Vector3 velocity = direction * speed + Vector3.up * Next(26f, 36f) + marchVelocity * .35f;
+            float speed = wheel ? Next(23f, 36f) : Next(16f, 30f);
+            Vector3 velocity = direction * speed + Vector3.up * Next(30f, 42f) + marchVelocity * .35f;
             Vector3 spin;
             if (wheel)
             {
