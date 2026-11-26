@@ -42,7 +42,10 @@ namespace AirCombat
         private bool visible, aligned;
         private Vector3 p0, p1, p2, p3;
         private Quaternion captureVisual;
-        private GUIStyle label;
+        internal bool ApproachVisible => visible;
+        internal bool ApproachAligned => aligned;
+        internal float ApproachHeld => held;
+        internal float ApproachHoldSeconds => holdSeconds;
 
         // Ground point on the resolved runway, not a separate navigation anchor.
         internal Vector3 NavigationPoint => At(touchdownOffset, 0f);
@@ -224,28 +227,6 @@ namespace AirCombat
         }
 
         private static float ContactLift(float noseUp) => RearContactArm * Mathf.Sin(noseUp * Mathf.Deg2Rad);
-
-        public void DrawWarning()
-        {
-            if (!visible) return;
-            if (label == null) label = new GUIStyle(GUI.skin.label)
-                { alignment = TextAnchor.MiddleCenter, fontStyle = FontStyle.Bold };
-            label.fontSize = Mathf.RoundToInt(Mathf.Clamp(Screen.height * .022f, 14f, 25f));
-            float width = Mathf.Min(Screen.width * .62f, 620f);
-            var rect = new Rect((Screen.width - width) * .5f, Screen.height * .76f, width, 38f);
-            Color previous = GUI.color;
-            GUI.color = new Color(.035f, .06f, .07f, .82f);
-            GUI.DrawTexture(rect, Texture2D.whiteTexture);
-            GUI.color = Color.white;
-            label.normal.textColor = aligned ? new Color(.5f, 1f, .82f) : new Color(.65f, .94f, 1f);
-            GUI.Label(rect, aligned ? "LANDING / MAINTAIN APPROACH" : "LANDING / ENTER APPROACH CORRIDOR", label);
-            if (held > 0f)
-            {
-                GUI.color = label.normal.textColor;
-                GUI.DrawTexture(new Rect(rect.x, rect.yMax - 3f, rect.width * held / holdSeconds, 3f), Texture2D.whiteTexture);
-            }
-            GUI.color = previous;
-        }
 
         public void Clear()
         {

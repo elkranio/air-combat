@@ -68,6 +68,8 @@ namespace AirCombat
 
         public Phase State { get; private set; } = Phase.Intro;
         internal MissionBoundaryGuard Boundary => boundary;
+        internal ScriptedLanding Landing => landing;
+        internal bool LandingTestOnly => landingTestOnly;
         public Rect OperationBounds => operationBounds;
         bool IAirTargetFlightContext.FlightActive => State == Phase.Flight;
 
@@ -140,6 +142,7 @@ namespace AirCombat
             }
             primaryObjectives = GetComponent<IPrimaryObjectiveSource>();
             Mission01ObjectiveHud.Attach(this);
+            Mission01StatusHud.Attach(this);
             samRadar = aircraft.GetComponent<AircraftRadar>();
             playerHealth = aircraft.GetComponent<PlayerHitPoints>();
             if (samSites != null && samSites.Length > 0)
@@ -427,36 +430,5 @@ namespace AirCombat
 #endif
         }
 
-        private void OnGUI()
-        {
-            if (Event.current.type != EventType.Repaint || MissionPause.IsTacticalMapPausedFor(gameObject.scene)) return;
-            if (State == Phase.Flight)
-            {
-                boundary?.DrawWarning();
-                landing?.DrawWarning();
-                return;
-            }
-            string message = State == Phase.Intro ? "MISSION INTRO" :
-                State == Phase.Ready ? "PRESS W TO TAKE OFF" :
-                State == Phase.Crashed ? "AIRCRAFT LOST  /  PRESS R TO RETRY" :
-                State == Phase.BoundaryFailed ? "MISSION FAILED — OPERATION AREA ABANDONED  /  PRESS R TO RETRY" :
-                State == Phase.Landing ? "AUTOPILOT / LANDING" :
-                State == Phase.Landed ? (landingTestOnly ? "LANDING TEST COMPLETE  /  PRESS R TO RETRY" :
-                    "MISSION COMPLETE  /  PRESS R TO RETRY") : "TAKEOFF";
-            var style = new GUIStyle(GUI.skin.label)
-            {
-                alignment = TextAnchor.MiddleCenter,
-                fontSize = Mathf.RoundToInt(Mathf.Clamp(Screen.height * .025f, 16f, 32f)),
-                fontStyle = FontStyle.Bold
-            };
-            var rect = new Rect(0f, Screen.height * .84f, Screen.width, 48f);
-            Color previous = GUI.color;
-            GUI.color = Color.white;
-            style.normal.textColor = new Color(.05f, .07f, .09f, .9f);
-            GUI.Label(new Rect(rect.x + 2f, rect.y + 2f, rect.width, rect.height), message, style);
-            style.normal.textColor = State == Phase.BoundaryFailed ? new Color(1f, .40f, .32f) : Color.white;
-            GUI.Label(rect, message, style);
-            GUI.color = previous;
-        }
     }
 }

@@ -14,7 +14,6 @@ namespace AirCombat
         private float distance = float.PositiveInfinity;
         private float nextChime;
         private int warningLevel;
-        private GUIStyle label;
 
         public MissionBoundaryGuard(Transform owner, Rect bounds, float caution, float critical)
         {
@@ -35,6 +34,8 @@ namespace AirCombat
 
         internal Rect Bounds => bounds;
         internal float CautionDistance => caution;
+        internal int WarningLevel => warningLevel;
+        internal float WarningDistance => distance;
 
         public float Distance(Vector3 p) => Mathf.Min(
             Mathf.Min(p.x - bounds.xMin, bounds.xMax - p.x),
@@ -89,31 +90,6 @@ namespace AirCombat
             warningLevel = 0;
             distance = float.PositiveInfinity;
             nextChime = 0f;
-        }
-
-        public void DrawWarning()
-        {
-            if (warningLevel == 0) return;
-            if (label == null) label = new GUIStyle(GUI.skin.label)
-            {
-                alignment = TextAnchor.MiddleCenter, fontStyle = FontStyle.Bold
-            };
-            label.fontSize = Mathf.RoundToInt(Mathf.Clamp(Screen.height * .022f, 14f, 26f));
-            float width = Mathf.Min(Screen.width * .62f, 660f);
-            var rect = new Rect((Screen.width - width) * .5f, Screen.height * .085f, width,
-                Mathf.Max(36f, label.fontSize * 1.8f));
-            Color previous = GUI.color;
-            GUI.color = new Color(.035f, .045f, .055f, .82f);
-            GUI.DrawTexture(rect, Texture2D.whiteTexture);
-            Color ink = warningLevel == 2 ? new Color(1f, .32f, .25f) : new Color(1f, .79f, .35f);
-            if (warningLevel == 2) ink.a = Mathf.Lerp(.68f, 1f, .5f + .5f * Mathf.Sin(Time.unscaledTime * 9f));
-            GUI.color = ink;
-            GUI.DrawTexture(new Rect(rect.x, rect.y, rect.width, 2f), Texture2D.whiteTexture);
-            GUI.color = Color.white;
-            label.normal.textColor = ink;
-            string message = warningLevel == 2 ? "RETURN TO COMBAT AREA" : "APPROACHING OPERATION BOUNDARY";
-            GUI.Label(rect, $"{message}  /  {Mathf.CeilToInt(distance)} m", label);
-            GUI.color = previous;
         }
 
         public void Dispose()
