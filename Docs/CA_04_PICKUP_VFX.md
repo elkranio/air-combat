@@ -1,5 +1,7 @@
 # CA04 — Carryall pickup presentation
 
+Accepted 2026-11-26 through CA04C. The ground wash is subtle and not strongly visible at game zoom, but accepted for now; further dust polish is deferred. Next focus is [CA05 destruction](CA_05_DESTRUCTION_PREVIEW.md).
+
 Requires the accepted CA03 preview. Existing M02 airfield-side preview, Start Airborne, R and Tab are unchanged; no menu or scene edits. Press Play. Observe the six phases from the same camera or Scene view. CA01/CG01 prefab assets, accepted meshes/materials, rotor visual, pose timing, capture logic and real C1/C2 instances are untouched.
 
 `CarryallPickupVfx` is a disposable presentation helper owned by the scene preview. Four tapered cool-blue/white downwash plumes attach to the authored downward exhaust sockets. Thrust is smoothed by pickup phase; descent is restrained, loaded lift is strongest, departure stays strong. Plume length is limited by the sampled terrain. One shared ground wash is active below 32 units of terrain clearance, strongest near the surface. Particles spawn in a broad annulus, spread radially in world space and fade; horizontal billboards keep the effect low to the ground. Clamp pulses keep their separate camera-facing particle system. Four small warm clamp puffs fire once when the successful load transition is observed, not continuously during Clamp. This is stylized visual feedback, not physical thrust or collision. No audio, new shaders, imported textures, lights, physics or damage. Uses the existing SandboxEffect shader; missing FX setup warns without blocking pickup.
