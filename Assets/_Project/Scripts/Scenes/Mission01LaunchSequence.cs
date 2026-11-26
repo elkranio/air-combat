@@ -49,6 +49,7 @@ namespace AirCombat
         [SerializeField, Min(10f)] private float landingTouchdownOffset = 65f;
         [SerializeField, Min(5f)] private float landingAutoTouchdownSpeed = 65f;
 
+        private ScriptedTakeoff takeoff;
         private Mission01Landing landing;
         private Mission01ReconEncounter reconEncounter;
         private bool landingTestOnly;
@@ -58,7 +59,6 @@ namespace AirCombat
         private AfterburnerVfx flames;
         private Vector3 runwayPosition;
         private Quaternion runwayRotation, visualRest;
-        private double elapsed;
         private bool handoverPending;
         private bool initialized;
         private Vector3 previousFlightPosition;
@@ -102,6 +102,7 @@ namespace AirCombat
             runwayPosition = aircraft.position;
             runwayRotation = aircraft.rotation;
             visualRest = visual.localRotation;
+            takeoff = new ScriptedTakeoff(aircraft, visual, runwayPosition, runwayRotation, visualRest);
             flight.enabled = false;
             weaponTrigger.enabled = false;
             // Keep the authored operation rectangle independent of decorative ground.
@@ -218,41 +219,20 @@ namespace AirCombat
             }
             if (State == Phase.Ready && Application.isFocused && keyboard != null && keyboard.wKey.wasPressedThisFrame)
             {
-                elapsed = 0d;
+                takeoff.ResetTimer();
                 handoverPending = false;
                 State = Phase.Takeoff;
                 // Existing straight twin plumes, independent of the gameplay tank.
                 flames.SetManeuverFlames(true);
                 return;
             }
-            if (State == Phase.Takeoff) TickTakeoff(Time.deltaTime);
+            if (State == Phase.Takeoff)
+            {
+                if (takeoff.Tick(Time.deltaTime, flight.CruiseSpeed, rollSeconds, climbSeconds, cruiseAltitude, maxPitch))
+                    handoverPending = true;
+            }
             else if (State == Phase.Landing && landing.TickLanding(aircraft, visual, Time.deltaTime))
                 State = Phase.Landed;
-        }
-
-        private void TickTakeoff(float dt)
-        {
-            float roll = Mathf.Max(.1f, rollSeconds);
-            float climb = Mathf.Max(.1f, climbSeconds);
-            // Do not saturate a float timer and then compare it to a separately
-            // evaluated sum: 2.2f + 2.5f can round differently across runtimes.
-            // Advance in double precision; clamp only the trajectory sample.
-            elapsed += Mathf.Max(0f, dt);
-            double duration = (double)roll + climb;
-            bool finished = elapsed >= duration;
-            float speed = flight.CruiseSpeed;
-            float t = finished ? roll : Mathf.Min((float)elapsed, roll);
-            float airTime = finished ? climb : Mathf.Clamp((float)(elapsed - roll), 0f, climb);
-            // Analytic integral of linear acceleration; deterministic at any FPS.
-            float distance = .5f * speed * t * t / roll + speed * airTime;
-            float u = Mathf.Clamp01(airTime / climb);
-            float rise = Mathf.Max(0f, cruiseAltitude - runwayPosition.y) * Mathf.SmoothStep(0f, 1f, u);
-            Vector3 forward = runwayRotation * Vector3.forward;
-            aircraft.SetPositionAndRotation(runwayPosition + forward * distance + Vector3.up * rise, runwayRotation);
-            // Pitch the visual only. Limit pitch near the runway so the tail does not dip through it.
-            float pitch = Mathf.Min(maxPitch * Mathf.Sin(Mathf.PI * u), Mathf.Atan2(rise, 7.5f) * Mathf.Rad2Deg);
-            visual.localRotation = visualRest * Quaternion.Euler(-Mathf.Max(0f, pitch), 0f, 0f);
-            if (finished) handoverPending = true;
         }
 
         private void LateUpdate()
@@ -367,11 +347,7 @@ namespace AirCombat
 #if UNITY_EDITOR
         private void StartAirborne()
         {
-            // Exact endpoint of the scripted takeoff, without waiting for it.
-            float distance = flight.CruiseSpeed * (.5f * Mathf.Max(.1f, rollSeconds) + Mathf.Max(.1f, climbSeconds));
-            Vector3 position = runwayPosition + runwayRotation * Vector3.forward * distance;
-            position.y = Mathf.Max(runwayPosition.y, cruiseAltitude);
-            aircraft.SetPositionAndRotation(position, runwayRotation);
+            takeoff.PlaceAtEnd(flight.CruiseSpeed, rollSeconds, climbSeconds, cruiseAltitude);
             EnterFlight();
             var camera = FindFirstObjectByType<ArcadeCameraFollow>();
             if (camera != null) camera.SnapToAircraft();
@@ -418,7 +394,7 @@ namespace AirCombat
             if (samSites != null) foreach (var site in samSites)
                 if (site != null) site.ResetEncounter();
             handoverPending = false;
-            elapsed = 0d;
+            takeoff.ResetTimer();
             flight.enabled = false;
             weaponTrigger.enabled = false;
             flames.SetManeuverFlames(false);
