@@ -28,9 +28,6 @@ namespace AirCombat
         [SerializeField] private PlannedSam[] plannedSam = Array.Empty<PlannedSam>();
         [SerializeField] private Transform[] recon = Array.Empty<Transform>();
         [SerializeField] private Transform optionalTarget;
-        private static TacticalMapView active;
-        private float previousTimeScale;
-        private bool previousAudioPause;
         private Texture2D ring, arrow;
         private Canvas canvas;
         private RectTransform frame, drawParent;
@@ -47,8 +44,7 @@ namespace AirCombat
         private static readonly Color Red = new Color(.86f,.36f,.30f);
         private static readonly Color Gold = new Color(.97f,.74f,.36f);
 
-        public static bool IsOpenFor(Scene scene) => active != null && active.gameObject.scene == scene;
-        private bool IsOpen => active == this;
+        private bool IsOpen => MissionPause.IsOwnedBy(this, MissionPause.Reason.TacticalMap);
         private bool HasMap => map != null && map.Geography != null && map.WorldBounds.width > 0 && map.WorldBounds.height > 0 && player != null;
 
 #if UNITY_EDITOR
@@ -78,7 +74,7 @@ namespace AirCombat
                 Debug.LogWarning("Tactical map: missing geography or player reference.", this);
                 return;
             }
-            if (active != null || Time.timeScale <= 0f) return;
+            if (!MissionPause.CanOpenTacticalMap) return;
             try
             {
                 BuildCanvas();
@@ -89,18 +85,13 @@ namespace AirCombat
                 DisposeCanvas();
                 return;
             }
-            previousTimeScale = Time.timeScale;
-            previousAudioPause = AudioListener.pause;
-            active = this;
-            Time.timeScale = 0f;
-            AudioListener.pause = true;
+            if (!MissionPause.TryAcquire(this, MissionPause.Reason.TacticalMap))
+                DisposeCanvas();
         }
         private void Close()
         {
             if (!IsOpen) return;
-            active = null;
-            Time.timeScale = previousTimeScale;
-            AudioListener.pause = previousAudioPause;
+            MissionPause.Release(this);
             DisposeCanvas();
         }
         private void DisposeCanvas()

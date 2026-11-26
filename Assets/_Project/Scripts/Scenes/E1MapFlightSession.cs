@@ -105,7 +105,7 @@ namespace AirCombat
 
         private void Update()
         {
-            if (TacticalMapView.IsOpenFor(gameObject.scene)) return;
+            if (MissionPause.IsTacticalMapPausedFor(gameObject.scene)) return;
             if (!Application.isFocused) return;
             var keyboard = Keyboard.current;
             if (keyboard != null && keyboard.hKey.wasPressedThisFrame) showLegend = !showLegend;
@@ -116,8 +116,10 @@ namespace AirCombat
                 if (keyboard.digit8Key.wasPressedThisFrame) ChangeAltitude(110f);
                 if (keyboard.digit9Key.wasPressedThisFrame) ChangeAltitude(150f);
             }
-            // Free-flight terrain testing: reset only on explicit player input.
-            if (keyboard != null && keyboard.rKey.wasPressedThisFrame)
+            // Standalone sandbox/labs retain their own retry input.
+            // In a campaign scene the mission invokes the same reset explicitly.
+            if (!MissionRetry.IsOwnedFor(gameObject.scene) &&
+                keyboard != null && keyboard.rKey.wasPressedThisFrame)
                 ResetFlight();
         }
 
@@ -130,6 +132,13 @@ namespace AirCombat
             spawnPosition.y = altitude;
             encounter?.SetAltitude(altitude);
             SnapCamera(); // Prevent a large vertical camera sweep.
+        }
+
+        internal bool Controls(FlightController controller) => flight == controller;
+
+        internal void ResetForMissionRetry()
+        {
+            if (isActiveAndEnabled) ResetFlight();
         }
 
         private void ResetFlight()

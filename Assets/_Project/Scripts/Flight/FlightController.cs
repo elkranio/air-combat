@@ -76,7 +76,7 @@ namespace AirCombat
 
         private void Update()
         {
-            if (TacticalMapView.IsOpenFor(gameObject.scene)) return;
+            if (MissionPause.IsTacticalMapPausedFor(gameObject.scene)) return;
             var keyboard = Keyboard.current;
             if (variableManeuverability)
             {

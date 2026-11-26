@@ -1,10 +1,9 @@
 using UnityEngine;
-using UnityEngine.InputSystem;
 using UnityEngine.Rendering;
 
 namespace AirCombat
 {
-    // Runs immediately after the launch sequence (-40), including its retry input.
+    // Runs immediately after the launch sequence (-40), including its accepted retry request.
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-30)]
     public sealed class Mission01ReconEncounter : MonoBehaviour
@@ -55,11 +54,10 @@ namespace AirCombat
 
         private void Update()
         {
-            if (!ready || TacticalMapView.IsOpenFor(gameObject.scene)) return;
-            var keys = Keyboard.current;
-            if (Application.isFocused && keys != null && keys.rKey.wasPressedThisFrame)
+            if (!ready || MissionPause.IsTacticalMapPausedFor(gameObject.scene)) return;
+            if (MissionRetry.WasRequestedThisFrame(gameObject.scene))
             {
-                // Same input and ordering as Mission01LaunchSequence.ResetToReady.
+                // The mission has already reset the player and SAMs this frame.
                 foreach (var round in FindObjectsByType<BallisticProjectile>(FindObjectsSortMode.None))
                     if (round.gameObject.scene == gameObject.scene && round.IsOwnedBy(player.transform))
                     { round.enabled = false; Destroy(round.gameObject); }
@@ -133,7 +131,7 @@ namespace AirCombat
 
         private void OnGUI()
         {
-            if (!InFlight || TacticalMapView.IsOpenFor(gameObject.scene) || Event.current.type != EventType.Repaint) return;
+            if (!InFlight || MissionPause.IsTacticalMapPausedFor(gameObject.scene) || Event.current.type != EventType.Repaint) return;
             int count = Eliminated;
             var style = new GUIStyle(GUI.skin.label) { fontSize = Mathf.RoundToInt(Mathf.Clamp(Screen.height * .022f, 15, 25)), fontStyle = FontStyle.Bold };
             string label = count == targets.Length ? "RECON COMPLETE  /  3 OF 3" : $"RECON  /  {count} OF {targets.Length}";

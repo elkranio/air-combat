@@ -48,7 +48,7 @@ namespace AirCombat
         private void LateUpdate()
         {
             if (flight == null || !flight.isActiveAndEnabled || viewCamera == null ||
-                TacticalMapView.IsOpenFor(gameObject.scene) ||
+                MissionPause.IsTacticalMapPausedFor(gameObject.scene) ||
                 !Application.isFocused)
             {
                 ClearWarning(); return;

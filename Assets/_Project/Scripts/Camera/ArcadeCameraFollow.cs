@@ -69,8 +69,15 @@ namespace AirCombat
             if (!Application.isPlaying || aircraft == null) return;
             if (!initialized) Initialize();
 
-            var keyboard = Keyboard.current;
-            if (keyboard != null && Application.isFocused && keyboard.rKey.wasPressedThisFrame)
+            bool retry;
+            if (MissionRetry.IsOwnedFor(gameObject.scene))
+                retry = MissionRetry.WasRequestedThisFrame(gameObject.scene);
+            else
+            {
+                var keyboard = Keyboard.current;
+                retry = keyboard != null && Application.isFocused && keyboard.rKey.wasPressedThisFrame;
+            }
+            if (retry)
             {
                 SnapToAircraft();
                 return;

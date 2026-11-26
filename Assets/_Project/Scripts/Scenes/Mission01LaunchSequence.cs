@@ -64,9 +64,7 @@ namespace AirCombat
         private Vector3 previousFlightPosition;
         private CombatHitFeedback crashFeedback;
         private MissionBoundaryGuard boundary;
-        private bool ownsBoundaryPause;
-        private float previousTimeScale;
-        private bool previousAudioPause;
+        private E1MapFlightSession flightSession;
 
         public Phase State { get; private set; } = Phase.Intro;
         internal MissionBoundaryGuard Boundary => boundary;
@@ -117,8 +115,25 @@ namespace AirCombat
             State = Phase.Intro;
         }
 
+        private void OnEnable()
+        {
+            if (initialized && !MissionRetry.Register(this)) enabled = false;
+        }
+
         private void Start()
         {
+            // The legacy flight session still configures the campaign player/camera.
+            // Keep its reset side effects, but let the mission own the input.
+            foreach (var root in gameObject.scene.GetRootGameObjects())
+            {
+                foreach (var session in root.GetComponentsInChildren<E1MapFlightSession>())
+                {
+                    if (!session.isActiveAndEnabled || !session.Controls(flight)) continue;
+                    flightSession = session;
+                    break;
+                }
+                if (flightSession != null) break;
+            }
             reconEncounter = GetComponent<Mission01ReconEncounter>();
             samRadar = aircraft.GetComponent<AircraftRadar>();
             playerHealth = aircraft.GetComponent<PlayerHitPoints>();
@@ -177,7 +192,7 @@ namespace AirCombat
 
         private void Update()
         {
-            if (TacticalMapView.IsOpenFor(gameObject.scene))
+            if (MissionPause.IsTacticalMapPausedFor(gameObject.scene))
             {
                 boundary?.Clear();
                 landing?.Clear();
@@ -186,10 +201,13 @@ namespace AirCombat
             var keyboard = Keyboard.current;
             if (Application.isFocused && keyboard != null && keyboard.rKey.wasPressedThisFrame)
             {
+                flightSession?.ResetForMissionRetry();
                 ResetToReady();
 #if UNITY_EDITOR
                 if (debugAirStart) StartAirborne();
 #endif
+                // Consumers observe this accepted request in their existing update order.
+                MissionRetry.MarkRequested(this);
                 return;
             }
             // A lethal missile hit uses the same mission-loss/retry path as terrain.
@@ -239,7 +257,7 @@ namespace AirCombat
 
         private void LateUpdate()
         {
-            if (TacticalMapView.IsOpenFor(gameObject.scene)) return;
+            if (MissionPause.IsTacticalMapPausedFor(gameObject.scene)) return;
             if (State == Phase.Flight)
             {
                 // Flight motor has already moved; camera and weapon LateUpdate
@@ -337,19 +355,13 @@ namespace AirCombat
             SetSamArmed(false);
             // No synthetic crash, damage or explosion. Freeze the failed sortie;
             // the existing R input runs even at timeScale zero.
-            previousTimeScale = Time.timeScale;
-            previousAudioPause = AudioListener.pause;
-            ownsBoundaryPause = true;
-            Time.timeScale = 0f;
-            AudioListener.pause = true;
+            if (!MissionPause.TryAcquire(this, MissionPause.Reason.BoundaryFailure))
+                Debug.LogError("Mission: could not acquire boundary-failure pause.", this);
         }
 
         private void ReleaseBoundaryPause()
         {
-            if (!ownsBoundaryPause) return;
-            ownsBoundaryPause = false;
-            Time.timeScale = previousTimeScale;
-            AudioListener.pause = previousAudioPause;
+            MissionPause.Release(this);
         }
 
 #if UNITY_EDITOR
@@ -434,6 +446,7 @@ namespace AirCombat
 
         private void OnDisable()
         {
+            MissionRetry.Unregister(this);
             ReleaseBoundaryPause();
             boundary?.Clear();
             landing?.Clear();
@@ -446,7 +459,7 @@ namespace AirCombat
 
         private void OnGUI()
         {
-            if (Event.current.type != EventType.Repaint || TacticalMapView.IsOpenFor(gameObject.scene)) return;
+            if (Event.current.type != EventType.Repaint || MissionPause.IsTacticalMapPausedFor(gameObject.scene)) return;
             if (State == Phase.Flight)
             {
                 boundary?.DrawWarning();

@@ -1,5 +1,4 @@
 using UnityEngine;
-using UnityEngine.InputSystem;
 
 namespace AirCombat
 {
@@ -219,9 +218,8 @@ namespace AirCombat
 
         private void Update()
         {
-            if (!ready || TacticalMapView.IsOpenFor(gameObject.scene)) return;
-            var keys = Keyboard.current;
-            if (Application.isFocused && keys != null && keys.rKey.wasPressedThisFrame)
+            if (!ready || MissionPause.IsTacticalMapPausedFor(gameObject.scene)) return;
+            if (MissionRetry.WasRequestedThisFrame(gameObject.scene))
             { ResetTarget(); return; }
             if (launch.State != Mission01LaunchSequence.Phase.Flight || Time.deltaTime <= 0f) return;
             float dt = Time.deltaTime;
@@ -370,7 +368,7 @@ namespace AirCombat
 
         private void OnGUI()
         {
-            if (!ready || launch.State != Mission01LaunchSequence.Phase.Flight || TacticalMapView.IsOpenFor(gameObject.scene) || Event.current.type != EventType.Repaint) return;
+            if (!ready || launch.State != Mission01LaunchSequence.Phase.Flight || MissionPause.IsTacticalMapPausedFor(gameObject.scene) || Event.current.type != EventType.Repaint) return;
             var style = new GUIStyle(GUI.skin.label) { fontSize = Mathf.RoundToInt(Mathf.Clamp(Screen.height * .019f, 13, 22)), fontStyle = FontStyle.Bold };
             string message = "SECONDARY / OVERLORD / " + ObjectiveStatus;
             style.normal.textColor = new Color(.05f,.07f,.08f,.9f);

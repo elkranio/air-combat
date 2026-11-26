@@ -57,7 +57,7 @@ namespace AirCombat
         private void OnGUI()
         {
             if (Event.current.type != EventType.Repaint || view == null ||
-                TacticalMapView.IsOpenFor(gameObject.scene) || !CollectWarnings(out Vector3 playerPosition)) return;
+                MissionPause.IsTacticalMapPausedFor(gameObject.scene) || !CollectWarnings(out Vector3 playerPosition)) return;
             Rect pixels = view.pixelRect;
             var rect = new Rect(pixels.xMin, Screen.height - pixels.yMax, pixels.width, pixels.height);
             float scale = Mathf.Clamp(rect.height / 720f, .75f, 3f);

@@ -70,7 +70,7 @@ namespace AirCombat
             if (!active) { StopLoops(); return; }
             // Tactical map already owns AudioListener.pause and timeScale.
             // Do not restart the playback heads while Unity reports them paused.
-            if (AudioListener.pause || TacticalMapView.IsOpenFor(gameObject.scene)) return;
+            if (AudioListener.pause || MissionPause.IsTacticalMapPausedFor(gameObject.scene)) return;
             if (!engine.isPlaying) engine.Play();
             if (!thrust.isPlaying) thrust.Play();
 
