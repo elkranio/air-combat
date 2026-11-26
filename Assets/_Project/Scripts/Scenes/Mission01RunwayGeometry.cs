@@ -27,7 +27,7 @@ namespace AirCombat
             return new LandingRunway(origin, runwayForward, physicalWidth, threshold, cueY);
         }
 
-        // Accepted Mission01_AirfieldPavement mesh: runway local X 113..137,
+        // Active C6 Mission01_HangarPass pavement: runway local X 113..137,
         // Z -120..120. The apron is part of the same mesh, so its aggregate
         // bounds cannot be used as runway bounds. Transform the runway anchors
         // into world space; do not assume the scene's yaw, scale or translation.
@@ -40,7 +40,7 @@ namespace AirCombat
             foreach (var root in owner.gameObject.scene.GetRootGameObjects())
                 foreach (var filter in root.GetComponentsInChildren<MeshFilter>())
                 {
-                    if (filter.sharedMesh == null || filter.sharedMesh.name != "Mission01_AirfieldPavement") continue;
+                    if (filter.sharedMesh == null || filter.sharedMesh.name != "Mission01_HangarPass") continue;
                     if (pavement != null) return false;
                     pavement = filter;
                 }
