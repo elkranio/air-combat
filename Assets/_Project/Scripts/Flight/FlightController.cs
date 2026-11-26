@@ -16,6 +16,7 @@ namespace AirCombat
 
         [Header("Steering")]
         [SerializeField, Min(1f)] private float turnRate = 85f;
+        [SerializeField, Range(.1f, 1f)] private float precisionTurnMultiplier = .4f;
         [SerializeField, Range(0f, 80f)] private float maxBank = 40f;
         [SerializeField, Min(1f)] private float bankRate = 160f;
 
@@ -93,6 +94,10 @@ namespace AirCombat
                 yaw *= boostTurnMultiplier;
                 accel = Mathf.Max(accel, afterburner.BoostAcceleration);
             }
+            // Shift modifies only the resolved yaw rate, including W/S flight modes.
+            if (focused && (keyboard.leftShiftKey.isPressed || keyboard.rightShiftKey.isPressed))
+                yaw *= Mathf.Clamp(precisionTurnMultiplier, .1f, 1f);
+
             // The motor still owns smooth speed and bank. Steering is never
             // committed to an angle or locked for a maneuver duration.
             motor.Tick(target, steer, accel, maneuverResponse, yaw, maxBank, bankRate, dt);
