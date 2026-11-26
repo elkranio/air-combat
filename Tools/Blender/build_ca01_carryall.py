@@ -58,7 +58,7 @@ def slab(name,asm,mat,outline,y0,y1):
     n=len(outline);v=[(x,y,z) for y in (y0,y1) for x,z in outline]
     solid(name,asm,mat,v,[tuple(range(n)),tuple(range(n,2*n))]+[(i,(i+1)%n,(i+1)%n+n,i+n) for i in range(n)])
 
-# V6: separate turbine pods; retain the V5 body, cockpit and tails.
+# V7: stagger the independent pods longitudinally and clear their fan apertures.
 # Preserve the CG01 capture plane and all twelve named assemblies.
 from math import sin, cos, pi
 PROFILE = [(-.64,-1),(.64,-1),(1,-.40),(1,.38),(.65,1),(-.65,1),(-1,.38),(-1,-.40)]
@@ -138,13 +138,13 @@ for s,side in [(-1,'L'),(1,'R')]:
     # Broad forward shoulders read as part of the fuselage, not four ribs.
     # Narrower trailing attachments preserve a small oblique opening over the cargo.
     shoulder('Main lifting shoulder','Body','Hull',s,[(2.15,2.55,3.42,5.15,1.10),
-        (4.2,2.93,3.38,4.85,.90),(6.4,3.50,3.33,3.85,.66),(8.25,4.6,3.17,2.30,.48)])
+        (4.2,2.93,3.38,4.85,.90),(6.4,3.50,3.33,3.85,.66),(7.35,4.6,3.17,2.30,.48)])
     shoulder('Upper swept armor','Body','Top',s,[(2.40,3.0,4.38,3.72,.25),
         (4.35,3.43,4.20,3.40,.22),(6.10,4.0,3.97,2.58,.20),(7.45,4.63,3.75,1.25,.18)])
     shoulder('Aft structural fairing','Body','Frame',s,[(2.0,-4.9,2.95,2.94,.76),
-        (4.3,-5.05,2.96,2.42,.72),(6.2,-5.4,3.03,1.80,.54),(8.20,-5.65,3.08,1.28,.43)])
+        (4.3,-5.05,2.96,2.42,.72),(6.2,-5.4,3.03,1.80,.54),(7.35,-5.65,3.08,1.28,.43)])
     shoulder('Aft armor cap','Body','Hull',s,[(2.2,-5.05,3.62,2.34,.23),
-        (4.4,-5.24,3.62,1.84,.22),(6.25,-5.6,3.52,1.32,.20),(7.75,-5.77,3.46,.80,.15)])
+        (4.4,-5.24,3.62,1.84,.22),(6.25,-5.6,3.52,1.32,.20),(7.35,-5.77,3.46,.80,.15)])
     # Low swept infill extends the main shoulder toward the inner nacelle wall.
     # Leave a smaller rear relief: no new rib, no change to the main shoulder.
     shoulder('Inner shoulder infill','Body','Hull',s,[(4.5,-1.25,3.25,1.65,.47),
@@ -153,11 +153,11 @@ for s,side in [(-1,'L'),(1,'R')]:
     for end,z,r,inner in [('Front',4.5,3.25,2.35),('Rear',-4.5,3.45,2.48)]:
         asm='Engine'+end+side
         if end=='Front':
-            loft('Continuous nacelle forward keel',asm,'Frame',[(2.0,x,2.28,2.68,1.30),(4.5,x,2.05,2.45,.90),(7.3,x,2.32,1.92,1.0),(9.15,x,2.85,.82,.58)])
-            # The keel overlaps the bore only below the fan face; it is a structural lower cover.
-            loft('Outer prow armor',asm,'Hull',[(6.8,x,3.0,2.38,.82),(8.25,x-s*.10,2.98,1.65,.78),(9.15,x-s*.30,2.85,.68,.35)])
+            loft('Continuous nacelle forward keel',asm,'Frame',[(2.0,x,1.95,1.55,.85),(4.5,x,2.0,2.45,.80),(7.3,x,2.0,1.92,.80),(9.15,x,2.85,.82,.58)])
+            # Lower cover stays below the dark fan disk, even at the inner end.
+            loft('Outer prow armor',asm,'Hull',[(7.05,x,3.0,2.38,.82),(8.25,x-s*.10,2.98,1.65,.78),(9.15,x-s*.30,2.85,.68,.35)])
         else:
-            loft('Continuous nacelle rear keel',asm,'Frame',[(-9.6,x,2.2,1.45,.64),(-7.2,x,2.2,2.35,1.08),(-4.5,x,2.0,2.55,.91),(-2.0,x,2.28,2.68,1.30)])
+            loft('Continuous nacelle rear keel',asm,'Frame',[(-9.6,x,2.2,1.45,.64),(-7.2,x,2.0,2.35,.80),(-4.5,x,2.0,2.55,.80),(-2.0,x,1.95,1.55,.85)])
             loft('Rear engine fairing',asm,'Hull',[(-9.6,x,2.8,1.20,.52),(-8.15,x,3.02,2.0,.78),(-7.05,x,3.0,2.38,.75)])
         duct('Open turbine shroud',asm,x,z,r,inner)
         disk('Dark turbine well',asm,'Dark',x,z,inner-.06,2.94,3.04,16)
@@ -175,8 +175,12 @@ for s,side in [(-1,'L'),(1,'R')]:
     # No bridge across the open space between the turbine rims.
     asm='Tail'+side
     # swept tail stabilizer tied to the bank, clearly defines rear direction
-    yzplate('Bank tail fin',asm,'Hull',*sorted((x+s*.70,x+s*1.07)),[(3.25,-9.5),(5.72,-9.08),(5.52,-7.70),(3.25,-6.65)])
+    yzplate('Bank tail fin',asm,'Hull',*sorted((x+s*.70,x+s*1.07)),[(3.25,-10.4),(5.72,-9.98),(5.52,-8.60),(3.25,-8.25)])
     slab('Rear tail plate',asm,'Top',[(s*3.05,-7.5),(s*7.95,-9.5),(s*9.4,-8.6),(s*7.8,-6.4),(s*4.0,-6.65)],2.55,2.85)
+# Move the entire four engine assemblies, keeping their local geometry coherent.
+PARTS[:] = [(name,asm,mat,[(x,y,z+(.9 if asm.startswith('EngineFront') else -.9)) for x,y,z in v],t)
+            if asm.startswith('Engine') else (name,asm,mat,v,t)
+            for name,asm,mat,v,t in PARTS]
 # Keep the exact existing CG01 capture pads.
 for i,(x,y,z) in enumerate(SOCKETS,1):
     asm=f'Clamp{i:02d}'
@@ -206,7 +210,7 @@ def export():
         groups.append({'name':asm,'pivot':vector(pivot),'vertices':verts,'slots':slots})
     points=[p for _,_,_,v,_ in PARTS for p in v]
     lo=[min(p[i] for p in points) for i in range(3)]; hi=[max(p[i] for p in points) for i in range(3)]
-    assert all(abs(a-b)<1e-6 for a,b in zip(lo,(-13.65,0,-9.6))),lo
+    assert all(abs(a-b)<1e-6 for a,b in zip(lo,(-13.65,0,-10.5))),lo
     assert all(abs(a-b)<1e-6 for a,b in zip(hi,(13.65,6.075,12.72))),hi
     OUT.parent.mkdir(parents=True,exist_ok=True)
     OUT.write_text(json.dumps({'palette':[{'name':k,'rgb':list(v)} for k,v in PALETTE.items()],
