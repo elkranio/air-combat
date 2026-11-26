@@ -15,6 +15,15 @@ namespace AirCombat
         private Quaternion startRotation;
         private float phase;
         private bool initialized;
+        public float Speed => speed;
+
+        public void SetPreviewAltitude(float altitude)
+        {
+            startPosition.y = altitude;
+            Vector3 position = transform.position;
+            position.y = altitude;
+            transform.position = position;
+        }
 
         private void Awake()
         {

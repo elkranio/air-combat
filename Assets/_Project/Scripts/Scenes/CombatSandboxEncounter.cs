@@ -18,10 +18,12 @@ namespace AirCombat
         [SerializeField] private EnemyMissileStressTest.Settings enemyMissiles = new EnemyMissileStressTest.Settings();
         private EnemyMissileStressTest missileStress;
         // Explicit serialized values: do not reorder or reuse these IDs.
-        public enum SandboxMode { Dogfight = 0, GroundAttack = 1, Interception = 2 }
+        public enum SandboxMode { Dogfight = 0, GroundAttack = 1, Interception = 2, Warden = 3 }
         [Header("Combat sandbox / select before Play")]
         [SerializeField] private SandboxMode mode = SandboxMode.GroundAttack;
         private bool groundMode;
+        private bool wardenMode;
+        private readonly List<WardenCombat> wardens = new List<WardenCombat>();
         [Header("Cruise missile interception")]
         [SerializeField] private CruiseMissileTarget sparrowPrefab;
         [SerializeField, Min(1)] private int interceptionCount = 10;
@@ -64,6 +66,13 @@ namespace AirCombat
         {
             get
             {
+                if (wardenMode)
+                {
+                    string status = defeated ? "DEFEAT" : victory ? "VICTORY" : "Warden";
+                    foreach (var warden in wardens)
+                        if (warden != null) status += " | " + warden.DebugStatus;
+                    return status;
+                }
                 if (interceptionMode) return interception != null ? interception.DebugStatus : "INTERCEPT UNAVAILABLE";
                 if (groundMode)
                 {
@@ -92,19 +101,20 @@ namespace AirCombat
         public void Bind(JetAssembly aircraft, Camera camera, AircraftRadar sensor,
             PlayerHitPoints health, float halfExtent)
         {
-            if (mode != SandboxMode.Dogfight && mode != SandboxMode.GroundAttack && mode != SandboxMode.Interception)
+            if (mode != SandboxMode.Dogfight && mode != SandboxMode.GroundAttack && mode != SandboxMode.Interception && mode != SandboxMode.Warden)
             {
                 Debug.LogError("Combat sandbox: invalid mode.", this);
                 return;
             }
             interceptionMode = mode == SandboxMode.Interception;
             groundMode = mode == SandboxMode.GroundAttack;
+            wardenMode = mode == SandboxMode.Warden;
             player = aircraft;
             view = camera;
             radar = sensor;
             playerHealth = health;
             boundary = halfExtent;
-            if ((!groundMode && !interceptionMode && enemyPrefab == null) ||
+            if ((mode == SandboxMode.Dogfight && enemyPrefab == null) ||
                 (interceptionMode && (sparrowPrefab == null || missilePrefab == null)) || player == null || radar == null || playerHealth == null)
             {
                 Debug.LogError("AIR encounter is missing its prefab or player binding.", this);
@@ -140,7 +150,7 @@ namespace AirCombat
             if (hitFeedback == null) hitFeedback = gameObject.AddComponent<CombatHitFeedback>();
             hitFeedback.Bind(view);
             hitFeedback.Track(playerHealth, true);
-            if (!groundMode && !interceptionMode && missilePrefab != null)
+            if (mode == SandboxMode.Dogfight && missilePrefab != null)
             {
                 missileStress = gameObject.AddComponent<EnemyMissileStressTest>();
                 missileStress.Bind(playerHealth, missilePrefab, hitFeedback, enemyMissiles, radar);
@@ -155,6 +165,19 @@ namespace AirCombat
                 nursLauncher.gameObject.SetActive(true);
                 nursLauncher.Bind(playerFlight, playerBoost, playerTrigger, view);
                 playerTrigger.ConfigureDualSlots(nursLauncher);
+            }
+            else if (wardenMode)
+            {
+                playerTrigger.ConfigureDualSlots(null);
+                foreach (var warden in FindObjectsByType<WardenCombat>())
+                {
+                    if (warden.gameObject.scene != gameObject.scene ||
+                        !warden.Bind(playerHealth, playerFlight, hitFeedback)) continue;
+                    wardens.Add(warden);
+                    radar.Register(warden.Contact);
+                }
+                if (wardens.Count == 0)
+                    Debug.LogError("Warden sandbox: place an ED01_Warden prefab in the scene.", this);
             }
             else
             {
@@ -198,6 +221,17 @@ namespace AirCombat
             if (playerFlight != null) playerFlight.enabled = true;
             if (playerTrigger != null) playerTrigger.enabled = true;
             defeated = victory = false;
+            if (wardenMode)
+            {
+                foreach (var warden in wardens)
+                {
+                    if (warden == null) continue;
+                    ClearRounds(warden.transform);
+                    warden.ResetCombat(Time.time);
+                }
+                encounterReady = wardens.Count > 0;
+                return;
+            }
             if (interceptionMode)
             {
                 interception?.Restart(player.transform.position, boundary, Time.time);
@@ -304,11 +338,33 @@ namespace AirCombat
                 playerBoost?.Tick(false, 0f);
                 ClearRounds(player.transform);
                 interception?.Clear();
+                foreach (var warden in wardens)
+                {
+                    if (warden == null) continue;
+                    ClearRounds(warden.transform);
+                    warden.StopCombat();
+                }
                 for (int i = fighters.Count - 1; i >= 0; i--)
                     RemoveFighterAt(i, !fighters[i].Health.IsAlive);
                 return;
             }
 
+            if (wardenMode)
+            {
+                bool anyAlive = false;
+                foreach (var warden in wardens)
+                {
+                    if (warden == null) continue;
+                    if (warden.Alive) anyAlive = true;
+                    else if (warden.gameObject.activeSelf)
+                    {
+                        ClearRounds(warden.transform);
+                        warden.HideDestroyed();
+                    }
+                }
+                victory = !anyAlive;
+                return;
+            }
             if (interceptionMode)
             {
                 interception?.Tick(Time.time, Time.deltaTime);
@@ -336,6 +392,12 @@ namespace AirCombat
         private void LateUpdate()
         {
             if (!bound || !encounterReady || defeated || victory || !playerHealth.IsAlive) return;
+            if (wardenMode)
+            {
+                foreach (var warden in wardens)
+                    if (warden != null) warden.TickFire(Time.time, Time.deltaTime);
+                return;
+            }
             if (missileStress != null) missileStress.Tick(Time.time);
             // Combined combat: gun requests tick independently of AAM readiness,
             // pending launch warnings and the number of missiles in flight.
@@ -361,7 +423,7 @@ namespace AirCombat
             var rect = new Rect((Screen.width - 340f) * .5f, 12f, 340f, 30f);
             GUI.Box(rect, GUIContent.none);
             GUI.Label(rect, defeated ? "AIRCRAFT LOST — R TO RESTART" :
-                "TIGERS DOWN — R TO RESTART", resultStyle);
+                wardenMode ? "WARDENS DOWN — R TO RESTART" : "TIGERS DOWN — R TO RESTART", resultStyle);
         }
 
         private static void ClearRounds(Transform owner)
@@ -378,6 +440,7 @@ namespace AirCombat
         public void SetAltitude(float y)
         {
             interception?.SetAltitude(y);
+            foreach (var warden in wardens) if (warden != null) warden.SetAltitude(y);
             foreach (var fighter in fighters)
             {
                 if (fighter.Root == null) continue;
@@ -416,6 +479,15 @@ namespace AirCombat
         private void OnDestroy()
         {
             interception?.Clear();
+            foreach (var warden in wardens)
+            {
+                if (warden == null) continue;
+                warden.StopCombat();
+                ClearRounds(warden.transform);
+                if (radar != null) radar.Unregister(warden.Contact);
+                if (hitFeedback != null) hitFeedback.Untrack(warden.Health);
+            }
+            wardens.Clear();
             foreach (var gun in groundGuns) if (gun != null) gun.Unbind();
             groundGuns.Clear();
             if (missileStress != null) { missileStress.ResetTest(); Destroy(missileStress); }

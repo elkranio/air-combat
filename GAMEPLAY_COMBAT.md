@@ -14,6 +14,7 @@ A/D steer. W boosts, reducing turn authority; S slows the aircraft and increases
 | Sandbox Dogfight | AC-01 | AAM |
 | Sandbox Ground Attack | AC-01 | NURS |
 | Sandbox Interception | AC-01 | AAM |
+| Sandbox Warden | AC-01 | Empty |
 
 AC-01 fires nose-forward physical rounds independently of mouse aim. AC-02 continuous/heat resource remains implemented as an optional preset, not a default loadout. AAM uses cursor acquisition and a short lock/grace, fires a guided projectile, and regenerates its two-round magazine only after both shots are spent. The weapon owns its lock/audio state; the old camera TargetLock was removed.
 
@@ -24,6 +25,7 @@ NURS fires physical unguided ground salvos. The predicted world-space footprint 
 - Dogfight: two Tiger fighters with individual pilot states and independent AAM cycles. Fuel-aware pursuit, separation, imperfect gun aim, bounded pressure and missile warning. The Tiger prefab owns attack settings. Test against both, not only a stationary target.
 - Ground Attack: Mantis mobile rocket AA follows a scene-authored route and uses the authored launch socket. Cold launch, attitude correction and smooth ignition; limited horizontal correction rather than fully guided air-to-air behavior. The rocket carrier and motor are independent. The old Mantis gun visual is retained as authoring content, not the live combat version.
 - Interception: ten Sparrow targets by default, offset routes and timed spawning. Cannon or AAM can intercept them. Independent regression scenario, not a campaign objective.
+- Warden: authored ED01 patrol(s), no evasive AI; two independently aimed cannons alternate individual shots in bursts, with thin red-orange physical tracers. Shared damage/FX/radar; R resets patrol, health and owned rounds. See [test notes](Docs/ED_03_WARDEN_COMBAT.md).
 
 ## Campaign threats and objectives
 

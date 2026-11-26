@@ -2517,7 +2517,7 @@ MonoBehaviour:
     lifetime: 4
     hitRadius: 5
     damage: 6
-  mode: 2
+  mode: 3
   sparrowPrefab: {fileID: 8176654010010000020, guid: 69cd2d1011a85dce9593357073f49dbc, type: 3}
   interceptionCount: 10
   interceptionInterval: 0.7

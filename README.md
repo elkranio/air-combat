@@ -9,7 +9,7 @@ Open the existing project in Unity Hub. Both authored scenes are already install
 | Scene | Purpose |
 | --- | --- |
 | `Assets/_Project/Scenes/Mission01_FirstSortie.unity` | Campaign slice: takeoff, six Picket SAMs, three Watchers, optional Overlord, RTB and assisted landing. First build scene. |
-| `Assets/_Project/Scenes/CombatSandbox.unity` | Isolated combat regression: Dogfight, Ground Attack, Interception. Select `Mode` on `CombatSandboxEncounter` before Play. |
+| `Assets/_Project/Scenes/CombatSandbox.unity` | Isolated combat regression: Dogfight, Ground Attack, Interception, Warden (current gun test). Select `Mode` on `CombatSandboxEncounter` before Play. |
 
 **Mission testing:** the saved editor baseline has Debug Air Start and Debug No Clip enabled. To play a normal sortie, disable both on `Mission01LaunchSequence`; leave Debug Landing Near Airfield disabled. These bypasses are editor-only. Press W to take off.
 

@@ -144,15 +144,16 @@ namespace AirCombat
             groundCrash = new GroundCrashFeedback(transform, particleMaterial, puffMaterial, cloudMaterial);
         }
 
-        public void Track(PlayerHitPoints health, bool isPlayer)
+        public void Track(PlayerHitPoints health, bool isPlayer, Transform visualRoot = null)
         {
             if (health == null || targets.ContainsKey(health)) return;
             if (isPlayer) playerListener = health.transform;
             var tracked = new Tracked { IsPlayer = isPlayer };
             var jet = health.GetComponent<JetAssembly>();
-            if (jet != null && jet.VisualRoot != null)
+            Transform visual = visualRoot != null ? visualRoot : jet != null ? jet.VisualRoot : null;
+            if (visual != null)
             {
-                tracked.Visual = jet.VisualRoot;
+                tracked.Visual = visual;
                 // Capture only the active authored hull at registration, not runtime
                 // flashes or exhaust which might be visible at the critical hit.
                 var filters = new List<MeshFilter>();
@@ -163,7 +164,7 @@ namespace AirCombat
                         filters.Add(filter);
                 }
                 tracked.HullMeshes = filters.ToArray();
-                foreach (var renderer in jet.VisualRoot.GetComponentsInChildren<Renderer>(true))
+                foreach (var renderer in tracked.Visual.GetComponentsInChildren<Renderer>(true))
                 {
                     if (renderer == null || !renderer.enabled || !renderer.gameObject.activeInHierarchy ||
                         !(renderer is MeshRenderer || renderer is SkinnedMeshRenderer)) continue;

@@ -11,6 +11,10 @@ GameObject:
   - component: {fileID: 8101000000000000001}
   - component: {fileID: 8101000000000000320}
   - component: {fileID: 8101000000000000321}
+  - component: {fileID: 8101000000000000322}
+  - component: {fileID: 8101000000000000323}
+  - component: {fileID: 8101000000000000324}
+  - component: {fileID: 8101000000000000325}
   m_Layer: 0
   m_Name: ED01_Warden
   m_TagString: Untagged
@@ -1593,3 +1597,77 @@ MonoBehaviour:
   speed: 24
   radius: 65
   clockwise: 1
+--- !u!114 &8101000000000000322
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8101000000000000000}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0252dee5824041d89df16af3c22b515c, type: 3}
+  m_Name:
+  m_EditorClassIdentifier:
+  maxHp: 5
+--- !u!114 &8101000000000000323
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8101000000000000000}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 13e0136ac66b4a7a87603b9f8e664311, type: 3}
+  m_Name:
+  m_EditorClassIdentifier:
+  side: 2
+--- !u!114 &8101000000000000324
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8101000000000000000}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9a1be7cecb034c7fa2a346b87aac7be1, type: 3}
+  m_Name:
+  m_EditorClassIdentifier:
+  headingSource: {fileID: 8101000000000000001}
+--- !u!114 &8101000000000000325
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8101000000000000000}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b1d7d0a727b54ed2b65ee5241da33a0e, type: 3}
+  m_Name:
+  m_EditorClassIdentifier:
+  visualRoot: {fileID: 8101000000000000011}
+  yawLeft: {fileID: 8101000000000000071}
+  pitchLeft: {fileID: 8101000000000000101}
+  muzzleLeft: {fileID: 8101000000000000141}
+  yawRight: {fileID: 8101000000000000151}
+  pitchRight: {fileID: 8101000000000000181}
+  muzzleRight: {fileID: 8101000000000000221}
+  tracerCore: {fileID: 2100000, guid: 6d26dc3d609a4e91bf92a56e7e0fa3a2, type: 2}
+  tracerGlow: {fileID: 2100000, guid: 989e3d1d906e4c2793d1185f54f6413a, type: 2}
+  shotClip: {fileID: 8300000, guid: 1477b8989b57255438e22ded9bece768, type: 3}
+  fireRange: 135
+  projectileSpeed: 185
+  projectileRange: 220
+  roundsPerSecond: 11
+  burstSeconds: 1.7
+  pauseSeconds: 1.15
+  leadSeconds: 0.32
+  spreadDegrees: 2.8
+  turretDegreesPerSecond: 250
+  tracerWidth: 0.34
+  glowWidth: 0.95
+  tracerLength: 5.5
+  shotVolume: 0.18
