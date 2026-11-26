@@ -9,10 +9,10 @@ import json
 
 ROOT = Path(__file__).resolve().parents[2]
 OUT = ROOT / 'Assets/_Project/Editor/Mission02/CA01Geometry.json'
-PALETTE = {'Hull': (153, 160, 164), 'Top': (190, 196, 197),
-           'Frame': (53, 61, 68), 'Steel': (139, 151, 158),
+PALETTE = {'Hull': (65, 72, 76), 'Top': (104, 116, 123),
+           'Frame': (40, 47, 51), 'Steel': (125, 137, 143),
            'Red': (177, 58, 48), 'Dark': (28, 32, 35),
-           'Glass': (44, 77, 82), 'Vent': (218, 113, 42)}  # V9C Logistics
+           'Glass': (44, 77, 82), 'Vent': (213, 165, 47)}  # V9A+ Heavy Duty
 PARTS = []
 SOCKETS = [(x, 0.0, z) for z in (-4.65,4.65) for x in (-2.45,2.45)]
 
@@ -194,10 +194,76 @@ for i,(x,y,z) in enumerate(SOCKETS,1):
     for sx in (-1,1):
         box('Clamp jaw',asm,'Vent',x+sx*.45,.34,z,.22,.54,1.05)
 
-# V9C paint assignment: dark nacelles, cool gray lifting hull, light upper armor.
-PARTS[:] = [(name, asm, ({'Hull':'Frame', 'Top':'Steel'}.get(mat,mat)
-                        if asm.startswith('Engine') else mat), v, t)
-            for name,asm,mat,v,t in PARTS]
+# V9A+ paint-only surface subdivision. Every child triangle stays on its parent face.
+def paint_bands(v, faces, coord, bands, base):
+    from math import sqrt
+    def norm(p): return sqrt(dot(p,p))
+    def clip(poly, level, high):
+        out=[]
+        for a,b in zip(poly,poly[1:]+poly[:1]):
+            da,db=coord(a)-level,coord(b)-level
+            ina=da>=0 if high else da<=0
+            inb=db>=0 if high else db<=0
+            if ina: out.append(a)
+            if ina!=inb:
+                t=da/(da-db)
+                out.append(tuple(x+(y-x)*t for x,y in zip(a,b)))
+        # Exact-on-boundary endpoints can be emitted twice.
+        clean=[]
+        for p in out:
+            if not clean or norm(sub(p,clean[-1]))>1e-9: clean.append(p)
+        if len(clean)>1 and norm(sub(clean[0],clean[-1]))<=1e-9: clean.pop()
+        return clean
+    verts=list(v); indices={tuple(p):i for i,p in enumerate(verts)}; groups={base:[], 'Vent':[]}
+    def idx(p):
+        p=tuple(p)
+        if p not in indices: indices[p]=len(verts); verts.append(p)
+        return indices[p]
+    for face in faces:
+        a,b,c=[v[i] for i in face]; normal=cross(sub(b,a),sub(c,a)); size=norm(normal)
+        # Only exposed upper armor, never vertical end caps or underside.
+        if normal[1]<=size*.35:
+            groups[base].append(face); continue
+        polys=[([a,b,c],base)]
+        for low,high in bands:
+            split=[]
+            for poly,mat in polys:
+                if mat=='Vent': split.append((poly,mat)); continue
+                if max(map(coord,poly))<=low or min(map(coord,poly))>=high:
+                    split.append((poly,mat)); continue
+                for piece,paint in [(clip(poly,low,False),base),
+                                    (clip(clip(poly,low,True),high,False),'Vent'),
+                                    (clip(poly,high,True),base)]:
+                    if len(piece)>=3: split.append((piece,paint))
+            polys=split
+        total=0.0
+        for poly,mat in polys:
+            for i in range(1,len(poly)-1):
+                p,q,r=poly[0],poly[i],poly[i+1]
+                n=cross(sub(q,p),sub(r,p)); area=norm(n)
+                if area<1e-10: continue
+                assert dot(n,normal)>0, 'Stripe flipped a face'
+                assert all(abs(dot(sub(k,a),normal))/size<1e-8 for k in (p,q,r)), 'Stripe left parent plane'
+                total+=area
+                groups[mat].append(tuple(idx(k) for k in (p,q,r)))
+        assert abs(total-size)<1e-7*max(1,size), 'Stripe changed surface area'
+    return [(mat,verts,ts) for mat,ts in groups.items() if ts]
+
+painted=[]
+for name,asm,mat,v,t in PARTS:
+    if name.startswith('Upper swept armor'):
+        coord=lambda p: abs(p[0])+.55*(p[2]-4.0)
+        bands=((4.05,4.72),(5.48,6.15))
+    elif name.startswith('Dorsal armor'):
+        coord=lambda p: p[2]+.25*p[0]
+        bands=((-5.85,-5.12),)
+    else:
+        painted.append((name,asm,mat,v,t)); continue
+    painted.extend((name,asm,m,vs,ts) for m,vs,ts in paint_bands(v,t,coord,bands,mat))
+PARTS[:]=painted
+assert sum(len(t) for name,asm,mat,v,t in PARTS if mat=='Vent' and name.startswith('Upper swept armor'))>0
+assert sum(len(t) for name,asm,mat,v,t in PARTS if mat=='Vent' and name.startswith('Dorsal armor'))>0
+
 
 def vector(p): return dict(zip(('x','y','z'),(round(x,6) for x in p)))
 
