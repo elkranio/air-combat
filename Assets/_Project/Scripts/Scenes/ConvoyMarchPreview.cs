@@ -77,6 +77,7 @@ namespace AirCombat
                 // Also cancels any opt-in visual deployment preview.
                 units[i].SetDeploymentImmediate(false);
                 Place(i);
+                units[i].GetComponent<GroundMovementDust>()?.ResetTrail();
             }
             ready = true;
             return true;
