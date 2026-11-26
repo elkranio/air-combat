@@ -33,13 +33,11 @@ namespace AirCombat
 #endif
         private AircraftMotor motor;
         private BreakTurn breakTurn;
-        private CabrageManeuver cabrage;
         private bool variableManeuverability;
         private bool waitForBoostRelease;
         private float tightSpeed, boostTurnMultiplier, tightTurnMultiplier, maneuverResponse;
 
-        // Explicit opt-in from the production scene; legacy labs retain Q/E and
-        // their original throttle, steering, boost and cabrage behavior.
+        // Explicit opt-in to variable maneuverability in the flight session.
         public void ConfigureVariableManeuverability(float slowSpeed, float boostTurn,
             float tightTurn, float response)
         {
@@ -53,7 +51,6 @@ namespace AirCombat
 
         // Optional maneuvers; null when a scene does not equip them.
         public void ConfigureBreakTurn(BreakTurn maneuver) { breakTurn = maneuver; }
-        public void ConfigureCabrage(CabrageManeuver maneuver) { cabrage = maneuver; }
 
         private void OnValidate()
         {
@@ -94,20 +91,12 @@ namespace AirCombat
                     - (keyboard.aKey.isPressed ? 1f : 0f);
             }
 
-            // During cabrage the same Q/E Break Turn is an emergency abort. It
-            // turns for real while the cabrage component returns us to cruise Y.
             if (breakTurn != null && keyboard != null && Application.isFocused)
             {
                 int side = keyboard.qKey.wasPressedThisFrame ? -1
                     : keyboard.eKey.wasPressedThisFrame ? 1 : 0;
-                if (side != 0)
-                {
-                    if (cabrage != null && cabrage.IsCommitted) cabrage.TryEmergencyBreak(side);
-                    else breakTurn.TryBegin(side);
-                }
+                if (side != 0) breakTurn.TryBegin(side);
             }
-            bool committed = cabrage != null && cabrage.IsCommitted;
-            if (committed) { steer = 0f; throttle = 0f; }
 
             var targetSpeed = useFixedCruiseWBoost ? cruiseSpeed
                 : throttle > 0f ? maxSpeed : throttle < 0f ? minSpeed : cruiseSpeed;
@@ -122,7 +111,7 @@ namespace AirCombat
             bool boostHeld = keyboard != null && Application.isFocused &&
                 (useFixedCruiseWBoost ? keyboard.wKey.isPressed : keyboard.spaceKey.isPressed);
             bool boost = afterburner != null && afterburner.Tick(
-                !breaking && !committed && boostHeld, Time.deltaTime);
+                !breaking && boostHeld, Time.deltaTime);
             if (boost || breaking) targetSpeed = Mathf.Max(targetSpeed, afterburner.BoostSpeed);
             float accel = boost || breaking
                 ? Mathf.Max(acceleration, afterburner.BoostAcceleration) : acceleration;

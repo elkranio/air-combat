@@ -7,7 +7,7 @@ namespace AirCombat
     // lock gating and scene-independent weapon presentation. Inspector tuning
     // remains here; the WeaponLabCannon subclass preserves existing scene data.
     [DisallowMultipleComponent]
-    [DefaultExecutionOrder(130)] // sample aim after camera follow and CameraLookAhead
+    [DefaultExecutionOrder(130)] // sample aim after camera follow
     public class WeaponController : MonoBehaviour
     {
         [SerializeField] private Material tracerMaterial;
