@@ -2,15 +2,18 @@ using UnityEngine;
 
 namespace AirCombat
 {
-    // Mission-local optional aircraft. Terminal escape is not a kill.
+    // Reusable escape aircraft. Terminal escape is not a kill.
     [DisallowMultipleComponent]
     [RequireComponent(typeof(BoxCollider))]
     [DefaultExecutionOrder(-20)]
     public sealed class OverlordTarget : AirDamageableTarget, IRadarAirContact
     {
         public enum Phase { Patrol, Preparing, Boost, Destroyed, Escaped }
-        [SerializeField] private Mission01LaunchSequence launch;
-        [SerializeField] private Mission01ReconEncounter effects;
+        // Keep the existing serialized PPtr field names for scene overrides.
+        [SerializeField] private MonoBehaviour launch; // IAirTargetFlightContext
+        [SerializeField] private MonoBehaviour effects; // IAirTargetEffects
+        private IAirTargetFlightContext flightContext;
+        private IAirTargetEffects airEffects;
         [SerializeField] private FlightController player;
         [SerializeField] private Transform visual;
         [SerializeField] private float groundY;
@@ -37,7 +40,7 @@ namespace AirCombat
         private AircraftRadar radar;
         private Afterburner playerBoost;
         private Camera viewCamera;
-        private bool useMissionEscapeRoute;
+        private bool useSoutheastEscapeRoute;
         private Vector3 escapeDestination;
         private Renderer[] glow = new Renderer[2];
         private MaterialPropertyBlock properties;
@@ -60,7 +63,7 @@ namespace AirCombat
             State == Phase.Boost ? "ESCAPING" : State == Phase.Preparing ? "ENGINES CHARGING" : "PATROLLING";
 
 #if UNITY_EDITOR
-        public void ConfigureForAuthoring(Mission01LaunchSequence sequence, Mission01ReconEncounter fx,
+        public void ConfigureForAuthoring(MonoBehaviour sequence, MonoBehaviour fx,
             FlightController controller, Transform model, float floor)
         { launch = sequence; effects = fx; player = controller; visual = model; groundY = floor; }
 #endif
@@ -68,8 +71,11 @@ namespace AirCombat
         private void Start()
         {
             hitboxes = GetComponents<BoxCollider>();
-            if (launch == null || effects == null || player == null || visual == null || hitboxes.Length == 0)
-            { Debug.LogError("AE01: missing encounter references.", this); enabled = false; return; }
+            flightContext = launch as IAirTargetFlightContext;
+            airEffects = effects as IAirTargetEffects;
+            if (launch == null || effects == null || flightContext == null || airEffects == null ||
+                player == null || visual == null || hitboxes.Length == 0)
+            { Debug.LogError("Overlord: missing or incompatible flight context/effects/player/visual references.", this); enabled = false; return; }
             authoredCenter = transform.position;
             rest = visual.localRotation;
             radar = player.GetComponent<AircraftRadar>();
@@ -94,14 +100,16 @@ namespace AirCombat
             radar?.Register(this);
         }
 
+        private bool FlightActive => launch != null && flightContext != null && flightContext.FlightActive;
+
         private void ResetTarget()
         {
             // Move the existing marker's runtime patrol north/west to leave
             // enough room for the full charge and the diagonal boost.
             center = authoredCenter + new Vector3(patrolCenterOffset.x, 0f, patrolCenterOffset.y);
-            useMissionEscapeRoute = true;
+            useSoutheastEscapeRoute = true;
             escapeHeading = Vector3.back;
-            Rect operation = launch.OperationBounds;
+            Rect operation = flightContext.OperationBounds;
             float inset = Mathf.Max(0f, edgeReserve) + 30f;
             escapeDestination = new Vector3(operation.xMax - inset, center.y, operation.yMin + inset);
 #if UNITY_EDITOR
@@ -112,7 +120,7 @@ namespace AirCombat
                 center = player.transform.position + forward * 165f;
                 center.y = authoredCenter.y;
                 escapeHeading = forward;
-                useMissionEscapeRoute = false;
+                useSoutheastEscapeRoute = false;
             }
 #endif
             hp = Mathf.Max(1, maxHp);
@@ -221,7 +229,7 @@ namespace AirCombat
             if (!ready || MissionPause.IsTacticalMapPausedFor(gameObject.scene)) return;
             if (MissionRetry.WasRequestedThisFrame(gameObject.scene))
             { ResetTarget(); return; }
-            if (launch.State != Mission01LaunchSequence.Phase.Flight || Time.deltaTime <= 0f) return;
+            if (!FlightActive || Time.deltaTime <= 0f) return;
             float dt = Time.deltaTime;
             if (State == Phase.Destroyed) { if (falling) TickWreck(dt); return; }
             if (!IsAlive) return;
@@ -234,7 +242,7 @@ namespace AirCombat
                 timer += dt;
                 // First break south, then bank onto the safe southeast bearing.
                 // Freeze this bearing on ignition; the boost stays a straight run.
-                if (useMissionEscapeRoute && timer >= chargeDuration * southeastTurnFraction)
+                if (useSoutheastEscapeRoute && timer >= chargeDuration * southeastTurnFraction)
                 {
                     Vector3 outbound = escapeDestination - transform.position;
                     outbound.y = 0f;
@@ -287,7 +295,7 @@ namespace AirCombat
 
         private float DistanceToEdge(Vector3 p, Vector3 direction)
         {
-            Rect b = launch.OperationBounds;
+            Rect b = flightContext.OperationBounds;
             float tx = direction.x > .0001f ? (b.xMax - p.x) / direction.x :
                 direction.x < -.0001f ? (b.xMin - p.x) / direction.x : float.PositiveInfinity;
             float tz = direction.z > .0001f ? (b.yMax - p.z) / direction.z :
@@ -319,7 +327,7 @@ namespace AirCombat
 
         public override bool ApplyDamage(Vector3 point, int damage)
         {
-            if (!IsAlive || damage <= 0 || launch.State != Mission01LaunchSequence.Phase.Flight) return false;
+            if (!IsAlive || damage <= 0 || !FlightActive) return false;
             hp = Mathf.Max(0, hp - damage);
             if (State == Phase.Patrol && hp > 0) BeginPreparation();
             if (hp == 0)
@@ -330,7 +338,7 @@ namespace AirCombat
                 foreach (var box in hitboxes) box.enabled = false;
                 SetGlow(0f);
                 escapeVfx?.Clear();
-                effects.AirBurst(point, deathForward);
+                airEffects.AirBurst(point, deathForward);
             }
             return true;
         }
@@ -348,11 +356,11 @@ namespace AirCombat
             if (!burst && timer >= 1f)
             {
                 burst = true;
-                effects.AirBurst(visual.TransformPoint(new Vector3(-5f, .2f, -6f)), deathForward);
-                effects.AirBurst(visual.TransformPoint(new Vector3(5f, .2f, -6f)), deathForward);
+                airEffects.AirBurst(visual.TransformPoint(new Vector3(-5f, .2f, -6f)), deathForward);
+                airEffects.AirBurst(visual.TransformPoint(new Vector3(5f, .2f, -6f)), deathForward);
             }
             if (u >= 1f)
-            { falling = false; visual.gameObject.SetActive(false); effects.GroundBurst(new Vector3(p.x, groundY + 1f, p.z), deathForward); }
+            { falling = false; visual.gameObject.SetActive(false); airEffects.GroundBurst(new Vector3(p.x, groundY + 1f, p.z), deathForward); }
         }
 
         private void Trail(float dt, float rate, bool burning)
@@ -362,13 +370,13 @@ namespace AirCombat
             {
                 smokeDebt -= 1f;
                 float x = Random.value < .5f ? -5.15f : 5.15f;
-                effects.EmitSmoke(visual.TransformPoint(new Vector3(x, .28f, -10.5f)), burning);
+                airEffects.EmitSmoke(visual.TransformPoint(new Vector3(x, .28f, -10.5f)), burning);
             }
         }
 
         private void OnGUI()
         {
-            if (!ready || launch.State != Mission01LaunchSequence.Phase.Flight || MissionPause.IsTacticalMapPausedFor(gameObject.scene) || Event.current.type != EventType.Repaint) return;
+            if (!ready || !FlightActive || MissionPause.IsTacticalMapPausedFor(gameObject.scene) || Event.current.type != EventType.Repaint) return;
             var style = new GUIStyle(GUI.skin.label) { fontSize = Mathf.RoundToInt(Mathf.Clamp(Screen.height * .019f, 13, 22)), fontStyle = FontStyle.Bold };
             string message = "SECONDARY / OVERLORD / " + ObjectiveStatus;
             style.normal.textColor = new Color(.05f,.07f,.08f,.9f);

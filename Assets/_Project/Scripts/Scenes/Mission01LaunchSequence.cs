@@ -6,7 +6,7 @@ namespace AirCombat
     // Mission-specific launch state. Normal flight remains owned by FlightController.
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-40)] // Before normal flight; E1 session initializes first.
-    public sealed class Mission01LaunchSequence : MonoBehaviour
+    public sealed class Mission01LaunchSequence : MonoBehaviour, IAirTargetFlightContext
     {
         public enum Phase { Intro, Ready, Takeoff, Flight, Crashed, BoundaryFailed, Landing, Landed }
 
@@ -69,6 +69,7 @@ namespace AirCombat
         public Phase State { get; private set; } = Phase.Intro;
         internal MissionBoundaryGuard Boundary => boundary;
         public Rect OperationBounds => operationBounds;
+        bool IAirTargetFlightContext.FlightActive => State == Phase.Flight;
 
 #if UNITY_EDITOR
         public void ConfigureForAuthoring(FlightController controller, PlayerWeaponTrigger trigger)
