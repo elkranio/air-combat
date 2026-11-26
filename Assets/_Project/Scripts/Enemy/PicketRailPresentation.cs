@@ -2,7 +2,7 @@ using UnityEngine;
 
 namespace AirCombat
 {
-    // Mission-only presentation of the fictional Picket twin-rail prop.
+    // Presentation of the fictional Picket twin-rail prop, independent of mission.
     // The launcher clock and projectile's gameplay transform remain authoritative.
     internal sealed class PicketRailPresentation
     {

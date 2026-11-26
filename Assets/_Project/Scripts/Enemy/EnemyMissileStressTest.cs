@@ -51,9 +51,9 @@ namespace AirCombat
             public WarningCue(Vector3 position, float started) { Position = position; Started = started; }
         }
 
-        public const float WarningPulsePeriod = .18f;
-        public const float WarningPulseLength = .105f;
-        public const float WarningClipSeconds = .48f;
+        public const float WarningPulsePeriod = MissileWarningTiming.PulsePeriod;
+        public const float WarningPulseLength = MissileWarningTiming.PulseLength;
+        public const float WarningClipSeconds = MissileWarningTiming.ClipSeconds;
         private readonly List<Shooter> shooters = new List<Shooter>();
         private readonly List<MissileContact> live = new List<MissileContact>();
         private AircraftRadar radar;

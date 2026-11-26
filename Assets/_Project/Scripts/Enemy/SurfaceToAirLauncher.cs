@@ -3,8 +3,8 @@ using UnityEngine;
 
 namespace AirCombat
 {
-    // M1b: fixed vertical-launch SAM. Radar acquisition is independent of
-    // launcher orientation; the missile owns the pitch-over and pursuit phases.
+    // Reusable SAM unit. Binding chooses the launch profile; the missile owns flight.
+    // Legacy single-shot and Picket overlapping-shot behavior are independent of mission identity.
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(180)]
     public sealed class SurfaceToAirLauncher : DamageableTarget, IRadarContact
@@ -31,13 +31,16 @@ namespace AirCombat
         private int launchBeepsRemaining;
         private float nextLaunchBeepAt;
         private int hp;
-        private bool missionMode, missionArmed;
+        private enum LaunchProfile { Legacy, Picket }
+        private LaunchProfile profile;
+        private bool armed;
+        private bool IsPicket => profile == LaunchProfile.Picket;
         private PicketRailPresentation railPresentation;
-        private float missionWarningStarted = -1f;
+        private float prelaunchWarningStarted = -1f;
         [SerializeField, Min(.5f)] private float prelaunchWarningSeconds = .65f;
 
         public bool IsConfigured => launchSocket != null && missilePrefab != null;
-        public float MissionWarningStarted => missionArmed && !IsDown ? missionWarningStarted : -1f;
+        public float PrelaunchWarningStarted => armed && !IsDown ? prelaunchWarningStarted : -1f;
         public int Hp => hp;
         public int MaxHp => maxHp;
         public bool IsDown => hp <= 0;
@@ -59,7 +62,7 @@ namespace AirCombat
             get
             {
                 if (IsDown) return "DESTROYED";
-                if (!missionMode && HasIncomingMissile) return "LAUNCHED / " + missile.PhaseLabel;
+                if (!IsPicket && HasIncomingMissile) return "LAUNCHED / " + missile.PhaseLabel;
                 if (missilePrefab == null || launchSocket == null) return "UNCONFIGURED";
                 if (target == null || hitPoints == null || !hitPoints.IsAlive) return "NO TARGET";
                 Vector3 flat = target.position - transform.position;
@@ -82,27 +85,27 @@ namespace AirCombat
             missilePrefab = projectile;
         }
 
-        // Mission opt-in; the legacy lab keeps its existing audio and acquisition.
-        public void BindMissionTarget(Transform aircraft, PlayerHitPoints health, AircraftRadar sensor)
+        // Any composition may opt into the Picket launch profile. Start disarmed.
+        public void BindPicketTarget(Transform aircraft, PlayerHitPoints health, AircraftRadar sensor)
         {
-            missionMode = true;
-            missionArmed = false;
+            profile = LaunchProfile.Picket;
+            armed = false;
             if (railPresentation == null) railPresentation = PicketRailPresentation.TryBind(transform);
             BindTarget(aircraft, health, sensor);
         }
 
-        public void SetMissionArmed(bool armed)
+        public void SetArmed(bool armed)
         {
-            missionArmed = armed;
+            this.armed = armed;
             if (!armed) ClearAcquisition();
         }
 
         private void ClearAcquisition()
         {
             lockProgress = 0f;
-            if (missionMode && missionWarningStarted >= 0f)
+            if (IsPicket && prelaunchWarningStarted >= 0f)
             {
-                missionWarningStarted = -1f;
+                prelaunchWarningStarted = -1f;
                 launchBeepsRemaining = 0;
                 if (warningAudio != null) warningAudio.Stop();
             }
@@ -127,9 +130,9 @@ namespace AirCombat
 
         private void Awake() { hp = maxHp; }
 
-        public void CancelMissionProjectiles()
+        public void CancelProjectiles()
         {
-            // All overlapping shots belong to this encounter, not just the latest.
+            // All overlapping shots belong to this launcher, not just the latest.
             // Disable immediately: Destroy alone is deferred until end of frame.
             foreach (var shot in ownedMissiles)
             {
@@ -144,10 +147,10 @@ namespace AirCombat
 
         public void ResetEncounter()
         {
-            CancelMissionProjectiles();
+            CancelProjectiles();
             hp = maxHp;
             lockProgress = 0f;
-            missionWarningStarted = -1f;
+            prelaunchWarningStarted = -1f;
             nextLaunchAt = Time.time;
             nextBeepAt = 0f;
             launchBeepsRemaining = 0;
@@ -162,11 +165,11 @@ namespace AirCombat
         {
             if (Time.deltaTime <= 0f) return;
             ownedMissiles.RemoveAll(shot => shot == null || !shot.IsFlying);
-            if (missionMode && !missionArmed) { ClearAcquisition(); return; }
-            if (missionMode && !IsDown) railPresentation?.TickReload(Time.time);
-            if (!missionMode) PlayLaunchSignal();
+            if (IsPicket && !armed) { ClearAcquisition(); return; }
+            if (IsPicket && !IsDown) railPresentation?.TickReload(Time.time);
+            if (!IsPicket) PlayLaunchSignal();
             // Picket fires independently of previous shots; preserve the old lab rule.
-            if (!missionMode && HasIncomingMissile)
+            if (!IsPicket && HasIncomingMissile)
             {
                 ClearAcquisition();
                 return;
@@ -188,29 +191,29 @@ namespace AirCombat
             // Cosmetic tracking only: the accepted acquisition/reload clock is unchanged.
             railPresentation?.Track(target.position, Time.deltaTime);
 
-            // Mission reload is the minimum launch-to-launch interval. Acquisition
+            // Picket reload is the minimum launch-to-launch interval. Acquisition
             // may overlap its tail, but neither launch nor warning can occur early.
-            float acquisitionWindow = missionMode ? Mathf.Max(lockSeconds, Mathf.Max(.5f, prelaunchWarningSeconds)) : 0f;
+            float acquisitionWindow = IsPicket ? Mathf.Max(lockSeconds, Mathf.Max(.5f, prelaunchWarningSeconds)) : 0f;
             if (Time.time < nextLaunchAt - acquisitionWindow)
             {
                 ClearAcquisition();
                 return;
             }
             lockProgress += Time.deltaTime;
-            if (missionMode)
+            if (IsPicket)
             {
                 // Silent acquisition, then a cancelable pre-launch cue.
                 float lead = Mathf.Max(.5f, prelaunchWarningSeconds);
-                if (missionWarningStarted < 0f && Time.time >= nextLaunchAt - lead &&
+                if (prelaunchWarningStarted < 0f && Time.time >= nextLaunchAt - lead &&
                     lockProgress >= Mathf.Max(0f, lockSeconds - lead))
                 {
-                    missionWarningStarted = Time.time;
+                    prelaunchWarningStarted = Time.time;
                     launchBeepsRemaining = 3;
                     nextLaunchBeepAt = Time.time;
                 }
-                if (missionWarningStarted >= 0f) PlayLaunchSignal();
-                if (Time.time < nextLaunchAt || lockProgress < lockSeconds || missionWarningStarted < 0f ||
-                    Time.time - missionWarningStarted < lead || launchBeepsRemaining > 0) return;
+                if (prelaunchWarningStarted >= 0f) PlayLaunchSignal();
+                if (Time.time < nextLaunchAt || lockProgress < lockSeconds || prelaunchWarningStarted < 0f ||
+                    Time.time - prelaunchWarningStarted < lead || launchBeepsRemaining > 0) return;
             }
             else if (lockProgress < lockSeconds)
             {
@@ -218,7 +221,7 @@ namespace AirCombat
                 return;
             }
             lockProgress = 0f;
-            missionWarningStarted = -1f;
+            prelaunchWarningStarted = -1f;
             nextLaunchAt = Time.time + reloadSeconds;
             // Force +Y ejection even when upgrading a legacy angled prefab.
             // The missile independently handles the pitch-over and pursuit.
@@ -228,8 +231,8 @@ namespace AirCombat
             ownedMissiles.Add(missile);
             missile.Launch(target, hitPoints, radar, transform, OnMissileFinished);
             railPresentation?.PresentLaunch(missile, Time.time, reloadSeconds);
-            // The mission already played its three pre-launch beeps.
-            if (!missionMode)
+            // Picket already played its three pre-launch beeps.
+            if (!IsPicket)
             {
                 if (warningAudio != null) warningAudio.Stop();
                 launchBeepsRemaining = 3;
@@ -238,7 +241,7 @@ namespace AirCombat
             }
             LaunchedCount++;
             LastFlightReport = $"SPAWNED #{LaunchedCount} at Y={launchPosition.y:F1}";
-            if (!missionMode) Debug.Log($"SAM1: {LastFlightReport}; target={target.position}", this);
+            if (!IsPicket) Debug.Log($"SAM1: {LastFlightReport}; target={target.position}", this);
         }
 
         private void OnMissileFinished(string report)
@@ -262,7 +265,7 @@ namespace AirCombat
                 Time.time < nextLaunchBeepAt) return;
             warningAudio.PlayOneShot(warningClip);
             launchBeepsRemaining--;
-            nextLaunchBeepAt = Time.time + (missionMode ? EnemyMissileStressTest.WarningPulsePeriod : .15f);
+            nextLaunchBeepAt = Time.time + (IsPicket ? MissileWarningTiming.PulsePeriod : .15f);
         }
 
         private static AudioClip CreateWarningTone()

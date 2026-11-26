@@ -150,7 +150,7 @@ namespace AirCombat
                     if (site == null) continue;
                     samRadar.Register(site);
                     if (!site.IsConfigured) Debug.LogError("Mission01: SAM not configured; re-run Install Tactical Map.", site);
-                    site.BindMissionTarget(aircraft, playerHealth, samRadar);
+                    site.BindPicketTarget(aircraft, playerHealth, samRadar);
                 }
             }
             // Dedicated scene-owned FX, not parented to the aircraft visual.
@@ -289,7 +289,7 @@ namespace AirCombat
             flames.SetManeuverFlames(false);
             SetSamArmed(false);
             if (samSites != null) foreach (var site in samSites)
-                if (site != null) site.CancelMissionProjectiles();
+                if (site != null) site.CancelProjectiles();
             // No more player shots after control is committed to landing.
             foreach (var round in FindObjectsByType<BallisticProjectile>(FindObjectsSortMode.None))
                 if (round.gameObject.scene == gameObject.scene && round.IsOwnedBy(aircraft))
@@ -373,7 +373,7 @@ namespace AirCombat
         private void SetSamArmed(bool armed)
         {
             if (samSites != null) foreach (var site in samSites)
-                if (site != null) site.SetMissionArmed(armed);
+                if (site != null) site.SetArmed(armed);
         }
 
         private void ResetToReady()

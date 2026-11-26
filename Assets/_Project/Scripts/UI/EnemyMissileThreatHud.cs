@@ -46,10 +46,10 @@ namespace AirCombat
             playerPosition = samPlayer.position;
             foreach (var site in samSites)
             {
-                if (site == null || !site.IsRadarVisible || site.MissionWarningStarted < 0f) continue;
+                if (site == null || !site.IsRadarVisible || site.PrelaunchWarningStarted < 0f) continue;
                 Vector3 bearing = site.transform.position;
                 bearing.y = playerPosition.y; // Show ground-plane bearing, not elevation/parallax.
-                warnings.Add(new EnemyMissileStressTest.WarningCue(bearing, site.MissionWarningStarted));
+                warnings.Add(new EnemyMissileStressTest.WarningCue(bearing, site.PrelaunchWarningStarted));
             }
             return warnings.Count > 0;
         }
@@ -71,11 +71,11 @@ namespace AirCombat
             foreach (var cue in warnings)
             {
                 float age = Mathf.Max(0f, Time.time - cue.Started);
-                float phase = Mathf.Repeat(age, EnemyMissileStressTest.WarningPulsePeriod);
+                float phase = Mathf.Repeat(age, MissileWarningTiming.PulsePeriod);
                 // Follow the same three short pulses as the distress audio. Keep
                 // a faint bearing until actual launch (the existing .8s lead).
-                float pulse = age < EnemyMissileStressTest.WarningClipSeconds
-                    ? Mathf.Clamp01(1f - phase / EnemyMissileStressTest.WarningPulseLength) : 0f;
+                float pulse = age < MissileWarningTiming.ClipSeconds
+                    ? Mathf.Clamp01(1f - phase / MissileWarningTiming.PulseLength) : 0f;
                 float alpha = Mathf.Lerp(.24f, .92f, pulse);
                 Project(cue.Position, rect, out Vector2 source);
                 DrawVector(rect, source, player, scale, alpha, pulse);
