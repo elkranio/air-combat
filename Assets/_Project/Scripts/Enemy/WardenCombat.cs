@@ -37,8 +37,8 @@ namespace AirCombat
         private Transform[] yaw, pitch, muzzle;
         private LineRenderer[] flashes;
         private readonly float[] flashUntil = new float[2];
-        private bool bound, firing, stopped;
-        private float nextShot, phaseUntil;
+        private bool bound, firing, stopped, wasInRange;
+        private float nextShot, phaseUntil, acquisitionDelay;
         private int nextBarrel, roundsRemaining;
         public PlayerHitPoints Health { get; private set; }
         public RadarAirContact Contact { get; private set; }
@@ -92,13 +92,15 @@ namespace AirCombat
             return true;
         }
 
-        public void ResetCombat(float now)
+        public void ResetCombat(float now, bool usePreviewPatrol = true, float firstAcquisitionDelay = 0f)
         {
             if (!bound) return;
             gameObject.SetActive(true);
             Health.ResetHealth();
-            patrol.enabled = true;
+            patrol.enabled = usePreviewPatrol;
             patrol.RestartPreview();
+            wasInRange = false;
+            acquisitionDelay = Mathf.Max(0f, firstAcquisitionDelay);
             for (int i = 0; i < 2; i++)
             {
                 yaw[i].localRotation = pitch[i].localRotation = Quaternion.identity;
@@ -122,10 +124,10 @@ namespace AirCombat
             if (audioSource != null) audioSource.Stop();
         }
 
-        public void HideDestroyed()
+        public void HideDestroyed(float movementSpeed = -1f)
         {
             StopCombat();
-            feedback?.SpawnWreck(Health, patrol.Speed);
+            feedback?.SpawnWreck(Health, movementSpeed < 0f ? patrol.Speed : movementSpeed);
             gameObject.SetActive(false);
         }
 
@@ -147,7 +149,15 @@ namespace AirCombat
                 if (firing) phaseUntil = now + pauseSeconds;
                 firing = false;
                 roundsRemaining = 0;
+                wasInRange = false;
                 return;
+            }
+            // Escort-specific acquisition delay also applies after a fresh approach,
+            // not just at scene start. Standalone Warden retains its old behavior.
+            if (!wasInRange)
+            {
+                wasInRange = true;
+                phaseUntil = Mathf.Max(phaseUntil, now + acquisitionDelay);
             }
             if (!firing)
             {

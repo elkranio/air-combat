@@ -33,7 +33,16 @@ namespace AirCombat
         [SerializeField, Min(16f)] private float convoySpacing = 30f;
         [SerializeField, Min(.1f)] private float convoySpeed = 12f;
         [SerializeField, Min(1f)] private float convoyDistance = 650f;
+        [Header("CV03 / Warden escort (X lateral, Y along route from head)")]
+        [SerializeField] private WardenCombat convoyWardenPrefab;
+        [SerializeField] private Vector2 escortAlphaOffset = new Vector2(-55f, -45f);
+        [SerializeField] private Vector2 escortBravoOffset = new Vector2(55f, -105f);
+        [SerializeField, Min(0f)] private float escortAlphaAcquireDelay = .15f;
+        [SerializeField, Min(0f)] private float escortBravoAcquireDelay = 1.25f;
         private ConvoyMarchPreview convoy;
+        private float escortAltitude;
+        private bool EscortCleared => convoyMode && encounterReady && wardens.Count == 2 &&
+            wardens.TrueForAll(warden => warden != null && !warden.Alive);
         [Header("Cruise missile interception")]
         [SerializeField] private CruiseMissileTarget sparrowPrefab;
         [SerializeField, Min(1)] private int interceptionCount = 10;
@@ -76,7 +85,15 @@ namespace AirCombat
         {
             get
             {
-                if (convoyMode) return convoy != null ? convoy.DebugStatus : "CONVOY UNAVAILABLE";
+                if (convoyMode)
+                {
+                    string convoyStatus = convoy != null ? convoy.DebugStatus : "CONVOY UNAVAILABLE";
+                    if (defeated) convoyStatus += " | DEFEAT";
+                    else if (EscortCleared) convoyStatus += " | ESCORT DOWN";
+                    for (int i = 0; i < wardens.Count; i++)
+                        if (wardens[i] != null) convoyStatus += $" | {(i == 0 ? "A" : "B")}:{wardens[i].DebugStatus}";
+                    return convoyStatus;
+                }
                 if (wardenMode)
                 {
                     string wardenStatus = defeated ? "DEFEAT" : victory ? "VICTORY" : "Warden";
@@ -188,6 +205,7 @@ namespace AirCombat
                     if (warden.gameObject.scene == gameObject.scene) warden.gameObject.SetActive(false);
                 foreach (var gun in FindObjectsByType<MantisGun>())
                     if (gun.gameObject.scene == gameObject.scene) gun.gameObject.SetActive(false);
+                if (!SpawnConvoyEscorts()) return;
             }
             else if (wardenMode)
             {
@@ -247,6 +265,16 @@ namespace AirCombat
             if (convoyMode)
             {
                 encounterReady = convoy != null && convoy.Restart();
+                if (!encounterReady) return;
+                escortAltitude = player.transform.position.y;
+                for (int i = 0; i < wardens.Count; i++)
+                {
+                    var warden = wardens[i];
+                    if (warden == null) continue;
+                    ClearRounds(warden.transform);
+                    warden.ResetCombat(Time.time, false, i == 0 ? escortAlphaAcquireDelay : escortBravoAcquireDelay);
+                    PlaceEscort(i);
+                }
                 return;
             }
             if (wardenMode)
@@ -380,6 +408,19 @@ namespace AirCombat
             if (convoyMode)
             {
                 convoy.Tick(Time.deltaTime);
+                for (int i = 0; i < wardens.Count; i++)
+                {
+                    var warden = wardens[i];
+                    if (warden == null) continue;
+                    if (warden.Alive) PlaceEscort(i);
+                    else if (warden.gameObject.activeSelf)
+                    {
+                        ClearRounds(warden.transform);
+                        warden.HideDestroyed(convoy.Speed);
+                    }
+                }
+                // Air cover cleared is deliberately not a terminal victory:
+                // the convoy keeps marching for the next ground-attack atom.
                 return;
             }
             if (wardenMode)
@@ -425,8 +466,7 @@ namespace AirCombat
         private void LateUpdate()
         {
             if (!bound || !encounterReady || defeated || victory || !playerHealth.IsAlive) return;
-            if (convoyMode) return;
-            if (wardenMode)
+            if (wardenMode || convoyMode)
             {
                 foreach (var warden in wardens)
                     if (warden != null) warden.TickFire(Time.time, Time.deltaTime);
@@ -446,7 +486,7 @@ namespace AirCombat
                 var counter = new Rect((Screen.width - 340f) * .5f, 12f, 340f, 30f);
                 GUI.Box(counter, interception.DebugStatus);
             }
-            if ((!victory && !defeated) || Event.current.type != EventType.Repaint) return;
+            if ((!victory && !defeated && !EscortCleared) || Event.current.type != EventType.Repaint) return;
             if (resultStyle == null)
                 resultStyle = new GUIStyle(GUI.skin.label)
                 {
@@ -457,6 +497,7 @@ namespace AirCombat
             var rect = new Rect((Screen.width - 340f) * .5f, 12f, 340f, 30f);
             GUI.Box(rect, GUIContent.none);
             GUI.Label(rect, defeated ? "AIRCRAFT LOST — R TO RESTART" :
+                convoyMode ? "ESCORT DOWN — CONVOY INTACT" :
                 wardenMode ? "WARDENS DOWN — R TO RESTART" : "TIGERS DOWN — R TO RESTART", resultStyle);
         }
 
@@ -474,7 +515,14 @@ namespace AirCombat
         public void SetAltitude(float y)
         {
             interception?.SetAltitude(y);
-            foreach (var warden in wardens) if (warden != null) warden.SetAltitude(y);
+            if (convoyMode)
+            {
+                escortAltitude = y;
+                if (encounterReady)
+                    for (int i = 0; i < wardens.Count; i++)
+                        if (wardens[i] != null && wardens[i].Alive) PlaceEscort(i);
+            }
+            else foreach (var warden in wardens) if (warden != null) warden.SetAltitude(y);
             foreach (var fighter in fighters)
             {
                 if (fighter.Root == null) continue;
@@ -510,10 +558,44 @@ namespace AirCombat
             for (int i = fighters.Count - 1; i >= 0; i--) RemoveFighterAt(i);
         }
 
-        private void OnDestroy()
+        private bool SpawnConvoyEscorts()
         {
-            convoy?.Dispose();
-            interception?.Clear();
+            if (convoyWardenPrefab == null)
+            {
+                Debug.LogError("CV03: assign ED01_Warden to Convoy Warden Prefab.", this);
+                return false;
+            }
+            for (int i = 0; i < 2; i++)
+            {
+                var warden = Instantiate(convoyWardenPrefab, transform);
+                warden.name = i == 0 ? "CV03 / Warden Alpha" : "CV03 / Warden Bravo";
+                if (!warden.Bind(playerHealth, playerFlight, hitFeedback))
+                {
+                    warden.gameObject.SetActive(false);
+                    Destroy(warden.gameObject);
+                    ReleaseWardens();
+                    return false;
+                }
+                // ResetCombat disables the circular preview before its first Update.
+                warden.GetComponent<WardenPatrolPreview>().enabled = false;
+                wardens.Add(warden);
+                radar.Register(warden.Contact);
+            }
+            return true;
+        }
+
+        private void PlaceEscort(int index)
+        {
+            Vector2 offset = index == 0 ? escortAlphaOffset : escortBravoOffset;
+            Vector3 forward = convoy.Forward;
+            Vector3 right = Vector3.Cross(Vector3.up, forward);
+            Vector3 p = convoy.HeadPosition + right * offset.x + forward * offset.y;
+            p.y = escortAltitude;
+            wardens[index].transform.SetPositionAndRotation(p, Quaternion.LookRotation(forward, Vector3.up));
+        }
+
+        private void ReleaseWardens()
+        {
             foreach (var warden in wardens)
             {
                 if (warden == null) continue;
@@ -521,8 +603,20 @@ namespace AirCombat
                 ClearRounds(warden.transform);
                 if (radar != null) radar.Unregister(warden.Contact);
                 if (hitFeedback != null) hitFeedback.Untrack(warden.Health);
+                if (convoyMode)
+                {
+                    warden.gameObject.SetActive(false);
+                    Destroy(warden.gameObject);
+                }
             }
             wardens.Clear();
+        }
+
+        private void OnDestroy()
+        {
+            convoy?.Dispose();
+            interception?.Clear();
+            ReleaseWardens();
             foreach (var gun in groundGuns) if (gun != null) gun.Unbind();
             groundGuns.Clear();
             if (missileStress != null) { missileStress.ResetTest(); Destroy(missileStress); }
