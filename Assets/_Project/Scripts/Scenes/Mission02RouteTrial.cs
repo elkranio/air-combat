@@ -33,6 +33,13 @@ namespace AirCombat
         private string failure;
         private GUIStyle textStyle, pointStyle;
 
+        public Rect OperationBounds => operationBounds;
+        public Vector3 PointA => a;
+        public Vector3 PointB => b;
+        public Vector3 PointC => c;
+        public GameObject RouteGuide => guide;
+        internal MissionBoundaryGuard Boundary => boundary;
+
         public string DebugStatus => $"M02 ROUTE | {phase} | {elapsed:F1}s";
 
         public void Configure(CombatHud display, GameObject routeGuide, Rect bounds,
@@ -159,7 +166,7 @@ namespace AirCombat
 
         private void OnGUI()
         {
-            if (!bound || Event.current.type != EventType.Repaint) return;
+            if (!bound || Event.current.type != EventType.Repaint || MissionPause.IsTacticalMapPausedFor(gameObject.scene)) return;
             if (textStyle == null)
             {
                 textStyle = new GUIStyle(GUI.skin.label) { fontSize = 15, normal = { textColor = Color.white } };
@@ -170,7 +177,7 @@ namespace AirCombat
             GUI.Label(new Rect(22f, 41f, 315f, 22f), $"A {Split(timeA)}   C {Split(timeC)}   B {Split(timeB)}", textStyle);
             GUI.Label(new Rect(22f, 64f, 315f, 22f), $"C -> B {Split(timeAfterC)} | Speed {flight.CurrentSpeed:F0}", textStyle);
             GUI.Label(new Rect(22f, 88f, 315f, 22f), phase == Phase.Failed ? failure + " — R" :
-                phase == Phase.Ready ? "W takeoff | G guides | R restart" : "G guides | R restart", textStyle);
+                phase == Phase.Ready ? "W takeoff | TAB map | G guides | R" : "TAB map | G guides | R restart", textStyle);
             DrawPoint(a, "A"); DrawPoint(b, "B"); DrawPoint(c, "C");
         }
 

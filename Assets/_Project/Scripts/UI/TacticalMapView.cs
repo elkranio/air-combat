@@ -38,6 +38,7 @@ namespace AirCombat
         private float mapScale;
         private bool cameraUp;
         private MissionBoundaryGuard operationBoundary;
+        private Mission02RouteTrial routeTrial;
         private ObjectiveProgress primaryProgress;
         private static readonly Color Ink = new Color(.80f,.89f,.87f);
         private static readonly Color Muted = new Color(.53f,.66f,.65f);
@@ -115,6 +116,7 @@ namespace AirCombat
         private void BuildCanvas()
         {
             DisposeCanvas();
+            routeTrial = GetComponent<Mission02RouteTrial>();
             operationBoundary = ResolveOperationBoundary();
             buildStage = "font and textures";
             EnsureGraphics();
@@ -250,6 +252,7 @@ namespace AirCombat
         private MissionBoundaryGuard ResolveOperationBoundary()
         {
             primaryProgress = default;
+            if (routeTrial != null) return routeTrial.Boundary;
             foreach (var root in gameObject.scene.GetRootGameObjects())
                 foreach (var launch in root.GetComponentsInChildren<Mission01LaunchSequence>())
                     if (launch.isActiveAndEnabled && launch.Boundary != null)
@@ -291,6 +294,7 @@ namespace AirCombat
 
         private void DrawMap(Rect rect)
         {
+            if (routeTrial != null) DrawRouteTrial(rect);
             if (map.HasAirfield && Inside(map.WorldToUV(map.AirfieldPosition)))
             {
                 Vector2 p = Point(rect,map.WorldToUV(map.AirfieldPosition));
@@ -329,8 +333,57 @@ namespace AirCombat
                 -Mathf.Atan2(north.x,north.y)*Mathf.Rad2Deg);
             Text(new Rect(compass.x-10,compass.y+12,20,20),"N",14,Ink,true,TextAnchor.MiddleCenter);
         }
+        private void DrawRouteTrial(Rect rect)
+        {
+            // Use the authored world-space guide geometry, even if G hides it in flight.
+            if (routeTrial.RouteGuide != null)
+                foreach (var line in routeTrial.RouteGuide.GetComponentsInChildren<LineRenderer>(true))
+                {
+                    if (line.loop || line.positionCount < 2) continue;
+                    Color tint = line.name.StartsWith("A to B") ? Red :
+                        line.name == "S to C" ? Gold : Cyan;
+                    for (int i = 1; i < line.positionCount; i++)
+                    {
+                        Vector3 a = line.GetPosition(i-1), b = line.GetPosition(i);
+                        if (!line.useWorldSpace) { a = line.transform.TransformPoint(a); b = line.transform.TransformPoint(b); }
+                        Vector2 u = map.WorldToUV(a), v = map.WorldToUV(b);
+                        if (Inside(u) && Inside(v)) Stroke(Point(rect,u), Point(rect,v), 2f, tint);
+                    }
+                }
+            Mark(routeTrial.PointA, "A", Red);
+            Mark(routeTrial.PointB, "B", Red);
+            Mark(routeTrial.PointC, "C", Gold);
+            void Mark(Vector3 world, string name, Color tint)
+            {
+                Vector2 uv = map.WorldToUV(world);
+                if (!Inside(uv)) return;
+                Vector2 p = Point(rect, uv);
+                Diamond(p, 8f, tint);
+                Text(new Rect(p.x+10,p.y-12,32,24),name,18,Ink,true);
+            }
+        }
+
+        private void DrawRouteData(Rect rect)
+        {
+            Solid(rect,new Color(.075f,.115f,.13f));
+            float x=rect.x+20, w=rect.width-40, y=rect.y+15;
+            Text(new Rect(x,y,w,30),"ROUTE TRIAL / M02",20,Ink,true);
+            Text(new Rect(x,y+40,w,25),"A — Convoy entry",18,Red,true);
+            Text(new Rect(x,y+73,w,25),"B — Supply depot",18,Red,true);
+            Text(new Rect(x,y+106,w,25),"C — Optional objective",18,Gold,true);
+            Solid(new Rect(x,y+148,w,1),new Color(.23f,.34f,.35f));
+            Legend(x,y+172,Cyan,"Direct / return route and player");
+            Legend(x,y+207,Gold,"Optional canyon route");
+            Legend(x,y+242,Red,"Future convoy route");
+            Legend(x,y+277,new Color(.28f,.26f,.22f),"Terrain obstruction");
+            Legend(x,y+312,RadarHud.BoundaryInk,"Operation boundary");
+            Text(new Rect(x,y+370,w,28),"ROUTE TEST — NO LIVE OBJECTIVES",14,Gold,true);
+            Text(new Rect(x,y+405,w,25),"Map pauses flight and timing.",14,Muted);
+        }
+
         private void DrawMissionData(Rect rect)
         {
+            if (routeTrial != null) { DrawRouteData(rect); return; }
             Solid(rect,new Color(.075f,.115f,.13f));
             float x=rect.x+20, w=rect.width-40, y=rect.y+15;
             Text(new Rect(x,y,w,30),"MISSION DATA",20,Ink,true);

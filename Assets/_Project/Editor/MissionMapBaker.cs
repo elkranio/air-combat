@@ -51,6 +51,12 @@ namespace AirCombat
             airfield = baseRoot != null ? baseRoot.GetComponentsInChildren<Transform>(true)
                 .FirstOrDefault(t => t.name == "Runway and apron") ?? baseRoot.transform : null;
             var launch = roots.SelectMany(g => g.GetComponentsInChildren<Mission01LaunchSequence>(true)).FirstOrDefault();
+            if (roots.Any(g => g.GetComponent<Mission02RouteTrial>() != null))
+            {
+                ground = roots.FirstOrDefault(g => g.name == "M02 / visible sand")?.GetComponent<Renderer>();
+                airfield = roots.SelectMany(g => g.GetComponentsInChildren<JetAssembly>(true))
+                    .FirstOrDefault()?.transform;
+            }
             altitude = 78f;
             if (launch != null)
             {
@@ -121,6 +127,19 @@ namespace AirCombat
             EditorGUILayout.LabelField("Rock silhouettes = blocked at cruise altitude. No tactical overlays yet.", EditorStyles.wordWrappedMiniLabel);
         }
 
+        // Explicit authoring entry point; shares the same raster/asset pipeline as the window.
+        internal static MissionMapData BakeForRouteTrial(Scene scene, Renderer surface, Transform runway)
+        {
+            var baker = CreateInstance<MissionMapBaker>();
+            try
+            {
+                baker.ground = surface; baker.airfield = runway; baker.altitude = 78f;
+                baker.Bake(scene);
+                return baker.data;
+            }
+            finally { DestroyImmediate(baker); }
+        }
+
         private void Bake(Scene scene)
         {
             if (ground.gameObject.scene != scene || (airfield != null && airfield.gameObject.scene != scene))
@@ -133,6 +152,9 @@ namespace AirCombat
             var launch = scene.GetRootGameObjects().SelectMany(g =>
                 g.GetComponentsInChildren<Mission01LaunchSequence>(true)).SingleOrDefault();
             if (launch != null) world = launch.OperationBounds;
+            var routeTrial = scene.GetRootGameObjects().SelectMany(g =>
+                g.GetComponentsInChildren<Mission02RouteTrial>(true)).SingleOrDefault();
+            if (routeTrial != null) world = routeTrial.OperationBounds;
             if (world.width <= .01f || world.height <= .01f) throw new InvalidOperationException("Map has no X/Z extent.");
             if (!TerrainSectionUnion.TryBakeForAuthoring(scene, altitude, out var edges, out var fill, out int count))
                 throw new InvalidOperationException("Terrain union failed. Check readable closed rock meshes; previous bake retained.");
