@@ -62,39 +62,38 @@ def cylinder(name,g,sections,assembly='Body',vertical=False,n=10):
 
 def paint(p,n):return 'Upper' if n[1]>.25 else 'Hull'
 
-# Armoured, blunt sensor prow, narrow rear spine. No cockpit or conventional tail.
-rings('Central armour','Hull',[(-6.8,0,.05,.70,.52),(-4.7,0,.13,1.65,1.05),(-1.5,0,.25,2.35,1.37),(2.5,0,.30,2.60,1.45),(4.65,0,.10,2.25,1.12),(6.0,0,-.12,1.43,.72)],paint=paint)
-rings('Sensor jaw','Dark',[(4.5,0,-.4,1.65,.60),(5.9,0,-.45,1.35,.53),(6.35,0,-.43,1.05,.36)])
-box('Red optical visor','Red',0,-.28,6.31,1.42,.32,.14)
-box('Dorsal spine','Dark',0,1.65,-.95,.85,.25,3.3)
+# ED01B: lightweight escort UAV. Open frame, small sensor head, separated pods.
+# Keep existing Unity turret/exhaust pivot positions and +Z muzzle sockets.
+rings('Central spine','Hull',[(-6.35,0,.08,.38,.36),(-4.65,0,.12,.78,.57),(-1.5,0,.16,1.25,.73),(2.4,0,.18,1.42,.78),(4.55,0,.07,1.16,.65),(5.70,0,-.04,.78,.48)],paint=paint)
+rings('Sensor head','Dark',[(4.65,0,-.26,.85,.39),(5.68,0,-.25,.77,.36),(6.05,0,-.22,.54,.24)])
+box('Red optic','Red',0,-.15,6.05,.78,.18,.12)
+box('Dorsal spine','Dark',0,.94,-.7,.46,.17,2.65)
 for s in (-1,1):
-    # Swept structural shoulder, with a distinct gap forward of the engine.
-    slab('Shoulder '+str(s),'Hull',[(s*1.6,.05,2.7),(s*5.7,.10,1.5),(s*6.9,.10,-2.65),(s*2.0,.05,-3.8)],1.08)
-    slab('Shoulder armour '+str(s),'Upper',[(s*2.0,.69,2.5),(s*5.45,.70,1.4),(s*5.9,.70,-1.25),(s*2.3,.69,-2.0)],.24)
-    # Detached-looking industrial engine pods, wide blunt intakes and short exhausts.
     x=s*6.35
-    rings('Engine nacelle '+str(s),'Hull',[(-6.6,x,.20,1.18,.89),(-5.3,x,.20,1.64,1.19),(-2.1,x,.24,1.92,1.44),(1.15,x,.24,1.87,1.42),(3.4,x,.24,1.52,1.12),(4.1,x,.24,1.18,.88)],paint=paint)
-    rings('Intake bezel '+str(s),'Dark',[(3.82,x,.24,1.20,.88),(4.18,x,.24,1.14,.83)])
-    # Recess appearance using a dark cap and chunky horizontal divider.
-    rings('Intake face '+str(s),'Dark',[(4.12,x,.24,.92,.61),(4.21,x,.24,.90,.60)])
-    box('Intake crossbar '+str(s),'Steel',x,.24,4.24,1.72,.15,.13)
-    rings('Rear nozzle '+str(s),'Dark',[(-7.25,x,.20,.83,.65),(-6.75,x,.20,1.06,.80),(-6.25,x,.20,1.13,.88)])
-    rings('Exhaust core '+str(s),'Steel',[(-7.30,x,.20,.58,.43),(-7.20,x,.20,.63,.47)])
-    # Outer shoulder stripe on top and side, no floating decals.
-    slab('Dominion flash '+str(s),'Red',[(s*6.9,1.54,.8),(s*7.48,1.32,.68),(s*7.48,1.32,-1.0),(s*6.9,1.54,-.88)],.10)
-    slab('Rear stabilizer '+str(s),'Upper',[(s*7.1,.48,-3.7),(s*8.85,.55,-4.8),(s*8.45,.55,-6.0),(s*6.9,.48,-5.6)],.42)
-    # Fixed circular mount under forward shoulder; local Y is yaw axis.
+    # Narrow forward cross-spar and short rear brace leave a large open bay.
+    slab('Forward spar '+str(s),'Hull',[(s*1.05,.10,2.75),(s*6.38,.10,2.88),(s*6.38,.10,1.48),(s*1.06,.10,1.38)],.52)
+    slab('Rear brace '+str(s),'Hull',[(s*.65,.11,-3.30),(s*6.32,.11,-3.82),(s*6.32,.11,-4.48),(s*.60,.11,-4.05)],.39)
+    slab('Spar accent '+str(s),'Upper',[(s*1.22,.37,2.55),(s*5.23,.37,2.66),(s*5.23,.37,2.38),(s*1.22,.37,2.26)],.06)
+    # Slender pods preserve span but shed the heavy slab-like mass.
+    rings('Engine nacelle '+str(s),'Hull',[(-6.62,x,.20,.67,.55),(-5.15,x,.20,1.01,.76),(-2.0,x,.24,1.18,.86),(1.15,x,.24,1.13,.83),(3.25,x,.24,.91,.70),(4.1,x,.24,.67,.52)],paint=paint)
+    rings('Intake bezel '+str(s),'Dark',[(3.82,x,.24,.70,.54),(4.18,x,.24,.65,.49)])
+    rings('Intake face '+str(s),'Dark',[(4.12,x,.24,.51,.36),(4.22,x,.24,.49,.34)])
+    box('Intake crossbar '+str(s),'Steel',x,.24,4.23,.89,.10,.13)
+    rings('Rear nozzle '+str(s),'Dark',[(-7.25,x,.20,.45,.37),(-6.75,x,.20,.62,.49),(-6.25,x,.20,.67,.54)])
+    rings('Exhaust core '+str(s),'Steel',[(-7.30,x,.20,.31,.24),(-7.20,x,.20,.35,.28)])
+    # Thin painted stripe on the top of each pod, following its slope.
+    slab('Dominion flash '+str(s),'Red',[(x-.25,1.095,.55),(x+.25,1.095,.55),(x+.25,1.105,-1.05),(x-.25,1.105,-1.05)],.06)
+    slab('Rear stabilizer '+str(s),'Upper',[(s*6.90,.35,-3.90),(s*8.55,.35,-4.82),(s*8.20,.35,-5.65),(s*6.86,.35,-5.12)],.24)
+    # Turret mounting point remains at the original prefab pivot.
     tx,ty,tz=TURRETS['L' if s<0 else 'R']
-    cylinder('Turret mount '+str(s),'Dark',[(ty-.08,tx,tz,.86,.86),(ty+.65,tx,tz,.96,.96)],vertical=True)
+    cylinder('Turret mount '+str(s),'Dark',[(ty-.08,tx,tz,.48,.48),(ty+.95,tx,tz,.61,.61)],vertical=True)
 
-# One reusable turret geometry in local coordinates, instantiated twice.
-# Separate yaw and pitch transforms are authored in the Unity visual prefab.
-cylinder('Yaw base','Steel',[(-.38,0,0,.71,.71),(.03,0,0,.82,.82)],'Yaw',vertical=True)
-rings('Yaw yoke','Dark',[(-.60,0,-.34,.63,.39),(.5,0,-.34,.68,.38)],'Yaw')
-rings('Gun housing','Hull',[(-.73,0,0,.48,.43),(-.40,0,0,.61,.49),(.52,0,0,.52,.38),(.82,0,0,.33,.26)],'Pitch')
-# Stylised gun shape only: no real-world functional details.
-cylinder('Barrel','Dark',[(.65,0,0,.19,.19),(2.35,0,0,.17,.17)],'Pitch',n=8)
-cylinder('Muzzle collar','Steel',[(2.13,0,0,.23,.23),(2.47,0,0,.23,.23)],'Pitch',n=8)
+# Shared lightweight turret visuals. Original yaw/pitch/muzzle transforms unchanged.
+cylinder('Yaw base','Steel',[(-.38,0,0,.43,.43),(.03,0,0,.54,.54)],'Yaw',vertical=True)
+rings('Yaw yoke','Dark',[(-.42,0,-.34,.39,.26),(.36,0,-.34,.43,.26)],'Yaw')
+rings('Gun housing','Hull',[(-.59,0,0,.29,.26),(-.31,0,0,.39,.32),(.43,0,0,.33,.25),(.68,0,0,.21,.18)],'Pitch')
+cylinder('Barrel','Dark',[(.54,0,0,.115,.115),(2.35,0,0,.105,.105)],'Pitch',n=8)
+cylinder('Muzzle collar','Steel',[(2.24,0,0,.155,.155),(2.47,0,0,.155,.155)],'Pitch',n=8)
 
 
 def export():
