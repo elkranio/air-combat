@@ -33,15 +33,20 @@ namespace AirCombat
         [SerializeField, Min(16f)] private float convoySpacing = 30f;
         [SerializeField, Min(.1f)] private float convoySpeed = 12f;
         [SerializeField, Min(1f)] private float convoyDistance = 650f;
-        [Header("CV03 / Warden escort (X lateral, Y along route from head)")]
+        [Header("CV06 / Warden elliptical patrol")]
         [SerializeField] private bool convoyEscortEnabled = false;
         [SerializeField] private WardenCombat convoyWardenPrefab;
-        [SerializeField] private Vector2 escortAlphaOffset = new Vector2(-55f, -45f);
-        [SerializeField] private Vector2 escortBravoOffset = new Vector2(55f, -105f);
+        [SerializeField, Min(10f)] private float escortLateralRadius = 55f;
+        [SerializeField, Min(10f)] private float escortEndClearance = 45f;
+        [SerializeField, Min(1f)] private float escortPatrolSpeed = 36f;
         [SerializeField, Min(0f)] private float escortAlphaAcquireDelay = .15f;
         [SerializeField, Min(0f)] private float escortBravoAcquireDelay = 1.25f;
         private ConvoyMarchPreview convoy;
         private float escortAltitude;
+        private const int EscortArcSamples = 256;
+        private readonly float[] escortArcLengths = new float[EscortArcSamples + 1];
+        private readonly float[] escortWorldSpeeds = new float[2];
+        private float escortPhaseDistance, escortLateral, escortLongitudinal;
         private bool EscortCleared => convoyMode && encounterReady && wardens.Count == 2 &&
             wardens.TrueForAll(warden => warden != null && !warden.Alive);
         [Header("Cruise missile interception")]
@@ -267,6 +272,7 @@ namespace AirCombat
                 encounterReady = convoy != null && convoy.Restart();
                 if (!encounterReady) return;
                 escortAltitude = player.transform.position.y;
+                ResetEscortOrbit();
                 for (int i = 0; i < wardens.Count; i++)
                 {
                     var warden = wardens[i];
@@ -408,6 +414,8 @@ namespace AirCombat
             if (convoyMode)
             {
                 convoy.Tick(Time.deltaTime);
+                escortPhaseDistance = Mathf.Repeat(escortPhaseDistance +
+                    Mathf.Max(1f, escortPatrolSpeed) * Time.deltaTime, escortArcLengths[EscortArcSamples]);
                 for (int i = 0; i < wardens.Count; i++)
                 {
                     var warden = wardens[i];
@@ -416,7 +424,7 @@ namespace AirCombat
                     else if (warden.gameObject.activeSelf)
                     {
                         ClearRounds(warden.transform);
-                        warden.HideDestroyed(convoy.Speed);
+                        warden.HideDestroyed(escortWorldSpeeds[i]);
                     }
                 }
                 // Keep the sandbox running after either group is cleared.
@@ -586,14 +594,57 @@ namespace AirCombat
             return true;
         }
 
+        private void ResetEscortOrbit()
+        {
+            escortLateral = Mathf.Max(10f, escortLateralRadius);
+            escortLongitudinal = convoy.HalfLength + Mathf.Max(10f, escortEndClearance);
+            escortPhaseDistance = 0f;
+            escortArcLengths[0] = 0f;
+            Vector2 previous = EscortOffset(0f);
+            for (int i = 1; i <= EscortArcSamples; i++)
+            {
+                Vector2 next = EscortOffset(2f * Mathf.PI * i / EscortArcSamples);
+                escortArcLengths[i] = escortArcLengths[i - 1] + Vector2.Distance(previous, next);
+                previous = next;
+            }
+        }
+
+        private Vector2 EscortOffset(float angle) => new Vector2(
+            -escortLateral * Mathf.Cos(angle), escortLongitudinal * Mathf.Sin(angle));
+
+        // Arc-length lookup, not constant angular speed: the two drones keep
+        // opposite positions and a steady patrol speed relative to the convoy.
+        private float EscortAngle(int index)
+        {
+            float length = escortArcLengths[EscortArcSamples];
+            float distance = Mathf.Repeat(escortPhaseDistance + index * length * .5f, length);
+            int low = 0, high = EscortArcSamples;
+            while (high - low > 1)
+            {
+                int mid = (low + high) / 2;
+                if (escortArcLengths[mid] <= distance) low = mid;
+                else high = mid;
+            }
+            float fraction = Mathf.InverseLerp(escortArcLengths[low], escortArcLengths[high], distance);
+            return 2f * Mathf.PI * (low + fraction) / EscortArcSamples;
+        }
+
         private void PlaceEscort(int index)
         {
-            Vector2 offset = index == 0 ? escortAlphaOffset : escortBravoOffset;
+            float angle = EscortAngle(index);
+            Vector2 offset = EscortOffset(angle);
             Vector3 forward = convoy.Forward;
             Vector3 right = Vector3.Cross(Vector3.up, forward);
-            Vector3 p = convoy.HeadPosition + right * offset.x + forward * offset.y;
+            Vector3 p = convoy.HeadPosition - forward * convoy.HalfLength +
+                right * offset.x + forward * offset.y;
             p.y = escortAltitude;
-            wardens[index].transform.SetPositionAndRotation(p, Quaternion.LookRotation(forward, Vector3.up));
+            Vector3 tangent = (right * (escortLateral * Mathf.Sin(angle)) +
+                forward * (escortLongitudinal * Mathf.Cos(angle))).normalized;
+            // Actual world movement includes the moving centre of the orbit.
+            Vector3 velocity = tangent * Mathf.Max(1f, escortPatrolSpeed) + forward * convoy.Speed;
+            escortWorldSpeeds[index] = velocity.magnitude;
+            Vector3 heading = velocity.sqrMagnitude > .01f ? velocity : tangent;
+            wardens[index].transform.SetPositionAndRotation(p, Quaternion.LookRotation(heading, Vector3.up));
         }
 
         private void ReleaseWardens()

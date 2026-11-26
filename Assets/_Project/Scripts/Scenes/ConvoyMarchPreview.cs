@@ -71,6 +71,7 @@ namespace AirCombat
         // Exposed for the next sandbox atom, not a campaign or deployment rule.
         public Vector3 HeadPosition => start + forward * progress;
         public Vector3 Forward => forward;
+        public float HalfLength => spacing * (Count - 1) * .5f;
         public float Speed => ready && progress < distance ? speed : 0f;
 
         public bool Restart()

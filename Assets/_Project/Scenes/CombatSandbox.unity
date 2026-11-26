@@ -2511,8 +2511,9 @@ MonoBehaviour:
   convoyDistance: 650
   convoyEscortEnabled: 1
   convoyWardenPrefab: {fileID: 8101000000000000325, guid: 70862499e8055692b5d61df5de489a90, type: 3}
-  escortAlphaOffset: {x: -55, y: -45}
-  escortBravoOffset: {x: 55, y: -105}
+  escortLateralRadius: 55
+  escortEndClearance: 45
+  escortPatrolSpeed: 36
   escortAlphaAcquireDelay: 0.15
   escortBravoAcquireDelay: 1.25
   sparrowPrefab: {fileID: 8176654010010000020, guid: 69cd2d1011a85dce9593357073f49dbc, type: 3}
