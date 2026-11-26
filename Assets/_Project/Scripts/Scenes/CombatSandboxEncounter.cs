@@ -419,8 +419,8 @@ namespace AirCombat
                         warden.HideDestroyed(convoy.Speed);
                     }
                 }
-                // Air cover cleared is deliberately not a terminal victory:
-                // the convoy keeps marching for the next ground-attack atom.
+                // Keep the sandbox running after either group is cleared.
+                // The player can attack the remaining targets in any order.
                 return;
             }
             if (wardenMode)
@@ -497,7 +497,9 @@ namespace AirCombat
             var rect = new Rect((Screen.width - 340f) * .5f, 12f, 340f, 30f);
             GUI.Box(rect, GUIContent.none);
             GUI.Label(rect, defeated ? "AIRCRAFT LOST — R TO RESTART" :
-                convoyMode ? "ESCORT DOWN — CONVOY INTACT" :
+                convoyMode ? (convoy != null && convoy.AliveCount == 0
+                    ? "ALL TARGETS DOWN — R TO RESTART"
+                    : "ESCORT DOWN — CONVOY REMAINS") :
                 wardenMode ? "WARDENS DOWN — R TO RESTART" : "TIGERS DOWN — R TO RESTART", resultStyle);
         }
 

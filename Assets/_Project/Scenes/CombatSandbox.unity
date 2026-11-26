@@ -2501,7 +2501,7 @@ MonoBehaviour:
     lifetime: 4
     hitRadius: 5
     damage: 6
-  mode: 1
+  mode: 4
   convoyPicketPrefab: {fileID: 8201000000000000004, guid: 43c92e56080254d797a874a625f33861, type: 3}
   convoyTerrain: {fileID: 1071449414}
   convoyStart: {x: -290, y: 0, z: -100}
@@ -2509,6 +2509,7 @@ MonoBehaviour:
   convoySpacing: 30
   convoySpeed: 12
   convoyDistance: 650
+  convoyEscortEnabled: 1
   convoyWardenPrefab: {fileID: 8101000000000000325, guid: 70862499e8055692b5d61df5de489a90, type: 3}
   escortAlphaOffset: {x: -55, y: -45}
   escortBravoOffset: {x: 55, y: -105}
