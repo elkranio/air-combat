@@ -1,0 +1,9 @@
+# CG01 — Dominion Special Cargo (visual trial)
+
+One armored cargo module per C1/C2. Both are parts of the same optional task, not separate objectives. This atom is art only. No health, physics collider, extraction or deadline; keep convoy and flight tuning unchanged.
+
+Open and save the existing two-target M02 scene. Run **Air Combat > Missions > M02 - Build CG01 Cargo Preview**. Generates the prefab `Assets/_Project/Prefabs/Environment/CG01_SpecialCargo.prefab`, mesh/material assets under `Art/Environment/Dominion/CG01_SpecialCargo`, and two visual instances at the existing C1/C2 coordinates. Saves the current M02 scene. If the preview root exists, the menu refuses rather than creating duplicates. The generated prefab is reusable independently of M02.
+
+Geometry: Unity X width 8, Y height 5, Z length 16, ground Y=0; root at ground center, +Z forward. Four `CaptureSockets/Grab_01..04` transforms at X ±2.45, Y 5, Z ±4.65. Future Carryall should use the sockets as a rigid local interface (4.9 x 9.3 spacing). These are reference transforms, not a pickup mechanism. `Visual` contains 13 independently pivoted assemblies including two side armor sets, roof, two bulkheads, skid cradle, two ribs, four capture fixtures and internal equipment. 1492 triangles. Destruction later may detach these assemblies; no runtime destruction is implemented yet.
+
+Editable Blender source: run `Tools/Blender/build_cg01_special_cargo.py` with Blender's bundled Python in background. Writes `Resources/Blender/CG01_SpecialCargo.blend` and deterministic `CG01Geometry.json`. The JSON is already in the patch, so Blender is not required for the Unity preview. The blend keeps all individual source solids editable and shares the same geometry with Unity. For later revisions regenerate JSON and explicitly rebuild assets; the initial installer does not overwrite existing generated assets.
