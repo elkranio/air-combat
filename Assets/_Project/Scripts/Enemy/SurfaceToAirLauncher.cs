@@ -23,8 +23,7 @@ namespace AirCombat
         private AircraftRadar radar;
         private SurfaceToAirMissile missile;
         private readonly List<SurfaceToAirMissile> ownedMissiles = new List<SurfaceToAirMissile>();
-        private AudioSource warningAudio;
-        private AudioClip warningClip;
+        private SamWarningAudio warningAudio;
         private float lockProgress;
         private float nextLaunchAt;
         private float nextBeepAt;
@@ -107,7 +106,7 @@ namespace AirCombat
             {
                 prelaunchWarningStarted = -1f;
                 launchBeepsRemaining = 0;
-                if (warningAudio != null) warningAudio.Stop();
+                warningAudio?.Stop();
             }
         }
 
@@ -116,14 +115,10 @@ namespace AirCombat
             target = aircraft;
             hitPoints = health;
             radar = sensor;
-            if (warningAudio == null)
+            if (warningAudio == null || !warningAudio.HasSource)
             {
-                warningAudio = gameObject.AddComponent<AudioSource>();
-                warningAudio.playOnAwake = false;
-                warningAudio.spatialBlend = 0f; // Cockpit receiver, not world audio.
-                warningAudio.volume = .46f;
-                warningAudio.dopplerLevel = 0f;
-                warningClip = CreateWarningTone();
+                warningAudio?.Dispose();
+                warningAudio = new SamWarningAudio(gameObject);
             }
             ResetEncounter();
         }
@@ -155,7 +150,7 @@ namespace AirCombat
             nextBeepAt = 0f;
             launchBeepsRemaining = 0;
             nextLaunchBeepAt = 0f;
-            if (warningAudio != null) warningAudio.Stop();
+            warningAudio?.Stop();
             LaunchedCount = 0;
             railPresentation?.Reset();
             LastFlightReport = "NO LAUNCH";
@@ -234,7 +229,7 @@ namespace AirCombat
             // Picket already played its three pre-launch beeps.
             if (!IsPicket)
             {
-                if (warningAudio != null) warningAudio.Stop();
+                warningAudio?.Stop();
                 launchBeepsRemaining = 3;
                 nextLaunchBeepAt = Time.time;
                 PlayLaunchSignal();
@@ -254,34 +249,18 @@ namespace AirCombat
 
         private void WarningBeep(float interval)
         {
-            if (warningAudio == null || warningClip == null || Time.time < nextBeepAt) return;
-            warningAudio.PlayOneShot(warningClip);
+            if (warningAudio == null || !warningAudio.CanPlay || Time.time < nextBeepAt) return;
+            warningAudio.Play();
             nextBeepAt = Time.time + interval;
         }
 
         private void PlayLaunchSignal()
         {
-            if (launchBeepsRemaining <= 0 || warningAudio == null || warningClip == null ||
+            if (launchBeepsRemaining <= 0 || warningAudio == null || !warningAudio.CanPlay ||
                 Time.time < nextLaunchBeepAt) return;
-            warningAudio.PlayOneShot(warningClip);
+            warningAudio.Play();
             launchBeepsRemaining--;
             nextLaunchBeepAt = Time.time + (IsPicket ? MissileWarningTiming.PulsePeriod : .15f);
-        }
-
-        private static AudioClip CreateWarningTone()
-        {
-            const int sampleRate = 22050;
-            const int samples = 2646; // 120ms: audible chirp with short release.
-            float[] wave = new float[samples];
-            for (int i = 0; i < wave.Length; i++)
-            {
-                float t = (float)i / sampleRate;
-                float envelope = Mathf.Min(1f, t * 90f) * Mathf.Min(1f, (samples - i) / 350f);
-                wave[i] = Mathf.Sin(2f * Mathf.PI * 880f * t) * envelope * .46f;
-            }
-            var clip = AudioClip.Create("SAM threat receiver / beep", samples, 1, sampleRate, false);
-            clip.SetData(wave, 0);
-            return clip;
         }
 
         public override bool ApplyDamage(Vector3 point, int damage)
@@ -294,7 +273,8 @@ namespace AirCombat
 
         private void OnDestroy()
         {
-            if (warningClip != null) Destroy(warningClip);
+            warningAudio?.Dispose();
+            warningAudio = null;
         }
     }
 }

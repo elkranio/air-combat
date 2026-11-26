@@ -9,10 +9,8 @@ namespace AirCombat
     {
         private readonly Rect bounds;
         private readonly float caution, critical;
-        private readonly AudioSource speaker;
-        private readonly AudioClip tone;
+        private readonly BoundaryWarningAudio audio;
         private float distance = float.PositiveInfinity;
-        private float nextChime;
         private int warningLevel;
 
         public MissionBoundaryGuard(Transform owner, Rect bounds, float caution, float critical)
@@ -22,14 +20,7 @@ namespace AirCombat
             this.bounds = bounds;
             this.caution = Mathf.Max(1f, caution);
             this.critical = Mathf.Clamp(critical, 1f, this.caution);
-            var go = new GameObject("Mission boundary caution", typeof(AudioSource));
-            go.transform.SetParent(owner, false);
-            speaker = go.GetComponent<AudioSource>();
-            speaker.playOnAwake = false;
-            speaker.spatialBlend = 0f;
-            speaker.volume = .14f;
-            speaker.dopplerLevel = 0f;
-            tone = MakeTone();
+            audio = new BoundaryWarningAudio(owner);
         }
 
         internal Rect Bounds => bounds;
@@ -70,51 +61,22 @@ namespace AirCombat
             distance = Distance(position);
             int level = distance <= critical ? 2 : distance <= caution ? 1 : 0;
             if (level == 0) { Clear(); return; }
-            if (level != warningLevel)
-            {
-                speaker.Stop();
-                nextChime = Time.time;
-                warningLevel = level;
-            }
-            if (Time.time >= nextChime)
-            {
-                speaker.pitch = level == 2 ? 1.22f : 1f;
-                speaker.PlayOneShot(tone);
-                nextChime = Time.time + (level == 2 ? .65f : 1.45f);
-            }
+            bool changed = level != warningLevel;
+            warningLevel = level;
+            audio.Tick(level, changed);
         }
 
         public void Clear()
         {
-            if (warningLevel != 0 && speaker != null) speaker.Stop();
+            audio.Clear(warningLevel != 0);
             warningLevel = 0;
             distance = float.PositiveInfinity;
-            nextChime = 0f;
         }
 
         public void Dispose()
         {
             Clear();
-            if (speaker != null) UnityEngine.Object.Destroy(speaker.gameObject);
-            if (tone != null) UnityEngine.Object.Destroy(tone);
-        }
-
-        private static AudioClip MakeTone()
-        {
-            const int rate = 22050;
-            const float duration = .22f;
-            var samples = new float[Mathf.RoundToInt(rate * duration)];
-            for (int i = 0; i < samples.Length; ++i)
-            {
-                float t = i / (float)rate;
-                float envelope = Mathf.SmoothStep(0f, 1f, t / .035f) *
-                    Mathf.SmoothStep(0f, 1f, (duration - t) / .09f);
-                // Soft lower register, distinct from terrain and SAM cues.
-                samples[i] = Mathf.Sin(2f * Mathf.PI * 390f * t) * envelope * .65f;
-            }
-            var clip = AudioClip.Create("Operation boundary caution", samples.Length, 1, rate, false);
-            clip.SetData(samples, 0);
-            return clip;
+            audio.Dispose();
         }
     }
 }
