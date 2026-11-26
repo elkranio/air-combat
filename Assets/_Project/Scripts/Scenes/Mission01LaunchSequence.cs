@@ -50,7 +50,7 @@ namespace AirCombat
         [SerializeField, Min(5f)] private float landingAutoTouchdownSpeed = 65f;
 
         private ScriptedTakeoff takeoff;
-        private Mission01Landing landing;
+        private ScriptedLanding landing;
         private Mission01ReconEncounter reconEncounter;
         private bool landingTestOnly;
         private Transform aircraft;
@@ -108,7 +108,8 @@ namespace AirCombat
             // Keep the authored operation rectangle independent of decorative ground.
             boundary = new MissionBoundaryGuard(transform, operationBounds,
                 boundaryCautionDistance, boundaryCriticalDistance);
-            landing = new Mission01Landing(transform, runwayPosition, runwayRotation, visualRest,
+            var landingRunway = Mission01RunwayGeometry.Resolve(transform, runwayPosition, runwayRotation, landingCorridorNear);
+            landing = new ScriptedLanding(transform, landingRunway, visualRest,
                 operationBounds, landingCorridorNear, landingCorridorFar, landingCorridorWidthScale,
                 landingRevealDistance, landingCaptureHeadingTolerance, landingCaptureSeconds, landingTouchdownOffset,
                 landingAutoTouchdownSpeed);

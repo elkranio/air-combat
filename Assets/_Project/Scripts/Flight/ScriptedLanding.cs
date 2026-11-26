@@ -3,9 +3,26 @@ using UnityEngine.Rendering;
 
 namespace AirCombat
 {
-    // Mission-local landing path and cue. The launch sequence owns flight state,
-    // weapons, retry and mission completion; no changes to shared aircraft motors.
-    internal sealed class Mission01Landing
+    // World-space runway geometry. Origin is the final stop point; Forward
+    // points from that origin toward the inbound approach threshold.
+    internal readonly struct LandingRunway
+    {
+        internal readonly Vector3 Origin, Forward;
+        internal readonly float Width, Threshold, CueY;
+
+        internal LandingRunway(Vector3 origin, Vector3 forward, float width, float threshold, float cueY)
+        {
+            Origin = origin;
+            Forward = forward;
+            Width = width;
+            Threshold = threshold;
+            CueY = cueY;
+        }
+    }
+
+    // Reusable assisted landing path and cue. The caller owns mission state,
+    // weapons, retry and completion, and provides resolved runway geometry.
+    internal sealed class ScriptedLanding
     {
         private readonly Vector3 origin, runwayForward, right;
         private readonly Quaternion landingRotation, visualRest;
@@ -30,26 +47,15 @@ namespace AirCombat
         // Ground point on the resolved runway, not a separate navigation anchor.
         internal Vector3 NavigationPoint => At(touchdownOffset, 0f);
 
-        public Mission01Landing(Transform owner, Vector3 runwayPosition, Quaternion runwayRotation,
+        internal ScriptedLanding(Transform owner, LandingRunway runway,
             Quaternion visualRest, Rect bounds, float near, float far, float widthScale,
             float reveal, float headingTolerance, float holdSeconds, float touchdownOffset, float touchdownSpeed)
         {
-            origin = runwayPosition;
-            runwayForward = Vector3.ProjectOnPlane(runwayRotation * Vector3.forward, Vector3.up).normalized;
-            float physicalWidth = 24f;
-            cueY = runwayPosition.y + .2f;
-            float threshold = near;
-            if (TryResolveRunway(owner, runwayPosition, runwayForward, out Vector3 center,
-                out Vector3 axis, out float actualWidth, out Vector3 entry))
-            {
-                runwayForward = axis;
-                Vector3 lateral = Vector3.Cross(Vector3.up, axis);
-                origin += lateral * Vector3.Dot(center - origin, lateral);
-                physicalWidth = actualWidth;
-                threshold = Vector3.Dot(entry - origin, axis);
-                cueY = entry.y + .2f;
-            }
-            else Debug.LogWarning("LAND-01A: pavement not resolved; using 24-unit runway and configured approach offsets.");
+            origin = runway.Origin;
+            runwayForward = runway.Forward;
+            float physicalWidth = runway.Width;
+            cueY = runway.CueY;
+            float threshold = runway.Threshold;
             right = Vector3.Cross(Vector3.up, runwayForward);
             landingRotation = Quaternion.LookRotation(-runwayForward, Vector3.up);
             this.visualRest = visualRest;
@@ -63,7 +69,7 @@ namespace AirCombat
             this.holdSeconds = Mathf.Max(.15f, holdSeconds);
             this.touchdownSpeed = Mathf.Max(5f, touchdownSpeed);
 
-            cue = new GameObject("Mission01 / landing corridor (runtime)");
+            cue = new GameObject("Landing corridor (runtime)");
             cue.transform.SetParent(owner, false);
             var shader = Shader.Find("Sprites/Default");
             if (shader == null)
@@ -86,38 +92,6 @@ namespace AirCombat
                 groundMarker.widthMultiplier = .65f;
             }
             cue.SetActive(false);
-        }
-
-        // Accepted Mission01_AirfieldPavement mesh: runway local X 113..137,
-        // Z -120..120. The apron is part of the same mesh, so its aggregate
-        // bounds cannot be used as runway bounds. Transform the runway anchors
-        // into world space; do not assume the scene's yaw, scale or translation.
-        private static bool TryResolveRunway(Transform owner, Vector3 spawn, Vector3 takeoff,
-            out Vector3 center, out Vector3 axis, out float width, out Vector3 entry)
-        {
-            center = axis = entry = Vector3.zero;
-            width = 0f;
-            MeshFilter pavement = null;
-            foreach (var root in owner.gameObject.scene.GetRootGameObjects())
-                foreach (var filter in root.GetComponentsInChildren<MeshFilter>())
-                {
-                    if (filter.sharedMesh == null || filter.sharedMesh.name != "Mission01_AirfieldPavement") continue;
-                    if (pavement != null) return false;
-                    pavement = filter;
-                }
-            if (pavement == null) return false;
-            Transform t = pavement.transform;
-            Vector3 a = t.TransformPoint(new Vector3(125f, 0f, -120f));
-            Vector3 b = t.TransformPoint(new Vector3(125f, 0f, 120f));
-            center = (a + b) * .5f;
-            axis = Vector3.ProjectOnPlane(b - a, Vector3.up).normalized;
-            if (Vector3.Dot(axis, takeoff) < 0f) { axis = -axis; entry = a; }
-            else entry = b;
-            Vector3 lateral = Vector3.Cross(Vector3.up, axis);
-            Vector3 edge = t.TransformVector(new Vector3(24f, 0f, 0f));
-            width = Mathf.Abs(Vector3.Dot(edge, lateral));
-            return width > 2f && Vector3.Dot(axis, takeoff) > .95f &&
-                Mathf.Abs(Vector3.Dot(spawn - center, lateral)) <= width * .5f + 2f;
         }
 
         private Vector3 At(float along, float side)
