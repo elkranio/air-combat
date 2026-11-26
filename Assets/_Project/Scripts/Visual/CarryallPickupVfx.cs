@@ -104,10 +104,10 @@ namespace AirCombat
             {
                 if (!GroundAt(sockets[i].position, out float y)) { dustCredit[i] = 0f; continue; }
                 float clearance = sockets[i].position.y - y;
-                float near = clearance > 0f ? 1f - Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(4f, 23f, clearance)) : 0f;
+                float near = clearance > 0f ? 1f - Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(7f, 32f, clearance)) : 0f;
                 // No airborne dust; per-nozzle rate falls smoothly with clearance.
                 if (near <= 0f || dustRate <= 0f) { dustCredit[i] = 0f; continue; }
-                dustCredit[i] += Mathf.Min(dt, .12f) * dustRate * near * Mathf.Lerp(.55f, 1.3f, thrust);
+                dustCredit[i] += Mathf.Min(dt, .12f) * dustRate * 1.6f * near * Mathf.Lerp(.70f, 1.3f, thrust);
                 int count = Mathf.Min(4, Mathf.FloorToInt(dustCredit[i]));
                 dustCredit[i] -= count;
                 for (int k = 0; k < count; k++) EmitDust(sockets[i].position, y, near);
@@ -147,12 +147,12 @@ namespace AirCombat
             // Move outwards from the cargo, rather than billowing through it.
             Vector3 outward = Vector3.ProjectOnPlane(source - carrier.position, Vector3.up).normalized;
             Vector3 spread = outward + Vector3.Cross(Vector3.up, outward) * UnityEngine.Random.Range(-.55f, .55f);
-            Vector3 p = new Vector3(source.x, y + .45f, source.z) + spread * UnityEngine.Random.Range(.4f, 1.6f);
-            var ink = new Color(.67f, .58f, .46f, Mathf.Lerp(.09f, .29f, near));
+            Vector3 p = new Vector3(source.x, y + 1.1f, source.z) + spread * UnityEngine.Random.Range(2.6f, 4.6f);
+            var ink = new Color(.83f, .76f, .64f, Mathf.Lerp(.18f, .62f, near));
             particles.Emit(new ParticleSystem.EmitParams
             {
-                position = p, velocity = spread * UnityEngine.Random.Range(4.5f, 8f) + Vector3.up * UnityEngine.Random.Range(.3f, .9f),
-                startSize = UnityEngine.Random.Range(2.3f, 4f), startLifetime = UnityEngine.Random.Range(.65f, 1.1f), startColor = ink
+                position = p, velocity = spread * UnityEngine.Random.Range(7f, 12f) + Vector3.up * UnityEngine.Random.Range(.5f, 1.5f),
+                startSize = UnityEngine.Random.Range(5.5f, 8.5f), startLifetime = UnityEngine.Random.Range(1.1f, 1.7f), startColor = ink
             }, 1);
         }
 
@@ -237,7 +237,7 @@ namespace AirCombat
             particles.Stop(true,ParticleSystemStopBehavior.StopEmittingAndClear);
             var main = particles.main;
             main.loop = true; main.playOnAwake = false; main.simulationSpace = ParticleSystemSimulationSpace.World;
-            main.cullingMode = ParticleSystemCullingMode.AlwaysSimulate; main.maxParticles = 128;
+            main.cullingMode = ParticleSystemCullingMode.AlwaysSimulate; main.maxParticles = 256;
             main.startSpeed = 0f; main.gravityModifier = 0f;
             var emission = particles.emission; emission.enabled = false;
             var shape = particles.shape; shape.enabled = false;
@@ -250,6 +250,9 @@ namespace AirCombat
             fade.color = new ParticleSystem.MinMaxGradient(gradient);
             var renderer = particles.GetComponent<ParticleSystemRenderer>();
             renderer.sharedMaterial = particleMaterial; renderer.renderMode = ParticleSystemRenderMode.Billboard;
+            // SandboxEffect consumes POSITION, COLOR and TEXCOORD0 (the radial mask UV).
+            renderer.SetActiveVertexStreams(new System.Collections.Generic.List<ParticleSystemVertexStream>
+            { ParticleSystemVertexStream.Position, ParticleSystemVertexStream.Color, ParticleSystemVertexStream.UV });
             renderer.shadowCastingMode = ShadowCastingMode.Off; renderer.receiveShadows = false;
         }
 
