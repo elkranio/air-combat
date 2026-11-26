@@ -20,7 +20,18 @@ namespace AirCombat
         [SerializeField] private LineRenderer convoyRoute;
         [SerializeField, Min(16f)] private float convoySpacing = 30f;
         [SerializeField, Min(.1f)] private float convoySpeed = 24f;
+        [Header("M02D2 / Warden escort")]
+        [SerializeField] private WardenCombat escortPrefab;
+        [SerializeField, Min(10f)] private float escortLateralRadius = 55f;
+        [SerializeField, Min(10f)] private float escortEndClearance = 45f;
+        [SerializeField, Min(1f)] private float escortPatrolSpeed = 36f;
+        [SerializeField, Min(0f)] private float escortAlphaAcquireDelay = .15f;
+        [SerializeField, Min(0f)] private float escortBravoAcquireDelay = 1.25f;
         private ConvoyMarchPreview convoy;
+        private Mission02ConvoyEscort escort;
+        private PlayerHitPoints playerHealth;
+        private CombatHitFeedback hitFeedback;
+        private float escortClearedTime = -1f, allClearedTime = -1f;
         private AircraftRadar radar;
         private ArcadeNursLauncher nurs;
         private float sortieTime, contactTime = -1f, arrivalTime = -1f, clearedTime = -1f;
@@ -55,6 +66,13 @@ namespace AirCombat
         {
             position = default;
             return convoy != null && convoy.TryGetPosition(index, out position);
+        }
+
+        internal string EscortStatus => escort != null ? $"Wardens {escort.AliveCount}/2" : "ESCORT UNAVAILABLE";
+        internal bool TryGetWardenPosition(int index, out Vector3 position)
+        {
+            position = default;
+            return escort != null && escort.TryGetPosition(index, out position);
         }
 
         private bool BuildConvoy()
@@ -96,6 +114,7 @@ namespace AirCombat
         {
             aircraft = player.transform;
             this.radar = radar;
+            playerHealth = health;
             flight = player.GetComponent<FlightController>();
             trigger = player.GetComponent<PlayerWeaponTrigger>();
             boost = player.GetComponent<Afterburner>();
@@ -111,11 +130,17 @@ namespace AirCombat
             safety = new MissionFlightSafety(boundary);
             flight.enabled = false; trigger.enabled = false;
             nurs = player.GetComponentInChildren<ArcadeNursLauncher>(true);
-            if (nurs == null || !BuildConvoy())
+            if (nurs == null || playerHealth == null || escortPrefab == null || !BuildConvoy())
             { Debug.LogError("M02D: incomplete convoy or NURS binding.", this); enabled = false; return; }
             nurs.gameObject.SetActive(true);
             nurs.Bind(flight, boost, trigger, view);
             trigger.ConfigureDualSlots(nurs);
+            var team = player.GetComponent<AircraftTeam>();
+            if (team != null) team.SetSide(AircraftSide.Player);
+            playerHealth.InstallHitbox();
+            hitFeedback = gameObject.AddComponent<CombatHitFeedback>();
+            hitFeedback.Bind(view);
+            hitFeedback.Track(playerHealth, true);
             bound = true;
         }
 
@@ -137,10 +162,18 @@ namespace AirCombat
             nurs.ResetMagazine();
             foreach (var gun in aircraft.GetComponentsInChildren<AutocannonWeapon>()) gun.ResetContinuous(Time.time);
             ClearRounds();
+            hitFeedback.ResetEffects();
+            escort?.Dispose(); escort = null;
+            playerHealth.ResetHealth();
             // Rebuild from current Inspector tuning, even on an in-Play R restart.
             convoy?.Dispose(); convoy = null;
             if (!BuildConvoy() || !convoy.Restart())
             { phase = Phase.Failed; failure = "CONVOY UNAVAILABLE"; return; }
+            escort = new Mission02ConvoyEscort(convoy, escortPrefab, radar, transform,
+                playerHealth, flight, hitFeedback, escortLateralRadius, escortEndClearance,
+                escortPatrolSpeed, escortAlphaAcquireDelay, escortBravoAcquireDelay);
+            if (!escort.Spawn())
+            { phase = Phase.Failed; failure = "ESCORT UNAVAILABLE"; return; }
             boost.enabled = false; boost.enabled = true;
             flames?.SetManeuverFlames(false);
             aircraft.SetPositionAndRotation(runwayPosition, runwayRotation);
@@ -148,6 +181,7 @@ namespace AirCombat
             boundary.Clear(); takeoff.ResetTimer();
             elapsed = sortieTime = 0f; timeA = timeB = timeC = timeAfterC = -1f;
             contactTime = arrivalTime = clearedTime = -1f;
+            escortClearedTime = allClearedTime = -1f;
             failure = null; handover = false; phase = Phase.Ready;
             if (startAirborne)
             {
@@ -188,7 +222,10 @@ namespace AirCombat
                             if (convoy.TryGetPosition(i, out Vector3 p) && Distance(p) <= 250f)
                             { contactTime = sortieTime; break; }
                 }
+                escort?.TickMovement(Time.deltaTime);
                 if (convoy != null && convoy.AliveCount == 0 && clearedTime < 0f) clearedTime = sortieTime;
+                if (escort != null && escort.AliveCount == 0 && escortClearedTime < 0f) escortClearedTime = sortieTime;
+                if (clearedTime >= 0f && escortClearedTime >= 0f && allClearedTime < 0f) allClearedTime = sortieTime;
             }
             if (phase == Phase.Takeoff)
                 handover = takeoff.Tick(Time.deltaTime, flight.CruiseSpeed, 2.2f, 2.5f, 78f, 18f);
@@ -210,9 +247,15 @@ namespace AirCombat
             if (!bound || MissionPause.IsTacticalMapPausedFor(gameObject.scene)) return;
             if (phase == Phase.Takeoff && handover) { handover = false; EnterFlight(); return; }
             if (phase != Phase.Flight) return;
+            if (!playerHealth.IsAlive)
+            {
+                hitFeedback.SpawnWreck(playerHealth, flight.CurrentSpeed);
+                Fail(aircraft.position, "AIRCRAFT LOST"); return;
+            }
             var result = safety.Check(gameObject.scene, aircraft.position, true, 3.5f, out Vector3 stop);
             if (result != MissionFlightSafety.Result.Clear)
             { Fail(stop, result == MissionFlightSafety.Result.TerrainImpact ? "TERRAIN IMPACT" : "BOUNDARY EXIT"); return; }
+            escort?.TickFire(Time.time, Time.deltaTime);
             elapsed += Time.deltaTime;
             if (timeA < 0f && Distance(a) <= arrivalRadius) timeA = elapsed;
             if (timeC < 0f && Distance(c) <= arrivalRadius) timeC = elapsed;
@@ -228,6 +271,7 @@ namespace AirCombat
             aircraft.position = stop;
             flight.enabled = false; boost.enabled = false; trigger.enabled = false;
             nurs?.ResetMagazine(); ClearRounds();
+            escort?.Stop();
             flames?.SetManeuverFlames(false);
             boundary.Clear(); failure = reason; phase = Phase.Failed;
         }
@@ -243,7 +287,7 @@ namespace AirCombat
                 textStyle = new GUIStyle(GUI.skin.label) { fontSize = 15, normal = { textColor = Color.white } };
                 pointStyle = new GUIStyle(textStyle) { alignment = TextAnchor.MiddleCenter, fontStyle = FontStyle.Bold, fontSize = 19 };
             }
-            GUI.Box(new Rect(12f, 12f, 470f, 192f), GUIContent.none);
+            GUI.Box(new Rect(12f, 12f, 470f, 216f), GUIContent.none);
             GUI.Label(new Rect(22f, 18f, 315f, 22f), $"M02 / {phase}   {elapsed:F1}s airborne", textStyle);
             GUI.Label(new Rect(22f, 41f, 315f, 22f), $"A {Split(timeA)}   C {Split(timeC)}   B {Split(timeB)}", textStyle);
             GUI.Label(new Rect(22f, 64f, 315f, 22f), $"C -> B {Split(timeAfterC)} | Speed {flight.CurrentSpeed:F0}", textStyle);
@@ -252,6 +296,7 @@ namespace AirCombat
             GUI.Label(new Rect(22f, 112f, 450f, 22f), ConvoyStatus, textStyle);
             GUI.Label(new Rect(22f, 135f, 450f, 22f), $"Sortie {sortieTime:F1}s | Contact {Split(contactTime)} | Arrival {Split(arrivalTime)}", textStyle);
             GUI.Label(new Rect(22f, 158f, 450f, 22f), $"All Pickets down {Split(clearedTime)} | ETA {(convoy != null && convoy.AliveCount > 0 && convoySpeed > 0f ? convoy.RemainingDistance / convoySpeed : 0f):F1}s", textStyle);
+            GUI.Label(new Rect(22f, 181f, 450f, 22f), $"{EscortStatus} | Down {Split(escortClearedTime)} | All down {Split(allClearedTime)}", textStyle);
             DrawPoint(a, "A"); DrawPoint(b, "B"); DrawPoint(c, "C");
         }
 
@@ -271,6 +316,11 @@ namespace AirCombat
                 { round.gameObject.SetActive(false); Destroy(round.gameObject); }
         }
 
-        private void OnDestroy() { convoy?.Dispose(); boundary?.Dispose(); }
+        private void OnDestroy()
+        {
+            escort?.Dispose();
+            convoy?.Dispose();
+            boundary?.Dispose();
+        }
     }
 }
