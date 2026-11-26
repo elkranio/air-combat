@@ -9,15 +9,10 @@ namespace AirCombat
         [SerializeField] private Transform visual;
         [SerializeField] private Afterburner afterburner;
 
-        // PlayerJet only. Sandbox and other legacy scene controllers keep W/S throttle + Space boost.
-        [SerializeField] private bool useFixedCruiseWBoost;
-
         [Header("Speed (units per second)")]
         [SerializeField, Min(0.1f)] private float minSpeed = 25f;
         [SerializeField, Min(0.1f)] private float cruiseSpeed = 45f;
         [SerializeField, Min(0.1f)] private float maxSpeed = 70f;
-        [SerializeField, Min(0.1f)] private float acceleration = 35f;
-        [SerializeField, Min(0.1f)] private float deceleration = 45f;
 
         [Header("Steering")]
         [SerializeField, Min(1f)] private float turnRate = 85f;
@@ -32,25 +27,18 @@ namespace AirCombat
         public bool DebugFastTravel { get; set; }
 #endif
         private AircraftMotor motor;
-        private BreakTurn breakTurn;
-        private bool variableManeuverability;
         private bool waitForBoostRelease;
-        private float tightSpeed, boostTurnMultiplier, tightTurnMultiplier, maneuverResponse;
+        private float tightSpeed = 35f, boostTurnMultiplier = .6f, tightTurnMultiplier = 2f, maneuverResponse = 140f;
 
-        // Explicit opt-in to variable maneuverability in the flight session.
+        // The flight session supplies authored maneuverability tuning.
         public void ConfigureVariableManeuverability(float slowSpeed, float boostTurn,
             float tightTurn, float response)
         {
-            variableManeuverability = true;
             tightSpeed = Mathf.Clamp(slowSpeed, minSpeed, cruiseSpeed);
             boostTurnMultiplier = Mathf.Max(.01f, boostTurn);
             tightTurnMultiplier = Mathf.Max(.01f, tightTurn);
             maneuverResponse = Mathf.Max(.1f, response);
-            breakTurn?.CancelBreak();
         }
-
-        // Optional maneuvers; null when a scene does not equip them.
-        public void ConfigureBreakTurn(BreakTurn maneuver) { breakTurn = maneuver; }
 
         private void OnValidate()
         {
@@ -75,48 +63,7 @@ namespace AirCombat
         {
             if (MissionPause.IsTacticalMapPausedFor(gameObject.scene)) return;
             var keyboard = Keyboard.current;
-            if (variableManeuverability)
-            {
-                TickVariableFlight(keyboard, Time.deltaTime);
-                return;
-            }
-            float throttle = 0f;
-            float steer = 0f;
-            if (keyboard != null)
-            {
-                if (!useFixedCruiseWBoost)
-                    throttle = (keyboard.wKey.isPressed ? 1f : 0f)
-                        - (keyboard.sKey.isPressed ? 1f : 0f);
-                steer = (keyboard.dKey.isPressed ? 1f : 0f)
-                    - (keyboard.aKey.isPressed ? 1f : 0f);
-            }
-
-            if (breakTurn != null && keyboard != null && Application.isFocused)
-            {
-                int side = keyboard.qKey.wasPressedThisFrame ? -1
-                    : keyboard.eKey.wasPressedThisFrame ? 1 : 0;
-                if (side != 0) breakTurn.TryBegin(side);
-            }
-
-            var targetSpeed = useFixedCruiseWBoost ? cruiseSpeed
-                : throttle > 0f ? maxSpeed : throttle < 0f ? minSpeed : cruiseSpeed;
-            float actualTurnRate = turnRate;
-            float breakSteer = 0f, breakTurnRate = 0f;
-            bool breaking = breakTurn != null && breakTurn.TryGetFlightCommand(
-                Time.deltaTime, out breakSteer, out breakTurnRate);
-            if (breaking) { steer = breakSteer; actualTurnRate = breakTurnRate; }
-
-            // Break turn already paid its configured fuel cost. No extra charge drain or
-            // held boost during the maneuver; grant the motor a short powered burst.
-            bool boostHeld = keyboard != null && Application.isFocused &&
-                (useFixedCruiseWBoost ? keyboard.wKey.isPressed : keyboard.spaceKey.isPressed);
-            bool boost = afterburner != null && afterburner.Tick(
-                !breaking && boostHeld, Time.deltaTime);
-            if (boost || breaking) targetSpeed = Mathf.Max(targetSpeed, afterburner.BoostSpeed);
-            float accel = boost || breaking
-                ? Mathf.Max(acceleration, afterburner.BoostAcceleration) : acceleration;
-            motor.Tick(targetSpeed, steer, accel, deceleration,
-                actualTurnRate, maxBank, bankRate, Time.deltaTime);
+            TickVariableFlight(keyboard, Time.deltaTime);
         }
 
         private void TickVariableFlight(Keyboard keyboard, float dt)

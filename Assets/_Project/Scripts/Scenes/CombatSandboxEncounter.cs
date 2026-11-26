@@ -54,7 +54,6 @@ namespace AirCombat
         private TargetingCursor targetingCursor;
         private ArcadeMissileLauncher missileLauncher;
         private Afterburner playerBoost;
-        private BreakTurn playerBreak;
         private bool bound;
         private bool encounterReady;
         private bool defeated;
@@ -173,7 +172,6 @@ namespace AirCombat
             if (interceptionMode)
                 interception = new InterceptionPlayground(sparrowPrefab, radar, hitFeedback,
                     missileLauncher, interceptionCount, interceptionInterval, interceptionLateralSpread);
-            playerBreak = player.GetComponent<BreakTurn>();
             bound = true;
         }
 
@@ -299,7 +297,6 @@ namespace AirCombat
                 if (hitFeedback != null)
                     hitFeedback.SpawnWreck(playerHealth, playerFlight != null ? playerFlight.CurrentSpeed : 70f);
                 if (playerFlight != null) playerFlight.enabled = false;
-                playerBreak?.CancelBreak();
                 playerBoost?.Tick(false, 0f);
                 ClearRounds(player.transform);
                 interception?.Clear();

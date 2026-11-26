@@ -60,7 +60,6 @@ namespace AirCombat
             }
             flight = player.GetComponent<FlightController>();
             boost = player.GetComponent<Afterburner>();
-            var legacyBreak = player.GetComponent<BreakTurn>();
             arcadeCamera = cameraRig.GetComponent<ArcadeCameraFollow>();
             if (flight == null || boost == null || arcadeCamera == null)
             {
@@ -71,10 +70,6 @@ namespace AirCombat
 
             spawnPosition = player.transform.position;
             spawnRotation = player.transform.rotation;
-            // Production flight is always WASD now. Leave the shared legacy
-            // component available to the labs, but do not equip it on this map.
-            if (legacyBreak != null) legacyBreak.enabled = false;
-            flight.ConfigureBreakTurn(null);
             flight.ConfigureVariableManeuverability(tightTurnSpeed, boostTurnMultiplier,
                 tightTurnMultiplier, maneuverResponse);
             cameraRig.BindPlayer(player.transform, boost, false);
