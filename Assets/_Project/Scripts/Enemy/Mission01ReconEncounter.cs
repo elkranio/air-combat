@@ -3,10 +3,10 @@ using UnityEngine.Rendering;
 
 namespace AirCombat
 {
-    // Runs immediately after the launch sequence (-40), including its accepted retry request.
+    // Composition, radar and shared FX. Clear retry FX before individual target updates.
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-30)]
-    public sealed class Mission01ReconEncounter : MonoBehaviour
+    public sealed class Mission01ReconEncounter : MonoBehaviour, IAirTargetEffects
     {
         [SerializeField] private Mission01LaunchSequence launch;
         [SerializeField] private FlightController player;
@@ -39,7 +39,7 @@ namespace AirCombat
             radar = player.GetComponent<AircraftRadar>();
             foreach (var target in targets)
             {
-                if (target == null || !target.Initialize(this, player.CruiseSpeed, groundY))
+                if (target == null || !target.Initialize(CanRunTargets, this, player.CruiseSpeed * .23f, groundY))
                 { Debug.LogError("RE01: invalid target authoring.", this); enabled = false; return; }
                 radar?.Register(target);
             }
@@ -52,6 +52,8 @@ namespace AirCombat
             ready = true;
         }
 
+        private bool CanRunTargets() => this != null && isActiveAndEnabled && InFlight;
+
         private void Update()
         {
             if (!ready || MissionPause.IsTacticalMapPausedFor(gameObject.scene)) return;
@@ -62,11 +64,7 @@ namespace AirCombat
                     if (round.gameObject.scene == gameObject.scene && round.IsOwnedBy(player.transform))
                     { round.enabled = false; Destroy(round.gameObject); }
                 effects?.ResetEffects(); smoke?.Clear(); fire?.Clear();
-                foreach (var target in targets) target.ResetTarget();
-                return;
             }
-            if (!InFlight) return;
-            foreach (var target in targets) target.Tick(Time.deltaTime);
         }
 
         public void AirBurst(Vector3 p, Vector3 forward) => effects?.EmitInterceptionBurst(p, forward);

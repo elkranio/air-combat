@@ -2,9 +2,10 @@ using UnityEngine;
 
 namespace AirCombat
 {
-    // Mission01's passive arcade recon craft. No weapon or aircraft AI dependency.
+    // Passive arcade recon craft. The composition supplies flight availability and effects.
     [DisallowMultipleComponent]
     [RequireComponent(typeof(BoxCollider))]
+    [DefaultExecutionOrder(-25)] // After shared retry/FX (-30), before Overlord (-20).
     public sealed class WatcherTarget : AirDamageableTarget, IRadarAirContact
     {
         [SerializeField] private Transform visual;
@@ -14,7 +15,8 @@ namespace AirCombat
         [SerializeField] private bool clockwise;
         private BoxCollider[] hitboxes;
         private Transform rotor;
-        private Mission01ReconEncounter encounter;
+        private System.Func<bool> canRun;
+        private IAirTargetEffects effects;
         private Vector3 center, fallStart, fallForward;
         private Quaternion visualRest, fallStartRotation;
         private float angle, speed, fallTime, smokeDebt, groundY;
@@ -32,25 +34,37 @@ namespace AirCombat
         public void ConfigureForAuthoring(Transform model, float radius, float phase, bool reverse)
         { visual = model; patrolRadius = radius; initialAngle = phase; clockwise = reverse; }
 #endif
-        public bool Initialize(Mission01ReconEncounter owner, float cruiseSpeed, float floor)
+        internal bool Initialize(System.Func<bool> canRun, IAirTargetEffects effects, float patrolSpeed, float floor)
         {
             hitboxes = GetComponents<BoxCollider>();
-            if (visual == null || hitboxes.Length == 0) return false;
+            if (visual == null || hitboxes.Length == 0 || canRun == null || effects == null) return false;
             rotor = visual.Find("PusherRotor");
             if (!initialized)
             {
                 center = transform.position;
                 visualRest = visual.localRotation;
             }
-            encounter = owner;
-            speed = Mathf.Max(1f, cruiseSpeed * .23f);
+            this.canRun = canRun;
+            this.effects = effects;
+            speed = Mathf.Max(1f, patrolSpeed);
             groundY = floor;
             initialized = true;
             ResetTarget();
             return true;
         }
 
-        public void ResetTarget()
+        private void Update()
+        {
+            if (!initialized || MissionPause.IsTacticalMapPausedFor(gameObject.scene)) return;
+            if (MissionRetry.WasRequestedThisFrame(gameObject.scene))
+            {
+                ResetTarget();
+                return;
+            }
+            if (canRun()) Tick(Time.deltaTime);
+        }
+
+        private void ResetTarget()
         {
             if (!initialized) return;
             hp = Mathf.Max(1, maxHp);
@@ -74,7 +88,7 @@ namespace AirCombat
 
         public override bool ApplyDamage(Vector3 point, int damage)
         {
-            if (!IsAlive || damage <= 0 || encounter == null || !encounter.InFlight) return false;
+            if (!IsAlive || damage <= 0 || !canRun()) return false;
             hp = Mathf.Max(0, hp - damage);
             if (hp == 0)
             {
@@ -85,12 +99,12 @@ namespace AirCombat
                 fallStart = transform.position;
                 fallForward = transform.forward;
                 fallStartRotation = visual.localRotation;
-                encounter.AirBurst(point, fallForward);
+                effects.AirBurst(point, fallForward);
             }
             return true;
         }
 
-        public void Tick(float dt)
+        private void Tick(float dt)
         {
             if (!initialized || dt <= 0f) return;
             if (IsAlive)
@@ -121,15 +135,15 @@ namespace AirCombat
             if (!detonated && fallTime >= 1.05f)
             {
                 detonated = true;
-                encounter.AirBurst(visual.TransformPoint(new Vector3(-2f, .2f, -.8f)), fallForward);
-                encounter.AirBurst(visual.TransformPoint(new Vector3(.3f, .1f, -5.5f)), fallForward);
+                effects.AirBurst(visual.TransformPoint(new Vector3(-2f, .2f, -.8f)), fallForward);
+                effects.AirBurst(visual.TransformPoint(new Vector3(.3f, .1f, -5.5f)), fallForward);
             }
             if (u >= 1f)
             {
                 falling = false;
                 visual.gameObject.SetActive(false);
                 Vector3 nose = visual.TransformPoint(new Vector3(0f, .25f, 9f));
-                encounter.GroundBurst(new Vector3(nose.x, groundY + 1f, nose.z), fallForward);
+                effects.GroundBurst(new Vector3(nose.x, groundY + 1f, nose.z), fallForward);
             }
         }
 
@@ -140,7 +154,7 @@ namespace AirCombat
             {
                 smokeDebt -= 1f;
                 Vector3 p = visual.TransformPoint(new Vector3(Random.Range(-.65f, .65f), Random.Range(-.45f, .65f), Random.Range(-7f, -4f)));
-                encounter.EmitSmoke(p, fire);
+                effects.EmitSmoke(p, fire);
             }
         }
     }
