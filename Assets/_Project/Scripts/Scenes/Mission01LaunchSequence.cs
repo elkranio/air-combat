@@ -61,7 +61,7 @@ namespace AirCombat
         private Quaternion runwayRotation, visualRest;
         private bool handoverPending;
         private bool initialized;
-        private Vector3 previousFlightPosition;
+        private MissionFlightSafety flightSafety;
         private CombatHitFeedback crashFeedback;
         private MissionBoundaryGuard boundary;
         private E1MapFlightSession flightSession;
@@ -108,6 +108,7 @@ namespace AirCombat
             // Keep the authored operation rectangle independent of decorative ground.
             boundary = new MissionBoundaryGuard(transform, operationBounds,
                 boundaryCautionDistance, boundaryCriticalDistance);
+            flightSafety = new MissionFlightSafety(boundary);
             var landingRunway = Mission01RunwayGeometry.Resolve(transform, runwayPosition, runwayRotation, landingCorridorNear);
             landing = new ScriptedLanding(transform, landingRunway, visualRest,
                 operationBounds, landingCorridorNear, landingCorridorFar, landingCorridorWidthScale,
@@ -242,25 +243,16 @@ namespace AirCombat
             if (State == Phase.Flight)
             {
                 // Flight motor has already moved; camera and weapon LateUpdate
-                // run later. Sweep before they see the next aircraft position.
-                Vector3 next = aircraft.position;
-                bool exited = boundary.TryClipExit(previousFlightPosition, next, out Vector3 stop);
-                // Test the reachable segment only: a rock before the boundary
-                // still wins, but a rock beyond the operation cannot cause a crash.
+                // run later. Resolve safety before attempting landing capture.
                 bool checkTerrain = true;
 #if UNITY_EDITOR
                 checkTerrain = !debugNoClip;
 #endif
-                if (checkTerrain && TerrainFlightCollision.TryHit(aircraft.gameObject.scene,
-                    previousFlightPosition, stop, Mathf.Max(.1f, terrainCrashRadius), out Vector3 impact))
-                    Crash(impact);
-                else if (exited) FailBoundary(stop);
-                else
-                {
-                    previousFlightPosition = next;
-                    boundary.Tick(next);
-                    TickLandingApproach();
-                }
+                var result = flightSafety.Check(aircraft.gameObject.scene, aircraft.position,
+                    checkTerrain, terrainCrashRadius, out Vector3 stop);
+                if (result == MissionFlightSafety.Result.TerrainImpact) Crash(stop);
+                else if (result == MissionFlightSafety.Result.BoundaryExit) FailBoundary(stop);
+                else TickLandingApproach();
                 return;
             }
             if (State != Phase.Takeoff || !handoverPending) return;
@@ -327,7 +319,6 @@ namespace AirCombat
             State = Phase.BoundaryFailed;
             landing?.Clear();
             aircraft.position = stop;
-            previousFlightPosition = stop;
             flight.enabled = false;
             weaponTrigger.enabled = false;
             boost.enabled = false;
@@ -361,9 +352,8 @@ namespace AirCombat
             visual.localRotation = visualRest;
             flames.SetManeuverFlames(false);
             flight.PrepareCruiseHandover();
-            previousFlightPosition = aircraft.position;
             State = Phase.Flight;
-            if (boundary.TryClipExit(aircraft.position, aircraft.position, out Vector3 stop))
+            if (flightSafety.Begin(aircraft.position, out Vector3 stop))
             {
                 FailBoundary(stop);
                 return;
