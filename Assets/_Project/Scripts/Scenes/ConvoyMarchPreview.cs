@@ -16,6 +16,7 @@ namespace AirCombat
         private readonly PicketDeploymentVisual[] units = new PicketDeploymentVisual[Count];
         private readonly PicketHealth[] health = new PicketHealth[Count];
         private readonly MarchContact[] contacts = new MarchContact[Count];
+        private readonly GameObject[] destruction = new GameObject[Count];
         private float progress;
         private bool ready;
 
@@ -75,6 +76,7 @@ namespace AirCombat
         public bool Restart()
         {
             ready = false;
+            ClearDestruction();
             if (prefab == null || prefab.GetComponent<PicketHealth>() == null ||
                 terrain == null || terrain.terrainData == null || radar == null ||
                 !InsideTerrain(start - forward * (spacing * (Count - 1))) ||
@@ -123,6 +125,7 @@ namespace AirCombat
             {
                 if (health[i] != killed) continue;
                 radar.Unregister(contacts[i]);
+                destruction[i] = PicketDestructionFx.Spawn(killed.transform, terrain, Forward * Speed);
                 break;
             }
         }
@@ -147,9 +150,23 @@ namespace AirCombat
             units[i].transform.SetPositionAndRotation(p, Quaternion.LookRotation(tangent, normal));
         }
 
+        private void ClearDestruction()
+        {
+            for (int i = 0; i < Count; i++)
+            {
+                if (destruction[i] != null)
+                {
+                    destruction[i].SetActive(false);
+                    Object.Destroy(destruction[i]);
+                }
+                destruction[i] = null;
+            }
+        }
+
         public void Dispose()
         {
             ready = false;
+            ClearDestruction();
             for (int i = 0; i < Count; i++)
             {
                 if (radar != null) radar.Unregister(contacts[i]);
