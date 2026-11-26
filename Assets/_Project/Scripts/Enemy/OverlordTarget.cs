@@ -104,7 +104,7 @@ namespace AirCombat
             radar?.Register(this);
         }
 
-        private bool FlightActive => launch != null && flightContext != null && flightContext.FlightActive;
+        internal bool FlightActive => launch != null && flightContext != null && flightContext.FlightActive;
 
         private void ResetTarget()
         {
@@ -376,17 +376,6 @@ namespace AirCombat
                 float x = Random.value < .5f ? -5.15f : 5.15f;
                 airEffects.EmitSmoke(visual.TransformPoint(new Vector3(x, .28f, -10.5f)), burning);
             }
-        }
-
-        private void OnGUI()
-        {
-            if (!ready || !FlightActive || MissionPause.IsTacticalMapPausedFor(gameObject.scene) || Event.current.type != EventType.Repaint) return;
-            var style = new GUIStyle(GUI.skin.label) { fontSize = Mathf.RoundToInt(Mathf.Clamp(Screen.height * .019f, 13, 22)), fontStyle = FontStyle.Bold };
-            string message = "SECONDARY / OVERLORD / " + ObjectiveStatus;
-            style.normal.textColor = new Color(.05f,.07f,.08f,.9f);
-            GUI.Label(new Rect(21, 56, 620, 35), message, style);
-            style.normal.textColor = State == Phase.Destroyed ? new Color(.58f,.94f,.76f) : State == Phase.Escaped ? new Color(1f,.52f,.4f) : new Color(.97f,.74f,.36f);
-            GUI.Label(new Rect(20, 55, 620, 35), message, style);
         }
 
         private void OnDisable() { escapeVfx?.Clear(); }

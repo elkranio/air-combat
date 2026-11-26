@@ -139,6 +139,7 @@ namespace AirCombat
                 if (flightSession != null) break;
             }
             primaryObjectives = GetComponent<IPrimaryObjectiveSource>();
+            Mission01ObjectiveHud.Attach(this);
             samRadar = aircraft.GetComponent<AircraftRadar>();
             playerHealth = aircraft.GetComponent<PlayerHitPoints>();
             if (samSites != null && samSites.Length > 0)

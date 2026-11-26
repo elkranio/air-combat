@@ -122,16 +122,6 @@ namespace AirCombat
             }
         }
 
-        private void OnGUI()
-        {
-            if (!InFlight || MissionPause.IsTacticalMapPausedFor(gameObject.scene) || Event.current.type != EventType.Repaint) return;
-            ObjectiveProgress progress = PrimaryProgress;
-            var style = new GUIStyle(GUI.skin.label) { fontSize = Mathf.RoundToInt(Mathf.Clamp(Screen.height * .022f, 15, 25)), fontStyle = FontStyle.Bold };
-            string label = progress.Complete ? $"RECON COMPLETE  /  {progress.Destroyed} OF {progress.Total}" : $"RECON  /  {progress.Destroyed} OF {progress.Total}";
-            style.normal.textColor = new Color(.05f, .07f, .08f, .9f); GUI.Label(new Rect(21, 21, 440, 40), label, style);
-            style.normal.textColor = progress.Complete ? new Color(.58f, .94f, .76f) : Color.white; GUI.Label(new Rect(20, 20, 440, 40), label, style);
-        }
-
         private void OnDestroy()
         {
             if (radar != null && targets != null) foreach (var t in targets) if (t != null) radar.Unregister(t);
