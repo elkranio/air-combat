@@ -68,10 +68,10 @@ namespace AirCombat
             {
                 if (wardenMode)
                 {
-                    string status = defeated ? "DEFEAT" : victory ? "VICTORY" : "Warden";
+                    string wardenStatus = defeated ? "DEFEAT" : victory ? "VICTORY" : "Warden";
                     foreach (var warden in wardens)
-                        if (warden != null) status += " | " + warden.DebugStatus;
-                    return status;
+                        if (warden != null) wardenStatus += " | " + warden.DebugStatus;
+                    return wardenStatus;
                 }
                 if (interceptionMode) return interception != null ? interception.DebugStatus : "INTERCEPT UNAVAILABLE";
                 if (groundMode)
