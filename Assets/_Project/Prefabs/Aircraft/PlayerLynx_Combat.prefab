@@ -518,7 +518,7 @@ MonoBehaviour:
   rocketCount: 6
   releaseInterval: 0.08
   cooldown: 5
-  muzzleSpeed: 260
+  muzzleSpeed: 320
   downwardAngle: 55
   blastRadius: 8
   leftPylon: {x: -2.8, y: -0.45, z: -1.55}

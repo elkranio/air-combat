@@ -12,7 +12,7 @@ namespace AirCombat
         [SerializeField, Range(1, 12)] private int rocketCount = 6;
         [SerializeField, Min(.02f)] private float releaseInterval = .08f;
         [SerializeField, Min(.1f)] private float cooldown = 5f;
-        [SerializeField, Min(1f)] private float muzzleSpeed = 260f;
+        [SerializeField, Min(1f)] private float muzzleSpeed = 320f;
         [SerializeField, Range(5f, 85f)] private float downwardAngle = 55f;
         [SerializeField, Min(.1f)] private float blastRadius = 8f;
         [SerializeField] private Vector3 leftPylon = new Vector3(-3.2f, -1.2f, 1.9f);
@@ -27,13 +27,19 @@ namespace AirCombat
         [SerializeField, Min(0f)] private float spreadPerShot = .1f;
         [SerializeField, Min(.1f)] private float settleSeconds = .35f;
 
+        [Header("NURS audio / optional, no synthesized fallback")]
+        [SerializeField] private AudioClip launchSound;
+        [SerializeField] private AudioClip impactSound;
+        [SerializeField, Range(0f, 1f)] private float launchVolume = .25f;
+        [SerializeField, Range(0f, 1f)] private float impactVolume = .35f;
+
         private FlightController flight;
         private Afterburner boost;
         private PlayerWeaponTrigger loadout;
         private Transform owner;
-        private Material shell, trail, flash, scorch;
+        private Material shell, trail, impactParticles;
+        private Texture2D impactMask;
         private AudioSource audioSource;
-        private AudioClip launchSound, impactSound;
         private int pending, firedInSalvo, fired, impacts;
         private float nextShot, readyAt, turn01, residual, lastYaw;
         private bool heldLast = true, configured, sampledYaw;
@@ -69,13 +75,10 @@ namespace AirCombat
             }
             shell = MakeMaterial(lit, "NURS shell", new Color(.26f, .32f, .29f));
             trail = new Material(effect) { name = "NURS streak" };
-            flash = MakeMaterial(lit, "NURS impact", new Color(1f, .57f, .17f));
-            scorch = MakeMaterial(lit, "NURS scorch", new Color(.13f, .11f, .09f));
+            impactParticles = RocketImpactFx.CreateMaterial(effect, out impactMask);
             audioSource = gameObject.AddComponent<AudioSource>();
             audioSource.playOnAwake = false;
             audioSource.spatialBlend = 0f;
-            launchSound = MakeSound(false);
-            impactSound = MakeSound(true);
             configured = true;
             gameObject.AddComponent<NursImpactMarker>().Bind(this, view);
         }
@@ -135,16 +138,19 @@ namespace AirCombat
             var root = new GameObject("Arcade NURS");
             root.transform.SetPositionAndRotation(Origin(index), Quaternion.LookRotation(velocity.normalized, Vector3.up));
             var rocket = root.AddComponent<NursProjectile>();
-            rocket.Launch(velocity, owner, shell, trail, flash, scorch, OnImpact, blastRadius, false, e => effects.Add(e));
+            rocket.Launch(velocity, owner, shell, trail, null, null, OnImpact, blastRadius, false,
+                e => effects.Add(e), impactParticles);
             live.Add(rocket);
             fired++;
-            audioSource.PlayOneShot(launchSound, .48f);
+            if (audioSource != null && launchSound != null)
+                audioSource.PlayOneShot(launchSound, launchVolume);
         }
 
         private void OnImpact(int damagedParts)
         {
             impacts++;
-            if (audioSource != null) audioSource.PlayOneShot(impactSound, .4f);
+            if (audioSource != null && impactSound != null)
+                audioSource.PlayOneShot(impactSound, impactVolume);
         }
 
         // Ground footprint only. Buildings/vehicles can intercept the real
@@ -220,35 +226,14 @@ namespace AirCombat
             return material;
         }
 
-        private static AudioClip MakeSound(bool impact)
-        {
-            const int rate = 22050;
-            float duration = impact ? .22f : .13f;
-            var data = new float[Mathf.RoundToInt(rate * duration)];
-            var rng = new System.Random(impact ? 43 : 29);
-            float low = 0f;
-            for (int i = 0; i < data.Length; i++)
-            {
-                float t = i / (float)rate;
-                low = Mathf.Lerp(low, (float)rng.NextDouble() * 2f - 1f, impact ? .11f : .24f);
-                float envelope = Mathf.Min(1f, t / .005f) * Mathf.Pow(1f - t / duration, 2f);
-                data[i] = envelope * (.75f * low + .3f * Mathf.Sin(2f * Mathf.PI * (impact ? 70f : 130f) * t));
-            }
-            var clip = AudioClip.Create(impact ? "NURS impact" : "NURS launch", data.Length, 1, rate, false);
-            clip.SetData(data, 0);
-            return clip;
-        }
-
         private void OnDisable() { CeaseFire(Time.time); }
         private void OnDestroy()
         {
             ResetMagazine();
             if (shell != null) Destroy(shell);
             if (trail != null) Destroy(trail);
-            if (flash != null) Destroy(flash);
-            if (scorch != null) Destroy(scorch);
-            if (launchSound != null) Destroy(launchSound);
-            if (impactSound != null) Destroy(impactSound);
+            if (impactParticles != null) Destroy(impactParticles);
+            if (impactMask != null) Destroy(impactMask);
         }
     }
 }

@@ -12,10 +12,10 @@ namespace AirCombat
         private static readonly RaycastHit[] Hits = new RaycastHit[32];
         private Vector3 velocity;
         private Transform shooter;
-        private Transform body;
         private TrailRenderer trail;
         private Material flashMaterial;
         private Material scorchMaterial;
+        private Material impactParticles;
         private Action<int> onImpact;
         private Action<GameObject> onEffect;
         private float elapsed;
@@ -25,12 +25,13 @@ namespace AirCombat
         public void Launch(Vector3 initialVelocity, Transform owner,
             Material shell, Material trailMaterial, Material flash, Material scorch,
             Action<int> impactCallback, float radius = 6f, bool castShadow = true,
-            Action<GameObject> effectCallback = null)
+            Action<GameObject> effectCallback = null, Material impactParticleMaterial = null)
         {
             velocity = initialVelocity;
             shooter = owner;
             flashMaterial = flash;
             scorchMaterial = scorch;
+            impactParticles = impactParticleMaterial;
             onImpact = impactCallback;
             onEffect = effectCallback;
             blastRadius = Mathf.Max(.1f, radius);
@@ -38,30 +39,60 @@ namespace AirCombat
             var visual = GameObject.CreatePrimitive(PrimitiveType.Capsule);
             visual.name = "NURS shell";
             visual.transform.SetParent(transform, false);
-            visual.transform.localScale = new Vector3(.36f, .85f, .36f);
-            body = visual.transform;
+            visual.transform.localRotation = Quaternion.Euler(90f, 0f, 0f);
+            visual.transform.localScale = new Vector3(.65f, 1.5f, .65f);
             var collider = visual.GetComponent<Collider>();
             if (collider != null) { collider.enabled = false; Destroy(collider); }
             var renderer = visual.GetComponent<MeshRenderer>();
             renderer.sharedMaterial = shell;
             renderer.shadowCastingMode = castShadow ? ShadowCastingMode.On : ShadowCastingMode.Off;
 
+            // Attached, continuous flame geometry remains readable even when the
+            // rocket travels several body lengths between rendered frames.
+            AddFlame("NURS flame / orange", trailMaterial, -1.4f, -6.4f,
+                1.15f, new Color(1f, .38f, .06f, .95f), new Color(1f, .22f, .03f, 0f), 1);
+            AddFlame("NURS flame / hot core", trailMaterial, -1.45f, -4.7f,
+                .55f, new Color(1f, 1f, .83f, 1f), new Color(1f, .68f, .15f, .1f), 2);
+
             var streak = new GameObject("NURS trail");
             streak.transform.SetParent(transform, false);
+            streak.transform.localPosition = Vector3.back * 4.5f;
             trail = streak.AddComponent<TrailRenderer>();
             trail.sharedMaterial = trailMaterial;
-            trail.time = .5f;
-            trail.minVertexDistance = .35f;
-            trail.startWidth = .8f;
-            trail.endWidth = .04f;
-            trail.startColor = new Color(1f, .82f, .47f, .8f);
-            trail.endColor = new Color(.7f, .74f, .7f, 0f);
+            trail.time = .045f;
+            trail.minVertexDistance = .25f;
+            trail.startWidth = .65f;
+            trail.endWidth = 1.1f;
+            trail.startColor = new Color(.68f, .64f, .58f, .24f);
+            trail.endColor = new Color(.58f, .55f, .50f, 0f);
+            trail.sortingOrder = 0;
             trail.shadowCastingMode = ShadowCastingMode.Off;
             trail.receiveShadows = false;
             trail.Clear();
             trail.emitting = true;
             launched = true;
             OrientBody();
+        }
+
+        private void AddFlame(string label, Material material, float front, float back,
+            float width, Color hot, Color tail, int sortingOrder)
+        {
+            var flame = new GameObject(label);
+            flame.transform.SetParent(transform, false);
+            var line = flame.AddComponent<LineRenderer>();
+            line.sharedMaterial = material;
+            line.useWorldSpace = false;
+            line.positionCount = 2;
+            line.SetPosition(0, Vector3.forward * front);
+            line.SetPosition(1, Vector3.forward * back);
+            line.startWidth = width;
+            line.endWidth = .04f;
+            line.startColor = hot;
+            line.endColor = tail;
+            line.numCapVertices = 2;
+            line.sortingOrder = sortingOrder;
+            line.shadowCastingMode = ShadowCastingMode.Off;
+            line.receiveShadows = false;
         }
 
         private void Update()
@@ -120,14 +151,16 @@ namespace AirCombat
 
         private void OrientBody()
         {
-            if (body != null && velocity.sqrMagnitude > .01f)
-                body.rotation = Quaternion.FromToRotation(Vector3.up, velocity.normalized);
+            if (velocity.sqrMagnitude > .01f)
+                transform.rotation = Quaternion.LookRotation(velocity.normalized, Vector3.up);
         }
 
         private void Detonate(Vector3 point)
         {
             int damagedParts = GroundBlastDamage.Apply(point, blastRadius, 1);
-            var effect = BombImpactFx.Spawn(point, flashMaterial, scorchMaterial, blastRadius);
+            var effect = impactParticles != null
+                ? RocketImpactFx.Spawn(point, impactParticles, blastRadius)
+                : BombImpactFx.Spawn(point, flashMaterial, scorchMaterial, blastRadius);
             onEffect?.Invoke(effect);
             onImpact?.Invoke(damagedParts);
             Finish();

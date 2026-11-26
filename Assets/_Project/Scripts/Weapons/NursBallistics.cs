@@ -2,13 +2,11 @@ using UnityEngine;
 
 namespace AirCombat
 {
-    // Physical trajectory for unguided NURS rockets. No impact predictor.
-    // The launcher supplies aircraft velocity plus an initial upward muzzle kick;
-    // no thrust, steering, homing or random corrections happen after release.
+    // Arcade powered flight: constant launch velocity, including aircraft motion.
+    // The footprint predictor and projectile share this straight-line step.
+    // No steering, homing or correction after release.
     public static class NursBallistics
     {
-        public const float Gravity = 80f;
-        public const float HorizontalDrag = .015f;
         public const float IntegrationStep = .025f;
 
         public static Vector3 LaunchVelocity(Vector3 forward, Vector3 right, float aircraftSpeed,
@@ -21,7 +19,7 @@ namespace AirCombat
 
         public static Vector3 Integrate(ref Vector3 velocity, Vector3 position, float dt)
         {
-            return UnguidedBallistics.Integrate(ref velocity, position, dt, Gravity, HorizontalDrag);
+            return position + velocity * dt;
         }
     }
 }
