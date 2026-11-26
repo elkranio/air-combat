@@ -58,7 +58,7 @@ def slab(name,asm,mat,outline,y0,y1):
     n=len(outline);v=[(x,y,z) for y in (y0,y1) for x,z in outline]
     solid(name,asm,mat,v,[tuple(range(n)),tuple(range(n,2*n))]+[(i,(i+1)%n,(i+1)%n+n,i+n) for i in range(n)])
 
-# V3: two integrated longitudinal power nacelles and a narrow skeletal lift bridge.
+# V4: wider faceted lift hull, broad tapered shoulders and integrated nacelles.
 # Preserve the CG01 capture plane and all twelve named assemblies.
 from math import sin, cos, pi
 PROFILE = [(-.64,-1),(.64,-1),(1,-.40),(1,.38),(.65,1),(-.65,1),(-1,.38),(-1,-.40)]
@@ -99,14 +99,22 @@ def duct(name,asm,x,z,outer,inner):
 def disk(name,asm,mat,x,z,r,y0,y1,n=12):
     slab(name,asm,mat,[(x+r*cos(2*pi*k/n),z+r*sin(2*pi*k/n)) for k in range(n)],y0,y1)
 
-# Exposed parallel load rails, narrow armored spine, deep dark frame.
+# Retain exposed load rails under a wider, tapered lifting fuselage.
 for s in (-1,1):
     loft('Load rail','Body','Frame',[(-8.65,s*2.45,1.55,.42,.40),(-5.6,s*2.45,1.65,.48,.58),
         (5.6,s*2.45,1.65,.48,.58),(8.0,s*2.45,2.15,.36,.40)])
-loft('Narrow armored spine','Body','Hull',[(-8.8,0,2.9,1.1,.65),(-6.6,0,3.25,1.85,1.10),
-    (4.9,0,3.55,2.10,1.05),(7.0,0,3.8,2.38,1.0)])
-loft('Raised power backbone','Body','Top',[(-6.4,0,4.32,.82,.23),(-4.9,0,4.82,1.40,.43),
-    (3.8,0,5.03,1.48,.54),(5.7,0,4.70,1.50,.32)])
+loft('Armored lifting hull','Body','Hull',[(-8.8,0,2.9,1.45,.65),(-6.6,0,3.25,2.52,1.10),
+    (-1.5,0,3.55,2.84,1.20),(4.9,0,3.67,3.12,1.27),(7.0,0,3.8,2.83,1.0)])
+loft('Dorsal armor','Body','Top',[(-6.4,0,4.32,1.20,.23),(-4.9,0,4.82,1.80,.43),
+    (3.8,0,5.03,2.05,.54),(5.7,0,4.83,1.85,.32)])
+# Tapered, faceted wing sections lofted along X. Their chord is broad at the
+# body and narrow at the nacelle; the gap is a swept triangular relief.
+def shoulder(name,asm,mat,side,sections):
+    n=len(PROFILE)
+    for j,(a,b) in enumerate(zip(sections,sections[1:])):
+        v=[(side*x,y+h*q,z+w*u) for x,z,y,w,h in (a,b) for u,q in PROFILE]
+        faces=[tuple(range(n)),tuple(range(n,2*n))]+[(i,(i+1)%n,(i+1)%n+n,i+n) for i in range(n)]
+        solid(name+' '+str(j),asm,mat,v,faces)
 for z in (-4.65,4.65):
     chamfer('Cross beam','Body','Steel',0,1.70,z,6.6,.76,1.48,.20)
     for s in (-1,1):
@@ -127,11 +135,16 @@ chamfer('Nose skid','Cab','Frame',0,2.18,11.55,3.45,.35,1.75,.12)
 
 for s,side in [(-1,'L'),(1,'R')]:
     x=s*10.2
-    # Two angular wings join the continuous engine banks to the narrow spine.
-    slab('Forward swept shoulder','Body','Hull',[(s*1.80,5.7),(s*7.8,8.25),(s*8.45,6.6),(s*8.1,3.4),(s*2.0,2.4)],2.65,4.0)
-    slab('Forward shoulder cap','Body','Top',[(s*2.20,5.45),(s*7.75,7.7),(s*8.0,6.15),(s*7.6,4.05),(s*2.40,3.15)],4.0,4.22)
-    slab('Rear swept shoulder','Body','Frame',[(s*1.55,-5.95),(s*8.0,-7.15),(s*8.2,-3.95),(s*2.0,-2.5)],2.45,3.50)
-    slab('Rear shoulder cap','Body','Hull',[(s*2.1,-5.75),(s*7.8,-6.65),(s*7.85,-4.3),(s*2.45,-3.3)],3.50,3.82)
+    # Broad forward shoulders read as part of the fuselage, not four ribs.
+    # Narrower trailing attachments preserve a small oblique opening over the cargo.
+    shoulder('Main lifting shoulder','Body','Hull',s,[(2.15,2.55,3.42,5.15,1.10),
+        (4.2,2.93,3.38,4.85,.90),(6.4,3.50,3.33,3.85,.66),(8.25,4.6,3.17,2.30,.48)])
+    shoulder('Upper swept armor','Body','Top',s,[(2.40,3.0,4.38,3.72,.25),
+        (4.35,3.43,4.20,3.40,.22),(6.10,4.0,3.97,2.58,.20),(7.45,4.63,3.75,1.25,.18)])
+    shoulder('Aft structural fairing','Body','Frame',s,[(2.0,-4.9,2.95,2.94,.76),
+        (4.3,-5.05,2.96,2.42,.72),(6.2,-5.4,3.03,1.80,.54),(8.20,-5.65,3.08,1.28,.43)])
+    shoulder('Aft armor cap','Body','Hull',s,[(2.2,-5.05,3.62,2.34,.23),
+        (4.4,-5.24,3.62,1.84,.22),(6.25,-5.6,3.52,1.32,.20),(7.75,-5.77,3.46,.80,.15)])
     # Integrated nacelle bridge: joins both turbine housings into one planform.
     # Two halves remain detachable, with a common seam at z=0.
     for end,z,r,inner in [('Front',4.5,3.25,2.35),('Rear',-4.5,3.45,2.48)]:
@@ -160,9 +173,13 @@ for s,side in [(-1,'L'),(1,'R')]:
     asm='Tail'+side
     loft('Nacelle dorsal bridge',asm,'Hull',[(-2.15,x,3.8,1.65,.26),(-1.1,x,3.86,2.05,.52),(1.0,x,3.86,2.05,.52),(2.15,x,3.8,1.55,.26)])
     box('Service panel',asm,'Vent',x,4.40,0,1.45,.07,1.35)
+    # Widen the bridge on both flanks without covering the visible fan discs.
+    for d in (-1,1):
+        loft('Bank side fairing',asm,'Hull',[(-2.0,x+d*1.65,3.25,.65,.40),(-.9,x+d*2.12,3.40,.88,.61),
+            (.9,x+d*2.12,3.40,.88,.61),(2.0,x+d*1.65,3.25,.65,.40)])
     # swept tail stabilizer tied to the bank, clearly defines rear direction
-    yzplate('Bank tail fin',asm,'Hull',*sorted((x+s*.70,x+s*1.07)),[(3.25,-9.5),(5.30,-9.1),(5.12,-8.1),(3.25,-6.85)])
-    slab('Rear tail plate',asm,'Top',[(s*5.0,-7.2),(s*8.5,-9.4),(s*9.4,-8.6),(s*8.1,-6.6)],2.55,2.85)
+    yzplate('Bank tail fin',asm,'Hull',*sorted((x+s*.70,x+s*1.07)),[(3.25,-9.5),(5.72,-9.08),(5.52,-7.70),(3.25,-6.65)])
+    slab('Rear tail plate',asm,'Top',[(s*3.05,-7.5),(s*7.95,-9.5),(s*9.4,-8.6),(s*7.8,-6.4),(s*4.0,-6.65)],2.55,2.85)
 # Keep the exact existing CG01 capture pads.
 for i,(x,y,z) in enumerate(SOCKETS,1):
     asm=f'Clamp{i:02d}'
