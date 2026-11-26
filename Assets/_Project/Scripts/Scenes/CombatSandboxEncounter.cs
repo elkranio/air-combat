@@ -180,6 +180,10 @@ namespace AirCombat
         public void Restart()
         {
             if (!bound) return;
+            // ED02A: reset opt-in visual patrols along with the sandbox session.
+            foreach (var preview in FindObjectsByType<WardenPatrolPreview>())
+                if (preview.gameObject.scene == gameObject.scene && preview.isActiveAndEnabled)
+                    preview.RestartPreview();
             if (nursLauncher != null) nursLauncher.ResetMagazine();
             if (missileStress != null) missileStress.ResetTest();
             if (missileLauncher != null) missileLauncher.ResetMagazine();

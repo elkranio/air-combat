@@ -107,8 +107,8 @@ for s in (-1,1):
     cylinder('Hub cap '+side,'Steel',[(.31,x,z,.23,.23),(.39,x,z,.16,.16)],vertical=True,n=10)
     for k in range(3):
         a=2*pi*k/3+(.68 if s<0 else -.68)
-        def blade(r,t):return (x+r*cos(a)-s*t*sin(a),.17,z+r*sin(a)+s*t*cos(a))
-        slab('Rotor blade '+side+str(k),'Steel',[blade(.32,-.13),blade(.88,-.30),blade(2.08,-.24),blade(2.10,.08),blade(.88,.21),blade(.32,.13)],.14)
+        def blade(r,t):return (r*cos(a)-s*t*sin(a),.17-ry,r*sin(a)+s*t*cos(a))
+        slab('Rotor blade '+side+str(k),'Steel',[blade(.32,-.13),blade(.88,-.30),blade(2.08,-.24),blade(2.10,.08),blade(.88,.21),blade(.32,.13)],.14,'Rotor'+side)
     # Integrated forward shoulders carry raised, independent yaw/pitch assemblies.
     slab('Weapon shoulder '+side,'Hull',[(s*1.50,.22,4.64),(s*2.91,.22,4.62),(s*3.32,.22,4.03),(s*3.18,.22,2.78),(s*1.50,.22,2.20)],.76)
     slab('Shoulder cap '+side,'Upper',[(s*1.78,.65,4.30),(s*2.85,.65,4.32),(s*3.10,.65,3.87),(s*2.93,.65,3.07),(s*1.80,.65,2.70)],.15)
@@ -138,7 +138,7 @@ def export():
         (OUT/(name+'.obj')).write_text('\n'.join(lines)+'\n',encoding='utf-8')
     body=[p for _,_,a,v,_ in PARTS if a=='Body' for p in v]
     print('ED01 body bounds:',[round(max(p[i] for p in body)-min(p[i] for p in body),2) for i in range(3)])
-    print('ED01 rendered triangles:',sum(len(t)*(1 if a=='Body' else 2) for _,_,a,_,t in PARTS),'groups:',keys)
+    print('ED01 rendered triangles:',sum(len(t)*(2 if a in ('Yaw','Pitch') else 1) for _,_,a,_,t in PARTS),'groups:',keys)
     try:import bpy
     except ImportError:return
     bpy.ops.object.select_all(action='SELECT');bpy.ops.object.delete(use_global=False)
@@ -150,6 +150,8 @@ def export():
     def empty(name,parent=None,pos=(0,0,0)):
         o=bpy.data.objects.new(name,None);bpy.context.scene.collection.objects.link(o);o.parent=parent;o.location=bl(pos);return o
     root=empty('ED01_Warden');parents={'Body':[root],'Yaw':[],'Pitch':[]}
+    for side,pos in ROTORS.items():
+        parents['Rotor'+side]=[empty('Rotor_'+side,root,pos)]
     for side,pos in EXHAUSTS.items():
         ex=empty('Exhaust_'+side,root,pos);ex.rotation_euler[2]=pi
     for side,pos in TURRETS.items():
