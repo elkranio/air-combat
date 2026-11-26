@@ -19,7 +19,7 @@ namespace AirCombat
         [SerializeField, Min(1f)] private float projectileRange = 220f;
         [SerializeField, Min(.1f)] private float roundsPerSecond = 11f;
         [SerializeField, Min(.1f)] private float burstSeconds = 1.7f;
-        [SerializeField, Min(.1f)] private float pauseSeconds = 1.15f;
+        [SerializeField, Min(.1f)] private float pauseSeconds = 2.3f;
         [SerializeField, Min(0f)] private float leadSeconds = .10f;
         [SerializeField, Min(0f)] private float spreadDegrees = 5.5f;
         [SerializeField, Min(1f)] private float turretDegreesPerSecond = 250f;
