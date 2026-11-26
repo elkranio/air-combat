@@ -1,35 +1,36 @@
 # Combat — current gameplay rules
 
-Current accepted main-map mechanics as of CLEANUP-01. Numeric values are playtest defaults, not final balance. Serialized Inspector overrides are authoritative.
+Current baseline after CLEAN-04. Numbers are playtest defaults, not final balance; the actual preset, prefab and scene Inspector values are authoritative.
 
-## Flight and controls
+## Flight
 
-A/D steer; W increases speed and reduces turning authority; S slows and increases turning authority. W and S consume the same finite `Afterburner` resource; S takes precedence. The production flight camera is fixed-world and oblique; the aircraft fight in a common height plane. LMB and RMB control independently equipped slots. Q/E reserved for future per-slot selection. R resets the session; H shows diagnostic information. Player HP baseline 20.
+A/D steer. W boosts, reducing turn authority; S slows the aircraft and increases turn authority. Both draw from one fuel resource, S takes priority. `FlightSession` supplies tight speed, steering multipliers and response; `AircraftMotor` smooths speed and bank. The fixed-world oblique camera leads along the aircraft heading/boost. No player Q/E break turn, cabrage, old throttle or Space boost. Editor-only Space fast travel is available through mission debug flight. R retries, H toggles flight diagnostics.
 
-## Production loadouts
+## Weapons
 
-| Slot | Weapon | Role |
+| Composition | LMB | RMB |
 | --- | --- | --- |
-| LMB | AC-01 BURST | Nose-forward air-only gun; short bursts, independent of mouse aim |
-| RMB (air test) | AAM | Cursor lock, fire-and-forget; 2 rounds, empty-magazine reload 20s |
-| RMB (ground test) | Direct NURS | Physical unguided ground salvo with predicted dispersion footprint |
+| Mission01 | AC-01 burst | Empty |
+| Sandbox Dogfight | AC-01 | AAM |
+| Sandbox Ground Attack | AC-01 | NURS |
+| Sandbox Interception | AC-01 | AAM |
 
-Player AAM baseline: speed 190, turn 220 degrees/s, cumulative turn budget 270 degrees, lifetime 3s, damage 5, hit radius 5. Lock acquisition 150ms; lock and grace cues belong to the AAM slot. AC-02 Continuous is retained but unequipped; future sustained-fire resource tradeoff to be tested. Gauss, bombs and earlier cabrage are not currently equipped on the main map.
+AC-01 fires nose-forward physical rounds independently of mouse aim. AC-02 continuous/heat resource remains implemented as an optional preset, not a default loadout. AAM uses cursor acquisition and a short lock/grace, fires a guided projectile, and regenerates its two-round magazine only after both shots are spent. The weapon owns its lock/audio state; the old camera TargetLock was removed.
 
-NURS: 6 rockets, .08s between shots, 5s rearm; muzzle speed 260 plus inherited aircraft motion, 55-degree down angle, blast radius 8. Actual spread and the footprint share the same launch state. Boost multiplies spread by 2.5, tight-turn mode by .5, active turning adds up to 1.5; spread increases across the salvo and settles afterward. The footprint is projected onto visible world surfaces, with prediction based on bare terrain. Each shot samples the current pose, not the pose at the beginning of the salvo. No homing or auto-aim. Slowing for precision makes the player more exposed. Vehicle damage/destruction and polished NURS effects remain future work.
+NURS fires physical unguided ground salvos. The predicted world-space footprint uses the same launch state as the rockets. Boost increases spread, tight turn improves precision, turning adds spread; each round samples the current pose. Ground destructibility and impact presentation remain development work. The old bombs, Gauss and cabrage implementations were retired; do not confuse their historical tuning with current mechanics.
 
-## Air threats
+## Sandbox threats
 
-Two Tiger fighters in the air test; each has its own pilot state and missile cooldown. Cruise/boost/tight movement, fuel-aware pursuit, separation and imperfect aim with reaction delay and bounded gun pressure. Baseline fighter HP 5. Strong combined threat accepted; do not rebalance in a cleanup atom.
+- Dogfight: two Tiger fighters with individual pilot states and independent AAM cycles. Fuel-aware pursuit, separation, imperfect gun aim, bounded pressure and missile warning. The Tiger prefab owns attack settings. Test against both, not only a stationary target.
+- Ground Attack: Mantis mobile rocket AA follows a scene-authored route and uses the authored launch socket. Cold launch, attitude correction and smooth ignition; limited horizontal correction rather than fully guided air-to-air behavior. The rocket carrier and motor are independent. The old Mantis gun visual is retained as authoring content, not the live combat version.
+- Interception: ten Sparrow targets by default, offset routes and timed spawning. Cannon or AAM can intercept them. Independent regression scenario, not a campaign objective.
 
-Enemy AAM: independent cooldown 8–15s, .8s warning, acquisition 90–300 units and 75-degree half-angle; speed 140, turn 95 degrees/s, total turn budget 120 degrees, lifetime 4s, damage 6, hit radius 5. Short Vector warning before launch and hostile missile radar contact; no persistent in-flight screen marker. Player and enemy missiles have no cast shadows. Air damage feedback includes hit sparks/flash, smoke/fire at low health and falling wreckage.
+## Campaign threats and objectives
 
-## Ground threat — mobile missile AA
+Six Picket SAM sites, armed in flight. Radar/threat cues and three short prelaunch warning beeps precede an actual missile launch; projectiles and terrain collision determine hits. Watchers are required airborne recon targets. Overlord is optional: detection or damage initiates preparation and an escape attempt; destruction and escape are distinct terminal states. Three destroyed Watchers gate return/landing, irrespective of Overlord outcome.
 
-`MantisGun` now represents only the accepted AA-01e2 cold-launch behavior; its historical gun name and component GUID remain for scene compatibility. One rocket per 2.5s cycle after detection within 210 horizontal units. Rise .48s, attitude turn .32s, ignition acceleration .22s. Rocket speed 240, range 310, physical hit damage 3. After ignition it may correct horizontally toward current player XZ at 25 degrees/s with a nonrenewing 20-degree total angular budget; zero in either field restores straight flight. No altitude tracking, predictive lead or splash damage. The rocket is silent pending the dedicated audio pass. This is an arcade convention, not a real-world specification. Tracers and Flak are retired from the main-map Mantis; older lab AA/SAM are unchanged.
+Terrain has explicit aircraft collision and projectile blocking, with proximity cues; crossing the operation boundary fails the sortie. Aircraft collision/evasion penalties were removed from the campaign. See [Mission01](Docs/MISSION_01.md) for the mission-specific flow and test gates.
 
-The radar indicates ground defense and its threat radius. Patrol route/movement is independent of firing. The vehicle follows its authored terrain path, turns through rounded corners and can be reset by the encounter. The temporary launch canister remains until the dedicated art pass.
+## Feedback
 
-## Legacy regression labs
-
-`WeaponLab` and `GroundAttackLab` retain their original controls, slot selection, camera, aircraft, GAUSS, bombs, cabrage/direct NURS and lab-only AA/SAM. Their numbers are not main-map defaults. Historical mechanics and tuning are in [the archive](Docs/Archive/README.md). Do not remove or silently port those components during cleanup.
+Hit flashes/sparks, smoke/fire, wreckage, camera shake, radar threats, selected-target marks and offscreen bearings are gameplay feedback. Warning is not a physical hit. Tab pauses the campaign through the shared pause owner. Reset clears owned projectiles and transient effects. Engine loops and warning sounds are provisional; a final audio/juice pass is deferred.

@@ -1,28 +1,26 @@
 # Air Combat — current handoff
 
-2026-11-25 | CLEANUP-03, base `8bfbbb7`.
+2026-11-26 | Post CLEAN-04 baseline `8134ba9` (Unity 6000.6.10f1).
 
-## Campaign baseline (current priority)
+## Where we are
 
-[Mission01 First Sortie](Docs/MISSION_01.md): v3 geography, Lynx takeoff/flight, cannon, terrain radar union/warning, fatal crash/retry and projectile blocking are accepted. SAMs and objectives are placeholders. Next: tactical map pipeline, boundary enforcement, live SAMs, recon units and optional target, then RTB/landing and results.
+- Mission01 is the campaign priority. The authored Lynx sortie includes launch, terrain/boundary failure, tactical map, six live Pickets, three required Watchers, optional escaping Overlord, return navigation and assisted landing. `Landed` is implemented; a full debrief/reward/progression layer is not.
+- CombatSandbox is the separate regression scene. Dogfight uses two Tigers and AAM; Ground Attack uses mobile Mantis and NURS; Interception uses Sparrow targets and AAM. Mode is a single enum, saved as Dogfight at the baseline.
+- Shared flight session, scripted takeoff/landing, flight safety, objective state, target effects and HUD presentation have been separated. Prefabs are authored, not rebuilt by one-shot installers.
+- CLEAN-03 removed the three obsolete scenes, legacy camera/weapon/input/AI paths and 37 imported asset candidates; CLEAN-04 migrated nine deprecated Unity search calls. The second Unity reachability report counted 516 imported paths and 42 deliberately retained non-reachable candidates (see [art pipeline](ART_PIPELINE.md)). No automatic deletion policy.
+- Saved Mission01 editor overrides: Debug Air Start ON, Debug No Clip ON, Debug Landing Near Airfield OFF. Disable all debug shortcuts for normal regression. They are not intended as shipping rules.
 
-## Accepted combat playground baseline
+## Next work (proposed, not committed design)
 
-- Main map: `ArcadeDesertE1`, authored 2 km desert, fixed-world oblique camera, flight and radar/HUD. WASD variable maneuverability shares one boost resource between fast and tight turns.
-- Air test: AC-01 BURST on LMB and AAM on RMB, two independently behaving Tigers. Strong opponents accepted; imperfect gun aim and bounded pressure, independent missile cycles (main scene currently overrides cooldown to 2–3.2s; no tuning change in 02b). Player AAM evasion and Short Vector cue accepted. AC-02 retained but not equipped; powerful, needs a later resource/cooldown tradeoff.
-- Ground test (default): AC-01 + direct NURS, one mobile AA patrol. NURS ballistic ground footprint, afterburner spread penalty and tight-turn accuracy reward accepted. Ground destructibility and impact feedback not finished.
-- Mobile AA: single silent cold-launch rocket, ejection, visible attitude jets, smooth ignition acceleration, finite horizontal correction. Accepted as an arcade threat, not an exact real-world analogue. Old Mantis tracer and Flak experiments retired. New AA02_Mantis_Rocket visual uses an authored launch socket. Smoke, launch, ignition and explosion effects still need a juice pass. Offscreen rise readability remains a known issue.
-- Patrol authoring: movable group containing route and unit; draggable points, rounded path, start preview, obstacle check. Existing route and transforms preserved. `AA02_Mantis_Combat.prefab` now owns the motor, launcher and nested visual chassis; the main-map instance keeps its scene route override. New instances need only a scene route assignment (or no route for a stationary unit).
+1. Run a normal end-to-end sortie with debug shortcuts off: launch, three Watchers, optional Overlord outcome, return and landing. Check threat placement, visibility and pacing.
+2. Fix actual playtest friction; decide the mission-end/debrief experience before adding campaign progression.
+3. Expand mission content and reusable threat/objective compositions only after the first sortie is fun. Keep the sandbox for weapon and enemy tests rather than mixing it into the campaign.
 
-- Tiger: `EF01_Tiger_Fighter.prefab` owns `ArcadeFighterUnit` and the attack settings formerly serialized on the encounter. The unit prepares its flight/health and owns its independent pilot. The encounter still schedules flight decisions before movement and fire after movement; AAM scheduling and registrations remain shared.
-- Player: `PlayerKestrel_Combat.prefab` owns the flight, boost, chassis, team, health, radar, trigger and mounted weapon modules. The scene selects and binds one secondary; AC-02 remains disabled. The original `PlayerJet.prefab` is retained for the labs. Spawn pose, camera and flight test settings stay on the scene/session.
+## Green gate
 
-## Next atoms
+- Unity compilation and Console; inspect both scenes for missing scripts/references/materials.
+- Mission01: launch, W/S/A/D, cannon, map pause/resume, terrain crash, boundary failure, SAM warning/cancel/hit, Watcher objective count, Overlord destruction AND escape, RTB capture and landing, R throughout.
+- Sandbox: all three modes, independent Tiger behavior, AAM lock/launch/rearm, Mantis patrol/NURS, Sparrow interception, HUD/radar and R. H/7/8/9 remain test tools.
+- Verify no unintended scene/prefab changes; commit a green after local Play Mode validation. Restore intentional development overrides after tests or explicitly commit the new baseline.
 
-Campaign: see [Mission 01](Docs/MISSION_01.md). The previous combat-lab backlog is retained in [Git history](https://github.com/elkranio/air-combat/blob/8bfbbb7698879b4809812894a5c7ebaba6c623fd/HANDOFF.md); do not prioritize it over the mission slice.
-
-## Regression gate
-
-Open main map: no missing scripts/materials, no automatic scene modifications or obsolete install menus. Ground mode: move/rotate patrol, edit points and start preview; launch one rocket per cycle, verify correction and physical hit, reset, NURS and HUD. Air mode: two Tigers, independent guns/AAM, player HP, dual weapons, radar warning, hit feedback and reset. Smoke/FX unchanged in cleanup. Both lab scenes still open and function; no unused-asset deletion without dependency proof. Commit a green only after Play Mode passes.
-
-[Combat rules](GAMEPLAY_COMBAT.md) | [Architecture](GAMEPLAY_ARCHITECTURE.md) | [History](Docs/Archive/README.md)
+[Mission](Docs/MISSION_01.md) | [Architecture](GAMEPLAY_ARCHITECTURE.md) | [Combat](GAMEPLAY_COMBAT.md) | [History](Docs/Archive/README.md)

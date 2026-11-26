@@ -1,7 +1,0 @@
-# SAM-01D — twin rail presentation
-
-Mission01 Picket only. After entering the existing acquisition range, rotate the C2 upper art as one group, keeping the chassis, fixed base and site transforms unchanged. Alternate the two visible missile slots. A fired slot disappears when the projectile is created and returns after 1.6 times the existing reload interval (8 seconds at a 5-second interval). R restores both props and the resting orientation. Tab pauses the sequence. Missing or incompatible C2 visual groups fall back to the previous presentation, without blocking combat.
-
-Use the same display mesh and paint for the flying missile. During at most .28 seconds of the existing vertical launch, the render-only rocket and trail follow a short curved handoff from the angled rail to the existing projectile pose. The gameplay root, radar, collision, acquisition, warning, cadence, damage and flight settings are unchanged; a temporary render/root discrepancy during launch is intentional. Legacy SAM1 is unchanged. No actual change to launch physics in this atom.
-
-Apply after SAM-01C2 and its prefab update, then open Mission01_FirstSortie and Play. No new editor menu, prefab rebuild or scene save is required. Check both rails, rotation while in range, reload visibility, consecutive launches, trail continuity, R/Tab, and the existing ability to evade. Unity compile and Game view remain the acceptance gate.

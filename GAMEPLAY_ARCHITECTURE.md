@@ -1,45 +1,54 @@
-# Gameplay architecture — active boundaries
+# Gameplay architecture — current boundaries
 
 ## Scene ownership
 
-| Scene | Owner | Responsibility |
+| Scene | Composition owner | Responsibility |
 | --- | --- | --- |
-| `ArcadeDesertE1` | `E1MapFlightSession` + `Air01Encounter` | Persistent authored world, production camera/flight, player/HUD binding, isolated air or ground test |
-| `WeaponLab` | `WeaponLabSession` | Legacy weapon/aircraft regression |
-| `GroundAttackLab` | `GroundAttackLabSession` | Legacy ground weapons, depot, AA/SAM and camera regression |
+| `Mission01_FirstSortie` | `FlightSession` + `Mission01LaunchSequence` | Authored player/world, campaign phase, takeoff/landing, failures, retry, objective gating |
+| `CombatSandbox` | `FlightSession` + `CombatSandboxEncounter` | Authored world, player/HUD, selectable regression composition, enemy/weapon setup, restart and cleanup |
 
-Only the main map is enabled in the build. `E1MapFlightSession` configures variable maneuverability, camera, radar, health, HUD and reset. `Air01Encounter` owns the runtime test composition; Ground Nurs Test selects NURS and scene-authored mobile AA, otherwise it equips AAM and spawns two Tigers. It binds, resets and tears down the active weapons/enemies. This is not a general mission system yet. Do not regenerate the map or rewrite shared lab prefabs for production changes.
+Both scenes are committed and enabled in Build Settings. `FlightSession` (execution order -80) binds the configured player, `ArcadeCameraFollow`, flight tuning, health, radar and HUD. It owns the shared pose/camera reset. An optional `IFlightSessionEncounter` supplies sandbox-specific bind, restart, altitude and debug status; the campaign owns its own retry lifecycle. No dependency from the shared session to a concrete sandbox class.
 
-## Component boundaries
+## Campaign lifecycle
 
-- Aircraft: `JetAssembly`, `FlightController`, `Afterburner`, `PlayerHitPoints` and `CombatAircraftFlight`; flight, resource, health and chassis sockets remain separate. `ArcadeFighterUnit` on the Tiger prefab owns its serialized attack settings, pilot lifetime, flight/health initialization and delegates to `ArcadeFighterPilot` for pursuit and gun decisions; `EnemyMissileStressTest` (historical class name) owns independent enemy AAM cycles.
-- Weapons: `PlayerWeaponTrigger` dispatches independent primary/secondary slots. `AutocannonWeapon`, AAM launcher/projectile and `ArcadeNursLauncher` own their mechanics; `NursImpactMarker` handles the world-space footprint. Legacy `WeaponSelection` remains for labs.
-- Ground: `GroundPatrolRoute` is scene-authored waypoint data and shared rounded-path geometry; `GroundPatrolMotor` owns vehicle motion. `MantisGun` owns the accepted mobile missile launcher, radar registration and projectile lifecycle; `MantisVerticalRocket` owns launch phases and limited correction. The rocket carrier visual supplies a fixed authored `LaunchSocket`; MantisGun binds that transform and no longer constructs a temporary pod or hides gun barrels. Component GUID and accepted tuning are unchanged.
-- Damage: `DamageableTarget.Domain` separates air and ground; `PlayerHitPoints` provides health and damage events; `GroundBlastDamage` applies ground splash. No cross-domain magic screen-hit test. `CombatHitFeedback` owns air combat feedback. Vehicle destruction still to implement.
-- Radar/HUD: `AircraftRadar` samples explicit `IRadarContact`s; `CombatHud` displays camera-relative radar, health, fuel and equipped weapons. Threat warning and physical hit are distinct.
+- `Mission01LaunchSequence` owns phase (`Intro`, `Ready`, `Takeoff`, `Flight`, `Crashed`, `BoundaryFailed`, `Landing`, `Landed`), input gates, SAM arming, mission retry and completion gating. `ScriptedTakeoff` and `ScriptedLanding` implement scripted pose changes; `Mission01RunwayGeometry` adapts the authored runway to reusable `LandingRunway` data.
+- `MissionFlightSafety` checks the movement segment against the operation bounds and terrain; `MissionBoundaryGuard` and `TerrainFlightCollision` provide geometry queries. The launch sequence decides the response. `RadarTerrainObstacle` and `TerrainSectionUnion` provide shared solid terrain sections; decorative debris is not automatically collidable.
+- `MissionPause` owns exclusive tactical-map / boundary-failure pause and time/audio restoration. `MissionRetry` registers the scene's owner and publishes an accepted same-frame retry. Target controllers and camera respect these contracts; do not add competing global time-scale writers or duplicate campaign R handling.
+- `Mission01ReconEncounter` binds the three `WatcherTarget`s and shared `AirTargetCombatEffects`. Targets own their motion, health and state. `DestroyTargetsObjective` reads `IObjectiveTarget` and provides `ObjectiveProgress` via `IPrimaryObjectiveSource`; destroyed required targets alone count. Missing/not-ready targets cannot silently complete the objective.
+- `OverlordTarget` is an autonomous optional objective with its own patrol/charge/boost/terminal states. It consumes `IAirTargetFlightContext` and `IAirTargetEffects`, not concrete mission controllers for those behaviors. Escaped is distinct from Destroyed.
+- `SurfaceToAirLauncher` owns Picket launch profile, arming, prelaunch warning and missiles. Mission chooses when sites are armed; warning timing and audio presentation are separate helpers.
 
-## Authoring and assets
+## Aircraft, weapons, damage
 
-`Air Combat > Mission > Create Patrol Route` is the persistent mission tool. Group/point editing, obstacle check and start preview are in the Inspector. A route anchor is independent of the moving child; place and yaw the group, edit waypoints, do not scale the vehicle. Terrain-only path projection; no pathfinding. The old one-time installers are no longer active editor code.
+- `JetAssembly` / `JetChassis`: configured aircraft and authored sockets. `FlightController` and `AircraftMotor`: player flight; `Afterburner`: shared resource; `AfterburnerVfx`: presentation. Enemy `CombatAircraftFlight` accepts pilot commands. `BreakTurn` remains part of the enemy flight contract; the player has no old Q/E branch.
+- `PlayerWeaponTrigger` dispatches independent slots via `ITriggeredWeapon`; `IWeaponHudStatus` exposes readiness. `AutocannonWeapon` uses an `AutocannonPreset`, burst or continuous cadence and `AutocannonEmitter`; rounds are physical `BallisticProjectile`s. `ArcadeMissileLauncher`, `TargetDesignation`, `WeaponLock`, `TargetingCursor` and `MissileProjectile` implement current AAM. `ArcadeNursLauncher`, `NursProjectile` and `NursImpactMarker` implement ground salvos. No legacy WeaponController/TargetLock path.
+- `ArcadeFighterUnit` owns the prefab's fighter settings and pilot lifetime. `ArcadeFighterPilot` owns individual decisions. Sandbox schedules shared encounter work and enemy AAM via `EnemyMissileStressTest` (historical name). Do not make a new campaign depend on a sandbox scene just to spawn fighters.
+- `GroundPatrolRoute` / `GroundPatrolPath`: authored route and rounded geometry. `GroundPatrolMotor`: motion. `MantisGun` / `MantisVerticalRocket`: mobile rocket AA. `DamageableTarget` separates air and ground domains; `PlayerHitPoints` and ground damage helpers own health/damage. `CombatHitFeedback` and `AirTargetCombatEffects` own effects, not mission rules.
 
-Existing `Prefabs/Aircraft` (including Tiger fighter and chassis), `Prefabs/Camera`, `Prefabs/UI` and environment prefabs are retained. `Prefabs/Ground/AA02_Mantis_Combat.prefab` is the battle-ready unit: root motor and launcher, nested `AA02_Mantis_Rocket` visual-only prefab, internal launch socket reference, no scene route in the asset. The main-map instance retains its route as an override. `Air01Encounter` discovers scene-authored Mantis units in Ground Nurs Test and binds each to player health and radar; no installer or registration list is required. The original `AA02_Mantis` gun visual is retained as a historical asset until the new art is accepted; the combat prefab GUID and scene overrides remain unchanged. See [ART-AA-01](Docs/ART_AA_01.md). All labs, their prefabs, and raw art sources stay available. See [asset policy](ART_PIPELINE.md).
+## Presentation
 
-### Add mobile AA to the main map
+`CombatCameraRig` binds one `ArcadeCameraFollow` (fixed world yaw; heading/boost lead). `AircraftRadar` receives explicit `IRadarContact` sources. `CombatHud`, `RadarHud`, `FlightHud`, `WeaponHud`, `TargetMarkerHud`, `EnemyMissileThreatHud` and `TerrainCollisionWarning` display runtime state. `Mission01ObjectiveHud` and `Mission01StatusHud` are attached runtime views. `TacticalMapView` owns its UI and input; mission state and objective progress stay in the controllers. `Mission01EngineAudio` and `CockpitWarningAudio` handle sound layers and warning cues.
 
-Drag `AA02_Mantis_Combat.prefab` into the scene. Create a route with `Air Combat > Mission > Create Patrol Route` or use an existing route. Assign it in the unit’s `GroundPatrolMotor` Inspector; the start pose previews immediately. Use `Group with assigned route` to move the route and child as one group. Different units may use independent routes or different start points on a shared route. Without a route the unit stays where placed. Tune the individual motor and launcher via prefab instance overrides; Play in Ground Nurs Test. Do not apply scene route references to the prefab asset.
+## Authoring
 
-### Player combat prefab
+Paths below are relative to `Assets/_Project/Prefabs/`:
 
-The main-map player uses `Prefabs/Aircraft/PlayerKestrel_Combat.prefab`, independently of the legacy `PlayerJet.prefab` used by the labs. The main-map session reads the authored radar and health instead of adding them at runtime. `Air01Encounter` selects and binds the authored AAM or NURS child (both inactive in the asset); the existing AC-01 primary is referenced by the trigger, and AC-02 remains unequipped. Scene-specific camera, targeting, feedback, spawn pose and flight-test settings remain in the session. Weapon modules no longer need to be created and destroyed by the encounter.
+| Prefab | Use |
+| --- | --- |
+| `Aircraft/PlayerLynx_Combat.prefab` | Campaign player |
+| `Aircraft/PlayerKestrel_Combat.prefab` | Sandbox player |
+| `Aircraft/EF01_Tiger_Fighter.prefab` | Fighter with authored flight/health/weapon/pilot settings |
+| `Aircraft/RE01_Watcher_Combat.prefab`, `Aircraft/AE01_Overlord_Combat.prefab` | Reusable objective aircraft |
+| `Aircraft/CM01_Sparrow.prefab` | Interception target |
+| `Ground/AA02_Mantis_Combat.prefab` | Mobile AA with motor, launcher and nested rocket-carrier visual |
+| `Environment/SAM01_Picket.prefab` | Campaign SAM |
+| `Environment/Base/Airfield_B.prefab` | Authored base composition |
+| `Camera/ArcadeCameraRig.prefab`, `UI/CombatHUD.prefab` | Shared camera and HUD |
 
-### Tiger combat prefab
+### Add mobile AA
 
-`Prefabs/Aircraft/EF01_Tiger_Fighter.prefab` contains the chassis, flight motor, boost, health, radar, AC-01 and `ArcadeFighterUnit`. Tune the Attack settings on that prefab (not on Air01Encounter). The encounter instantiates the prefab, prepares it, registers health/targeting/AAM/radar, and binds the player and map boundary. Each unit creates its own randomized pilot variant. The encounter deliberately schedules both flight decisions before aircraft movement and guns after movement, retaining wingman context and the existing shared AAM scheduler. A future mission can use the same unit API; simply dropping an unbound Tiger in the scene does not assign a target. No balance or timing changes in this atom.
+In CombatSandbox, place `AA02_Mantis_Combat.prefab`. Use **Air Combat > Mission > Create Patrol Route** or an existing route. Assign the scene route on `GroundPatrolMotor`; use Group with assigned route and start preview in the Inspector. Move/yaw the route group, not the vehicle scale. Without a route it stays stationary. Ground Attack discovers the scene's Mantis units (including inactive ones) and binds them to player health/radar. Do not apply scene references to a prefab asset.
 
-## Future boundary
+### Rules for further missions
 
-Mission scripts should compose reusable units, routes and objective/trigger data. Do not add mission-specific coordinates or dependencies inside generic weapon/flight code. Prefabize existing behavior before new features. Keep runtime asset lookup and serialized GUID references in mind during resource cleanup; a lack of scene references alone is not proof of disuse.
-
-## Campaign scene
-
-`Mission01_FirstSortie` owns the authored v3 geography and `Mission01LaunchSequence` owns takeoff, flight, terrain crash and retry. `RadarTerrainObstacle` and `TerrainSectionUnion` provide shared terrain geometry for radar/proximity; projectile queries use marked rock surfaces. Mission data and tactical map are the next separate systems, not new responsibilities of the flight controller. See [Mission 01](Docs/MISSION_01.md).
+Compose existing prefabs and scene-owned bindings; keep generic flight/weapons free from mission coordinates. Do not regenerate hand-authored scenes, replace GUIDs casually, or add an installer for already-authored content. Build map geography with the persistent baker after terrain edits. Use the scene reachability audit before removing assets; it is not proof of dynamic or authoring disuse.

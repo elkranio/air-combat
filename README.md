@@ -1,40 +1,37 @@
 # Air Combat
 
-Unity 6.6 / URP. Stylized arcade air combat: strong silhouettes, responsive flight, readable threats and impactful destruction. Gameplay comes before simulation realism.
+Unity 6000.6.10f1 / URP / Input System. Stylized arcade air combat: responsive flight, readable threats and impactful destruction. Gameplay before simulation realism.
 
-## Play the campaign slice
+## Open and play
 
-Open `Assets/_Project/Scenes/Mission01_FirstSortie.unity` and press Play. W takes off; A/D turn, S tight turn, W boost, LMB cannon, R retry. See [Mission 01](Docs/MISSION_01.md).
+Open the existing project in Unity Hub. Both authored scenes are already installed and enabled in Build Settings; **never regenerate either scene**.
 
-## Combat regression playground
+| Scene | Purpose |
+| --- | --- |
+| `Assets/_Project/Scenes/Mission01_FirstSortie.unity` | Campaign slice: takeoff, six Picket SAMs, three Watchers, optional Overlord, RTB and assisted landing. First build scene. |
+| `Assets/_Project/Scenes/CombatSandbox.unity` | Isolated combat regression: Dogfight, Ground Attack, Interception. Select `Mode` on `CombatSandboxEncounter` before Play. |
 
-Open `Assets/_Project/Scenes/ArcadeDesertE1.unity` and press Play. The current green uses **Ground Nurs Test** on `Air01Encounter`: AC-01 on LMB, NURS on RMB, mobile missile AA on the authored patrol. Disable Ground Nurs Test before Play to restore the two-Tiger air encounter and AAM secondary. These are separate test compositions, not a finished mission system.
+**Mission testing:** the saved editor baseline has Debug Air Start and Debug No Clip enabled. To play a normal sortie, disable both on `Mission01LaunchSequence`; leave Debug Landing Near Airfield disabled. These bypasses are editor-only. Press W to take off.
 
-**CM-03:** the main scene starts in Interception Test (takes priority over Ground Nurs Test). Ten Sparrow targets fly individually offset straight routes. AC-01 on LMB, AAM on RMB, R restarts, no mission objective. Turn Interception Test off to restore the original ground/air selector. See [interception playground](Docs/CM_02.md).
+| Input | Action |
+| --- | --- |
+| A/D | Steer |
+| W / S | Afterburner / tight turn (shared fuel) |
+| LMB | AC-01 cannon |
+| RMB | Equipped secondary in sandbox (AAM or NURS); no secondary in Mission01 |
+| Tab / Esc | Open / close tactical map in Mission01 |
+| R | Retry / reset |
+| H | Diagnostic flight legend |
+| 7 / 8 / 9 | Sandbox altitude comparison (78 / 110 / 150) |
 
-A/D steer, W boost, S tight turn, LMB/RMB fire, R reset, H debug. Q/E reserved for future per-slot weapon selection.
+## Documentation
 
-To add another mobile AA, drag `Assets/_Project/Prefabs/Ground/AA02_Mantis_Combat.prefab` into the main scene and assign a scene route in its `GroundPatrolMotor` Inspector. See [authoring instructions](GAMEPLAY_ARCHITECTURE.md#add-mobile-aa-to-the-main-map).
+- [Handoff](HANDOFF.md) — current baseline, next work and regression gate.
+- [Mission 01](Docs/MISSION_01.md) — mission rules, debug switches and authoring.
+- [Combat](GAMEPLAY_COMBAT.md) — player, weapons and enemy behavior.
+- [Architecture](GAMEPLAY_ARCHITECTURE.md) — runtime ownership and reusable prefabs.
+- [Art pipeline](ART_PIPELINE.md), [model authoring](ART_AUTHORING.md), [lighting](LIGHTING_L1.md).
+- [Third-party assets and audio provenance](THIRD_PARTY_ASSETS.md).
+- [History](Docs/Archive/README.md) — superseded iterations and cleanup records, not current installation instructions.
 
-Player health, radar and weapon module settings live on `Assets/_Project/Prefabs/Aircraft/PlayerKestrel_Combat.prefab`. The original PlayerJet is retained for the legacy labs; the main map already uses the combat prefab.
-
-Tiger behavior settings live on `Assets/_Project/Prefabs/Aircraft/EF01_Tiger_Fighter.prefab` (`ArcadeFighterUnit`), not on the scene encounter. The current air test still spawns two Tigers automatically.
-
-## Separate visual trials
-
-- [TERRAIN-01](Docs/TERRAIN_01.md) — create/open the isolated faceted-terrain flight playground via the Air Combat editor menu.
-
-## Campaign development (WIP)
-
-- [MISSION-01 — First Sortie](Docs/MISSION_01.md) — current v3 geography, flight, terrain collision and next mission atoms.
-
-## Current documentation
-
-- [HANDOFF.md](HANDOFF.md) — current baseline, next atoms, regression gates.
-- [GAMEPLAY_COMBAT.md](GAMEPLAY_COMBAT.md) — accepted weapons, enemies and player rules.
-- [GAMEPLAY_ARCHITECTURE.md](GAMEPLAY_ARCHITECTURE.md) — current scene and component ownership.
-- [ART_AUTHORING.md](ART_AUTHORING.md), [ART_PIPELINE.md](ART_PIPELINE.md), [THIRD_PARTY_ASSETS.md](THIRD_PARTY_ASSETS.md) — art contracts and attribution.
-- [Docs/Archive](Docs/Archive/README.md) — historical iterations and superseded instructions; not installation instructions.
-- [Cleanup record](Docs/CLEANUP_03.md) — removed editor/runtime code, asset scope, verification.
-
-The main scene is hand-authored; never regenerate it. `WeaponLab` and `GroundAttackLab` remain regression scenes. Editable source art lives outside Unity in `Resources`; imported art lives in `Assets/_Project/Art`.
+Raw editable art stays under `Resources/` (outside Unity Assets); imported assets under `Assets/_Project/Art`; gameplay prefabs under `Assets/_Project/Prefabs`.

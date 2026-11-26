@@ -1,7 +1,0 @@
-# SAND-V0 — Mission01 macro ground variation (visual trial)
-
-Base `a9d506f`. In Edit Mode open `Mission01_FirstSortie` and run **Air Combat > Art > Apply Mission01 Sand Variation v0**. The original flat ground mesh and material are retained; the command generates a mesh copy with world X/Z UVs, a 1024² mipmapped macro-color texture and a cloned sand material in `Assets/_Project/Art/Environment/Mission01_FirstSortie/`. Re-apply regenerates the same assets in place. Save the scene and commit the generated assets + metas if accepted. **Restore Mission01 Original Sand** restores both original references without deleting assets.
-
-Ten broad asymmetric regions in two subtle related sand tones. The existing palette's actual ground texel is used as the untouched base; low-frequency contours, broad lobes, softly feathered edges and mild interior gradients. Positions are deliberate trial art, not new landmarks or gameplay features. No overlaid ground geometry, no changes to original mesh geometry/normals, lighting, collision, rocks, roads, radar, tactical map, or mission logic. The existing renderer still receives shadows without casting them.
-
-Review from the flight camera at normal altitude: avoid puddle/leopard-spot appearance, check airfield and SAM sites, confirm shadows and no flickering. Adjust `Patches` and `Strength` in `Mission01SandVariation.cs`, then re-apply if needed. The command deliberately refuses non-flat or multi-palette ground rather than silently discarding its original shading. Unity execution/visual acceptance pending.

@@ -1,7 +1,0 @@
-# Mission 01 terrain crash v0
-
-Mission01LaunchSequence opts into fatal terrain impacts only after flight handover. A swept circular footprint (default radius 3.5 world units, deliberately forgiving compared to full wingspan) tests the closed rock section at cruise height. The sweep prevents tunneling on boost and editor fast travel. It uses the registered RadarTerrainObstacle meshes, with a conservative per-rock broad phase. No physics colliders or radar registration are added; low rubble and unregistered scenery remain non-blocking. The query is designed for the current fixed-altitude flight, not arbitrary vertical trajectories.
-
-On impact: stop movement, weapon trigger and boost; set HP to zero, hide the aircraft visual, emit the existing crash explosion and camera impulse at the first contact position, and show AIRCRAFT LOST / PRESS R TO RETRY. R uses the existing mission reset path, restores the visual and clears crash FX. No automatic respawn, wreck physics, collision damage to AI, or map boundary logic in this atom. Editor-only debugNoClip on Mission01LaunchSequence bypasses collisions but retains warnings. Existing debugAirStart still skips takeoff and Space still fast-travels.
-
-Check near-miss, head-on impact, grazing, boost / low FPS, restart twice, and flight over decorative rubble. Check AirCombat.TerrainCollision.Sweep in Profiler. Compile and validate Unity locally.

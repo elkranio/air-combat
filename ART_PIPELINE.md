@@ -1,31 +1,32 @@
-# Art pipeline — active map and assets
-
-The current asset direction is [Stylized Arcade Military](Docs/Archive/ART_DIRECTION.md). We author **one reusable asset at a time**, compare in the actual `ArcadeDesertE1` flight view and only then reuse or expand it. No more blind whole-map generators.
+# Art pipeline — active assets
 
 ## Folders
 
-- `Resources/Blender/`: editable `.blend` sources for **currently used** aircraft, targets and accepted new props; not imported into Unity.
-- `Resources/References/`: raw reference images and notes, not game assets. Check licenses before any direct reuse.
-- `Tools/Blender/`: reproducible authoring/generator scripts **only for live assets**. Rejected V17/V19/forest study generators are retired.
-- `Assets/_Project/Art/`: imported meshes, materials and textures. `Environment/ArcadeDesertE1` holds the current terrain, plateau and local aircraft paint.
-- `Assets/_Project/Prefabs/`: scene-neutral gameplay and camera prefabs. Prefer prefab reuse over copying materials or composing dependencies inside an obsolete scene.
-- `Assets/_Project/Scenes/ArcadeDesertE1.unity`: persistent, hand-editable map; **never regenerate**. Combat labs remain strictly for regression.
-- `Assets/_Project/Settings/ArcadeCombat_URP.asset`: main-map candidate for 600-unit, four-cascade shadows. Compare its cost/quality to the current combat-lab profile before global adoption.
-- `Assets/ThirdParty/`: third-party imports; protect runtime and lab dependencies; attribution/license rules in [THIRD_PARTY_ASSETS.md](THIRD_PARTY_ASSETS.md).
+- `Resources/Blender/`, `Resources/Audio/`, `Resources/References/`: editable/raw sources outside Unity Assets. Not runtime `Resources.Load` paths. Keep source and provenance.
+- `Tools/Blender/`: reproducible geometry/export scripts for retained assets and libraries. One-time obsolete Unity installers are retired.
+- `Assets/_Project/Art/`: imported meshes, materials, textures and live audio. `Environment/ArcadeDesertE1` remains a historical folder name used by CombatSandbox; do not rename it casually.
+- `Assets/_Project/Prefabs/`: scene-neutral combat, camera, HUD and environment assets. Scene references stay on scene instances.
+- `Assets/_Project/Generated/`: live generated assets such as mission map data and referenced legacy-named materials. Folder names alone are not evidence of disuse.
+- `Assets/ThirdParty/`: imports plus licenses and model sidecars. See [provenance](THIRD_PARTY_ASSETS.md).
+- Two authored scenes in `Assets/_Project/Scenes/`; do not regenerate them.
 
-Use **Air Combat > Tools > Audit unreferenced art assets** to generate a read-only candidate report in `Temp/AirCombat-asset-audit.txt`. Keep dynamic lookups, imported sidecars, licenses and source art until verified.
+## Review and authoring
 
-## Base/airfield surface authoring — as built
+Build one asset at a time, test in the real flight view, then reuse it. Review silhouette, proportion, dynamic lighting, terrain/aircraft readability, model import and `.meta` stability. Reuse base/airfield, CL06 cliffs, ENV01–04 environment libraries and combat prefabs. Keep the generated rock-layout JSON and planning SVG as references, not live placement instructions. Bake the tactical map when geography changes using the persistent MissionMapBaker editor tool.
 
-B1d roads, shoulder meshes and sparse wear are **separate authored objects**. Its initial B1d/B1d2 compacted-ground TerrainLayer/alphamap experiment was superseded by **B1d3**, a separately toggleable ~183×226 m **sharp-edge prepared-lot mesh**. The B1d3 install cleared the old local prepared paint; the original editable Terrain and TerrainCollider remain. B1e runway/apron and B1f hangar trial occupy a different sector. **One-time B1 installers are retired outside Assets.** See [base](Docs/Archive/BASE_DESIGN.md) and [airfield](Docs/Archive/AIRFIELD_B1E.md).
+## Read-only asset audit
 
-## Model handoff
+- **Air Combat > Tools > Audit unreferenced art assets**: conservative report (`Temp/AirCombat-asset-audit.txt`) protects all prefabs.
+- **Air Combat > Tools > Audit scene reachability (CLEAN-03C)**: `Temp/AirCombat-scene-reachability.txt` separates unreachable prefabs, their exclusive dependencies and orphan candidates. Never deletes assets.
 
-1. Find a few relevant geometry reference images (proportion/massing, not styling to copy), set object footprint in **world units** next to the actual aircraft at Y78.
-2. Block out an intentionally designed silhouette. Use a small number of large surfaces, clear side/roof separation, no procedural spikes or crowded bevels. Inspect from gameplay yaw -45°, pitch 50°, ortho 80.
-3. Assign 2–4 intentional flat/matte material colors. Give neutral buildings enough contrast from muted sand `#B8A993`; reserve saturated accents for aircraft, doors/markings, weapons and VFX.
-4. If the model reads with dynamic URP sunlight, **do not bake just because the tool exists**. If local concavity/structural seams need more read, author restrained AO/normal independently; never bake a directional sun/shadow into albedo.
-5. Keep source `.blend` or documented model generator, source mesh, unity mesh import settings, prefab/materials and `.meta` GUIDs. Check collider/shadow flags and asset sizes before green.
-6. Evaluate at cruise and boost under real day lighting; compare readability, size, color, shadows and performance. Approve or reject the individual asset before adding another.
+After CLEAN-03C2 the report counted 516 imported paths (down from 553), 712 protected dependency paths (unchanged) and 42 retained candidates:
 
-No historical V14–V20 steps are production instructions. Git preserves those experiments.
+| Retained group | Count | Reason |
+| --- | --- | --- |
+| MilitaryDepot (including ready file) | 14 | Future ground mission target/source |
+| Original AA02 Mantis | 14 | Authoring source/visual variant, not combat carrier |
+| ENV04 pads/tracks | 8 | Library variants and reproducible generator |
+| CL06 variants and layout JSON | 5 | Reusable rock library and authoring recipe |
+| Missile.mtl | 1 | Imported model sidecar |
+
+These are explicit retention decisions, not proof of runtime use. Review actual Unity dependency closure, GUID and path references, source generators, dynamic loads, import sidecars and licenses before any deletion. Raw sources are separate from imported assets. Never delete indiscriminately based on an unused report.
