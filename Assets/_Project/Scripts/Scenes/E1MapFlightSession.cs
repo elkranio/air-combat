@@ -3,8 +3,8 @@ using UnityEngine.InputSystem;
 
 namespace AirCombat
 {
-    // Main-map flight composition, with an optional independent encounter.
-    // Keeps the original PlayerJet prefab unchanged and makes a large map flyable.
+    // Shared player, camera and HUD composition. An optional scenario supplies
+    // combat behavior through IFlightSessionEncounter, never a concrete lab type.
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-80)]
     public sealed class E1MapFlightSession : MonoBehaviour
@@ -22,7 +22,7 @@ namespace AirCombat
         [SerializeField, Min(1f)] private float tightTurnMultiplier = 2f;
         [SerializeField, Min(.1f)] private float maneuverResponse = 140f;
 
-        private Air01Encounter encounter;
+        private IFlightSessionEncounter encounter;
         private FlightController flight;
         private Afterburner boost;
         private ArcadeCameraFollow arcadeCamera;
@@ -80,7 +80,7 @@ namespace AirCombat
             cameraRig.BindPlayer(player.transform, boost, false);
             cameraRig.BindLockTarget(null, 1f, .5f);
 
-            encounter = GetComponent<Air01Encounter>();
+            encounter = GetComponent<IFlightSessionEncounter>();
             if (combatHud != null || encounter != null)
             {
                 var radar = player.GetComponent<AircraftRadar>();
@@ -138,14 +138,20 @@ namespace AirCombat
 
         internal void ResetForMissionRetry()
         {
-            if (isActiveAndEnabled) ResetFlight();
+            // The campaign owns its objectives, weapons and retry lifecycle.
+            if (isActiveAndEnabled) ResetPlayerPose();
         }
 
         private void ResetFlight()
         {
-            player.transform.SetPositionAndRotation(spawnPosition, spawnRotation);
-            SnapCamera(); // No fast camera sweep across the 2 km map.
+            ResetPlayerPose();
             encounter?.Restart();
+        }
+
+        private void ResetPlayerPose()
+        {
+            player.transform.SetPositionAndRotation(spawnPosition, spawnRotation);
+            SnapCamera(); // No fast camera sweep across the map.
         }
 
         private void SnapCamera()
