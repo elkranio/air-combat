@@ -16,6 +16,9 @@ namespace AirCombat
         [SerializeField, Min(16f)] private float minimumPickSizePx = 40f;
         [SerializeField, Min(0f)] private float bracketGapPx = 7f;
         [SerializeField, Min(12f)] private float edgeInsetPx = 22f;
+        [Header("Autocannon boresight")]
+        [SerializeField, Min(1f)] private float cannonSightDistance = 24f;
+        [SerializeField, Min(3f)] private float cannonSightRadiusPx = 6f;
 
         private sealed class Contact
         {
@@ -45,6 +48,8 @@ namespace AirCombat
         }
 
         private Camera viewCamera;
+        private PlayerWeaponTrigger cannonLoadout;
+        private PlayerHitPoints cannonHealth;
         private Contact selected;
         private AircraftRadar automaticRadar;
         private System.Func<Vector3?> navigationTarget;
@@ -63,6 +68,13 @@ namespace AirCombat
             automaticRadar = radar;
             selected = null;
             detections.Clear();
+            SetVerticesDirty();
+        }
+
+        internal void BindCannonSight(PlayerWeaponTrigger weapons, PlayerHitPoints health)
+        {
+            cannonLoadout = weapons;
+            cannonHealth = health;
             SetVerticesDirty();
         }
 
@@ -127,7 +139,8 @@ namespace AirCombat
                 automaticRadar.Sample(detections);
                 SetVerticesDirty(); // Also clears arrows on kill, reset or range exit.
             }
-            else if (selected != null || navigationTarget != null) SetVerticesDirty(); // Camera and aircraft moved.
+            else if (selected != null || navigationTarget != null || cannonLoadout != null)
+                SetVerticesDirty(); // Also clears the sight when the weapon changes.
         }
 
         private bool TryGetBounds(Contact contact, out Rect screenBounds)
@@ -173,6 +186,7 @@ namespace AirCombat
             mesh.Clear();
             if (viewCamera == null || Screen.width <= 0 || Screen.height <= 0) return;
             arrowPositions.Clear();
+            DrawCannonSight(mesh);
             Vector3? destination = navigationTarget?.Invoke();
             if (destination.HasValue)
             {
@@ -232,6 +246,46 @@ namespace AirCombat
                 at - direction * 8f - wing * 8f, shadow);
             Triangle(mesh, at + direction * 7f, at - direction * 6f + wing * 5f,
                 at - direction * 6f - wing * 5f, highlight);
+        }
+
+        private void DrawCannonSight(VertexHelper mesh)
+        {
+            if (cannonLoadout == null || !cannonLoadout.isActiveAndEnabled ||
+                (cannonHealth != null && !cannonHealth.IsAlive) ||
+                MissionPause.IsTacticalMapPausedFor(cannonLoadout.gameObject.scene)) return;
+            var cannon = (cannonLoadout.UsesDualSlots
+                ? cannonLoadout.PrimaryHudStatus : cannonLoadout.SelectedHudStatus) as AutocannonWeapon;
+            if (cannonLoadout.UsesDualSlots && cannon == null)
+                cannon = cannonLoadout.SecondaryHudStatus as AutocannonWeapon;
+            if (cannon == null || !cannon.TryGetAimPoint(cannonSightDistance, out Vector3 point)) return;
+            Vector3 projected = viewCamera.WorldToScreenPoint(point);
+            Vector2 screen = new Vector2(projected.x, projected.y);
+            if (projected.z <= viewCamera.nearClipPlane || projected.z >= viewCamera.farClipPlane ||
+                !viewCamera.pixelRect.Contains(screen)) return;
+            // Fixed screen size, hollow center and dark edge for bright terrain.
+            DrawSightRing(mesh, screen, cannonSightRadiusPx, 3.5f, new Color(.06f, .09f, .11f, .68f));
+            DrawSightRing(mesh, screen, cannonSightRadiusPx, 1.5f, new Color(.91f, 1f, .96f, .92f));
+        }
+
+        private void DrawSightRing(VertexHelper mesh, Vector2 centre, float radius, float width, Color tint)
+        {
+            const int segments = 24;
+            float inner = Mathf.Max(.1f, radius - width * .5f);
+            float outer = radius + width * .5f;
+            for (int i = 0; i < segments; i++)
+            {
+                float a = i * (2f * Mathf.PI / segments);
+                float b = (i + 1) * (2f * Mathf.PI / segments);
+                Vector2 u = new Vector2(Mathf.Cos(a), Mathf.Sin(a));
+                Vector2 v = new Vector2(Mathf.Cos(b), Mathf.Sin(b));
+                int start = mesh.currentVertCount;
+                AddVertex(mesh, ScreenToLocal(centre + u * inner), tint);
+                AddVertex(mesh, ScreenToLocal(centre + u * outer), tint);
+                AddVertex(mesh, ScreenToLocal(centre + v * outer), tint);
+                AddVertex(mesh, ScreenToLocal(centre + v * inner), tint);
+                mesh.AddTriangle(start, start + 1, start + 2);
+                mesh.AddTriangle(start, start + 2, start + 3);
+            }
         }
 
         private void DrawTrackedArrow(VertexHelper mesh, Vector2 screen, float depth, Color highlight)

@@ -24,6 +24,17 @@ namespace AirCombat
         public int HitCount { get; private set; }
         public bool HasPendingShots => cadence != null && cadence.HasPendingShots;
 
+        // Cosmetic boresight: midpoint of the two muzzle trajectories, not a target solution.
+        public bool TryGetAimPoint(float distance, out Vector3 point)
+        {
+            point = default;
+            if (!isActiveAndEnabled || aircraft == null || !aircraft.IsConfigured) return false;
+            var chassis = aircraft.Chassis;
+            Vector3 centre = (chassis.AutocannonLeft.position + chassis.AutocannonRight.position) * .5f;
+            point = centre + aircraft.transform.forward * Mathf.Max(0f, distance);
+            return true;
+        }
+
 #if UNITY_EDITOR
         public void SetAuthoringPreset(AutocannonPreset variant) { preset = variant; }
 #endif

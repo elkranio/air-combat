@@ -39,7 +39,11 @@ namespace AirCombat
             // Legacy WeaponLab/GroundAttackLab stay north-up, unchanged.
             bool oblique = camera != null &&
                 camera.GetComponent<ArcadeCameraFollow>() != null;
-            if (targetMarker != null) targetMarker.Bind(camera, oblique ? sensor : null);
+            if (targetMarker != null)
+            {
+                targetMarker.Bind(camera, oblique ? sensor : null);
+                targetMarker.BindCannonSight(weapons, hitPoints);
+            }
             radarDisplay.Bind(sensor, oblique ? camera : null);
         }
     }
