@@ -1786,6 +1786,11 @@ MonoBehaviour:
   c: {x: 1998, y: 0, z: 420}
   arrivalRadius: 75
   startAirborne: 0
+  convoyPrefab: {fileID: 8201000000000000004, guid: 43c92e56080254d797a874a625f33861, type: 3}
+  convoyTerrain: {fileID: 2035110805}
+  convoyRoute: {fileID: 553010178}
+  convoySpacing: 30
+  convoySpeed: 24
 --- !u!114 &1325795058
 MonoBehaviour:
   m_ObjectHideFlags: 0

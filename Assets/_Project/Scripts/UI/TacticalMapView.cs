@@ -353,6 +353,14 @@ namespace AirCombat
             Mark(routeTrial.PointA, "A", Red);
             Mark(routeTrial.PointB, "B", Red);
             Mark(routeTrial.PointC, "C", Gold);
+            for (int i = 0; i < ConvoyMarchPreview.Count; i++)
+                if (routeTrial.TryGetPicketPosition(i, out Vector3 world))
+                {
+                    Vector2 uv = map.WorldToUV(world);
+                    if (!Inside(uv)) continue;
+                    Vector2 p = Point(rect, uv);
+                    Solid(new Rect(p.x-3,p.y-3,6,6), new Color(.99f,.26f,.18f));
+                }
             void Mark(Vector3 world, string name, Color tint)
             {
                 Vector2 uv = map.WorldToUV(world);
@@ -374,10 +382,11 @@ namespace AirCombat
             Solid(new Rect(x,y+148,w,1),new Color(.23f,.34f,.35f));
             Legend(x,y+172,Cyan,"Direct / return route and player");
             Legend(x,y+207,Gold,"Optional canyon route");
-            Legend(x,y+242,Red,"Future convoy route");
+            Legend(x,y+242,Red,"Convoy route / live Pickets");
             Legend(x,y+277,new Color(.28f,.26f,.22f),"Terrain obstruction");
             Legend(x,y+312,RadarHud.BoundaryInk,"Operation boundary");
-            Text(new Rect(x,y+370,w,28),"ROUTE TEST — NO LIVE OBJECTIVES",14,Gold,true);
+            Text(new Rect(x,y+355,w,22),"CONVOY TRIAL / NO DEPLOYMENT",14,Gold,true);
+            Text(new Rect(x,y+378,w,22),routeTrial.ConvoyStatus,12,Ink);
             Text(new Rect(x,y+405,w,25),"Map pauses flight and timing.",14,Muted);
         }
 
