@@ -17,11 +17,12 @@ namespace AirCombat
         [Header("Enemy AAM / independent attack cooldown")]
         [SerializeField] private EnemyMissileStressTest.Settings enemyMissiles = new EnemyMissileStressTest.Settings();
         private EnemyMissileStressTest missileStress;
-        [Header("NURS-01 / isolated ground playtest (set before Play)")]
-        [SerializeField] private bool groundNursTest = true;
+        // Explicit serialized values: do not reorder or reuse these IDs.
+        public enum SandboxMode { Dogfight = 0, GroundAttack = 1, Interception = 2 }
+        [Header("Combat sandbox / select before Play")]
+        [SerializeField] private SandboxMode mode = SandboxMode.GroundAttack;
         private bool groundMode;
-        [Header("CM-02 / interception test (overrides Ground Nurs Test)")]
-        [SerializeField] private bool interceptionTest;
+        [Header("Cruise missile interception")]
         [SerializeField] private CruiseMissileTarget sparrowPrefab;
         [SerializeField, Min(1)] private int interceptionCount = 10;
         [SerializeField, Min(.1f)] private float interceptionInterval = .7f;
@@ -92,8 +93,13 @@ namespace AirCombat
         public void Bind(JetAssembly aircraft, Camera camera, AircraftRadar sensor,
             PlayerHitPoints health, float halfExtent)
         {
-            interceptionMode = interceptionTest;
-            groundMode = groundNursTest && !interceptionMode;
+            if (mode != SandboxMode.Dogfight && mode != SandboxMode.GroundAttack && mode != SandboxMode.Interception)
+            {
+                Debug.LogError("Combat sandbox: invalid mode.", this);
+                return;
+            }
+            interceptionMode = mode == SandboxMode.Interception;
+            groundMode = mode == SandboxMode.GroundAttack;
             player = aircraft;
             view = camera;
             radar = sensor;
