@@ -16,6 +16,7 @@ namespace AirCombat
         [SerializeField] private Vector3 c2;
         [SerializeField, Min(1f)] private float arrivalRadius = 75f;
         [SerializeField] private bool startAirborne;
+        [SerializeField] private CarryallFlightPreview carryallFlightPreview;
         [Header("M02D / Convoy march")]
         [SerializeField] private PicketDeploymentVisual convoyPrefab;
         [SerializeField] private Terrain convoyTerrain;
@@ -214,6 +215,7 @@ namespace AirCombat
                 p.y = 78f; aircraft.position = p;
                 EnterFlight();
             }
+            carryallFlightPreview?.RestartPreview();
             view.GetComponent<ArcadeCameraFollow>()?.SnapToAircraft();
         }
 
