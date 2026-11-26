@@ -9,3 +9,5 @@ Preview defaults: cruise Y78, radius 32, speed 18 units/s, mild 5-degree bank, h
 CarryallRotorVisual identifies the 84 existing blade triangles per turbine from the accepted source, uses transient instance-only meshes, and checks triangle conservation. The shroud, hub, other surfaces, prefab asset, original meshes and Blender source are unchanged. This deliberately temporary approach avoids touching accepted asset GUIDs; author explicit reusable rotor meshes before production integration if needed. Preview follows scaled time and map pause. No collision or terrain-aware flight logic.
 
 Local gate: compile, install, Play, check all four rotors spin without duplicating blades or obscuring bores, confirm loaded cargo stays attached during banking and unloaded toggle works, test R and Tab pause, verify no unrelated scene or prefab changes. The exact blade selection was verified against committed CA01 geometry JSON (84 triangles in each of four engines); Unity execution remains local acceptance.
+
+Superseded for the installed preview by [CA03 cargo pickup](CA_03_CARGO_PICKUP.md); CA02 remains the rotor and installation record.

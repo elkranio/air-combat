@@ -3175,12 +3175,19 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::AirCombat.CarryallFlightPreview
   carrier: {fileID: 1888059035}
   payload: {fileID: 748594263}
-  showPayload: 1
-  radius: 32
-  speed: 18
+  groundClearance: 0.15
+  cruiseAltitude: 78
+  approachDistance: 56
+  approachLateral: 14
+  approachSeconds: 3.5
+  alignSeconds: 1.2
+  descendSeconds: 5
+  clampSeconds: 1.1
+  liftSeconds: 6.5
+  departSeconds: 9
+  departDistance: 150
   rotorDegreesPerSecond: 720
-  hoverAmplitude: 1.2
-  bank: 5
+  phaseStatus: 
 --- !u!4 &2078675610
 Transform:
   m_ObjectHideFlags: 0
