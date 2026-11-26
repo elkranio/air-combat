@@ -24,7 +24,7 @@ namespace AirCombat
         private static readonly Vector3 Spawn = new Vector3(-1912.5f, 0f, 580.5f);
         private static readonly Vector3 A = new Vector3(-1363.5f, 0f, 1314f);
         private static readonly Vector3 B = new Vector3(1732.5f, 0f, 1156.5f);
-        private static readonly Vector3 C = new Vector3(1998f, 0f, -1156.5f);
+        private static readonly Vector3 C = new Vector3(1998f, 0f, 420f);
 
         [Serializable] private sealed class Rock { public Vector3[] vertices; public int[] sides, tops; }
         [Serializable] private sealed class Layout { public Rock[] rocks; public Vector3[] direct, optional, exit, convoy; }
@@ -72,7 +72,8 @@ namespace AirCombat
                 float oldGround = oldTerrain.SampleHeight(oldSpawn) + oldTerrain.transform.position.y;
                 Vector3 oldHeading = Vector3.ProjectOnPlane(oldFlight.transform.forward, Vector3.up).normalized;
                 Require(oldHeading.sqrMagnitude > .9f, "invalid runway heading");
-                Quaternion rotate = Quaternion.FromToRotation(oldHeading, Vector3.forward);
+                Vector3 targetHeading = new Vector3(0.92f, 0f, 0.38f).normalized;
+                Quaternion rotate = Quaternion.FromToRotation(oldHeading, targetHeading);
                 Vector3 newSpawn = Spawn + Vector3.up * (oldSpawn.y - oldGround);
                 Vector3 fieldPosition = newSpawn + rotate * (field.position - oldSpawn);
                 Quaternion fieldRotation = rotate * field.rotation;
