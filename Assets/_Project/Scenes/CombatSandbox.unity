@@ -2465,7 +2465,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: aa627549a0a14455bfc9d2243d72acf1, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::AirCombat.E1MapFlightSession
+  m_EditorClassIdentifier: Assembly-CSharp::AirCombat.FlightSession
   player: {fileID: 1069913521}
   cameraRig: {fileID: 1027530358}
   combatHud: {fileID: 1691306172}
@@ -2503,7 +2503,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: fdc403b94ffb470996ce62e59ab304a3, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::AirCombat.Air01Encounter
+  m_EditorClassIdentifier: Assembly-CSharp::AirCombat.CombatSandboxEncounter
   enemyPrefab: {fileID: 36626630230575987, guid: e59bcec657b57044ea9bbfbb12121973, type: 3}
   missilePrefab: {fileID: 1166229602950883390, guid: 22d60401b2f22264a94c1483e5f97a30, type: 3}
   spawnRadius: 550

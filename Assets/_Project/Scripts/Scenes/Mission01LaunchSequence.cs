@@ -64,7 +64,7 @@ namespace AirCombat
         private MissionFlightSafety flightSafety;
         private CombatHitFeedback crashFeedback;
         private MissionBoundaryGuard boundary;
-        private E1MapFlightSession flightSession;
+        private FlightSession flightSession;
 
         public Phase State { get; private set; } = Phase.Intro;
         internal MissionBoundaryGuard Boundary => boundary;
@@ -132,7 +132,7 @@ namespace AirCombat
             // Keep its reset side effects, but let the mission own the input.
             foreach (var root in gameObject.scene.GetRootGameObjects())
             {
-                foreach (var session in root.GetComponentsInChildren<E1MapFlightSession>())
+                foreach (var session in root.GetComponentsInChildren<FlightSession>())
                 {
                     if (!session.isActiveAndEnabled || !session.Controls(flight)) continue;
                     flightSession = session;

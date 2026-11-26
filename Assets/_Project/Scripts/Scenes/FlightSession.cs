@@ -7,7 +7,7 @@ namespace AirCombat
     // combat behavior through IFlightSessionEncounter, never a concrete lab type.
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-80)]
-    public sealed class E1MapFlightSession : MonoBehaviour
+    public sealed class FlightSession : MonoBehaviour
     {
         [SerializeField] private JetAssembly player;
         [SerializeField] private CombatCameraRig cameraRig;

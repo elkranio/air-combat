@@ -7,7 +7,7 @@ namespace AirCombat
     // the encounter owns pair spawning, radar lifetime, health and reset.
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-70)]
-    public sealed class Air01Encounter : MonoBehaviour, IFlightSessionEncounter
+    public sealed class CombatSandboxEncounter : MonoBehaviour, IFlightSessionEncounter
     {
         [SerializeField] private GameObject enemyPrefab;
         [SerializeField] private MissileProjectile missilePrefab;

@@ -11,7 +11,7 @@ namespace AirCombat
     // Explicit editor commands only. No import hook, runtime generator or main-map edits.
     internal static class Terrain01Playground
     {
-        private const string MainScene = "Assets/_Project/Scenes/ArcadeDesertE1.unity";
+        private const string MainScene = "Assets/_Project/Scenes/CombatSandbox.unity";
         private const string TrialScene = "Assets/_Project/Scenes/Terrain01Playground.unity";
         private const string ArtParent = "Assets/_Project/Art/Environment";
         private const string ArtFolder = ArtParent + "/Terrain01";
@@ -66,7 +66,7 @@ namespace AirCombat
             }
             Scene scene = EditorSceneManager.OpenScene(TrialScene, OpenSceneMode.Single);
             GameObject[] roots = scene.GetRootGameObjects();
-            E1MapFlightSession session = roots.Select(r => r.GetComponent<E1MapFlightSession>())
+            FlightSession session = roots.Select(r => r.GetComponent<FlightSession>())
                 .FirstOrDefault(s => s != null);
             GameObject lighting = roots.FirstOrDefault(r => r.name == "E1 / CombatLightingRig");
             if (session == null || lighting == null || lighting.GetComponentInChildren<Light>(true) == null)
@@ -96,7 +96,7 @@ namespace AirCombat
             serialized.FindProperty("airContacts").arraySize = 0;
             serialized.FindProperty("altitudeComparison").boolValue = true;
             serialized.ApplyModifiedPropertiesWithoutUndo();
-            var encounter = session.GetComponent<Air01Encounter>();
+            var encounter = session.GetComponent<CombatSandboxEncounter>();
             if (encounter != null) UnityEngine.Object.DestroyImmediate(encounter);
             trigger.enabled = false;
             PrefabUtility.RecordPrefabInstancePropertyModifications(trigger);
@@ -208,7 +208,7 @@ namespace AirCombat
             JetAssembly canyonPlayer = null;
             if (canyon)
             {
-                var session = roots.Select(r => r.GetComponent<E1MapFlightSession>())
+                var session = roots.Select(r => r.GetComponent<FlightSession>())
                     .FirstOrDefault(s => s != null);
                 if (session != null)
                     canyonPlayer = new SerializedObject(session).FindProperty("player")

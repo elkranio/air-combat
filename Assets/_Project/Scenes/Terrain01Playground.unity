@@ -698,7 +698,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: aa627549a0a14455bfc9d2243d72acf1, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::AirCombat.E1MapFlightSession
+  m_EditorClassIdentifier: Assembly-CSharp::AirCombat.FlightSession
   player: {fileID: 1069913521}
   cameraRig: {fileID: 1027530358}
   combatHud: {fileID: 0}
