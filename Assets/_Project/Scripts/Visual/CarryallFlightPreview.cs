@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.InputSystem;
 
 namespace AirCombat
 {
@@ -25,7 +26,15 @@ namespace AirCombat
         [SerializeField, Min(0f)] private float exhaustScale = 1f;
         [SerializeField, Min(0f)] private float dustPuffsPerSecond = 7f;
         [SerializeField] private bool clampPulse = true;
+        [Header("CA05 / Destruction trial")]
+        [SerializeField] private TestMode testMode;
+        [SerializeField, Min(8f)] private float crashAcceleration = 24f;
+        [SerializeField, Min(0f)] private float crashMinimumDrift = 16f;
         [SerializeField] private string phaseStatus;
+        private enum TestMode { Pickup, Empty, Loaded }
+        private CarryallCrashSequence crash;
+        private Vector3 lastPosition, velocity;
+        private bool forcedLoaded;
         private CarryallRotorVisual rotors;
         private CarryallPickupSequence sequence;
         private CarryallPickupVfx effects;
@@ -66,6 +75,7 @@ namespace AirCombat
                 enabled = false; return;
             }
             effects = CarryallPickupVfx.Create(carrier, transform, previewTerrain);
+            crash = new CarryallCrashSequence(carrier, payload.transform, transform, previewTerrain);
             ready = true;
             RestartPreview();
         }
@@ -92,6 +102,7 @@ namespace AirCombat
         public void RestartPreview()
         {
             if (!ready) return;
+            crash.Reset();
             sequence = new CarryallPickupSequence(carrier, payload.transform, mount, transform,
                 ground + Vector3.up * Mathf.Max(0f, groundClearance), heading);
             sequence.Reset(new CarryallPickupSequence.Settings
@@ -101,6 +112,22 @@ namespace AirCombat
                 clampSeconds = clampSeconds, liftSeconds = liftSeconds, departSeconds = departSeconds,
                 departDistance = departDistance
             });
+            forcedLoaded = testMode == TestMode.Loaded;
+            if (testMode != TestMode.Pickup)
+            {
+                Vector3 p = ground;
+                p.y = Mathf.Max(ground.y + 12f, cruiseAltitude);
+                carrier.SetPositionAndRotation(p, heading);
+                if (forcedLoaded)
+                {
+                    payload.transform.SetParent(mount, false);
+                    payload.transform.localPosition = Vector3.zero;
+                    payload.transform.localRotation = Quaternion.identity;
+                }
+                payload.SetActive(forcedLoaded);
+            }
+            lastPosition = carrier.position;
+            velocity = Vector3.zero;
             rotors.ResetPhase();
             effects?.Reset();
             UpdateStatus();
@@ -110,18 +137,53 @@ namespace AirCombat
         {
             if (!ready || MissionPause.IsTacticalMapPausedFor(gameObject.scene)) return;
             float dt = Time.deltaTime;
-            rotors.Advance(rotorDegreesPerSecond * dt);
-            sequence.Advance(dt);
-            effects?.Tick(dt, sequence.CurrentPhase, sequence.IsLoaded, exhaustScale, dustPuffsPerSecond, clampPulse);
+            var keyboard = Keyboard.current;
+            if (Application.isFocused && keyboard != null)
+            {
+                // FlightSession owns R. L resets only the visual preview and cycles its test mode.
+                if (keyboard.rKey.wasPressedThisFrame) return;
+                if (keyboard.lKey.wasPressedThisFrame)
+                {
+                    testMode = (TestMode)(((int)testMode + 1) % 3);
+                    RestartPreview();
+                    return;
+                }
+                if (keyboard.kKey.wasPressedThisFrame && !crash.Active)
+                {
+                    bool loaded = testMode == TestMode.Pickup ? sequence.IsLoaded : forcedLoaded;
+                    effects?.Clear();
+                    crash.Begin(loaded, velocity, crashAcceleration, crashMinimumDrift);
+                }
+            }
+            if (crash.Active)
+            {
+                crash.Advance(dt);
+                rotors.Advance(rotorDegreesPerSecond * crash.RotorFactor * dt);
+            }
+            else
+            {
+                rotors.Advance(rotorDegreesPerSecond * dt);
+                if (testMode == TestMode.Pickup) sequence.Advance(dt);
+                if (dt > .00001f) velocity = (carrier.position - lastPosition) / dt;
+                lastPosition = carrier.position;
+                var phase = testMode == TestMode.Pickup ? sequence.CurrentPhase : CarryallPickupSequence.Phase.Complete;
+                bool loaded = testMode == TestMode.Pickup ? sequence.IsLoaded : forcedLoaded;
+                effects?.Tick(dt, phase, loaded, exhaustScale, dustPuffsPerSecond, clampPulse && testMode == TestMode.Pickup);
+            }
             UpdateStatus();
         }
 
-        private void OnDisable() => effects?.Clear();
-        private void OnDestroy() => effects?.Dispose();
+        private void OnDisable() { effects?.Clear(); }
+        private void OnDestroy() { crash?.Dispose(); effects?.Dispose(); }
 
         private void UpdateStatus()
         {
-            phaseStatus = sequence.CurrentPhase + (sequence.IsLoaded ? " / LOADED" : " / EMPTY");
+            if (crash.Active)
+                phaseStatus = (crash.HullLanded ? "WRECK" : "FALLING") +
+                    (crash.HadPayload ? (crash.CargoLanded ? " / CARGO GROUNDED" : " / CARGO FALLING") : " / EMPTY");
+            else if (testMode != TestMode.Pickup)
+                phaseStatus = "HOVER / " + (forcedLoaded ? "LOADED" : "EMPTY");
+            else phaseStatus = sequence.CurrentPhase + (sequence.IsLoaded ? " / LOADED" : " / EMPTY");
         }
     }
 }
