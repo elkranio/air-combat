@@ -4,8 +4,8 @@ using UnityEngine.Rendering;
 
 namespace AirCombat
 {
-    // BURST shot presentation and physical projectile creation. Selection and
-    // firing cadence belong to WeaponSelection and Autocannon respectively.
+    // Shot presentation and physical projectile creation. The weapon mount
+    // owns firing cadence and trigger requests.
     [DisallowMultipleComponent]
     public sealed class AutocannonEmitter : MonoBehaviour
     {
@@ -150,7 +150,7 @@ namespace AirCombat
 
         public void SetSoundVariants(AudioClip[] clips) { soundVariants = clips; }
 
-        // Called at the same point in WeaponController.LateUpdate as before.
+        // Called by the weapon mount in LateUpdate.
         public void TickVisuals()
         {
             if (flashes == null) return;
