@@ -11,7 +11,7 @@ OUT = ROOT / 'Assets/_Project/Art/Aircraft/Dominion/ED01_Warden'
 PALETTE = {'Hull': (76, 85, 68), 'Upper': (112, 122, 94), 'Dark': (39, 47, 47),
            'Red': (179, 55, 45), 'Steel': (112, 124, 126)}
 PARTS = []
-TURRETS = {'L': (-2.10, -.26, 3.25), 'R': (2.10, -.26, 3.25)}
+TURRETS = {'L': (-2.85, 1.40, 4.05), 'R': (2.85, 1.40, 4.05)}
 
 def sub(a,b): return tuple(x-y for x,y in zip(a,b))
 def dot(a,b): return sum(x*y for x,y in zip(a,b))
@@ -62,17 +62,14 @@ def cylinder(name,g,sections,assembly='Body',vertical=False,n=10):
 
 def paint(p,n):return 'Upper' if n[1]>.25 else 'Hull'
 
-# ED01C: twin ducted rotor escort drone. Compact teardrop body, no wings or booms.
-# +Z is the nose. The ring shrouds are hollow, not solid discs.
-ROTORS = {'L': (-5.0, .16, -1.15), 'R': (5.0, .16, -1.15)}
-EXHAUSTS = {'L': (-.66, .05, -4.48), 'R': (.66, .05, -4.48)}
+# ED01D: balanced twin-rotor silhouette, broad fuselage and faceted shrouds.
+ROTORS = {'L': (-5.42, .16, -1.05), 'R': (5.42, .16, -1.05)}
+EXHAUSTS = {'L': (-.83, .05, -5.25), 'R': (.83, .05, -5.25)}
 
-# A closed annular shell with chamfered edges; separate top/inner paint faces.
 def duct(name, x, z):
-    n=24
-    # cross section (radius, y) around a vertical axis
-    section=[(3.15,-.29),(3.34,-.16),(3.40,.33),(3.26,.51),
-             (2.91,.51),(2.79,.33),(2.79,-.18),(2.93,-.29)]
+    n=16
+    section=[(2.69,-.40),(2.84,-.24),(2.88,.32),(2.75,.58),
+             (2.36,.58),(2.23,.32),(2.23,-.22),(2.38,-.40)]
     v=[(x+r*cos(2*pi*k/n),y,z+r*sin(2*pi*k/n)) for r,y in section for k in range(n)]
     faces=[]
     for j in range(len(section)):
@@ -83,48 +80,44 @@ def duct(name, x, z):
     def duct_paint(p,normal):
         r=((p[0]-x)**2+(p[2]-z)**2)**.5
         if normal[1]>.45*dot(normal,normal)**.5:
-            # Red forward-outboard rim segments make nose direction apparent.
-            if p[2]-z>1.10 and (p[0]-x)*(1 if x>0 else -1)>1.35:return 'Red'
+            if p[2]-z>.95 and (p[0]-x)*(1 if x>0 else -1)>1.10:return 'Red'
             return 'Upper'
-        return 'Dark' if r<2.96 else 'Hull'
+        return 'Dark' if r<2.39 else 'Hull'
     solid(name,'Hull',v,faces,paint=duct_paint)
 
-# Short tapered body, broad enough to read as a vehicle rather than a stick.
-rings('Teardrop chassis','Hull',[(-4.48,0,.02,.64,.38),(-3.1,0,.08,1.00,.57),(-.6,0,.11,1.45,.82),(1.4,0,.10,1.63,.87),(3.0,0,.05,1.46,.68),(4.45,0,-.06,.94,.43),(5.06,0,-.08,.55,.31)],paint=paint)
-rings('Sensor prow','Dark',[(3.82,0,-.10,.87,.36),(4.88,0,-.12,.60,.29),(5.20,0,-.12,.45,.22)])
-box('Red optic','Red',0,-.05,5.18,.76,.24,.12)
-# Top-facing red sensor strip is visible from the flight camera.
-slab('Sensor crown','Red',[(-.37,.39,4.43),(.37,.39,4.43),(.24,.27,4.99),(-.24,.27,4.99)],.09)
-slab('Dorsal panel','Dark',[(-.42,.99,1.08),(.42,.99,1.08),(.30,.87,-1.74),(-.30,.87,-1.74)],.10)
+# Wider main hull with a distinct squared sensor nose and tapered tail.
+rings('Escort chassis','Hull',[(-5.25,0,.03,.85,.43),(-3.7,0,.10,1.46,.70),(-1.0,0,.13,2.20,.95),(1.6,0,.15,2.36,1.02),(3.55,0,.10,2.10,.80),(5.05,0,.03,1.48,.61),(6.02,0,-.04,1.06,.43)],paint=paint)
+rings('Sensor prow','Dark',[(5.02,0,.02,1.15,.53),(5.88,0,.00,1.03,.44),(6.19,0,.00,.82,.30)])
+box('Red optic','Red',0,.04,6.18,1.40,.27,.12)
+slab('Sensor crown','Red',[(-.66,.58,5.07),(.66,.58,5.07),(.51,.39,5.89),(-.51,.39,5.89)],.10)
+slab('Dorsal panel','Dark',[(-.58,1.20,1.08),(.58,1.20,1.08),(.43,1.05,-2.10),(-.43,1.05,-2.10)],.10)
 
 for s in (-1,1):
     side='L' if s<0 else 'R'
     x,ry,z=ROTORS[side]
-    # Single short swept link, no ladder-like rear braces.
-    slab('Rotor support '+side,'Hull',[(s*1.00,.12,1.65),(s*2.18,.12,.88),(s*2.21,.12,-.90),(s*.98,.12,-.12)],.62)
-    slab('Support upper '+side,'Upper',[(s*1.20,.46,1.28),(s*1.93,.46,.80),(s*2.00,.46,-.46),(s*1.26,.46,-.03)],.12)
+    # Solid short shoulder joins the inner shroud wall; no second cross brace.
+    slab('Rotor support '+side,'Hull',[(s*1.56,.12,1.50),(s*3.00,.12,.45),(s*3.04,.12,-1.88),(s*1.52,.12,-1.08)],.72)
+    slab('Support upper '+side,'Upper',[(s*1.80,.52,1.13),(s*2.89,.52,.31),(s*2.88,.52,-1.34),(s*1.84,.52,-.86)],.12)
     duct('Rotor shroud '+side,x,z)
-    # Three narrow fixed spokes sit below the blade plane.
     for k in range(3):
         a=2*pi*k/3+(.20 if s<0 else -.20)
         def point(r,t,y):return (x+r*cos(a)-t*sin(a),y,z+r*sin(a)+t*cos(a))
-        slab('Motor spoke '+side+str(k),'Dark',[point(.35,-.105,-.22),point(2.90,-.13,-.22),point(2.90,.13,-.22),point(.35,.105,-.22)],.19)
-    cylinder('Motor hub '+side,'Dark',[(-.35,x,z,.50,.50),(.11,x,z,.54,.54),(.32,x,z,.34,.34)],vertical=True,n=12)
-    cylinder('Hub cap '+side,'Steel',[(.31,x,z,.25,.25),(.39,x,z,.18,.18)],vertical=True,n=10)
-    # Clearly visible broad, tapered blades. Static for this silhouette trial.
+        slab('Motor spoke '+side+str(k),'Dark',[point(.35,-.105,-.22),point(2.36,-.13,-.22),point(2.36,.13,-.22),point(.35,.105,-.22)],.19)
+    cylinder('Motor hub '+side,'Dark',[(-.35,x,z,.43,.43),(.11,x,z,.47,.47),(.32,x,z,.30,.30)],vertical=True,n=12)
+    cylinder('Hub cap '+side,'Steel',[(.31,x,z,.23,.23),(.39,x,z,.16,.16)],vertical=True,n=10)
     for k in range(3):
         a=2*pi*k/3+(.68 if s<0 else -.68)
         def blade(r,t):return (x+r*cos(a)-s*t*sin(a),.17,z+r*sin(a)+s*t*cos(a))
-        slab('Rotor blade '+side+str(k),'Steel',[blade(.38,-.14),blade(1.15,-.40),blade(2.62,-.32),blade(2.65,.09),blade(1.12,.26),blade(.38,.15)],.14)
-    # Short forward weapon mounts, clear of the rotor disc in top view.
-    slab('Weapon shoulder '+side,'Hull',[(s*1.02,.10,3.66),(s*2.56,.10,3.65),(s*2.52,.10,2.79),(s*1.08,.10,2.20)],.56)
+        slab('Rotor blade '+side+str(k),'Steel',[blade(.32,-.13),blade(.88,-.30),blade(2.08,-.24),blade(2.10,.08),blade(.88,.21),blade(.32,.13)],.14)
+    # Integrated forward shoulders carry raised, independent yaw/pitch assemblies.
+    slab('Weapon shoulder '+side,'Hull',[(s*1.50,.22,4.64),(s*2.91,.22,4.62),(s*3.32,.22,4.03),(s*3.18,.22,2.78),(s*1.50,.22,2.20)],.76)
+    slab('Shoulder cap '+side,'Upper',[(s*1.78,.65,4.30),(s*2.85,.65,4.32),(s*3.10,.65,3.87),(s*2.93,.65,3.07),(s*1.80,.65,2.70)],.15)
     tx,ty,tz=TURRETS[side]
-    cylinder('Turret mount '+side,'Dark',[(ty-.06,tx,tz,.43,.43),(ty+.30,tx,tz,.52,.52)],vertical=True,n=10)
-    # Small aft cooling ports retain the two original socket roles.
+    cylinder('Turret pedestal '+side,'Dark',[(.58,tx,tz,.60,.60),(1.02,tx,tz,.55,.55),(ty+.02,tx,tz,.43,.43)],vertical=True,n=10)
     ex,ey,ez=EXHAUSTS[side]
-    rings('Cooling outlet '+side,'Dark',[(ez,ex,ey,.24,.20),(ez+.52,ex,ey,.32,.28)])
+    rings('Cooling outlet '+side,'Dark',[(ez,ex,ey,.28,.23),(ez+.62,ex,ey,.35,.30)])
 
-# Two modest but legible game-weapon silhouettes, same yaw/pitch/muzzle hierarchy.
+# Separate visual turret parts; pitch and +Z muzzle coordinates stay unchanged.
 cylinder('Yaw base','Steel',[(-.38,0,0,.48,.48),(.03,0,0,.57,.57)],'Yaw',vertical=True)
 rings('Yaw yoke','Dark',[(-.45,0,-.34,.44,.29),(.39,0,-.34,.46,.29)],'Yaw')
 rings('Gun housing','Hull',[(-.62,0,0,.36,.27),(-.32,0,0,.45,.34),(.45,0,0,.36,.28),(.70,0,0,.23,.20)],'Pitch')
