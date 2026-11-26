@@ -13,6 +13,8 @@ namespace AirCombat
         private Vector3 velocity;
         private Transform shooter;
         private TrailRenderer trail;
+        private LineRenderer outerFlame, innerFlame;
+        private float travelled;
         private Material flashMaterial;
         private Material scorchMaterial;
         private Material impactParticles;
@@ -49,9 +51,9 @@ namespace AirCombat
 
             // Attached, continuous flame geometry remains readable even when the
             // rocket travels several body lengths between rendered frames.
-            AddFlame("NURS flame / orange", trailMaterial, -1.4f, -6.4f,
+            outerFlame = AddFlame("NURS flame / orange", trailMaterial, -1.4f, -6.4f,
                 1.15f, new Color(1f, .38f, .06f, .95f), new Color(1f, .22f, .03f, 0f), 1);
-            AddFlame("NURS flame / hot core", trailMaterial, -1.45f, -4.7f,
+            innerFlame = AddFlame("NURS flame / hot core", trailMaterial, -1.45f, -4.7f,
                 .55f, new Color(1f, 1f, .83f, 1f), new Color(1f, .68f, .15f, .1f), 2);
 
             var streak = new GameObject("NURS trail");
@@ -69,12 +71,13 @@ namespace AirCombat
             trail.shadowCastingMode = ShadowCastingMode.Off;
             trail.receiveShadows = false;
             trail.Clear();
-            trail.emitting = true;
+            trail.emitting = false;
             launched = true;
             OrientBody();
+            UpdateExhaust();
         }
 
-        private void AddFlame(string label, Material material, float front, float back,
+        private LineRenderer AddFlame(string label, Material material, float front, float back,
             float width, Color hot, Color tail, int sortingOrder)
         {
             var flame = new GameObject(label);
@@ -93,6 +96,20 @@ namespace AirCombat
             line.sortingOrder = sortingOrder;
             line.shadowCastingMode = ShadowCastingMode.Off;
             line.receiveShadows = false;
+            return line;
+        }
+
+        // The full rearward flame would reach back up through the wing when a
+        // steeply pitched rocket first appears. Grow it as the rocket clears the pylon.
+        private void UpdateExhaust()
+        {
+            outerFlame.SetPosition(1, Vector3.back * Mathf.Min(6.4f, 1.7f + travelled));
+            innerFlame.SetPosition(1, Vector3.back * Mathf.Min(4.7f, 1.7f + travelled));
+            if (trail != null && !trail.emitting && travelled >= 4.5f)
+            {
+                trail.Clear();
+                trail.emitting = true;
+            }
         }
 
         private void Update()
@@ -144,9 +161,11 @@ namespace AirCombat
                     return;
                 }
                 transform.position = to;
+                travelled += distance;
                 remaining -= dt;
             }
             OrientBody();
+            UpdateExhaust();
         }
 
         private void OrientBody()

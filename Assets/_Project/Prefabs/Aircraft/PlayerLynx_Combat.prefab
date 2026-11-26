@@ -521,8 +521,8 @@ MonoBehaviour:
   muzzleSpeed: 320
   downwardAngle: 55
   blastRadius: 8
-  leftPylon: {x: -2.8, y: -0.45, z: -1.55}
-  rightPylon: {x: 2.8, y: -0.45, z: -1.55}
+  leftPylon: {x: -3.5, y: -1.5, z: -1.55}
+  rightPylon: {x: 3.5, y: -1.5, z: -1.55}
   yawSpread: 5
   pitchSpread: 5
   boostSpread: 2.5
