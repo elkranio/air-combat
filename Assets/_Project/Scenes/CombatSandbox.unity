@@ -2517,7 +2517,14 @@ MonoBehaviour:
     lifetime: 4
     hitRadius: 5
     damage: 6
-  mode: 3
+  mode: 4
+  convoyPicketPrefab: {fileID: 8201000000000000004, guid: 43c92e56080254d797a874a625f33861, type: 3}
+  convoyTerrain: {fileID: 1071449414}
+  convoyStart: {x: -290, y: 0, z: -100}
+  convoyYaw: 0
+  convoySpacing: 30
+  convoySpeed: 12
+  convoyDistance: 650
   sparrowPrefab: {fileID: 8176654010010000020, guid: 69cd2d1011a85dce9593357073f49dbc, type: 3}
   interceptionCount: 10
   interceptionInterval: 0.7

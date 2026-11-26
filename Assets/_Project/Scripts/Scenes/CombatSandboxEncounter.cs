@@ -18,12 +18,22 @@ namespace AirCombat
         [SerializeField] private EnemyMissileStressTest.Settings enemyMissiles = new EnemyMissileStressTest.Settings();
         private EnemyMissileStressTest missileStress;
         // Explicit serialized values: do not reorder or reuse these IDs.
-        public enum SandboxMode { Dogfight = 0, GroundAttack = 1, Interception = 2, Warden = 3 }
+        public enum SandboxMode { Dogfight = 0, GroundAttack = 1, Interception = 2, Warden = 3, Convoy = 4 }
         [Header("Combat sandbox / select before Play")]
         [SerializeField] private SandboxMode mode = SandboxMode.GroundAttack;
         private bool groundMode;
         private bool wardenMode;
         private readonly List<WardenCombat> wardens = new List<WardenCombat>();
+        private bool convoyMode;
+        [Header("CV02 / Straight convoy preview")]
+        [SerializeField] private PicketDeploymentVisual convoyPicketPrefab;
+        [SerializeField] private Terrain convoyTerrain;
+        [SerializeField] private Vector3 convoyStart = new Vector3(-290f, 0f, -100f);
+        [SerializeField] private float convoyYaw;
+        [SerializeField, Min(16f)] private float convoySpacing = 30f;
+        [SerializeField, Min(.1f)] private float convoySpeed = 12f;
+        [SerializeField, Min(1f)] private float convoyDistance = 650f;
+        private ConvoyMarchPreview convoy;
         [Header("Cruise missile interception")]
         [SerializeField] private CruiseMissileTarget sparrowPrefab;
         [SerializeField, Min(1)] private int interceptionCount = 10;
@@ -66,6 +76,7 @@ namespace AirCombat
         {
             get
             {
+                if (convoyMode) return convoy != null ? convoy.DebugStatus : "CONVOY UNAVAILABLE";
                 if (wardenMode)
                 {
                     string wardenStatus = defeated ? "DEFEAT" : victory ? "VICTORY" : "Warden";
@@ -101,7 +112,7 @@ namespace AirCombat
         public void Bind(JetAssembly aircraft, Camera camera, AircraftRadar sensor,
             PlayerHitPoints health, float halfExtent)
         {
-            if (mode != SandboxMode.Dogfight && mode != SandboxMode.GroundAttack && mode != SandboxMode.Interception && mode != SandboxMode.Warden)
+            if (mode != SandboxMode.Dogfight && mode != SandboxMode.GroundAttack && mode != SandboxMode.Interception && mode != SandboxMode.Warden && mode != SandboxMode.Convoy)
             {
                 Debug.LogError("Combat sandbox: invalid mode.", this);
                 return;
@@ -109,6 +120,7 @@ namespace AirCombat
             interceptionMode = mode == SandboxMode.Interception;
             groundMode = mode == SandboxMode.GroundAttack;
             wardenMode = mode == SandboxMode.Warden;
+            convoyMode = mode == SandboxMode.Convoy;
             player = aircraft;
             view = camera;
             radar = sensor;
@@ -166,6 +178,17 @@ namespace AirCombat
                 nursLauncher.Bind(playerFlight, playerBoost, playerTrigger, view);
                 playerTrigger.ConfigureDualSlots(nursLauncher);
             }
+            else if (convoyMode)
+            {
+                playerTrigger.ConfigureDualSlots(null);
+                convoy = new ConvoyMarchPreview(convoyPicketPrefab, convoyTerrain, radar, transform,
+                    convoyStart, convoyYaw, convoySpacing, convoySpeed, convoyDistance);
+                // Isolate the previous Warden and Mantis trials in this mode.
+                foreach (var warden in FindObjectsByType<WardenCombat>())
+                    if (warden.gameObject.scene == gameObject.scene) warden.gameObject.SetActive(false);
+                foreach (var gun in FindObjectsByType<MantisGun>())
+                    if (gun.gameObject.scene == gameObject.scene) gun.gameObject.SetActive(false);
+            }
             else if (wardenMode)
             {
                 playerTrigger.ConfigureDualSlots(null);
@@ -221,6 +244,11 @@ namespace AirCombat
             if (playerFlight != null) playerFlight.enabled = true;
             if (playerTrigger != null) playerTrigger.enabled = true;
             defeated = victory = false;
+            if (convoyMode)
+            {
+                encounterReady = convoy != null && convoy.Restart();
+                return;
+            }
             if (wardenMode)
             {
                 foreach (var warden in wardens)
@@ -349,6 +377,11 @@ namespace AirCombat
                 return;
             }
 
+            if (convoyMode)
+            {
+                convoy.Tick(Time.deltaTime);
+                return;
+            }
             if (wardenMode)
             {
                 bool anyAlive = false;
@@ -392,6 +425,7 @@ namespace AirCombat
         private void LateUpdate()
         {
             if (!bound || !encounterReady || defeated || victory || !playerHealth.IsAlive) return;
+            if (convoyMode) return;
             if (wardenMode)
             {
                 foreach (var warden in wardens)
@@ -478,6 +512,7 @@ namespace AirCombat
 
         private void OnDestroy()
         {
+            convoy?.Dispose();
             interception?.Clear();
             foreach (var warden in wardens)
             {
