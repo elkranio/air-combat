@@ -58,7 +58,7 @@ def slab(name,asm,mat,outline,y0,y1):
     n=len(outline);v=[(x,y,z) for y in (y0,y1) for x,z in outline]
     solid(name,asm,mat,v,[tuple(range(n)),tuple(range(n,2*n))]+[(i,(i+1)%n,(i+1)%n+n,i+n) for i in range(n)])
 
-# V4: wider faceted lift hull, broad tapered shoulders and integrated nacelles.
+# V5: retain the V4 center hull, integrate the longitudinal engine banks.
 # Preserve the CG01 capture plane and all twelve named assemblies.
 from math import sin, cos, pi
 PROFILE = [(-.64,-1),(.64,-1),(1,-.40),(1,.38),(.65,1),(-.65,1),(-1,.38),(-1,-.40)]
@@ -145,6 +145,10 @@ for s,side in [(-1,'L'),(1,'R')]:
         (4.3,-5.05,2.96,2.42,.72),(6.2,-5.4,3.03,1.80,.54),(8.20,-5.65,3.08,1.28,.43)])
     shoulder('Aft armor cap','Body','Hull',s,[(2.2,-5.05,3.62,2.34,.23),
         (4.4,-5.24,3.62,1.84,.22),(6.25,-5.6,3.52,1.32,.20),(7.75,-5.77,3.46,.80,.15)])
+    # Low swept infill extends the main shoulder toward the inner nacelle wall.
+    # Leave a smaller rear relief: no new rib, no change to the main shoulder.
+    shoulder('Inner shoulder infill','Body','Hull',s,[(4.5,-1.25,3.25,1.65,.47),
+        (6.5,-.60,3.24,2.0,.46),(8.6,0.0,3.24,2.12,.44)])
     # Integrated nacelle bridge: joins both turbine housings into one planform.
     # Two halves remain detachable, with a common seam at z=0.
     for end,z,r,inner in [('Front',4.5,3.25,2.35),('Rear',-4.5,3.45,2.48)]:
@@ -169,14 +173,13 @@ for s,side in [(-1,'L'),(1,'R')]:
         slab('Outboard cheek',asm,'Frame',[(x+s*2.55,z-2.2),(x+s*3.10,z-1.45),(x+s*3.10,z+1.45),(x+s*2.55,z+2.2)],2.12,3.38)
         if end=='Front':
             slab('Dominion shoulder marking',asm,'Red',[(x+s*.65,7.75),(x+s*1.35,7.45),(x+s*1.65,7.88),(x+s*.90,8.17)],3.70,3.83)
-    # Dark mechanical spine bridges the two visible circular rims on top.
+    # One low, beveled armored waist instead of the raised bridge and service box.
+    # The bank is widest at the circular shrouds and pinched at mid-chord.
+    # End stations stay outside both fan bores (z distance >= 2.55).
     asm='Tail'+side
-    loft('Nacelle dorsal bridge',asm,'Hull',[(-2.15,x,3.8,1.65,.26),(-1.1,x,3.86,2.05,.52),(1.0,x,3.86,2.05,.52),(2.15,x,3.8,1.55,.26)])
-    box('Service panel',asm,'Vent',x,4.40,0,1.45,.07,1.35)
-    # Widen the bridge on both flanks without covering the visible fan discs.
-    for d in (-1,1):
-        loft('Bank side fairing',asm,'Hull',[(-2.0,x+d*1.65,3.25,.65,.40),(-.9,x+d*2.12,3.40,.88,.61),
-            (.9,x+d*2.12,3.40,.88,.61),(2.0,x+d*1.65,3.25,.65,.40)])
+    loft('Unified nacelle waist',asm,'Hull',[(-1.95,x,3.13,2.60,.75),
+        (-1.15,x,3.12,2.52,.74),(0,x,3.09,2.30,.72),
+        (1.15,x,3.12,2.48,.74),(1.95,x,3.13,2.52,.75)])
     # swept tail stabilizer tied to the bank, clearly defines rear direction
     yzplate('Bank tail fin',asm,'Hull',*sorted((x+s*.70,x+s*1.07)),[(3.25,-9.5),(5.72,-9.08),(5.52,-7.70),(3.25,-6.65)])
     slab('Rear tail plate',asm,'Top',[(s*3.05,-7.5),(s*7.95,-9.5),(s*9.4,-8.6),(s*7.8,-6.4),(s*4.0,-6.65)],2.55,2.85)
