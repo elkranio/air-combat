@@ -6,7 +6,7 @@ namespace AirCombat
     [DisallowMultipleComponent]
     [RequireComponent(typeof(BoxCollider))]
     [DefaultExecutionOrder(-25)] // After shared retry/FX (-30), before Overlord (-20).
-    public sealed class WatcherTarget : AirDamageableTarget, IRadarAirContact
+    public sealed class WatcherTarget : AirDamageableTarget, IRadarAirContact, IObjectiveTarget
     {
         [SerializeField] private Transform visual;
         [SerializeField, Min(1)] private int maxHp = 10;
@@ -23,6 +23,8 @@ namespace AirCombat
         private int hp;
         private bool initialized, falling, detonated;
         public override bool IsAlive => initialized && hp > 0;
+        public ObjectiveTargetState ObjectiveState => !initialized ? ObjectiveTargetState.Pending :
+            hp <= 0 ? ObjectiveTargetState.Destroyed : ObjectiveTargetState.Patrolling;
         public override CombatTargetDomain Domain => CombatTargetDomain.Air;
         public Vector3 RadarPosition => transform.position;
         public Vector3 RadarForward => transform.forward;

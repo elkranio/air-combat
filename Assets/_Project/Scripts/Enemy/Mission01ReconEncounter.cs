@@ -6,7 +6,7 @@ namespace AirCombat
     // Composition, radar and shared FX. Clear retry FX before individual target updates.
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-30)]
-    public sealed class Mission01ReconEncounter : MonoBehaviour, IAirTargetEffects
+    public sealed class Mission01ReconEncounter : MonoBehaviour, IAirTargetEffects, IPrimaryObjectiveSource
     {
         [SerializeField] private Mission01LaunchSequence launch;
         [SerializeField] private FlightController player;
@@ -19,15 +19,9 @@ namespace AirCombat
         private Texture2D mask;
         private bool ready;
         public bool InFlight => ready && launch != null && launch.isActiveAndEnabled && launch.State == Mission01LaunchSequence.Phase.Flight;
-        public int Eliminated
-        {
-            get
-            {
-                int n = 0;
-                if (ready) foreach (var target in targets) if (target != null && !target.IsAlive) n++;
-                return n;
-            }
-        }
+        private DestroyTargetsObjective primaryObjective;
+        public ObjectiveProgress PrimaryProgress => primaryObjective != null ? primaryObjective.Read() : default;
+        public int Eliminated => PrimaryProgress.Destroyed;
 #if UNITY_EDITOR
         public void ConfigureForAuthoring(Mission01LaunchSequence sequence, FlightController flight, WatcherTarget[] units, float floor)
         { launch = sequence; player = flight; targets = units; groundY = floor; }
@@ -49,6 +43,7 @@ namespace AirCombat
             var rig = FindFirstObjectByType<ArcadeCameraFollow>();
             effects.Bind(rig != null ? rig.GetComponent<Camera>() : null);
             CreateTrails();
+            primaryObjective = new DestroyTargetsObjective(targets);
             ready = true;
         }
 
@@ -130,11 +125,11 @@ namespace AirCombat
         private void OnGUI()
         {
             if (!InFlight || MissionPause.IsTacticalMapPausedFor(gameObject.scene) || Event.current.type != EventType.Repaint) return;
-            int count = Eliminated;
+            ObjectiveProgress progress = PrimaryProgress;
             var style = new GUIStyle(GUI.skin.label) { fontSize = Mathf.RoundToInt(Mathf.Clamp(Screen.height * .022f, 15, 25)), fontStyle = FontStyle.Bold };
-            string label = count == targets.Length ? "RECON COMPLETE  /  3 OF 3" : $"RECON  /  {count} OF {targets.Length}";
+            string label = progress.Complete ? $"RECON COMPLETE  /  {progress.Destroyed} OF {progress.Total}" : $"RECON  /  {progress.Destroyed} OF {progress.Total}";
             style.normal.textColor = new Color(.05f, .07f, .08f, .9f); GUI.Label(new Rect(21, 21, 440, 40), label, style);
-            style.normal.textColor = count == targets.Length ? new Color(.58f, .94f, .76f) : Color.white; GUI.Label(new Rect(20, 20, 440, 40), label, style);
+            style.normal.textColor = progress.Complete ? new Color(.58f, .94f, .76f) : Color.white; GUI.Label(new Rect(20, 20, 440, 40), label, style);
         }
 
         private void OnDestroy()

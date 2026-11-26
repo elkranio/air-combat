@@ -6,7 +6,7 @@ namespace AirCombat
     [DisallowMultipleComponent]
     [RequireComponent(typeof(BoxCollider))]
     [DefaultExecutionOrder(-20)]
-    public sealed class OverlordTarget : AirDamageableTarget, IRadarAirContact
+    public sealed class OverlordTarget : AirDamageableTarget, IRadarAirContact, IObjectiveTarget
     {
         public enum Phase { Patrol, Preparing, Boost, Destroyed, Escaped }
         // Keep the existing serialized PPtr field names for scene overrides.
@@ -59,8 +59,12 @@ namespace AirCombat
         public float RadarThreatRadius => 0f;
         public bool IsRadarVisible => IsAlive && isActiveAndEnabled;
         public RadarContactType RadarKind => RadarContactType.Aircraft;
-        public string ObjectiveStatus => State == Phase.Destroyed ? "DESTROYED" : State == Phase.Escaped ? "TARGET ESCAPED" :
-            State == Phase.Boost ? "ESCAPING" : State == Phase.Preparing ? "ENGINES CHARGING" : "PATROLLING";
+        public ObjectiveTargetState ObjectiveState => !ready ? ObjectiveTargetState.Pending :
+            State == Phase.Destroyed ? ObjectiveTargetState.Destroyed :
+            State == Phase.Escaped ? ObjectiveTargetState.Escaped :
+            State == Phase.Boost ? ObjectiveTargetState.Escaping :
+            State == Phase.Preparing ? ObjectiveTargetState.Charging : ObjectiveTargetState.Patrolling;
+        public string ObjectiveStatus => ObjectiveStatusText.For(ObjectiveState);
 
 #if UNITY_EDITOR
         public void ConfigureForAuthoring(MonoBehaviour sequence, MonoBehaviour fx,

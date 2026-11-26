@@ -38,6 +38,7 @@ namespace AirCombat
         private float mapScale;
         private bool cameraUp;
         private MissionBoundaryGuard operationBoundary;
+        private ObjectiveProgress primaryProgress;
         private static readonly Color Ink = new Color(.80f,.89f,.87f);
         private static readonly Color Muted = new Color(.53f,.66f,.65f);
         private static readonly Color Cyan = new Color(.48f,.92f,.94f);
@@ -248,9 +249,14 @@ namespace AirCombat
 
         private MissionBoundaryGuard ResolveOperationBoundary()
         {
+            primaryProgress = default;
             foreach (var root in gameObject.scene.GetRootGameObjects())
                 foreach (var launch in root.GetComponentsInChildren<Mission01LaunchSequence>())
-                    if (launch.isActiveAndEnabled && launch.Boundary != null) return launch.Boundary;
+                    if (launch.isActiveAndEnabled && launch.Boundary != null)
+                    {
+                        primaryProgress = launch.PrimaryProgress;
+                        return launch.Boundary;
+                    }
             return null;
         }
 
@@ -302,13 +308,13 @@ namespace AirCombat
             if (recon != null) for (int i=0;i<recon.Length;i++)
                 if (recon[i]!=null && Inside(map.WorldToUV(recon[i].position)))
                 {
-                    var target = recon[i].GetComponent<WatcherTarget>();
-                    if (target == null || target.IsAlive) Diamond(Point(rect,recon[i]),5,Ink);
+                    var target = recon[i].GetComponent<IObjectiveTarget>();
+                    if (target == null || ObjectiveStatusText.IsActive(target.ObjectiveState)) Diamond(Point(rect,recon[i]),5,Ink);
                 }
             if (optionalTarget != null && Inside(map.WorldToUV(optionalTarget.position)))
             {
-                var target = optionalTarget.GetComponent<OverlordTarget>();
-                if (target == null || target.IsAlive) Diamond(Point(rect,optionalTarget),7,Gold);
+                var target = optionalTarget.GetComponent<IObjectiveTarget>();
+                if (target == null || ObjectiveStatusText.IsActive(target.ObjectiveState)) Diamond(Point(rect,optionalTarget),7,Gold);
             }
             Vector2 uv=map.WorldToUV(player.position);
             Vector2 pos=Point(rect,new Vector2(Mathf.Clamp(uv.x,.025f,.975f),Mathf.Clamp(uv.y,.025f,.975f)));
@@ -330,16 +336,13 @@ namespace AirCombat
             Text(new Rect(x,y,w,30),"MISSION DATA",20,Ink,true);
             Text(new Rect(x,y+36,w,24),"PRIMARY OBJECTIVE",15,Cyan,true);
             Text(new Rect(x,y+66,w,24),"Destroy reconnaissance units",18,Ink);
-            bool reconLive = recon != null && recon.Length > 0 &&
-                Array.TrueForAll(recon, t => t != null && t.GetComponent<WatcherTarget>() != null);
-            int destroyed = 0;
-            if (reconLive) foreach (var t in recon) if (!t.GetComponent<WatcherTarget>().IsAlive) destroyed++;
-            Text(new Rect(x,y+94,w,22),reconLive ? $"Destroyed: {destroyed} / {recon.Length}" : "Planned targets: "+(recon==null?0:recon.Length),14,Muted);
+            bool reconLive = primaryProgress.IsReady;
+            Text(new Rect(x,y+94,w,22),reconLive ? $"Destroyed: {primaryProgress.Destroyed} / {primaryProgress.Total}" : "Planned targets: "+(recon==null?0:recon.Length),14,Muted);
             Solid(new Rect(x,y+126,w,1),new Color(.23f,.34f,.35f));
             Text(new Rect(x,y+142,w,24),"SECONDARY OBJECTIVE",15,Gold,true);
-            var overlord = optionalTarget != null ? optionalTarget.GetComponent<OverlordTarget>() : null;
-            Text(new Rect(x,y+171,w,24),overlord != null ? "Destroy Overlord" : "Destroy optional target",18,Ink);
-            Text(new Rect(x,y+198,w,22),overlord != null ? overlord.ObjectiveStatus : "Optional / planned",14,Muted);
+            var optional = optionalTarget != null ? optionalTarget.GetComponent<IObjectiveTarget>() : null;
+            Text(new Rect(x,y+171,w,24),optional != null ? "Destroy Overlord" : "Destroy optional target",18,Ink);
+            Text(new Rect(x,y+198,w,22),optional != null ? ObjectiveStatusText.For(optional.ObjectiveState) : "Optional / planned",14,Muted);
             Solid(new Rect(x,y+230,w,1),new Color(.23f,.34f,.35f));
             Text(new Rect(x,y+244,w,26),"LEGEND",16,Ink,true);
             Legend(x,y+282,new Color(.28f,.26f,.22f),"Terrain obstruction");
@@ -358,7 +361,7 @@ namespace AirCombat
             Solid(new Rect(x,y+footer,w,1),new Color(.23f,.34f,.35f));
             bool armed = linked && Array.TrueForAll(plannedSam, sam => sam.Launcher.IsConfigured);
             Text(new Rect(x,y+footer+15,w,25),linked ? "MISSION PROTOTYPE" : "PLANNING DATA / NOT LIVE",14,Gold,true);
-            Text(new Rect(x,y+footer+46,w,28),armed ? (reconLive ? (overlord != null ? "SAMs and objectives live." : "SAMs and recon live; optional pending.") : "SAMs live; objectives pending.") : linked ? "SAM sites linked; combat pending." : "SAMs and objectives are placeholders.",14,Muted);
+            Text(new Rect(x,y+footer+46,w,28),armed ? (reconLive ? (optional != null ? "SAMs and objectives live." : "SAMs and recon live; optional pending.") : "SAMs live; objectives pending.") : linked ? "SAM sites linked; combat pending." : "SAMs and objectives are placeholders.",14,Muted);
         }
         private void Legend(float x,float y,Color c,string text)
         { Solid(new Rect(x,y+5,15,15),c); Text(new Rect(x+25,y,300,25),text,15,Ink); }

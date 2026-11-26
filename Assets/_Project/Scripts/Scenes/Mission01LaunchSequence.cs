@@ -51,7 +51,7 @@ namespace AirCombat
 
         private ScriptedTakeoff takeoff;
         private ScriptedLanding landing;
-        private Mission01ReconEncounter reconEncounter;
+        private IPrimaryObjectiveSource primaryObjectives;
         private bool landingTestOnly;
         private Transform aircraft;
         private Transform visual;
@@ -138,7 +138,7 @@ namespace AirCombat
                 }
                 if (flightSession != null) break;
             }
-            reconEncounter = GetComponent<Mission01ReconEncounter>();
+            primaryObjectives = GetComponent<IPrimaryObjectiveSource>();
             samRadar = aircraft.GetComponent<AircraftRadar>();
             playerHealth = aircraft.GetComponent<PlayerHitPoints>();
             if (samSites != null && samSites.Length > 0)
@@ -261,7 +261,8 @@ namespace AirCombat
             EnterFlight();
         }
 
-        private bool PrimaryComplete => reconEncounter != null && reconEncounter.Eliminated == 3;
+        internal ObjectiveProgress PrimaryProgress => primaryObjectives != null ? primaryObjectives.PrimaryProgress : default;
+        private bool PrimaryComplete => PrimaryProgress.Complete;
 
         private Vector3? ReturnNavigationPoint()
         {
