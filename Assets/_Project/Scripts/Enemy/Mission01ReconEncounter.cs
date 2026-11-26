@@ -33,7 +33,7 @@ namespace AirCombat
                 { Debug.LogError("RE01: invalid target authoring.", this); enabled = false; return; }
                 radar?.Register(target);
             }
-            var rig = FindFirstObjectByType<ArcadeCameraFollow>();
+            var rig = FindAnyObjectByType<ArcadeCameraFollow>();
             airTargetEffects = new AirTargetCombatEffects(transform, player.transform,
                 rig != null ? rig.GetComponent<Camera>() : null);
             primaryObjective = new DestroyTargetsObjective(targets);
@@ -48,7 +48,7 @@ namespace AirCombat
             if (MissionRetry.WasRequestedThisFrame(gameObject.scene))
             {
                 // The mission has already reset the player and SAMs this frame.
-                foreach (var round in FindObjectsByType<BallisticProjectile>(FindObjectsSortMode.None))
+                foreach (var round in FindObjectsByType<BallisticProjectile>())
                     if (round.gameObject.scene == gameObject.scene && round.IsOwnedBy(player.transform))
                     { round.enabled = false; Destroy(round.gameObject); }
                 airTargetEffects?.Reset();

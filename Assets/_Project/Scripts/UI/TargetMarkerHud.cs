@@ -94,7 +94,7 @@ namespace AirCombat
             float closestDistance = float.PositiveInfinity;
             // One scene discovery per RMB click. Only live hostile aircraft with
             // a configured visual hull are eligible. No magic radar-range lock.
-            foreach (var team in FindObjectsByType<AircraftTeam>(FindObjectsSortMode.None))
+            foreach (var team in FindObjectsByType<AircraftTeam>())
             {
                 if (team == null || team.Side != AircraftSide.Hostile) continue;
                 var health = team.GetComponent<PlayerHitPoints>();

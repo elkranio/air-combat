@@ -128,7 +128,7 @@ namespace AirCombat
             playerHealth.InstallHitbox();
             if (groundMode)
             {
-                foreach (var gun in FindObjectsByType<MantisGun>(FindObjectsInactive.Include, FindObjectsSortMode.None))
+                foreach (var gun in FindObjectsByType<MantisGun>(FindObjectsInactive.Include))
                 {
                     if (gun.gameObject.scene != gameObject.scene) continue;
                     groundGuns.Add(gun);
@@ -363,7 +363,7 @@ namespace AirCombat
         private static void ClearRounds(Transform owner)
         {
             if (owner == null) return;
-            foreach (var round in FindObjectsByType<BallisticProjectile>(FindObjectsSortMode.None))
+            foreach (var round in FindObjectsByType<BallisticProjectile>())
             {
                 if (!round.IsOwnedBy(owner)) continue;
                 round.gameObject.SetActive(false);

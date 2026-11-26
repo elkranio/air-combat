@@ -161,7 +161,7 @@ namespace AirCombat
             var effects = new GameObject("Mission01 / terrain crash FX");
             effects.transform.SetParent(transform, false);
             crashFeedback = effects.AddComponent<CombatHitFeedback>();
-            var crashCamera = FindFirstObjectByType<ArcadeCameraFollow>();
+            var crashCamera = FindAnyObjectByType<ArcadeCameraFollow>();
             crashFeedback.Bind(crashCamera != null ? crashCamera.GetComponent<Camera>() : null);
             if (missionHud != null)
             {
@@ -170,7 +170,7 @@ namespace AirCombat
                 missionHud.BindOperationBoundary(boundary);
                 if (missionHud.Marker != null) missionHud.Marker.BindNavigationTarget(ReturnNavigationPoint);
                 // Mission-only terrain warning uses the already configured flight camera.
-                var follow = FindFirstObjectByType<ArcadeCameraFollow>();
+                var follow = FindAnyObjectByType<ArcadeCameraFollow>();
                 if (follow != null)
                 {
                     var camera = follow.GetComponent<Camera>();
@@ -296,7 +296,7 @@ namespace AirCombat
             if (samSites != null) foreach (var site in samSites)
                 if (site != null) site.CancelProjectiles();
             // No more player shots after control is committed to landing.
-            foreach (var round in FindObjectsByType<BallisticProjectile>(FindObjectsSortMode.None))
+            foreach (var round in FindObjectsByType<BallisticProjectile>())
                 if (round.gameObject.scene == gameObject.scene && round.IsOwnedBy(aircraft))
                 { round.enabled = false; Destroy(round.gameObject); }
         }
@@ -347,7 +347,7 @@ namespace AirCombat
         {
             takeoff.PlaceAtEnd(flight.CruiseSpeed, rollSeconds, climbSeconds, cruiseAltitude);
             EnterFlight();
-            var camera = FindFirstObjectByType<ArcadeCameraFollow>();
+            var camera = FindAnyObjectByType<ArcadeCameraFollow>();
             if (camera != null) camera.SnapToAircraft();
         }
 #endif
