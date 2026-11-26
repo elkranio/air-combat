@@ -30,6 +30,10 @@ namespace AirCombat
         [Header("NURS audio / optional, no synthesized fallback")]
         [SerializeField] private AudioClip launchSound;
         [SerializeField] private AudioClip impactSound;
+        [SerializeField] private AudioClip impactDistant;
+        [SerializeField] private AudioClip impactSingleFar;
+        private enum ImpactAudioChoice { Grenade = 0, MuffledDistant = 1, SingleFar = 2 }
+        [SerializeField] private ImpactAudioChoice impactChoice = ImpactAudioChoice.Grenade;
         [SerializeField, Range(0f, 1f)] private float launchVolume = .25f;
         [SerializeField, Range(0f, 1f)] private float impactVolume = .35f;
 
@@ -149,8 +153,10 @@ namespace AirCombat
         private void OnImpact(int damagedParts)
         {
             impacts++;
-            if (audioSource != null && impactSound != null)
-                audioSource.PlayOneShot(impactSound, impactVolume);
+            AudioClip clip = impactChoice == ImpactAudioChoice.MuffledDistant ? impactDistant :
+                impactChoice == ImpactAudioChoice.SingleFar ? impactSingleFar : impactSound;
+            if (audioSource != null && clip != null)
+                audioSource.PlayOneShot(clip, impactVolume);
         }
 
         // Ground footprint only. Buildings/vehicles can intercept the real

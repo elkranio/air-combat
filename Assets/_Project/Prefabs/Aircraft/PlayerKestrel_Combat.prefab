@@ -434,6 +434,13 @@ MonoBehaviour:
   fullTurnRate: 125
   spreadPerShot: 0.1
   settleSeconds: 0.35
+  launchSound: {fileID: 8300000, guid: 26ad3e6ccda04d628c82f2570031cb12, type: 3}
+  impactSound: {fileID: 8300000, guid: 26ad3e6ccda04d628c82f2570031cb13, type: 3}
+  impactDistant: {fileID: 8300000, guid: 26ad3e6ccda04d628c82f2570031cb14, type: 3}
+  impactSingleFar: {fileID: 8300000, guid: 26ad3e6ccda04d628c82f2570031cb15, type: 3}
+  impactChoice: 0
+  launchVolume: 0.18
+  impactVolume: 0.25
 --- !u!1 &8001124010100000008
 GameObject:
   m_ObjectHideFlags: 0
