@@ -58,7 +58,7 @@ def slab(name,asm,mat,outline,y0,y1):
     n=len(outline);v=[(x,y,z) for y in (y0,y1) for x,z in outline]
     solid(name,asm,mat,v,[tuple(range(n)),tuple(range(n,2*n))]+[(i,(i+1)%n,(i+1)%n+n,i+n) for i in range(n)])
 
-# V7: stagger the independent pods longitudinally and clear their fan apertures.
+# V8: remove tall rear fins that obscure the fans from the oblique game camera.
 # Preserve the CG01 capture plane and all twelve named assemblies.
 from math import sin, cos, pi
 PROFILE = [(-.64,-1),(.64,-1),(1,-.40),(1,.38),(.65,1),(-.65,1),(-1,.38),(-1,-.40)]
@@ -174,8 +174,7 @@ for s,side in [(-1,'L'),(1,'R')]:
             slab('Dominion shoulder marking',asm,'Red',[(x+s*.65,7.75),(x+s*1.35,7.45),(x+s*1.65,7.88),(x+s*.90,8.17)],3.70,3.83)
     # No bridge across the open space between the turbine rims.
     asm='Tail'+side
-    # swept tail stabilizer tied to the bank, clearly defines rear direction
-    yzplate('Bank tail fin',asm,'Hull',*sorted((x+s*.70,x+s*1.07)),[(3.25,-10.4),(5.72,-9.98),(5.52,-8.60),(3.25,-8.25)])
+    # Keep the low rear tail plate, without a fin above the turbine.
     slab('Rear tail plate',asm,'Top',[(s*3.05,-7.5),(s*7.95,-9.5),(s*9.4,-8.6),(s*7.8,-6.4),(s*4.0,-6.65)],2.55,2.85)
 # Move the entire four engine assemblies, keeping their local geometry coherent.
 PARTS[:] = [(name,asm,mat,[(x,y,z+(.9 if asm.startswith('EngineFront') else -.9)) for x,y,z in v],t)
