@@ -21,9 +21,15 @@ namespace AirCombat
         [SerializeField, Min(.05f)] private float departSeconds = 9f;
         [SerializeField, Min(20f)] private float departDistance = 150f;
         [SerializeField, Min(0f)] private float rotorDegreesPerSecond = 720f;
+        [Header("CA04 / Pickup VFX (live tuning)")]
+        [SerializeField, Min(0f)] private float exhaustScale = 1f;
+        [SerializeField, Min(0f)] private float dustPuffsPerSecond = 7f;
+        [SerializeField] private bool clampPulse = true;
         [SerializeField] private string phaseStatus;
         private CarryallRotorVisual rotors;
         private CarryallPickupSequence sequence;
+        private CarryallPickupVfx effects;
+        private Terrain previewTerrain;
         private Vector3 ground;
         private Quaternion heading;
         private Transform mount;
@@ -59,6 +65,7 @@ namespace AirCombat
                 Debug.LogError("CA01 pickup preview: rotor initialization failed.", this);
                 enabled = false; return;
             }
+            effects = CarryallPickupVfx.Create(carrier, transform, previewTerrain);
             ready = true;
             RestartPreview();
         }
@@ -76,6 +83,7 @@ namespace AirCombat
                 if (point.x < origin.x || point.x > origin.x + size.x ||
                     point.z < origin.z || point.z > origin.z + size.z) continue;
                 point.y = terrain.SampleHeight(point) + origin.y;
+                previewTerrain = terrain;
                 return true;
             }
             return false;
@@ -94,6 +102,7 @@ namespace AirCombat
                 departDistance = departDistance
             });
             rotors.ResetPhase();
+            effects?.Reset();
             UpdateStatus();
         }
 
@@ -103,8 +112,12 @@ namespace AirCombat
             float dt = Time.deltaTime;
             rotors.Advance(rotorDegreesPerSecond * dt);
             sequence.Advance(dt);
+            effects?.Tick(dt, sequence.CurrentPhase, sequence.IsLoaded, exhaustScale, dustPuffsPerSecond, clampPulse);
             UpdateStatus();
         }
+
+        private void OnDisable() => effects?.Clear();
+        private void OnDestroy() => effects?.Dispose();
 
         private void UpdateStatus()
         {
