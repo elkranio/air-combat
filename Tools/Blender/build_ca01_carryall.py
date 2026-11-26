@@ -58,13 +58,12 @@ def slab(name,asm,mat,outline,y0,y1):
     n=len(outline);v=[(x,y,z) for y in (y0,y1) for x,z in outline]
     solid(name,asm,mat,v,[tuple(range(n)),tuple(range(n,2*n))]+[(i,(i+1)%n,(i+1)%n+n,i+n) for i in range(n)])
 
-# V2: wedge-shaped central bridge, swept shoulders and longitudinally tapered
-# power nacelles. Root and four cargo contacts deliberately unchanged.
-PROFILE = [(-.68,-1),(.68,-1),(1,-.45),(1,.38),(.62,1),(-.62,1),(-1,.38),(-1,-.45)]
+# V3: two integrated longitudinal power nacelles and a narrow skeletal lift bridge.
+# Preserve the CG01 capture plane and all twelve named assemblies.
+from math import sin, cos, pi
+PROFILE = [(-.64,-1),(.64,-1),(1,-.40),(1,.38),(.65,1),(-.65,1),(-1,.38),(-1,-.40)]
 
 def loft(name, asm, mat, sections):
-    # Each segment is a closed faceted solid; aligned section rings share a seam.
-    # z, x center, y center, half width, half height
     n=len(PROFILE)
     for j,(a,b) in enumerate(zip(sections,sections[1:])):
         v=[(x+u*w,y+v*h,z) for z,x,y,w,h in (a,b) for u,v in PROFILE]
@@ -75,58 +74,96 @@ def yzplate(name,asm,mat,x0,x1,profile):
     n=len(profile);v=[(x,y,z) for x in (x0,x1) for y,z in profile]
     solid(name,asm,mat,v,[tuple(range(n)),tuple(range(n,2*n))]+[(i,(i+1)%n,(i+1)%n+n,i+n) for i in range(n)])
 
-loft('Tapered lifting fuselage','Body','Hull',[
-    (-10.8,0,3.30,2.15,.85),(-7.8,0,3.65,3.65,1.55),(-3.2,0,3.8,4.75,1.9),
-    (3.9,0,3.85,4.6,1.85),(6.4,0,3.65,3.45,1.48)])
-loft('Dorsal ridge','Body','Top',[(-7.8,0,5.1,1.5,.23),(-4.0,0,5.58,2.4,.55),
-    (2.6,0,5.64,2.35,.56),(5.4,0,5.05,1.75,.26)])
-# Visible belly frame, two load rails and crossmembers; wide open underside.
-for s in (-1,1):
-    loft('Skeletal load rail','Body','Frame',[(-8.5,s*2.45,1.76,.44,.34),(-5.9,s*2.45,1.52,.61,.52),
-        (5.9,s*2.45,1.52,.61,.52),(8.25,s*2.45,2.05,.45,.34)])
-for z in (-4.65,4.65):
-    chamfer('Transverse grapple beam','Body','Frame',0,1.65,z,7.65,.75,1.32,.22)
-    for s in (-1,1):
-        yzplate('Grapple buttress','Body','Steel',s*2.45-.46,s*2.45+.46,[(1.85,z-.62),(2.75,z-1.5),(2.75,z+.9),(1.85,z+.62)])
-# Nose wedge, low forehead, canopy flush with upper sloping facets.
-loft('Wedge cockpit','Cab','Hull',[(4.65,0,3.75,3.45,1.5),(7.0,0,3.8,3.6,1.5),
-    (9.2,0,3.28,2.95,1.02),(11.2,0,2.95,1.7,.55)])
-for s in (-1,1):
-    lo,hi=sorted((s*.20,s*1.68))
-    yzplate('Swept cockpit glazing','Cab','Glass',lo,hi,[(5.24,7.06),(4.25,9.18),(4.34,9.18),(5.33,7.06)])
-    yzplate('Forward glazing','Cab','Glass',lo,hi,[(4.25,9.18),(3.60,10.85),(3.69,10.85),(4.34,9.18)])
-    # Small bright recognition panels on the nose shoulders.
-    slab('Nose recognition','Cab','Red',[(s*2.15,8.55),(s*2.75,8.55),(s*2.25,9.36),(s*1.87,9.36)],4.26,4.34)
-chamfer('Nose skid','Cab','Frame',0,2.41,10.35,3.85,.33,1.3,.12)
+def duct(name,asm,x,z,outer,inner):
+    # Watertight annular shroud, with actual open bore and distinct lip material.
+    n=16
+    profile=[(outer-.24,.75),(outer,1.12),(outer,3.45),(outer-.24,4.03),
+             (inner+.15,4.03),(inner,3.73),(inner,1.05),(inner+.20,.75)]
+    v=[(x+r*cos(2*pi*k/n),y,z+r*sin(2*pi*k/n)) for r,y in profile for k in range(n)]
+    tris=[]; groups={}
+    for j in range(len(profile)):
+        q=(j+1)%len(profile)
+        mat='Top' if j in (2,3) else 'Dark' if j in (4,5) else 'Frame' if j in (6,7) else 'Hull'
+        for k in range(n):
+            l=(k+1)%n;a,b,c,d=j*n+k,j*n+l,q*n+l,q*n+k
+            t=[(a,b,c),(a,c,d)];tris.extend(t);groups.setdefault(mat,[]).extend(t)
+    edges=Counter((a,b) for t in tris for a,b in zip(t,t[1:]+t[:1]))
+    assert all(n==1 and edges[b,a]==1 for (a,b),n in edges.items()),name
+    vol=sum(dot(v[a],cross(v[b],v[c])) for a,b,c in tris)/6
+    assert abs(vol)>1e-6,name
+    for mat,ts in groups.items():
+        if vol<0:ts=[(a,c,b) for a,b,c in ts]
+        for a,b,c in ts:assert dot(cross(sub(v[b],v[a]),sub(v[c],v[a])),cross(sub(v[b],v[a]),sub(v[c],v[a])))>1e-10
+        PARTS.append((name,asm,mat,v,ts))
 
-for sx,side in [(-1,'L'),(1,'R')]:
-    for sz,end in [(-1,'Rear'),(1,'Front')]:
-        z=sz*5.55; asm='Engine'+end+side; x=sx*8.15
-        # Swept triangular shoulders, not horizontal square bars.
-        slab('Swept wing stub','Body','Hull',[(sx*3.2,z-2.1),(sx*7.8,z-2.65),(sx*8.1,z+.85),(sx*3.7,z+2.55)],2.72,3.87)
-        slab('Swept shoulder cap','Body','Top',[(sx*3.9,z-1.55),(sx*7.15,z-1.9),(sx*7.4,z+.48),(sx*4.15,z+1.9)],3.87,4.08)
-        # Distinct front and rear engine planforms: tapered prow, angular tail,
-        # flatter upper surfaces, visible faceted cheeks.
-        sections=[(-4.35,1.18,.72,2.85),(-2.7,2.35,1.48,3.10),(-.85,2.68,1.92,3.15),
-                  (1.65,2.58,1.86,3.15),(3.50,1.73,1.10,3.05),(4.35,.86,.48,2.95)] if end=='Front' else [
-                  (-4.75,1.42,.72,2.8),(-3.05,2.46,1.48,3.03),(-1.0,2.72,1.91,3.16),
-                  (1.3,2.5,1.77,3.10),(3.05,1.65,1.02,3.0),(3.9,.91,.51,2.85)]
-        loft('Faceted turbine housing',asm,'Hull',[(z+dz,x,y,w,h) for dz,w,h,y in sections])
-        # Long intake on the broad dorsal facet, narrower than the outer armor.
-        panel=[(x-1.08,z-1.35),(x+1.08,z-1.35),(x+1.28,z-.7),(x+1.15,z+1.35),(x-1.15,z+1.35),(x-1.28,z-.7)]
-        slab('Raised intake surround',asm,'Top',panel,4.88,5.10)
-        slab('Recessed intake',asm,'Dark',[(x-.82,z-1.10),(x+.82,z-1.10),(x+1.02,z-.57),(x+.9,z+1.08),(x-.9,z+1.08),(x-1.02,z-.57)],5.10,5.15)
-        for dz in (-.75,-.24,.27,.78):
-            box('Intake vane',asm,'Steel',x,5.18,z+dz,1.68,.10,.15)
-        # A diagonal recognition stripe on the outer cheek (not four red rectangles).
-        slab('Engine recognition',asm,'Red',[(x+sx*.96,z-1.4),(x+sx*1.32,z-1.4),(x+sx*1.57,z-.8),(x+sx*1.18,z-.8)],5.07,5.15)
-        # Eight-sided thrust outlet, inset dark face. Bottom remains above capture plane.
-        chamfer('Nozzle shroud',asm,'Frame',x,1.08,z,3.75,1.2,4.0,.52)
-        slab('Octagonal thrust outlet',asm,'Dark',[(x+dx,z+dz) for dx,dz in [(-1.02,-1.58),(1.02,-1.58),(1.58,-1.02),(1.58,1.02),(1.02,1.58),(-1.02,1.58),(-1.58,1.02),(-1.58,-1.02)]],.45,.60)
-    # Swept tail plates, not upright boxes.
-    slab('Tapered tail boom','Tail'+side,'Frame',[(sx*1.7,-10.8),(sx*4.9,-9.5),(sx*4.45,-6.3),(sx*2.1,-6.1)],2.15,3.0)
-    yzplate('Swept tail fin','Tail'+side,'Hull',sx*3.65-.27,sx*3.65+.27,[(3.0,-10.4),(5.24,-9.75),(5.02,-8.65),(3.0,-6.8)])
-# Original CG01-compatible capture pads, exposed below the frame.
+def disk(name,asm,mat,x,z,r,y0,y1,n=12):
+    slab(name,asm,mat,[(x+r*cos(2*pi*k/n),z+r*sin(2*pi*k/n)) for k in range(n)],y0,y1)
+
+# Exposed parallel load rails, narrow armored spine, deep dark frame.
+for s in (-1,1):
+    loft('Load rail','Body','Frame',[(-8.65,s*2.45,1.55,.42,.40),(-5.6,s*2.45,1.65,.48,.58),
+        (5.6,s*2.45,1.65,.48,.58),(8.0,s*2.45,2.15,.36,.40)])
+loft('Narrow armored spine','Body','Hull',[(-8.8,0,2.9,1.1,.65),(-6.6,0,3.25,1.85,1.10),
+    (4.9,0,3.55,2.10,1.05),(7.0,0,3.8,2.38,1.0)])
+loft('Raised power backbone','Body','Top',[(-6.4,0,4.32,.82,.23),(-4.9,0,4.82,1.40,.43),
+    (3.8,0,5.03,1.48,.54),(5.7,0,4.70,1.50,.32)])
+for z in (-4.65,4.65):
+    chamfer('Cross beam','Body','Steel',0,1.70,z,6.6,.76,1.48,.20)
+    for s in (-1,1):
+        yzplate('Frame buttress','Body','Frame',s*2.45-.28,s*2.45+.28,[(2.0,z-.8),(3.38,z-1.65),(3.38,z+1.65),(2.0,z+.8)])
+# Cab extends well ahead of the pod noses, broad dark glazing on top AND front.
+loft('Cab prow','Cab','Hull',[(5.4,0,3.80,2.18,1.10),(7.6,0,4.03,2.85,1.50),
+    (10.0,0,3.83,2.75,1.48),(12.15,0,3.15,1.95,.88),(12.7,0,2.95,1.35,.52)])
+# Broad canopy solid lies above the armor, not buried inside it.
+loft('Canopy crown','Cab','Glass',[(7.65,0,5.46,1.72,.18),(8.75,0,5.65,2.12,.39),
+    (10.02,0,5.52,1.95,.41),(11.90,0,4.13,1.50,.24)])
+loft('Canopy center divider','Cab','Frame',[(7.65,0,5.64,.10,.035),(8.75,0,6.04,.10,.035),
+    (10.02,0,5.93,.10,.035),(11.90,0,4.37,.10,.035)])
+for s in (-1,1):
+    # visible lateral cab windows, sitting outside the hull
+    yzplate('Side cockpit window','Cab','Glass',*sorted((s*2.72,s*2.84)),[(3.78,8.1),(4.63,8.1),(4.62,9.75),(3.84,10.05)])
+    box('Nose light','Cab','Vent',s*1.0,2.94,12.68,.55,.20,.08)
+chamfer('Nose skid','Cab','Frame',0,2.18,11.55,3.45,.35,1.75,.12)
+
+for s,side in [(-1,'L'),(1,'R')]:
+    x=s*10.2
+    # Two angular wings join the continuous engine banks to the narrow spine.
+    slab('Forward swept shoulder','Body','Hull',[(s*1.80,5.7),(s*7.8,8.25),(s*8.45,6.6),(s*8.1,3.4),(s*2.0,2.4)],2.65,4.0)
+    slab('Forward shoulder cap','Body','Top',[(s*2.20,5.45),(s*7.75,7.7),(s*8.0,6.15),(s*7.6,4.05),(s*2.40,3.15)],4.0,4.22)
+    slab('Rear swept shoulder','Body','Frame',[(s*1.55,-5.95),(s*8.0,-7.15),(s*8.2,-3.95),(s*2.0,-2.5)],2.45,3.50)
+    slab('Rear shoulder cap','Body','Hull',[(s*2.1,-5.75),(s*7.8,-6.65),(s*7.85,-4.3),(s*2.45,-3.3)],3.50,3.82)
+    # Integrated nacelle bridge: joins both turbine housings into one planform.
+    # Two halves remain detachable, with a common seam at z=0.
+    for end,z,r,inner in [('Front',4.5,3.25,2.35),('Rear',-4.5,3.45,2.48)]:
+        asm='Engine'+end+side
+        if end=='Front':
+            loft('Continuous nacelle forward keel',asm,'Frame',[(0,x,2.40,2.38,1.36),(2.0,x,2.28,2.68,1.30),(4.5,x,2.05,2.45,.90),(7.3,x,2.32,1.92,1.0),(9.15,x,2.85,.82,.58)])
+            # The keel overlaps the bore only below the fan face; it is a structural lower cover.
+            loft('Outer prow armor',asm,'Hull',[(6.8,x,3.0,2.38,.82),(8.25,x-s*.10,2.98,1.65,.78),(9.15,x-s*.30,2.85,.68,.35)])
+        else:
+            loft('Continuous nacelle rear keel',asm,'Frame',[(-9.6,x,2.2,1.45,.64),(-7.2,x,2.2,2.35,1.08),(-4.5,x,2.0,2.55,.91),(-2.0,x,2.28,2.68,1.30),(0,x,2.40,2.38,1.36)])
+            loft('Rear engine fairing',asm,'Hull',[(-9.6,x,2.8,1.20,.52),(-8.15,x,3.02,2.0,.78),(-7.05,x,3.0,2.38,.75)])
+        duct('Open turbine shroud',asm,x,z,r,inner)
+        disk('Dark turbine well',asm,'Dark',x,z,inner-.06,2.94,3.04,16)
+        # Seven static readable blades on recessed fan disk, not tiny decorative grilles.
+        for k in range(7):
+            a=2*pi*k/7+(.18 if s>0 else -.18)
+            def p(rad,t):return (x+rad*cos(a)-t*sin(a),z+rad*sin(a)+t*cos(a))
+            slab('Swept turbine blade',asm,'Steel',[p(.49,-.13),p(inner-.20,-.36*s-.20),p(inner-.20,-.36*s+.20),p(.49,.13)],3.08,3.25)
+        disk('Turbine hub',asm,'Frame',x,z,.68,3.18,3.48)
+        disk('Hub cap',asm,'Vent',x,z,.35,3.48,3.57,8)
+        # Large dark longitudinal cheek, shared styling across the pair.
+        slab('Outboard cheek',asm,'Frame',[(x+s*2.55,z-2.2),(x+s*3.10,z-1.45),(x+s*3.10,z+1.45),(x+s*2.55,z+2.2)],2.12,3.38)
+        if end=='Front':
+            slab('Dominion shoulder marking',asm,'Red',[(x+s*.65,7.75),(x+s*1.35,7.45),(x+s*1.65,7.88),(x+s*.90,8.17)],3.70,3.83)
+    # Dark mechanical spine bridges the two visible circular rims on top.
+    asm='Tail'+side
+    loft('Nacelle dorsal bridge',asm,'Hull',[(-2.15,x,3.8,1.65,.26),(-1.1,x,3.86,2.05,.52),(1.0,x,3.86,2.05,.52),(2.15,x,3.8,1.55,.26)])
+    box('Service panel',asm,'Vent',x,4.40,0,1.45,.07,1.35)
+    # swept tail stabilizer tied to the bank, clearly defines rear direction
+    yzplate('Bank tail fin',asm,'Hull',*sorted((x+s*.70,x+s*1.07)),[(3.25,-9.5),(5.30,-9.1),(5.12,-8.1),(3.25,-6.85)])
+    slab('Rear tail plate',asm,'Top',[(s*5.0,-7.2),(s*8.5,-9.4),(s*9.4,-8.6),(s*8.1,-6.6)],2.55,2.85)
+# Keep the exact existing CG01 capture pads.
 for i,(x,y,z) in enumerate(SOCKETS,1):
     asm=f'Clamp{i:02d}'
     chamfer('Clamp telescoping housing',asm,'Frame',x,1.28,z,1.72,1.45,1.9,.25)
@@ -155,8 +192,8 @@ def export():
         groups.append({'name':asm,'pivot':vector(pivot),'vertices':verts,'slots':slots})
     points=[p for _,_,_,v,_ in PARTS for p in v]
     lo=[min(p[i] for p in points) for i in range(3)]; hi=[max(p[i] for p in points) for i in range(3)]
-    assert all(abs(a-b)<1e-6 for a,b in zip(lo,(-10.87,0,-10.8))),lo
-    assert all(abs(a-b)<1e-6 for a,b in zip(hi,(10.87,6.2,11.2))),hi
+    assert all(abs(a-b)<1e-6 for a,b in zip(lo,(-13.65,0,-9.6))),lo
+    assert all(abs(a-b)<1e-6 for a,b in zip(hi,(13.65,6.075,12.72))),hi
     OUT.parent.mkdir(parents=True,exist_ok=True)
     OUT.write_text(json.dumps({'palette':[{'name':k,'rgb':list(v)} for k,v in PALETTE.items()],
         'assemblies':groups,'sockets':[vector(p) for p in SOCKETS]},separators=(',',':'))+'\n',encoding='utf-8')
