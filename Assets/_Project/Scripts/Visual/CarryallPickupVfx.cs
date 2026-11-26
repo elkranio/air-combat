@@ -13,11 +13,11 @@ namespace AirCombat
         private readonly Transform[] sockets = new Transform[4];
         private readonly Transform[] clamps = new Transform[4];
         private readonly Transform[] plumes = new Transform[4];
-        private readonly float[] dustCredit = new float[4];
+        private float dustCredit;
         private Mesh plumeMesh;
-        private Material plumeMaterial, particleMaterial;
-        private Texture2D mask;
-        private ParticleSystem particles;
+        private Material plumeMaterial, particleMaterial, dustMaterial;
+        private Texture2D mask, dustMask;
+        private ParticleSystem particles, dust;
         private float thrust, age;
         private bool wasLoaded;
         private bool disposed;
@@ -71,10 +71,11 @@ namespace AirCombat
 
         public void Clear()
         {
-            Array.Clear(dustCredit, 0, dustCredit.Length);
+            dustCredit = 0f;
             foreach (var plume in plumes)
                 if (plume != null) plume.gameObject.SetActive(false);
             if (particles != null) particles.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
+            if (dust != null) dust.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
         }
 
         public void Tick(float dt, CarryallPickupSequence.Phase phase, bool loaded,
@@ -100,18 +101,18 @@ namespace AirCombat
             if (!particles.isPlaying) particles.Play(true);
             if (loaded && !wasLoaded && clampPulse) EmitClampPulse();
             wasLoaded = loaded;
-            for (int i = 0; i < sockets.Length; i++)
-            {
-                if (!GroundAt(sockets[i].position, out float y)) { dustCredit[i] = 0f; continue; }
-                float clearance = sockets[i].position.y - y;
-                float near = clearance > 0f ? 1f - Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(7f, 32f, clearance)) : 0f;
-                // No airborne dust; per-nozzle rate falls smoothly with clearance.
-                if (near <= 0f || dustRate <= 0f) { dustCredit[i] = 0f; continue; }
-                dustCredit[i] += Mathf.Min(dt, .12f) * dustRate * 1.6f * near * Mathf.Lerp(.70f, 1.3f, thrust);
-                int count = Mathf.Min(4, Mathf.FloorToInt(dustCredit[i]));
-                dustCredit[i] -= count;
-                for (int k = 0; k < count; k++) EmitDust(sockets[i].position, y, near);
-            }
+            // Treat the four jets as one ground-level flow field. Keep the old
+            // Inspector rate as a density knob (7 -> up to 56 particles/s total).
+            if (dust == null) return;
+            if (!dust.isPlaying) dust.Play(true);
+            if (!GroundAt(carrier.position, out float y)) { dustCredit = 0f; return; }
+            float clearance = carrier.position.y + .75f - y;
+            float near = clearance > 0f ? 1f - Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(7f, 32f, clearance)) : 0f;
+            if (near <= 0f || dustRate <= 0f) { dustCredit = 0f; return; }
+            dustCredit += Mathf.Min(dt, .12f) * dustRate * 8f * near * Mathf.Lerp(.70f, 1.3f, thrust);
+            int count = Mathf.Min(12, Mathf.FloorToInt(dustCredit));
+            dustCredit = Mathf.Min(1f, dustCredit - count);
+            for (int k = 0; k < count; k++) EmitDust(near);
         }
 
         private void ApplyPlumes(bool visible, float scale)
@@ -142,17 +143,22 @@ namespace AirCombat
             return true;
         }
 
-        private void EmitDust(Vector3 source, float y, float near)
+        private void EmitDust(float near)
         {
-            // Move outwards from the cargo, rather than billowing through it.
-            Vector3 outward = Vector3.ProjectOnPlane(source - carrier.position, Vector3.up).normalized;
-            Vector3 spread = outward + Vector3.Cross(Vector3.up, outward) * UnityEngine.Random.Range(-.55f, .55f);
-            Vector3 p = new Vector3(source.x, y + 1.1f, source.z) + spread * UnityEngine.Random.Range(2.6f, 4.6f);
-            var ink = new Color(.83f, .76f, .64f, Mathf.Lerp(.18f, .62f, near));
-            particles.Emit(new ParticleSystem.EmitParams
+            // Uniform azimuth, broad overlapping annulus, no engine-specific lobes.
+            float angle = UnityEngine.Random.Range(0f, 2f * Mathf.PI);
+            Vector3 outward = new Vector3(Mathf.Cos(angle), 0f, Mathf.Sin(angle));
+            float radius = Mathf.Sqrt(UnityEngine.Random.Range(36f, 256f));
+            Vector3 p = carrier.position + outward * radius;
+            if (!GroundAt(p, out float y)) return;
+            p.y = y + UnityEngine.Random.Range(.38f, .75f);
+            var ink = new Color(.77f, .64f, .45f, Mathf.Lerp(.13f, .32f, near));
+            dust.Emit(new ParticleSystem.EmitParams
             {
-                position = p, velocity = spread * UnityEngine.Random.Range(7f, 12f) + Vector3.up * UnityEngine.Random.Range(.5f, 1.5f),
-                startSize = UnityEngine.Random.Range(5.5f, 8.5f), startLifetime = UnityEngine.Random.Range(1.1f, 1.7f), startColor = ink
+                position = p,
+                velocity = outward * UnityEngine.Random.Range(5f, 9f) + Vector3.up * UnityEngine.Random.Range(.12f, .32f),
+                startSize = UnityEngine.Random.Range(12f, 19f), startLifetime = UnityEngine.Random.Range(1.5f, 2.2f),
+                rotation = UnityEngine.Random.Range(0f, 360f), startColor = ink
             }, 1);
         }
 
@@ -254,6 +260,52 @@ namespace AirCombat
             renderer.SetActiveVertexStreams(new System.Collections.Generic.List<ParticleSystemVertexStream>
             { ParticleSystemVertexStream.Position, ParticleSystemVertexStream.Color, ParticleSystemVertexStream.UV });
             renderer.shadowCastingMode = ShadowCastingMode.Off; renderer.receiveShadows = false;
+            BuildGroundDust(shader, owner);
+        }
+
+        private void BuildGroundDust(Shader shader, Transform owner)
+        {
+            const int resolution = 64;
+            dustMask = new Texture2D(resolution, resolution, TextureFormat.RGBA32, false, true)
+                { name = "CA01 irregular ground dust mask", wrapMode = TextureWrapMode.Clamp, filterMode = FilterMode.Bilinear };
+            var pixels = new Color32[resolution * resolution];
+            for (int y = 0; y < resolution; y++) for (int x = 0; x < resolution; x++)
+            {
+                float u = (x + .5f) / resolution, v = (y + .5f) / resolution;
+                float r = new Vector2(u * 2f - 1f, v * 2f - 1f).magnitude;
+                float edge = 1f - Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(.05f, 1f, r));
+                float noise = .5f * Mathf.PerlinNoise(u * 4f + 7f, v * 4f + 11f) +
+                    .5f * Mathf.PerlinNoise(u * 8f + 21f, v * 8f + 15f);
+                float alpha = edge * Mathf.Lerp(.35f, 1f, noise);
+                pixels[y * resolution + x] = new Color32(255, 255, 255, (byte)Mathf.RoundToInt(alpha * 255f));
+            }
+            dustMask.SetPixels32(pixels); dustMask.Apply(false, true);
+            dustMaterial = new Material(shader) { name = "CA01 ground wash (runtime)" };
+            dustMaterial.SetTexture("_ParticleMask", dustMask);
+            var go = new GameObject("CA01 unified ground wash");
+            go.transform.SetParent(owner, false);
+            go.layer = carrier.gameObject.layer;
+            dust = go.AddComponent<ParticleSystem>();
+            dust.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
+            var main = dust.main;
+            main.loop = true; main.playOnAwake = false; main.simulationSpace = ParticleSystemSimulationSpace.World;
+            main.cullingMode = ParticleSystemCullingMode.AlwaysSimulate; main.maxParticles = 384;
+            main.startSpeed = 0f; main.gravityModifier = 0f;
+            var emission = dust.emission; emission.enabled = false;
+            var shape = dust.shape; shape.enabled = false;
+            var size = dust.sizeOverLifetime; size.enabled = true;
+            size.size = new ParticleSystem.MinMaxCurve(1f, AnimationCurve.Linear(0f, .9f, 1f, 1.65f));
+            var fade = dust.colorOverLifetime; fade.enabled = true;
+            var gradient = new Gradient();
+            gradient.SetKeys(new[] { new GradientColorKey(Color.white, 0f), new GradientColorKey(Color.white, 1f) },
+                new[] { new GradientAlphaKey(.35f, 0f), new GradientAlphaKey(1f, .2f), new GradientAlphaKey(.6f, .55f), new GradientAlphaKey(0f, 1f) });
+            fade.color = new ParticleSystem.MinMaxGradient(gradient);
+            var renderer = dust.GetComponent<ParticleSystemRenderer>();
+            renderer.sharedMaterial = dustMaterial;
+            renderer.renderMode = ParticleSystemRenderMode.HorizontalBillboard;
+            renderer.SetActiveVertexStreams(new System.Collections.Generic.List<ParticleSystemVertexStream>
+            { ParticleSystemVertexStream.Position, ParticleSystemVertexStream.Color, ParticleSystemVertexStream.UV });
+            renderer.shadowCastingMode = ShadowCastingMode.Off; renderer.receiveShadows = false;
         }
 
         public void Dispose()
@@ -266,6 +318,9 @@ namespace AirCombat
             if (plumeMaterial != null) Object.Destroy(plumeMaterial);
             if (particleMaterial != null) Object.Destroy(particleMaterial);
             if (mask != null) Object.Destroy(mask);
+            if (dust != null) Object.Destroy(dust.gameObject);
+            if (dustMaterial != null) Object.Destroy(dustMaterial);
+            if (dustMask != null) Object.Destroy(dustMask);
         }
     }
 }
