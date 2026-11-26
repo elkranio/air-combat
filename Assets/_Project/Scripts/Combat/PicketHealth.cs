@@ -9,7 +9,7 @@ namespace AirCombat
     [RequireComponent(typeof(BoxCollider))]
     public sealed class PicketHealth : DamageableTarget
     {
-        [SerializeField, Min(1)] private int maxHp = 3;
+        [SerializeField, Min(1)] private int maxHp = 2;
         public int Hp { get; private set; }
         public int MaxHp => Mathf.Max(1, maxHp);
         public bool IsAlive => Hp > 0;
