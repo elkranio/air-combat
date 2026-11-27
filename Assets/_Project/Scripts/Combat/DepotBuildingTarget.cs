@@ -20,7 +20,7 @@ namespace AirCombat
         {
             public Transform tr;
             public Bounds bounds;
-            public Vector3 origin, destination;
+            public Vector3 origin, destination, scale;
             public Quaternion rotation, collapsedRotation;
             public bool foundation;
         }
@@ -34,17 +34,18 @@ namespace AirCombat
         private readonly List<Part> parts = new List<Part>();
         private readonly List<Paint> paints = new List<Paint>();
         private BoxCollider hitbox;
+        private Transform visual;
         private Material plain, soft;
         private Texture2D mask;
         private GroundCrashFeedback impact;
         private bool initialized;
         private float age;
-        private const float CollapseSeconds = .85f;
+        private const float CollapseSeconds = .85f, CleanupStart = 3.5f, CleanupSeconds = 4f;
 
         private void Awake()
         {
             hitbox = GetComponent<BoxCollider>();
-            Transform visual = transform.Find("Visual");
+            visual = transform.Find("Visual");
             if (visual == null || visual.localPosition.sqrMagnitude > .000001f ||
                 Quaternion.Angle(visual.localRotation, Quaternion.identity) > .01f ||
                 (visual.localScale - Vector3.one).sqrMagnitude > .000001f)
@@ -55,7 +56,7 @@ namespace AirCombat
                 var renderer = child.GetComponent<MeshRenderer>();
                 if (filter == null || filter.sharedMesh == null || renderer == null) continue;
                 var part = new Part { tr = child, bounds = filter.sharedMesh.bounds,
-                    origin = child.localPosition, rotation = child.localRotation,
+                    origin = child.localPosition, rotation = child.localRotation, scale = child.localScale,
                     foundation = child.name == "Foundation" };
                 PlanCollapse(part);
                 parts.Add(part);
@@ -142,19 +143,28 @@ namespace AirCombat
 
         private void Update()
         {
-            if (!IsDestroyed || age >= CollapseSeconds || MissionPause.IsTacticalMapPausedFor(gameObject.scene)) return;
-            age = Mathf.Min(CollapseSeconds, age + Time.deltaTime);
-            float t = age / CollapseSeconds;
+            if (!IsDestroyed || age >= CleanupSeconds || MissionPause.IsTacticalMapPausedFor(gameObject.scene)) return;
+            age = Mathf.Min(CleanupSeconds, age + Time.deltaTime);
+            float t = Mathf.Clamp01(age / CollapseSeconds);
             float eased = t * t * (3f - 2f * t);
+            float remaining = 1f - Mathf.SmoothStep(0f, 1f,
+                Mathf.InverseLerp(CleanupStart, CleanupSeconds, age));
             foreach (var part in parts)
             {
-                if (part.foundation) continue;
-                Quaternion rotation = Quaternion.Slerp(part.rotation, part.collapsedRotation, eased);
-                Vector3 position = Vector3.Lerp(part.origin, part.destination, eased);
-                position.y = Mathf.Max(position.y, FloorY(part, rotation) + .03f);
+                Quaternion rotation = part.foundation ? part.rotation : Quaternion.Slerp(part.rotation, part.collapsedRotation, eased);
+                Vector3 position = part.foundation ? part.origin : Vector3.Lerp(part.origin, part.destination, eased);
+                // Shrink only during the last half-second, with the bottom kept
+                // at its previous ground clearance (no floating shrinking wreck).
+                part.tr.localScale = part.scale;
+                float floor = FloorY(part, rotation);
+                float clearance = Mathf.Max(part.foundation ? 0f : .03f, position.y - floor);
+                part.tr.localScale = part.scale * remaining;
+                position.y = FloorY(part, rotation) + clearance * remaining;
                 part.tr.localPosition = position;
                 part.tr.localRotation = rotation;
             }
+            // Keep the receiver active so mission state and R still see it.
+            if (age >= CleanupSeconds) visual.gameObject.SetActive(false);
         }
 
         public void ResetTarget()
@@ -162,8 +172,10 @@ namespace AirCombat
             if (!initialized) return;
             hp = Mathf.Max(1, maxHp);
             age = 0f;
+            visual.gameObject.SetActive(true);
             foreach (var part in parts)
             {
+                part.tr.localScale = part.scale;
                 part.tr.localPosition = part.origin;
                 part.tr.localRotation = part.rotation;
             }
