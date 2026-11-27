@@ -12,3 +12,9 @@ This is the current environment direction for the protected site, superseding th
 Source: `Tools/Blender/build_pg01_transformer.py`; it regenerates `Assets/_Project/Editor/PG01Geometry.json`. Running it in Blender also writes the editable `Resources/Blender/PG01_Transformer.blend`. Keep prefab/mesh/material asset paths stable during art passes.
 
 PG03 source: `Tools/Blender/build_pg03_transformer_long.py`, generating `Assets/_Project/Editor/PG03Geometry.json` and (in Blender) `Resources/Blender/PG03_TransformerLong.blend`.
+
+## Composition decisions after visual trials
+
+PG03B and PG04A accepted for visual composition. PG05 is a decorative pylon and span preview; build with **Air Combat > Missions > M03 - Build PG05 Power Line Preview**. It creates two reusable prefabs and a temporary group of three pylons and two spans. Rebuilds preserve existing poses. Source: `Tools/Blender/build_pg05_power_line.py`, with editable Blender output when run in Blender.
+
+PG06: remove broad individual display slabs from the three major props when composing a single continuous yard. Retain only integral equipment bases and small structural feet. Use one coherent shared surface with local variation and access paths. Wear, surface details and vegetation transitions are deferred to polish. Never move the friendly airfield during site authoring.
