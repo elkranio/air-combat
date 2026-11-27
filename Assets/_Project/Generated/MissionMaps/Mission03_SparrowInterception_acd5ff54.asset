@@ -26,7 +26,7 @@ MonoBehaviour:
   hasAirfield: 1
   airfieldPosition: {x: -1050, y: -850}
   airfieldForward: {x: 0.70710695, y: 0.70710665}
-  sourceFingerprint: 
+  sourceFingerprint: fa8084fc04956779a6ffb6048bdf7f78
 --- !u!28 &6219842023757082984
 Texture2D:
   m_ObjectHideFlags: 0

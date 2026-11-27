@@ -40,6 +40,7 @@ namespace AirCombat
         private TargetingCursor cursor;
         private CombatHitFeedback feedback;
         private Camera view;
+        internal Mission03PowerComplex PowerComplex { get; private set; }
         private MissionBoundaryGuard boundary;
         private MissionFlightSafety safety;
         private ScriptedTakeoff takeoff;
@@ -114,6 +115,7 @@ namespace AirCombat
             missiles.gameObject.SetActive(true);
             missiles.Bind(camera, cursor, player, missilePrefab, feedback);
             trigger.ConfigureDualSlots(missiles);
+            PowerComplex = Mission03PowerComplex.Bind(gameObject.scene);
             bound = true;
         }
 
@@ -149,6 +151,7 @@ namespace AirCombat
             flames.SetManeuverFlames(false);
             aircraft.SetPositionAndRotation(spawn, spawnRotation); visual.localRotation = visualRest;
             takeoff.ResetTimer(); handover = false; failure = null; phase = Phase.Ready;
+            PowerComplex?.ResetTargets();
             hud.gameObject.SetActive(false);
 #if UNITY_EDITOR
             if (cheats != null && cheats.SkipTakeoff)
@@ -168,6 +171,15 @@ namespace AirCombat
             {
                 Restart(); MissionRetry.MarkRequested(this); return;
             }
+#if UNITY_EDITOR
+            // Temporary art-only preview; no production objective logic here.
+            if (phase == Phase.Flight && Application.isFocused && keys != null && PowerComplex != null)
+            {
+                if (keys.f6Key.wasPressedThisFrame) PowerComplex.PreviewDestroy(0);
+                if (keys.f7Key.wasPressedThisFrame) PowerComplex.PreviewDestroy(1);
+                if (keys.f8Key.wasPressedThisFrame) PowerComplex.PreviewDestroy(2);
+            }
+#endif
             if (phase == Phase.Ready && Application.isFocused && keys != null && keys.wKey.wasPressedThisFrame)
             {
                 phase = Phase.Takeoff; flames.SetManeuverFlames(true); return;

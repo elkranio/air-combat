@@ -1854,13 +1854,13 @@ PrefabInstance:
       value: E1 / Main Camera
       objectReference: {fileID: 0}
     - target: {fileID: 5299753384366365605, guid: 371922c97e367a140876da6ab486cf44, type: 3}
-      propertyPath: aircraft
-      value: 
-      objectReference: {fileID: 1069913520}
-    - target: {fileID: 5299753384366365605, guid: 371922c97e367a140876da6ab486cf44, type: 3}
       propertyPath: yaw
       value: -45
       objectReference: {fileID: 0}
+    - target: {fileID: 5299753384366365605, guid: 371922c97e367a140876da6ab486cf44, type: 3}
+      propertyPath: aircraft
+      value: 
+      objectReference: {fileID: 1069913520}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -3231,7 +3231,7 @@ MonoBehaviour:
     lifetime: 4
     hitRadius: 5
     damage: 6
-  mode: 1
+  mode: 7
   interceptorPrefab: {fileID: 585073388258483318, guid: 0ca69e2e1dc70e44ea012bf38b3d7521, type: 3}
   interceptorWingmanEnabled: 1
   interceptorWingmanDelay: 1.5

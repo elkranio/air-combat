@@ -4,11 +4,11 @@ using UnityEngine.Rendering;
 
 namespace AirCombat
 {
-    // PG07 visual prototype for PG02. Ground damage uses the existing NURS
-    // receiver contract; all rubble and fire are presentation, not hitboxes.
+    // PG07/08 persistent prop ruins and pooled cosmetic effects.
     [DisallowMultipleComponent]
     public sealed class BuildingDestructionTrial : DamageableTarget
     {
+        public enum RuinProfile { ControlBuilding, CompactProp, LongProp }
         public override CombatTargetDomain Domain => CombatTargetDomain.Ground;
         public bool IsDestroyed => destroyed;
         public int FireFocusCount { get; private set; }
@@ -22,6 +22,20 @@ namespace AirCombat
             new Vector3(-6.5f,1.7f,3.7f), new Vector3(2.7f,2.2f,3.2f),
             new Vector3(2.8f,1.5f,-5.3f), new Vector3(9.1f,4.2f,-2.2f)
         };
+        private static readonly Vector3[] CompactSockets = {
+            new Vector3(-6f,2.7f,-2.5f), new Vector3(-5f,2.1f,3.8f),
+            new Vector3(-.5f,3.9f,-.5f), new Vector3(3.8f,3.4f,2.2f),
+            new Vector3(5.6f,1.9f,-4f), new Vector3(7.6f,1.8f,4.3f)
+        };
+        private static readonly Vector3[] LongSockets = {
+            new Vector3(-9f,2.4f,-2.7f), new Vector3(-7f,2.0f,4f),
+            new Vector3(-2.6f,3.5f,-.5f), new Vector3(3.5f,3.9f,.5f),
+            new Vector3(7f,2.0f,-4f), new Vector3(9f,2.5f,3.5f)
+        };
+        private RuinProfile profile;
+        private bool sharedYard, allowWeaponHits;
+        private Vector3[] activeSockets = FireSockets;
+        private float effectScale = 1f;
         private const int FlameBudget = 12, SmokeBudget = 18;
         private readonly int[] socketOrder = new int[FireSockets.Length];
         private readonly Vector3[] focusOrigins = new Vector3[4];
@@ -59,21 +73,34 @@ namespace AirCombat
             public Quaternion Rotation;
         }
 
-        public bool Initialize(int plumeVariant = 0)
+        public bool Initialize(int plumeVariant = 0, RuinProfile ruinProfile = RuinProfile.ControlBuilding,
+            bool useSharedYard = false, bool installWeaponHitbox = true)
         {
             if (ready) return true;
+            profile = ruinProfile;
+            sharedYard = useSharedYard;
+            allowWeaponHits = installWeaponHitbox;
+            activeSockets = profile == RuinProfile.CompactProp ? CompactSockets :
+                profile == RuinProfile.LongProp ? LongSockets : FireSockets;
+            effectScale = profile == RuinProfile.CompactProp ? .82f :
+                profile == RuinProfile.LongProp ? .92f : 1f;
             intact = transform.Find("Visual");
             var lit = Shader.Find("Universal Render Pipeline/Lit");
             var unlit = Shader.Find("Universal Render Pipeline/Unlit");
             var effect = Shader.Find("AirCombat/SandboxEffect");
             if (intact == null || lit == null || unlit == null || effect == null)
             {
-                Debug.LogError("PG07: missing PG02 Visual or destruction shaders.", this);
+                Debug.LogError("PG08: missing Visual or destruction shaders.", this);
                 return false;
             }
-            hitbox = gameObject.AddComponent<BoxCollider>();
-            hitbox.center = new Vector3(0f, 3.7f, -.5f);
-            hitbox.size = new Vector3(26f, 7.4f, 17f);
+            // The protected M03 props are explicit game targets, not targets for
+            // player weapons. Sandbox keeps its existing hitbox behavior.
+            if (allowWeaponHits)
+            {
+                hitbox = gameObject.AddComponent<BoxCollider>();
+                hitbox.center = new Vector3(0f, 3.7f, -.5f);
+                hitbox.size = new Vector3(26f, 7.4f, 17f);
+            }
             block = MakeBlock();
             puff = MakePuff();
             blastMaterial = RocketImpactFx.CreateMaterial(effect, out blastMask);
@@ -98,7 +125,7 @@ namespace AirCombat
             foreach (var d in debris) d.Node.gameObject.SetActive(false);
             wreck.gameObject.SetActive(false);
             intact.gameObject.SetActive(true);
-            hitbox.enabled = true;
+            if (hitbox != null) hitbox.enabled = true;
         }
 
         public override bool ApplyDamage(Vector3 point, int damage)
@@ -107,7 +134,7 @@ namespace AirCombat
             if (!ready || destroyed || !isActiveAndEnabled || damage <= 0) return false;
             destroyed = true;
             age = 0f;
-            hitbox.enabled = false;
+            if (hitbox != null) hitbox.enabled = false;
             intact.gameObject.SetActive(false);
             wreck.gameObject.SetActive(true);
             TickPresentation();
@@ -132,9 +159,17 @@ namespace AirCombat
                 Paint(unlit, "PG07 flame", new Color32(255, 148, 35, 255)),
                 Paint(unlit, "PG07 flame core", new Color32(255, 222, 102, 255))
             };
-            // Match the approved PG02 footprint. Keep a broken perimeter and
-            // two fallen roof masses; the silhouette must not read as intact.
-            Piece("Foundation", block, concrete, new Vector3(0,.145f,0), new Vector3(27.57f,.29f,19.28f));
+            if (profile != RuinProfile.ControlBuilding)
+            {
+                BuildEquipmentRuin(concrete, wall, scorched, roof);
+                for (int i=0; i<FlameBudget; i++) CreatePlume(true);
+                for (int i=0; i<SmokeBudget; i++) CreatePlume(false);
+                return;
+            }
+            // Match the approved PG02 footprint. In PG06 the broad slab is
+            // intentionally hidden; do not resurrect it under the wreck.
+            if (!sharedYard)
+                Piece("Foundation", block, concrete, new Vector3(0,.145f,0), new Vector3(27.57f,.29f,19.28f));
             Piece("Charred floor", block, scorched, new Vector3(-3,.40f,-.65f), new Vector3(18.2f,.25f,14f));
             Piece("Rear wall left", block, wall, new Vector3(-8.5f,2.15f,-7.3f), new Vector3(7.0f,3.7f,.9f));
             Piece("Rear wall stump", block, scorched, new Vector3(-.2f,1.25f,-7.3f), new Vector3(5.0f,1.9f,.9f));
@@ -174,6 +209,59 @@ namespace AirCombat
             for (int i=0; i<SmokeBudget; i++) CreatePlume(false);
         }
 
+        private void BuildEquipmentRuin(Material concrete, Material wall, Material scorched, Material roof)
+        {
+            // Abstract low-poly wreck silhouettes; preserve the authored small
+            // footing (including PG06's hidden display-slab renderer override).
+            var foundation = intact.Find("Foundation");
+            if (foundation != null)
+            {
+                var retained = Instantiate(foundation.gameObject, wreck, false);
+                retained.name = "Retained footing";
+            }
+            else
+                Piece("Footing",block,concrete,new Vector3(0,.45f,0),new Vector3(14f,.6f,9f));
+
+            bool elongated = profile == RuinProfile.LongProp;
+            float width = elongated ? 19f : 15f;
+            Piece("Charred mass",block,scorched,new Vector3(0,1.1f,0),new Vector3(width,1.6f,9f));
+            if (elongated)
+            {
+                Piece("Broken left mass",block,roof,new Vector3(-5.1f,2.4f,-.5f),new Vector3(7.7f,3.2f,7.2f),new Vector3(8,0,12));
+                Piece("Broken right mass",block,wall,new Vector3(4.8f,2.6f,.6f),new Vector3(7.5f,3.6f,7f),new Vector3(-9,4,-15));
+                Piece("Fallen long panel",block,roof,new Vector3(-3.6f,1.5f,4.3f),new Vector3(8.6f,.55f,3f),new Vector3(13,-8,6));
+                Piece("Detached panel",block,roof,new Vector3(7.9f,1.2f,-4.6f),new Vector3(5f,.65f,3.1f),new Vector3(-8,17,-5));
+            }
+            else
+            {
+                Piece("Collapsed central mass",block,roof,new Vector3(-2f,2.5f,-.5f),new Vector3(10.5f,3.7f,7.5f),new Vector3(12,-6,14));
+                Piece("Separated block",block,wall,new Vector3(5.7f,1.9f,2.5f),new Vector3(5.2f,2.7f,5.8f),new Vector3(-10,12,-13));
+                Piece("Fallen panel",block,roof,new Vector3(-4.7f,1.2f,4.5f),new Vector3(6f,.65f,3.5f),new Vector3(14,-12,8));
+            }
+            var rng = new System.Random(elongated ? 803 : 801);
+            for (int i=0; i<9; i++)
+            {
+                float x = Range(rng,-width*.5f,width*.5f);
+                float z = Range(rng,-5.8f,5.8f);
+                Piece("Settled scrap",block,i%3 == 0 ? wall : roof,
+                    new Vector3(x,.85f,z),new Vector3(Range(rng,.8f,2.2f),Range(rng,.3f,.85f),Range(rng,.7f,1.8f)),
+                    new Vector3(Range(rng,-20f,20f),Range(rng,0f,360f),Range(rng,-20f,20f)));
+            }
+            for (int i=0; i<7; i++)
+            {
+                var start = new Vector3(Range(rng,-width*.35f,width*.35f),Range(rng,3f,4.8f),Range(rng,-3f,3f));
+                float angle = i * Mathf.PI * 2f / 7f + Range(rng,-.35f,.35f);
+                var velocity = new Vector3(Mathf.Cos(angle)*Range(rng,5f,11f),Range(rng,8f,15f),Mathf.Sin(angle)*Range(rng,5f,11f));
+                var size = new Vector3(Range(rng,.8f,1.9f),Range(rng,.3f,.6f),Range(rng,.7f,1.5f));
+                float restY = Mathf.Max(size.x,Mathf.Max(size.y,size.z))*.5f + (sharedYard ? .27f : 0f);
+                var t = Piece("Thrown scrap",block,i%2 == 0 ? roof : wall,start,size);
+                float flight = (velocity.y + Mathf.Sqrt(velocity.y*velocity.y + 70f*(start.y-restY)))/35f;
+                debris.Add(new DebrisPiece { Node=t, Origin=start, Velocity=velocity, RestY=restY, FlightTime=flight,
+                    Spin=new Vector3(Range(rng,-220f,220f),Range(rng,-220f,220f),Range(rng,-220f,220f)),
+                    Rotation=Quaternion.Euler(0,Range(rng,0f,360f),0) });
+            }
+        }
+
         private void ConfigureFireLayout()
         {
             var rng = plumeRandom;
@@ -183,7 +271,7 @@ namespace AirCombat
             {
                 int j = rng.Next(i,socketOrder.Length);
                 int swap = socketOrder[i]; socketOrder[i] = socketOrder[j]; socketOrder[j] = swap;
-                focusOrigins[i] = FireSockets[socketOrder[i]] +
+                focusOrigins[i] = activeSockets[socketOrder[i]] +
                     new Vector3(Range(rng,-.65f,.65f),0,Range(rng,-.65f,.65f));
                 // One strong focal point, smaller secondary fires.
                 focusStrengths[i] = i == 0 ? Range(rng,1.4f,1.7f) : Range(rng,.95f,1.4f);
@@ -195,7 +283,7 @@ namespace AirCombat
                 int slot = p.Fire ? i : i-FlameBudget;
                 int focus = slot % FireFocusCount;
                 int layer = slot / FireFocusCount;
-                float strength = focusStrengths[focus] * densityScale;
+                float strength = focusStrengths[focus] * densityScale * effectScale;
                 Vector3 centre = focusOrigins[focus];
                 var palette = p.Fire ? flameMaterials : smokeMaterials;
                 p.Renderer.sharedMaterial = palette[(layer+focus)%palette.Length];
@@ -347,6 +435,8 @@ namespace AirCombat
         private void OnDestroy()
         {
             ClearBurst();
+            if (wreck != null) Destroy(wreck.gameObject);
+            if (hitbox != null) Destroy(hitbox);
             if (block != null) Destroy(block);
             if (puff != null) Destroy(puff);
             if (blastMaterial != null) Destroy(blastMaterial);
