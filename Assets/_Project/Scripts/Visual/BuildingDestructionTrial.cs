@@ -29,7 +29,7 @@ namespace AirCombat
         {
             public Transform Node;
             public Vector3 Origin, Drift;
-            public float Delay, Lifetime, Size, Rise, Spin;
+            public float Delay, Lifetime, Size, Rise, Spin, Aspect, Expansion;
             public bool Fire;
             public Quaternion Rotation;
         }
@@ -103,9 +103,9 @@ namespace AirCombat
             var scorched = Paint(lit, "PG07 char", new Color32(51, 51, 47, 255));
             var roof = Paint(lit, "PG07 roof rubble", new Color32(75, 83, 82, 255));
             var smoke = new[] {
-                Paint(lit, "PG07 smoke dark", new Color32(43, 44, 45, 255)),
+                Paint(lit, "PG07 smoke dark", new Color32(52, 53, 54, 255)),
                 Paint(lit, "PG07 smoke medium", new Color32(65, 66, 65, 255)),
-                Paint(lit, "PG07 smoke outer", new Color32(91, 91, 86, 255))
+                Paint(lit, "PG07 smoke outer", new Color32(80, 80, 77, 255))
             };
             var flame = new[] {
                 Paint(unlit, "PG07 ember orange", new Color32(231, 79, 20, 255)),
@@ -152,16 +152,18 @@ namespace AirCombat
             // Bounded pool; no per-frame allocations or repeated instantiation.
             for (int i=0; i<10; i++)
             {
-                Vector3 origin = i%2==0 ? new Vector3(-4f,2.2f,-.7f) : new Vector3(2.7f,1.8f,3.2f);
-                origin += new Vector3(Range(rng,-1.2f,1.2f),0,Range(rng,-1f,1f));
-                AddPlume(flame[i%3], origin, new Vector3(.65f,0,.3f), i*.085f,
-                    Range(rng,.65f,1.05f),Range(rng,2.3f,3.5f),Range(rng,3.2f,5.0f),true,rng);
+                bool primary = i%2 == 0;
+                float focusScale = primary ? 1.65f : 1.42f;
+                Vector3 origin = primary ? new Vector3(-4f,2.2f,-.7f) : new Vector3(2.7f,1.8f,3.2f);
+                origin += new Vector3(Range(rng,-1.2f,1.2f)*focusScale,0,Range(rng,-1f,1f)*focusScale);
+                AddPlume(flame[i%3], origin, new Vector3(Range(rng,.35f,.95f),0,Range(rng,.1f,.6f)), i*.085f,
+                    Range(rng,.65f,1.15f),Range(rng,2.3f,3.5f)*focusScale,Range(rng,3.2f,5.0f)*focusScale,true,rng);
             }
             for (int i=0; i<15; i++)
             {
                 Vector3 origin = new Vector3(-2.6f+Range(rng,-2f,2f),4.2f,Range(rng,-1.8f,1.8f));
-                AddPlume(smoke[i%3],origin,new Vector3(Range(rng,8f,13f),0,Range(rng,2f,5f)),i*.22f,
-                    Range(rng,3.3f,4.5f),Range(rng,4.2f,6.0f),Range(rng,21f,29f),false,rng);
+                AddPlume(smoke[i%3],origin,new Vector3(Range(rng,7f,14f),0,Range(rng,1f,6f)),i*.22f+Range(rng,0f,.12f),
+                    Range(rng,3.1f,5.0f),Range(rng,4.2f,6.0f),Range(rng,19f,31f),false,rng);
             }
         }
 
@@ -192,7 +194,11 @@ namespace AirCombat
         {
             var t=Piece(fire ? "Faceted flame" : "Faceted smoke",puff,material,origin,Vector3.one,shadow:false);
             plume.Add(new PlumePiece { Node=t,Origin=origin,Drift=drift,Delay=delay,Lifetime=lifetime,Size=size,Rise=rise,Fire=fire,
-                Spin=Range(rng,-55f,55f),Rotation=Quaternion.Euler(Range(rng,0f,360f),Range(rng,0f,360f),Range(rng,0f,360f)) });
+                Spin=Range(rng,-55f,55f),Aspect=fire ? Range(rng,1.75f,2.1f) : Range(rng,.88f,1.05f),
+                Expansion=fire ? .45f : Range(rng,1.4f,1.85f),
+                Rotation=fire
+                    ? Quaternion.Euler(Range(rng,-12f,12f),Range(rng,0f,360f),Range(rng,-12f,12f))
+                    : Quaternion.Euler(Range(rng,0f,360f),Range(rng,0f,360f),Range(rng,0f,360f)) });
         }
 
         private void Update()
@@ -210,11 +216,13 @@ namespace AirCombat
                 float t=Mathf.Repeat(age-p.Delay,p.Lifetime)/p.Lifetime;
                 float envelope=Mathf.SmoothStep(0f,1f,Mathf.Clamp01(t/.12f)) *
                     (1f-Mathf.SmoothStep(0f,1f,Mathf.InverseLerp(.72f,1f,t)));
-                float scale=p.Size * envelope * (p.Fire ? Mathf.Lerp(1f,.45f,t) : Mathf.Lerp(.65f,1.65f,t));
+                float scale=p.Size * envelope * Mathf.Lerp(p.Fire ? 1f : .65f,p.Expansion,t);
                 p.Node.gameObject.SetActive(scale>.015f);
                 p.Node.localPosition=p.Origin+p.Drift*t+Vector3.up*(p.Rise*t);
-                p.Node.localRotation=Quaternion.AngleAxis(p.Spin*t,Vector3.up)*p.Rotation;
-                p.Node.localScale=new Vector3(scale,scale*(p.Fire ? 1.65f : .94f),scale);
+                p.Node.localRotation=p.Fire
+                    ? Quaternion.AngleAxis(p.Spin*t,Vector3.up)*p.Rotation
+                    : Quaternion.Euler(p.Spin*t*.32f,p.Spin*t,-p.Spin*t*.23f)*p.Rotation;
+                p.Node.localScale=new Vector3(scale,scale*p.Aspect,scale);
             }
             foreach (var d in debris)
             {
@@ -243,9 +251,17 @@ namespace AirCombat
                 new Vector3(0,-1,g),new Vector3(0,1,g),new Vector3(0,-1,-g),new Vector3(0,1,-g),
                 new Vector3(g,0,-1),new Vector3(g,0,1),new Vector3(-g,0,-1),new Vector3(-g,0,1)};
             for(int i=0;i<v.Length;i++) v[i]=v[i].normalized*.5f;
-            return FlatMesh("PG07 faceted puff",v,new[]{0,11,5,0,5,1,0,1,7,0,7,10,0,10,11,
+            var mesh = FlatMesh("PG07 faceted puff",v,new[]{0,11,5,0,5,1,0,1,7,0,7,10,0,10,11,
                 1,5,9,5,11,4,11,10,2,10,7,6,7,1,8,3,9,4,3,4,2,3,2,6,3,6,8,3,8,9,
                 4,9,5,2,4,11,6,2,10,8,6,7,9,8,1});
+            // Preserve the low-poly silhouette but soften lighting across faces.
+            // Flame uses the same mesh with an unlit material; rubble uses block.
+            var vertices = mesh.vertices;
+            var normals = mesh.normals;
+            for (int i=0; i<normals.Length; i++)
+                normals[i] = Vector3.Slerp(normals[i],vertices[i].normalized,.55f).normalized;
+            mesh.normals = normals;
+            return mesh;
         }
 
         private static Mesh FlatMesh(string name,Vector3[] source,int[] faces)
