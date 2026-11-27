@@ -119,6 +119,68 @@ NavMeshSettings:
     debug:
       m_Flags: 0
   m_NavMeshData: {fileID: 0}
+--- !u!1001 &295318155
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 666302416}
+    m_Modifications:
+    - target: {fileID: 7536688647064979148, guid: 55e41fc66b5874b4cb75a136c7f0a646, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7536688647064979148, guid: 55e41fc66b5874b4cb75a136c7f0a646, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7536688647064979148, guid: 55e41fc66b5874b4cb75a136c7f0a646, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7536688647064979148, guid: 55e41fc66b5874b4cb75a136c7f0a646, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 7536688647064979148, guid: 55e41fc66b5874b4cb75a136c7f0a646, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7536688647064979148, guid: 55e41fc66b5874b4cb75a136c7f0a646, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7536688647064979148, guid: 55e41fc66b5874b4cb75a136c7f0a646, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7536688647064979148, guid: 55e41fc66b5874b4cb75a136c7f0a646, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7536688647064979148, guid: 55e41fc66b5874b4cb75a136c7f0a646, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7536688647064979148, guid: 55e41fc66b5874b4cb75a136c7f0a646, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7834014347320129378, guid: 55e41fc66b5874b4cb75a136c7f0a646, type: 3}
+      propertyPath: m_Name
+      value: BD01_SupplyWarehouse
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 55e41fc66b5874b4cb75a136c7f0a646, type: 3}
+--- !u!4 &295318156 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 7536688647064979148, guid: 55e41fc66b5874b4cb75a136c7f0a646, type: 3}
+  m_PrefabInstance: {fileID: 295318155}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &381963263
 GameObject:
   m_ObjectHideFlags: 0
@@ -1180,6 +1242,38 @@ LineRenderer:
   m_UseWorldSpace: 1
   m_Loop: 1
   m_ApplyActiveColorSpace: 1
+--- !u!1 &666302415
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 666302416}
+  m_Layer: 0
+  m_Name: M02 / BD01 warehouse visual trial
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &666302416
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 666302415}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0.4694716, z: 0, w: 0.8829476}
+  m_LocalPosition: {x: 34.5579, y: 0, z: 160.88864}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children:
+  - {fileID: 295318156}
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &678868308
 GameObject:
   m_ObjectHideFlags: 0
@@ -1663,6 +1757,14 @@ PrefabInstance:
     - target: {fileID: 2816180994480941013, guid: 5522210661e69224e8dbad436a8a1b7b, type: 3}
       propertyPath: m_Name
       value: CombatHUD
+      objectReference: {fileID: 0}
+    - target: {fileID: 2865594701866542026, guid: 5522210661e69224e8dbad436a8a1b7b, type: 3}
+      propertyPath: m_SizeDelta.x
+      value: 112
+      objectReference: {fileID: 0}
+    - target: {fileID: 2865594701866542026, guid: 5522210661e69224e8dbad436a8a1b7b, type: 3}
+      propertyPath: m_SizeDelta.y
+      value: 112
       objectReference: {fileID: 0}
     - target: {fileID: 5764071564821117952, guid: 5522210661e69224e8dbad436a8a1b7b, type: 3}
       propertyPath: m_Pivot.x
@@ -2425,6 +2527,7 @@ MonoBehaviour:
   arrivalRadius: 75
   startAirborne: 1
   carryallFlightPreview: {fileID: 2078675609}
+  carryallFiringRange: 0
   convoyPrefab: {fileID: 8201000000000000004, guid: 43c92e56080254d797a874a625f33861, type: 3}
   convoyTerrain: {fileID: 2035110805}
   convoyRoute: {fileID: 553010178}
@@ -3187,6 +3290,14 @@ MonoBehaviour:
   departSeconds: 9
   departDistance: 150
   rotorDegreesPerSecond: 720
+  exhaustScale: 1
+  dustPuffsPerSecond: 7
+  clampPulse: 1
+  testMode: 0
+  crashAcceleration: 24
+  crashMinimumDrift: 16
+  rangeHullHp: 5
+  rangeCargoHp: 2
   phaseStatus: 
 --- !u!4 &2078675610
 Transform:
@@ -3219,3 +3330,4 @@ SceneRoots:
   - {fileID: 547176323}
   - {fileID: 463732046}
   - {fileID: 2078675610}
+  - {fileID: 666302416}
