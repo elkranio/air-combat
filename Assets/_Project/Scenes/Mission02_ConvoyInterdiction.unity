@@ -2485,28 +2485,6 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!114 &1900000072
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1325795056}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 1701222d36014cd980e9f8532e57a55a, type: 3}
-  m_Name:
-  m_EditorClassIdentifier: Assembly-CSharp::AirCombat.Mission01EngineAudio
-  flight: {fileID: 0}
-  cruiseLoop: {fileID: 8300000, guid: e781bafdb5ef9f9489ceb8dd6831ed3b, type: 3}
-  boostLoop: {fileID: 8300000, guid: 84d2506ee0f0a664f8426711bd4cb12b, type: 3}
-  idleVolume: 0.16
-  cruiseVolume: 0.38
-  boostVolume: 0.55
-  attackSeconds: 0.22
-  releaseSeconds: 0.35
-  cruisePitch: 1
-  boostPitch: 1
 --- !u!114 &1325795057
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2541,6 +2519,8 @@ MonoBehaviour:
   picketSamTemplate: {fileID: 1298626541, guid: 4758bfb984f508a4c82af3323d448857, type: 3}
   baseDeploymentTrial: 0
   baseTrialHoldAircraft: 0
+  baseAssaultTrial: 1
+  baseAssaultSpawn: {x: 1640, y: 78, z: 790}
   convoyPrefab: {fileID: 8201000000000000004, guid: 43c92e56080254d797a874a625f33861, type: 3}
   convoyTerrain: {fileID: 2035110805}
   convoyRoute: {fileID: 553010178}
@@ -3393,6 +3373,28 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b987af0b257fd624caed0a18411a4d3e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::AirCombat.CarryallRotorVisual
+--- !u!114 &1900000072
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1325795056}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1701222d36014cd980e9f8532e57a55a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::AirCombat.Mission01EngineAudio
+  flight: {fileID: 0}
+  cruiseLoop: {fileID: 8300000, guid: e781bafdb5ef9f9489ceb8dd6831ed3b, type: 3}
+  boostLoop: {fileID: 8300000, guid: 84d2506ee0f0a664f8426711bd4cb12b, type: 3}
+  idleVolume: 0.16
+  cruiseVolume: 0.38
+  boostVolume: 0.55
+  attackSeconds: 0.22
+  releaseSeconds: 0.35
+  cruisePitch: 1
+  boostPitch: 1
 --- !u!1001 &2010572953
 PrefabInstance:
   m_ObjectHideFlags: 0

@@ -28,7 +28,7 @@ namespace AirCombat
         private static readonly float DepotSpur = DepotArc + DepotOffset - DepotTurnRadius;
         private const float DepotVehicleRadius = 12f;
         private readonly bool[] parked = new bool[Count];
-        private bool deployAtDepot;
+        private bool deployAtDepot, spreadDepotDefense;
         private float progress;
         private bool ready;
 
@@ -84,12 +84,14 @@ namespace AirCombat
             return route[i - 1] + heading * (Mathf.Min(along, distance) - routeDistances[i - 1]);
         }
 
-        // The final straight segment is the depot approach. Each pair turns
-        // into opposite sides of the road; the last two pairs stop near the base.
-        public bool EnableDepotDeployment(Rect safeArea)
+        // Pairs turn off the authored road into fixed slots. M02 may use a
+        // distributed perimeter; the original compact layout remains selectable.
+        public bool EnableDepotDeployment(Rect safeArea, bool spreadDefense = false)
         {
-            if (ready || route == null || distance - routeDistances[route.Length - 2] <= 100f)
+            if (ready || route == null || distance - routeDistances[route.Length - 2] <= 100f ||
+                (spreadDefense && distance < 950f))
                 return false;
+            spreadDepotDefense = spreadDefense;
             // Validate a conservative swept envelope over the actual shared-progress
             // schedule, including parked vehicles. Fixed slots survive convoy losses.
             var buildings = new System.Collections.Generic.List<BoxCollider>();
@@ -101,7 +103,10 @@ namespace AirCombat
                 }
             float finish = distance;
             for (int i = 0; i < Count; i++) finish = Mathf.Max(finish, DepotBranch(i) + spacing*i + DepotSpurFor(i));
-            float begin = Mathf.Max(0f, distance - 400f - spacing*(Count-1));
+            // Cover the earliest branch and the tail, not just the final depot approach.
+            float earliestBranch = distance - 400f;
+            for (int i = 0; i < Count; i++) earliestBranch = Mathf.Min(earliestBranch, DepotBranch(i) - 100f);
+            float begin = Mathf.Max(0f, earliestBranch - spacing*(Count-1));
             var positions = new Vector3[Count];
             int steps = Mathf.CeilToInt(finish-begin);
             for (int step = 0; step <= steps; step++)
@@ -131,11 +136,19 @@ namespace AirCombat
             return true;
         }
 
-        private static float DepotLateralFor(int index) => index >= 4 ? 32f : DepotOffset;
-        private static float DepotSpurFor(int index) => index < 2
+        private float DepotLateralFor(int index)
+        {
+            if (!spreadDepotDefense || index < 2) return index >= 4 ? 32f : DepotOffset;
+            if (index == 2) return 180f;
+            if (index == 3) return 145f;
+            return index == 4 ? 190f : 135f;
+        }
+        private float DepotSpurFor(int index) => index < 2
             ? DepotSpur + DepotArc + (index == 0 ? 115f : 103f) - 2f*DepotTurnRadius
             : DepotArc + DepotLateralFor(index) - DepotTurnRadius;
-        private float DepotBranch(int index) => distance - (index >= 4 ? DepotInnerRowOffset : 0f);
+        private float DepotBranch(int index) => distance - (spreadDepotDefense
+            ? (index < 2 ? 0f : index < 4 ? 360f : 850f)
+            : (index >= 4 ? DepotInnerRowOffset : 0f));
         private float DepotTravel(int index) => progress - spacing * index - DepotBranch(index);
         private float MoveLimit
         {
@@ -330,6 +343,8 @@ namespace AirCombat
                 units[i].gameObject.SetActive(true);
                 // Also cancels any opt-in visual deployment preview.
                 units[i].SetDeploymentImmediate(startDeployed);
+                // A close-start trial can begin after an outer pair has parked.
+                if (!startDeployed && parked[i]) units[i].SetDeploymentTarget(true);
                 radar.Register(contacts[i]);
                 units[i].GetComponent<GroundMovementDust>()?.ResetTrail();
             }

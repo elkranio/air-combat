@@ -32,6 +32,9 @@ namespace AirCombat
         [Header("BD06 / Base assault trial (R applies)")]
         [SerializeField] private bool baseAssaultTrial;
         [SerializeField] private Vector3 baseAssaultSpawn = new Vector3(1640f, 78f, 790f);
+        [Header("BD07 / Depot defense layout (R applies)")]
+        [Tooltip("Use the original six closely packed Pickets instead of the distributed perimeter.")]
+        [SerializeField] private bool compactDepotDefense;
         private bool assaultTrialActive;
         private bool baseTrialActive;
         private Vector3 depotForward;
@@ -139,7 +142,7 @@ namespace AirCombat
             depotForward = (points[points.Length-1]-points[points.Length-2]).normalized;
             convoy = new ConvoyMarchPreview(convoyPrefab, convoyTerrain, radar, transform,
                 points, convoySpacing, convoySpeed);
-            if (!convoy.EnableDepotDeployment(inset))
+            if (!convoy.EnableDepotDeployment(inset, !compactDepotDefense))
             {
                 Debug.LogError("M02D3: depot needs a clear final segment and parking area inside safe bounds.", this);
                 convoy.Dispose(); convoy = null;
