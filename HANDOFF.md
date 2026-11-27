@@ -1,6 +1,6 @@
 # Air Combat — current handoff
 
-2026-11-26 | End of day, CA05 committed; animation review pending. Unity 6000.6.10f1 / URP. Work on `master` in small verified atoms. Open existing scenes, never regenerate them.
+2026-11-27 | CA05 hull crash accepted; CA05B cargo breakup trial pending local acceptance. Unity 6000.6.10f1 / URP. Work on `master` in small verified atoms. Open existing scenes, never regenerate them.
 
 ## Where we are
 
@@ -19,16 +19,19 @@ Open `Assets/_Project/Scenes/Mission02_ConvoyInterdiction.unity`. Current route 
 | [CA02](Docs/CA_02_FLIGHT_PREVIEW.md) | Accepted counter-rotating blades and basic flight presentation; original circle superseded by CA03. |
 | [CA03](Docs/CA_03_CARGO_PICKUP.md) | Accepted v0: Approach → Align → Descend → Clamp → Lift → Depart. Rigid four-socket capture. Timing may be tuned in mission context. |
 | [CA04](Docs/CA_04_PICKUP_VFX.md) | Accepted through C: thrust, subtle unified ground wash and clamp pulse. Dust polish deferred. |
-| [CA05](Docs/CA_05_DESTRUCTION_PREVIEW.md) | Committed prototype, NOT visually accepted. User has animation notes to discuss next session; details not recorded yet. |
+| [CA05](Docs/CA_05_DESTRUCTION_PREVIEW.md) | Hull crash accepted as good enough; polish deferred. CA05B: CG01 tips, breaks on impact and leaves temporary debris. Cargo breakup pending Play Mode acceptance. |
 
-### Resume here next session
+### Current work / next atoms
 
 1. Play the existing airfield-side `M02 / CA01 flight preview`. Enable `Start Airborne` on `Mission02RouteTrial` for quick Game view passes; Scene view can follow the entire sequence. L cycles Pickup → Empty hover → Loaded hover; K triggers destruction at the current pose; R resets the selected mode and sortie; Tab pauses. No new installer needed. If the preview is missing, use the existing CA02 install menu in saved M02; the comparison preview is not needed.
-2. Review the user's animation notes before changing CA05. Validate unloaded and loaded crashes, loss of thrust, falling motion, terrain impact, wreck presentation and separate cargo fall; iterate until accepted. Current CA05 keeps a charred intact hull and intact landed CG01 as visual placeholders. No nacelle separation or real hull/cargo collision. Do not assume the final gameplay cargo outcome from this art test.
-3. Only after both destruction variants are accepted: design and integrate actual Carryall pickup/extraction at C1/C2, targetability, damage and cargo/task outcomes. Remove the temporary airfield preview before final runtime composition. Preserve the accepted assets and socket contract. Empty Carryall destruction gives no reward; the two cargo sites are one optional task. Timing, final cargo destruction/recovery rules and mission/debrief consequences remain design work.
-4. Balance and playtest the combined convoy / cargo route; return to campaign completion, debrief and progression later.
+2. Accept CA05B loaded cargo breakup and verify unloaded kill leaves grounded cargo intact; test R mid-fall and during debris cleanup. Hull crash is already good enough; do not reopen hull animation polish now. No nacelle separation or physical hull/cargo collision.
+3. CA06: opt-in stationary firing stand near the airport. Freeze Lynx at a suitable firing position and heading (keep real weapon controls and projectiles); CA01 holds above CG01 at cruise altitude, manual descent command, R repeat. Tune actual AC01 hitboxes and NURS impact/overlap against cargo across phases. Before attachment, cargo destruction aborts pickup and the empty carrier leaves. After attachment, cargo destruction also kills the carrier; AC01 kill of a loaded carrier causes separate cargo fall and breakup. Avoid invulnerability gaps or unlimited vertical ground blast; establish actual weapon/height envelope on this stand. CA06 remains unimplemented.
+4. Only after these outcomes are accepted: integrate real pickup/extraction at C1/C2, targetability and mission task outcomes. Remove temporary airport preview before final composition. Preserve accepted assets and socket contract. Empty carrier destruction gives no reward; both cargo sites are one optional task.
+5. Balance and playtest the combined convoy / cargo route; return to campaign completion, debrief and progression later.
 
 ### Regression gate
+
+- TEST01 (planned): introduce Unity Edit Mode / Play Mode regression tests and local runner; map integrity, socket/prefab checks, reset and phase outcomes first. No test infrastructure added by CA05B.
 
 - Compile and check Console; inspect all three existing scenes for missing references. For CA05 test K before attachment and during loaded lift/depart, L in both hover modes, R during fall/after impact, and Tab pause. Check there are no duplicate cargo/rotors, residual FX or shared material changes; real C1/C2 and convoy remain untouched.
 - M02: launch/Start Airborne, movement, AC-01/NURS, convoy progress/deployment, independent Wardens, radar, map and R; check V06 routes and boundary/terrain safety.

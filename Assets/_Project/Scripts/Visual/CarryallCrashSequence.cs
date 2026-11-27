@@ -16,6 +16,7 @@ namespace AirCombat
         private readonly Texture2D mask;
         private readonly GroundCrashFeedback impact;
         private readonly ParticleSystem smoke;
+        private readonly CargoBreakupVisual cargoBreakup;
         private Vector3 hullVelocity, cargoVelocity;
         private Quaternion hullRotation, cargoRotation;
         private float elapsed, smokeCredit, sign, acceleration, drift;
@@ -40,6 +41,7 @@ namespace AirCombat
             var visual = carrier.Find("Visual");
             hullBounds = BoundsPoints(carrier, visual);
             cargoBounds = BoundsPoints(cargo, cargo);
+            cargoBreakup = new CargoBreakupVisual(cargo, owner, terrain);
             // Only authored/animated hull renderers; exhausts and cargo are not charred.
             if (visual != null)
             foreach (var r in visual.GetComponentsInChildren<MeshRenderer>(true))
@@ -80,7 +82,7 @@ namespace AirCombat
             {
                 // Preserve the contact pose exactly. Detachment and subsequent fall are independent.
                 cargo.SetParent(owner, true);
-                cargoRotation = Quaternion.LookRotation(forward, Vector3.up);
+                cargoRotation = cargo.rotation;
                 cargoVelocity = planar * .55f - forward * 3f - carrier.right * sign * 5f;
                 cargoVelocity.y = Mathf.Min(0f, velocity.y);
             }
@@ -100,6 +102,7 @@ namespace AirCombat
                 if (!hullLanded) StepHull(step);
                 if (!cargoLanded) StepCargo(step);
             }
+            cargoBreakup.Advance(dt);
             if (!hullLanded)
             {
                 smokeCredit += dt * 16f;
@@ -134,12 +137,18 @@ namespace AirCombat
         {
             cargoVelocity.y -= acceleration * 1.15f * dt;
             Vector3 p = cargo.position + cargoVelocity * dt;
-            // Keep container upright for the recoverable visual trial; no bounce or roll.
-            float floor = ContactY(p, cargoRotation, cargoBounds);
-            if (p.y > floor) { cargo.SetPositionAndRotation(p, cargoRotation); return; }
+            // Small, progressively increasing tilt; retain the actual release orientation.
+            float t = Mathf.SmoothStep(0f, 1f, Mathf.Clamp01(elapsed / 1.15f));
+            Quaternion rotation = cargoRotation * Quaternion.Euler(12f * t, -8f * sign * t, -24f * sign * t);
+            float floor = ContactY(p, rotation, cargoBounds);
+            if (p.y > floor) { cargo.SetPositionAndRotation(p, rotation); return; }
             p.y = floor;
-            cargo.SetPositionAndRotation(p, cargoRotation);
+            cargo.SetPositionAndRotation(p, rotation);
             cargoLanded = true;
+            cargoBreakup.Break(cargoVelocity);
+            // Restrained impact flash, not a second aircraft-sized fireball.
+            Emit(p + Vector3.up * 1.4f, Vector3.up * 1.5f, 4f, .18f,
+                new Color(1f, .77f, .38f, .82f));
             for (int i = 0; i < 10; i++)
             {
                 float angle = i * Mathf.PI * .2f;
@@ -232,6 +241,7 @@ namespace AirCombat
 
         public void Reset()
         {
+            cargoBreakup.Reset();
             Active = loaded = hullLanded = cargoLanded = false;
             elapsed = smokeCredit = 0f;
             foreach (var p in paints)
@@ -242,7 +252,7 @@ namespace AirCombat
 
         public void Dispose()
         {
-            Reset(); impact?.Dispose();
+            Reset(); cargoBreakup.Dispose(); impact?.Dispose();
             if (smoke != null) Object.Destroy(smoke.gameObject);
             if (plain != null) Object.Destroy(plain);
             if (soft != null) Object.Destroy(soft);

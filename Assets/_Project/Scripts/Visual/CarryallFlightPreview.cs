@@ -180,7 +180,7 @@ namespace AirCombat
         {
             if (crash.Active)
                 phaseStatus = (crash.HullLanded ? "WRECK" : "FALLING") +
-                    (crash.HadPayload ? (crash.CargoLanded ? " / CARGO GROUNDED" : " / CARGO FALLING") : " / EMPTY");
+                    (crash.HadPayload ? (crash.CargoLanded ? " / CARGO DESTROYED" : " / CARGO FALLING") : " / EMPTY");
             else if (testMode != TestMode.Pickup)
                 phaseStatus = "HOVER / " + (forcedLoaded ? "LOADED" : "EMPTY");
             else phaseStatus = sequence.CurrentPhase + (sequence.IsLoaded ? " / LOADED" : " / EMPTY");
