@@ -165,7 +165,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::AirCombat.ArcadeCameraFollow
   aircraft: {fileID: 0}
   pitch: 50
-  yaw: -45
+  yaw: 0
   orthographicSize: 80
   cruiseLead: 57.6
   boostExtraLead: 16.8

@@ -15,8 +15,8 @@ namespace AirCombat
 
         [SerializeField] private UniversalRenderPipelineAsset pipeline;
         [SerializeField] private LightingTime timeOfDay = LightingTime.Day;
-        [SerializeField, Range(-180f, 180f)] private float azimuth = -38f;
-        [SerializeField, Range(-10f, 10f)] private float elevationOffset;
+        [SerializeField, Range(-180f, 180f)] private float azimuth = 52f;
+        [SerializeField, Range(-10f, 10f)] private float elevationOffset = -10f;
         [SerializeField, Range(.1f, 2f)] private float ambientMultiplier = 1f;
 
         private Light sun;

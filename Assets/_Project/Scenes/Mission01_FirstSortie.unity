@@ -19902,10 +19902,6 @@ PrefabInstance:
       value: E1 / Main Camera
       objectReference: {fileID: 0}
     - target: {fileID: 5299753384366365605, guid: 371922c97e367a140876da6ab486cf44, type: 3}
-      propertyPath: yaw
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 5299753384366365605, guid: 371922c97e367a140876da6ab486cf44, type: 3}
       propertyPath: aircraft
       value: 
       objectReference: {fileID: 1109986514}
@@ -21932,18 +21928,6 @@ PrefabInstance:
     - target: {fileID: 5873373495131327965, guid: d5110f3e56ef9894c825455424d41a82, type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 7445552645641753148, guid: d5110f3e56ef9894c825455424d41a82, type: 3}
-      propertyPath: azimuth
-      value: 52
-      objectReference: {fileID: 0}
-    - target: {fileID: 7445552645641753148, guid: d5110f3e56ef9894c825455424d41a82, type: 3}
-      propertyPath: pipeline
-      value: 
-      objectReference: {fileID: 11400000, guid: 0f5a2e57d1598de438328dc96c0345c6, type: 2}
-    - target: {fileID: 7445552645641753148, guid: d5110f3e56ef9894c825455424d41a82, type: 3}
-      propertyPath: elevationOffset
-      value: -10
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []

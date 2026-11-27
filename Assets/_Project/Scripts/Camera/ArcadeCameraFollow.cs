@@ -14,7 +14,7 @@ namespace AirCombat
         [SerializeField] private Transform aircraft;
         [Header("Framing")]
         [SerializeField, Range(40f, 80f)] private float pitch = 50f;
-        [SerializeField, Range(-180f, 180f)] private float yaw = -45f;
+        [SerializeField, Range(-180f, 180f)] private float yaw = 0f;
         [SerializeField, Min(1f)] private float orthographicSize = 80f;
         [SerializeField, Min(0f)] private float cruiseLead = 57.6f;
         [SerializeField, Min(0f)] private float boostExtraLead = 16.8f;

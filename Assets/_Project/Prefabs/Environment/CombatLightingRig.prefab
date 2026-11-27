@@ -111,10 +111,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 81282464443c4db3805e8de6732a6c88, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::AirCombat.CombatLightingRig
-  pipeline: {fileID: 11400000, guid: 5034b25ca553b5d469efe6cef2757f78, type: 2}
+  pipeline: {fileID: 11400000, guid: 0f5a2e57d1598de438328dc96c0345c6, type: 2}
   timeOfDay: 0
-  azimuth: -38
-  elevationOffset: 0
+  azimuth: 52
+  elevationOffset: -10
   ambientMultiplier: 1
 --- !u!114 &-3324453402873720336
 MonoBehaviour:
