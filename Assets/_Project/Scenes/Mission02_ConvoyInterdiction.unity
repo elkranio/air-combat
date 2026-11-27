@@ -1796,7 +1796,7 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 8850759895102427982, guid: 6e560668bc997ad4188608873c609919, type: 3}
   m_PrefabInstance: {fileID: 748594262}
   m_PrefabAsset: {fileID: 0}
---- !u!1 &757906782
+--- !u!1 &776956474
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -1804,24 +1804,24 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 757906783}
-  - component: {fileID: 757906786}
-  - component: {fileID: 757906785}
-  - component: {fileID: 757906784}
+  - component: {fileID: 776956475}
+  - component: {fileID: 776956478}
+  - component: {fileID: 776956477}
+  - component: {fileID: 776956476}
   m_Layer: 0
-  m_Name: M02_V06_South
+  m_Name: M02_V07_West_1
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!4 &757906783
+--- !u!4 &776956475
 Transform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 757906782}
+  m_GameObject: {fileID: 776956474}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
@@ -1830,25 +1830,25 @@ Transform:
   m_Children: []
   m_Father: {fileID: 1133882017}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &757906784
+--- !u!114 &776956476
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 757906782}
+  m_GameObject: {fileID: 776956474}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: cb6a617f14dd408b9d2aa3f3b9eb6596, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::AirCombat.RadarTerrainObstacle
---- !u!23 &757906785
+--- !u!23 &776956477
 MeshRenderer:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 757906782}
+  m_GameObject: {fileID: 776956474}
   m_Enabled: 1
   m_CastShadows: 1
   m_ReceiveShadows: 1
@@ -1892,14 +1892,14 @@ MeshRenderer:
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
---- !u!33 &757906786
+--- !u!33 &776956478
 MeshFilter:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 757906782}
-  m_Mesh: {fileID: 4300000, guid: fbe27b3055703d84b8b6b2b01336bea3, type: 2}
+  m_GameObject: {fileID: 776956474}
+  m_Mesh: {fileID: 4300000, guid: 67c0df96ab130da4e82c8f343416d9ac, type: 2}
 --- !u!1001 &825903670
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -2489,11 +2489,13 @@ Transform:
   m_Children:
   - {fileID: 409364893}
   - {fileID: 678868309}
-  - {fileID: 1211346374}
-  - {fileID: 757906783}
+  - {fileID: 776956475}
+  - {fileID: 1255861462}
+  - {fileID: 1641167201}
+  - {fileID: 2075697896}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &1211346373
+--- !u!1 &1255861461
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -2501,24 +2503,24 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 1211346374}
-  - component: {fileID: 1211346377}
-  - component: {fileID: 1211346376}
-  - component: {fileID: 1211346375}
+  - component: {fileID: 1255861462}
+  - component: {fileID: 1255861465}
+  - component: {fileID: 1255861464}
+  - component: {fileID: 1255861463}
   m_Layer: 0
-  m_Name: M02_V06_West
+  m_Name: M02_V07_West_2
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!4 &1211346374
+--- !u!4 &1255861462
 Transform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1211346373}
+  m_GameObject: {fileID: 1255861461}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
@@ -2527,25 +2529,25 @@ Transform:
   m_Children: []
   m_Father: {fileID: 1133882017}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &1211346375
+--- !u!114 &1255861463
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1211346373}
+  m_GameObject: {fileID: 1255861461}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: cb6a617f14dd408b9d2aa3f3b9eb6596, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::AirCombat.RadarTerrainObstacle
---- !u!23 &1211346376
+--- !u!23 &1255861464
 MeshRenderer:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1211346373}
+  m_GameObject: {fileID: 1255861461}
   m_Enabled: 1
   m_CastShadows: 1
   m_ReceiveShadows: 1
@@ -2589,14 +2591,14 @@ MeshRenderer:
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
---- !u!33 &1211346377
+--- !u!33 &1255861465
 MeshFilter:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1211346373}
-  m_Mesh: {fileID: 4300000, guid: 5dc66f52f9def744799216890fc4c1fb, type: 2}
+  m_GameObject: {fileID: 1255861461}
+  m_Mesh: {fileID: 4300000, guid: 7e1ad3aa5434c9141a0f5a78c95ba676, type: 2}
 --- !u!1001 &1259870272
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -2816,19 +2818,10 @@ MonoBehaviour:
   cargoPrefab: {fileID: 7593123294971043384, guid: 6e560668bc997ad4188608873c609919, type: 3}
   c1Path:
   - {x: -2130, y: 78, z: 460}
-  - {x: -1890, y: 78, z: 260}
-  - {x: -1770, y: 78, z: 105}
-  - {x: -1770, y: 78, z: -75}
-  - {x: -1910, y: 78, z: -260}
-  - {x: -2080, y: 78, z: -420}
-  - {x: -2175, y: 78, z: -590}
-  - {x: -2200, y: 78, z: -790}
-  - {x: -2850, y: 78, z: -900}
+  - {x: -2850, y: 78, z: 613}
   c2Path:
   - {x: 1510, y: 78, z: -2200}
-  - {x: 1510, y: 78, z: -2230}
-  - {x: 1510, y: 170, z: -2290}
-  - {x: 1510, y: 170, z: -3065}
+  - {x: 1758, y: 78, z: -3065}
 --- !u!1 &1573035788
 GameObject:
   m_ObjectHideFlags: 0
@@ -2987,6 +2980,110 @@ LineRenderer:
   m_UseWorldSpace: 1
   m_Loop: 0
   m_ApplyActiveColorSpace: 1
+--- !u!1 &1641167200
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1641167201}
+  - component: {fileID: 1641167204}
+  - component: {fileID: 1641167203}
+  - component: {fileID: 1641167202}
+  m_Layer: 0
+  m_Name: M02_V07_South_1
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1641167201
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1641167200}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1133882017}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1641167202
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1641167200}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cb6a617f14dd408b9d2aa3f3b9eb6596, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::AirCombat.RadarTerrainObstacle
+--- !u!23 &1641167203
+MeshRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1641167200}
+  m_Enabled: 1
+  m_CastShadows: 1
+  m_ReceiveShadows: 1
+  m_DynamicOccludee: 1
+  m_StaticShadowCaster: 0
+  m_MotionVectors: 1
+  m_LightProbeUsage: 1
+  m_ReflectionProbeUsage: 1
+  m_RayTracingMode: 2
+  m_RayTraceProcedural: 0
+  m_RayTracingAccelStructBuildFlagsOverride: 0
+  m_RayTracingAccelStructBuildFlags: 1
+  m_SmallMeshCulling: 1
+  m_ForceMeshLod: -1
+  m_MeshLodSelectionBias: 0
+  m_RenderingLayerMask: 1
+  m_RendererPriority: 0
+  m_Materials:
+  - {fileID: 2100000, guid: e053dba1d14b1854ab02435be8e77865, type: 2}
+  - {fileID: 2100000, guid: 23fffb0de52b49345a4f669d3316271f, type: 2}
+  m_StaticBatchInfo:
+    firstSubMesh: 0
+    subMeshCount: 0
+  m_StaticBatchRoot: {fileID: 0}
+  m_ProbeAnchor: {fileID: 0}
+  m_LightProbeVolumeOverride: {fileID: 0}
+  m_ScaleInLightmap: 1
+  m_ReceiveGI: 1
+  m_PreserveUVs: 0
+  m_IgnoreNormalsForChartDetection: 0
+  m_ImportantGI: 0
+  m_StitchLightmapSeams: 1
+  m_SelectedEditorRenderState: 3
+  m_MinimumChartSize: 4
+  m_AutoUVMaxDistance: 0.5
+  m_AutoUVMaxAngle: 89
+  m_LightmapParameters: {fileID: 0}
+  m_GlobalIlluminationMeshLod: 0
+  m_SortingLayerID: 0
+  m_SortingLayer: 0
+  m_SortingOrder: 0
+  m_MaskInteraction: 0
+  m_AdditionalVertexStreams: {fileID: 0}
+--- !u!33 &1641167204
+MeshFilter:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1641167200}
+  m_Mesh: {fileID: 4300000, guid: 524aa90b997765142a45201e40c4b033, type: 2}
 --- !u!1 &1669654176
 GameObject:
   m_ObjectHideFlags: 0
@@ -3543,6 +3640,110 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &2075697895
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 2075697896}
+  - component: {fileID: 2075697899}
+  - component: {fileID: 2075697898}
+  - component: {fileID: 2075697897}
+  m_Layer: 0
+  m_Name: M02_V07_South_2
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &2075697896
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2075697895}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1133882017}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &2075697897
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2075697895}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cb6a617f14dd408b9d2aa3f3b9eb6596, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::AirCombat.RadarTerrainObstacle
+--- !u!23 &2075697898
+MeshRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2075697895}
+  m_Enabled: 1
+  m_CastShadows: 1
+  m_ReceiveShadows: 1
+  m_DynamicOccludee: 1
+  m_StaticShadowCaster: 0
+  m_MotionVectors: 1
+  m_LightProbeUsage: 1
+  m_ReflectionProbeUsage: 1
+  m_RayTracingMode: 2
+  m_RayTraceProcedural: 0
+  m_RayTracingAccelStructBuildFlagsOverride: 0
+  m_RayTracingAccelStructBuildFlags: 1
+  m_SmallMeshCulling: 1
+  m_ForceMeshLod: -1
+  m_MeshLodSelectionBias: 0
+  m_RenderingLayerMask: 1
+  m_RendererPriority: 0
+  m_Materials:
+  - {fileID: 2100000, guid: e053dba1d14b1854ab02435be8e77865, type: 2}
+  - {fileID: 2100000, guid: 23fffb0de52b49345a4f669d3316271f, type: 2}
+  m_StaticBatchInfo:
+    firstSubMesh: 0
+    subMeshCount: 0
+  m_StaticBatchRoot: {fileID: 0}
+  m_ProbeAnchor: {fileID: 0}
+  m_LightProbeVolumeOverride: {fileID: 0}
+  m_ScaleInLightmap: 1
+  m_ReceiveGI: 1
+  m_PreserveUVs: 0
+  m_IgnoreNormalsForChartDetection: 0
+  m_ImportantGI: 0
+  m_StitchLightmapSeams: 1
+  m_SelectedEditorRenderState: 3
+  m_MinimumChartSize: 4
+  m_AutoUVMaxDistance: 0.5
+  m_AutoUVMaxAngle: 89
+  m_LightmapParameters: {fileID: 0}
+  m_GlobalIlluminationMeshLod: 0
+  m_SortingLayerID: 0
+  m_SortingLayer: 0
+  m_SortingOrder: 0
+  m_MaskInteraction: 0
+  m_AdditionalVertexStreams: {fileID: 0}
+--- !u!33 &2075697899
+MeshFilter:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2075697895}
+  m_Mesh: {fileID: 4300000, guid: 95b0fe72e370bd048a8b88a45f6d1f69, type: 2}
 --- !u!1 &2078675608
 GameObject:
   m_ObjectHideFlags: 0
