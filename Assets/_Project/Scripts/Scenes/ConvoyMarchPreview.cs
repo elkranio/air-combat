@@ -20,7 +20,7 @@ namespace AirCombat
         private readonly PicketHealth[] health = new PicketHealth[Count];
         private readonly MarchContact[] contacts = new MarchContact[Count];
         private readonly GameObject[] destruction = new GameObject[Count];
-        private const float DepotRowSpacing = 50f, DepotOffset = 65f, DepotTurnRadius = 18f;
+        private const float DepotInnerRowOffset = 5f, DepotOffset = 65f, DepotTurnRadius = 18f;
         private static readonly float DepotArc = DepotTurnRadius * Mathf.PI * .5f;
         private static readonly float DepotSpur = DepotArc + DepotOffset - DepotTurnRadius;
         private const float DepotVehicleRadius = 12f;
@@ -82,10 +82,10 @@ namespace AirCombat
         }
 
         // The final straight segment is the depot approach. Each pair turns
-        // into opposite sides of the road, with three independent parking rows.
+        // into opposite sides of the road; the last two pairs stop near the base.
         public bool EnableDepotDeployment(Rect safeArea)
         {
-            if (ready || route == null || distance - routeDistances[route.Length - 2] <= 2f * DepotRowSpacing)
+            if (ready || route == null || distance - routeDistances[route.Length - 2] <= 100f)
                 return false;
             // Validate a conservative swept envelope over the actual shared-progress
             // schedule, including parked vehicles. Fixed slots survive convoy losses.
@@ -128,10 +128,11 @@ namespace AirCombat
             return true;
         }
 
+        private static float DepotLateralFor(int index) => index >= 4 ? 32f : DepotOffset;
         private static float DepotSpurFor(int index) => index < 2
             ? DepotSpur + DepotArc + (index == 0 ? 115f : 103f) - 2f*DepotTurnRadius
-            : DepotSpur + (index >= 4 ? 8f : 0f);
-        private float DepotBranch(int index) => distance - (index / 2) * DepotRowSpacing;
+            : DepotArc + DepotLateralFor(index) - DepotTurnRadius;
+        private float DepotBranch(int index) => distance - (index >= 4 ? DepotInnerRowOffset : 0f);
         private float DepotTravel(int index) => progress - spacing * index - DepotBranch(index);
         private float MoveLimit
         {
@@ -161,7 +162,7 @@ namespace AirCombat
             }
             float angle = Mathf.Clamp(travel / DepotTurnRadius, 0f, Mathf.PI * .5f);
             heading = (axis * Mathf.Cos(angle) + side * Mathf.Sin(angle)).normalized;
-            float lateral = DepotOffset + (index >= 4 ? 8f : 0f);
+            float lateral = DepotLateralFor(index);
             return origin + axis * (DepotTurnRadius * Mathf.Sin(angle)) + side *
                 (DepotTurnRadius * (1f - Mathf.Cos(angle)) + Mathf.Clamp(travel - DepotArc, 0f, lateral - DepotTurnRadius));
         }
