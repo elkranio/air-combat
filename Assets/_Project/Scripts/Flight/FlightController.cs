@@ -23,10 +23,7 @@ namespace AirCombat
         public float CurrentSpeed => motor != null ? motor.CurrentSpeed : cruiseSpeed;
         public float CruiseSpeed => Mathf.Clamp(cruiseSpeed, minSpeed, maxSpeed);
         public Transform Visual => visual; // Shared with optional flight maneuvers.
-#if UNITY_EDITOR
-        // Explicit opt-in from Mission01LaunchSequence only; absent from builds.
-        public bool DebugFastTravel { get; set; }
-#endif
+        private MissionCheats cheats;
         private AircraftMotor motor;
         private bool waitForBoostRelease;
         private float tightSpeed = 35f, boostTurnMultiplier = .6f, tightTurnMultiplier = 2f, maneuverResponse = 140f;
@@ -49,6 +46,7 @@ namespace AirCombat
 
         private void Awake()
         {
+            cheats = GetComponent<MissionCheats>();
             motor = new AircraftMotor(transform, visual, Mathf.Clamp(cruiseSpeed, minSpeed, maxSpeed));
         }
 
@@ -102,9 +100,9 @@ namespace AirCombat
             // committed to an angle or locked for a maneuver duration.
             motor.Tick(target, steer, accel, maneuverResponse, yaw, maxBank, bankRate, dt);
 #if UNITY_EDITOR
-            // Add twice the nominal displacement; no extra steering, fuel or time ticks.
-            if (DebugFastTravel && focused && keyboard.spaceKey.isPressed)
-                transform.position += transform.forward * (2f * motor.CurrentSpeed * dt);
+            // One additional displacement = exactly x2 travel, not x3.
+            if (cheats != null && cheats.DoubleSpeed && focused && keyboard.spaceKey.isPressed)
+                transform.position += transform.forward * (motor.CurrentSpeed * dt);
 #endif
         }
     }

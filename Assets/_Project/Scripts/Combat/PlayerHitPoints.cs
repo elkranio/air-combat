@@ -46,6 +46,10 @@ namespace AirCombat
         public override bool ApplyDamage(Vector3 point, int damage)
         {
             if (!IsAlive || damage <= 0) return false;
+#if UNITY_EDITOR
+            // Only the authored player carries this component; enemies share this receiver.
+            if (TryGetComponent<MissionCheats>(out var cheats) && cheats.Invulnerable) return false;
+#endif
             Hp = Mathf.Max(0, Hp - damage);
             HitCount++;
             LastHitTime = Time.time;

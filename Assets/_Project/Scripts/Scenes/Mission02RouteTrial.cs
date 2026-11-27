@@ -15,7 +15,6 @@ namespace AirCombat
         [SerializeField] private bool twoPartRoute;
         [SerializeField] private Vector3 c2;
         [SerializeField, Min(1f)] private float arrivalRadius = 75f;
-        [SerializeField] private bool startAirborne;
         [SerializeField] private CarryallFlightPreview carryallFlightPreview;
         [SerializeField] private Mission02CargoEvacuation cargoEvacuation;
         [Header("CA06 / stationary firing range (R applies)")]
@@ -63,6 +62,7 @@ namespace AirCombat
         private ArcadeNursLauncher nurs;
         private float sortieTime, contactTime = -1f, arrivalTime = -1f, clearedTime = -1f;
         private FlightController flight;
+        private MissionCheats cheats;
         private PlayerWeaponTrigger trigger;
         private Afterburner boost;
         private AfterburnerVfx flames;
@@ -165,6 +165,7 @@ namespace AirCombat
             this.radar = radar;
             playerHealth = health;
             flight = player.GetComponent<FlightController>();
+            cheats = player.GetComponent<MissionCheats>();
             trigger = player.GetComponent<PlayerWeaponTrigger>();
             boost = player.GetComponent<Afterburner>();
             visual = flight != null ? flight.Visual : null;
@@ -314,12 +315,13 @@ namespace AirCombat
                 EnterFlight();
                 if (baseTrialHoldAircraft) flight.enabled = false; // weapons and convoy still tick
             }
-            else if (startAirborne)
+#if UNITY_EDITOR
+            else if (cheats != null && cheats.SkipTakeoff)
             {
-                Vector3 p = runwayPosition + runwayRotation * Vector3.forward * (flight.CruiseSpeed * 3.6f);
-                p.y = 78f; aircraft.position = p;
+                takeoff.PlaceAtEnd(flight.CruiseSpeed, 2.2f, 2.5f, 78f);
                 EnterFlight();
             }
+#endif
             if (carryallFlightPreview != null && carryallFlightPreview.gameObject.activeInHierarchy)
                 carryallFlightPreview.RestartPreview();
             view.GetComponent<ArcadeCameraFollow>()?.SnapToAircraft();
@@ -423,7 +425,8 @@ namespace AirCombat
                 hitFeedback.SpawnWreck(playerHealth, flight.CurrentSpeed);
                 Fail(aircraft.position, "AIRCRAFT LOST"); return;
             }
-            var result = safety.Check(gameObject.scene, aircraft.position, true, 3.5f, out Vector3 stop);
+            bool checkTerrain = cheats == null || !cheats.NoClip;
+            var result = safety.Check(gameObject.scene, aircraft.position, checkTerrain, 3.5f, out Vector3 stop);
             if (result != MissionFlightSafety.Result.Clear)
             { Fail(stop, result == MissionFlightSafety.Result.TerrainImpact ? "TERRAIN IMPACT" : "BOUNDARY EXIT"); return; }
             if (picketSamActive) convoy?.TickSamArming();

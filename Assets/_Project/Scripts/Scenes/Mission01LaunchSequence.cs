@@ -18,13 +18,6 @@ namespace AirCombat
         private AircraftRadar samRadar;
         private PlayerHitPoints playerHealth;
 
-#if UNITY_EDITOR
-        [Header("Temporary terrain test (Editor only)")]
-        [SerializeField] private bool debugAirStart = true;
-        [SerializeField] private bool debugNoClip;
-        [SerializeField] private bool debugLandingNearAirfield = true;
-#endif
-
         [Header("Terrain crash")]
         [SerializeField, Min(.1f)] private float terrainCrashRadius = 3.5f;
 
@@ -65,6 +58,7 @@ namespace AirCombat
         private CombatHitFeedback crashFeedback;
         private MissionBoundaryGuard boundary;
         private FlightSession flightSession;
+        private MissionCheats cheats;
 
         public Phase State { get; private set; } = Phase.Intro;
         FlightController IPlayerEngineAudioContext.EngineAudioFlight => flight;
@@ -102,6 +96,7 @@ namespace AirCombat
                 return;
             }
             aircraft = flight.transform;
+            cheats = flight.GetComponent<MissionCheats>();
             visual = flight.Visual;
             boost = aircraft.GetComponent<Afterburner>();
             flames = visual != null ? visual.GetComponent<AfterburnerVfx>() : null;
@@ -191,8 +186,7 @@ namespace AirCombat
                 missionHud.gameObject.SetActive(false);
             }
 #if UNITY_EDITOR
-            flight.DebugFastTravel = debugAirStart;
-            if (debugAirStart)
+            if (cheats != null && cheats.SkipTakeoff)
             {
                 StartAirborne();
                 return;
@@ -221,7 +215,7 @@ namespace AirCombat
                 flightSession?.ResetForMissionRetry();
                 ResetToReady();
 #if UNITY_EDITOR
-                if (debugAirStart) StartAirborne();
+                if (cheats != null && cheats.SkipTakeoff) StartAirborne();
 #endif
                 // Consumers observe this accepted request in their existing update order.
                 MissionRetry.MarkRequested(this);
@@ -258,10 +252,7 @@ namespace AirCombat
             {
                 // Flight motor has already moved; camera and weapon LateUpdate
                 // run later. Resolve safety before attempting landing capture.
-                bool checkTerrain = true;
-#if UNITY_EDITOR
-                checkTerrain = !debugNoClip;
-#endif
+                bool checkTerrain = cheats == null || !cheats.NoClip;
                 var result = flightSafety.Check(aircraft.gameObject.scene, aircraft.position,
                     checkTerrain, terrainCrashRadius, out Vector3 stop);
                 if (result == MissionFlightSafety.Result.TerrainImpact) Crash(stop);
@@ -287,10 +278,7 @@ namespace AirCombat
         private void TickLandingApproach()
         {
             bool primaryComplete = PrimaryComplete;
-            bool available = primaryComplete;
-#if UNITY_EDITOR
-            available |= debugLandingNearAirfield;
-#endif
+            bool available = primaryComplete || (cheats != null && cheats.AllowEarlyLanding);
             if (!Application.isFocused || (playerHealth != null && !playerHealth.IsAlive))
             { landing.Clear(); return; }
             if (!landing.TickApproach(aircraft, visual, flight.CurrentSpeed, available, Time.deltaTime)) return;
@@ -434,9 +422,6 @@ namespace AirCombat
             landing?.Clear();
             SetSamArmed(false);
             if (initialized && flames != null) flames.SetManeuverFlames(false);
-#if UNITY_EDITOR
-            if (flight != null) flight.DebugFastTravel = false;
-#endif
         }
 
     }

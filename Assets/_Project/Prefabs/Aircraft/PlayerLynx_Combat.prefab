@@ -47,6 +47,7 @@ GameObject:
   - component: {fileID: 6432170106372861549}
   - component: {fileID: 1826298213645586773}
   - component: {fileID: 5909889966356477815}
+  - component: {fileID: 611595460606994884}
   m_Layer: 0
   m_Name: PlayerLynx_Combat
   m_TagString: Untagged
@@ -74,6 +75,24 @@ Transform:
   - {fileID: 9000972567068900957}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &611595460606994884
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 611595460606994883}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b8e50874514d4d02b07346ea81abf29a, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::AirCombat.MissionCheats
+  skipTakeoff: 0
+  doubleSpeed: 0
+  noClip: 0
+  invulnerable: 0
+  infiniteAfterburner: 0
+  allowEarlyLanding: 0
 --- !u!114 &6414408027231277647
 MonoBehaviour:
   m_ObjectHideFlags: 0

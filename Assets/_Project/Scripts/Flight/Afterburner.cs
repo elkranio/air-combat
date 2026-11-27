@@ -20,9 +20,11 @@ namespace AirCombat
         private float charge;
         private float delayRemaining;
         private bool wasHeld;
+        private MissionCheats cheats;
 
         private void OnEnable()
         {
+            cheats = GetComponent<MissionCheats>();
             charge = Mathf.Max(0.01f, capacitySeconds);
             delayRemaining = 0f;
             wasHeld = false;
@@ -44,8 +46,10 @@ namespace AirCombat
         {
             float capacity = Mathf.Max(0.01f, capacitySeconds);
             float cost = capacity * Mathf.Clamp01(fraction);
-            if (!isActiveAndEnabled || charge < cost - 0.0001f) return false;
-            charge = Mathf.Max(0f, charge - cost);
+            if (!isActiveAndEnabled) return false;
+            bool infinite = cheats != null && cheats.InfiniteAfterburner;
+            if (!infinite && charge < cost - 0.0001f) return false;
+            charge = infinite ? capacity : Mathf.Max(0f, charge - cost);
             delayRemaining = rechargeDelay;
             wasHeld = false;
             IsActive = false;
@@ -62,6 +66,15 @@ namespace AirCombat
         {
             if (!isActiveAndEnabled) return false;
             float capacity = Mathf.Max(0.01f, capacitySeconds);
+            if (cheats != null && cheats.InfiniteAfterburner)
+            {
+                charge = capacity;
+                delayRemaining = 0f;
+                wasHeld = held;
+                IsActive = held && thrust;
+                IsManeuvering = held && !thrust;
+                return held;
+            }
             charge = Mathf.Clamp(charge, 0f, capacity);
             float dt = Mathf.Max(0f, deltaTime);
             bool powered = held && charge > 0f;
