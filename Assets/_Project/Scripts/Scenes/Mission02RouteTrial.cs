@@ -17,6 +17,9 @@ namespace AirCombat
         [SerializeField, Min(1f)] private float arrivalRadius = 75f;
         [SerializeField] private bool startAirborne;
         [SerializeField] private CarryallFlightPreview carryallFlightPreview;
+        [Header("CA06 / stationary firing range (R applies)")]
+        [SerializeField] private bool carryallFiringRange;
+        private bool rangeAimAtCargo;
         [Header("M02D / Convoy march")]
         [SerializeField] private PicketDeploymentVisual convoyPrefab;
         [SerializeField] private Terrain convoyTerrain;
@@ -52,7 +55,7 @@ namespace AirCombat
         private ScriptedTakeoff takeoff;
         private MissionBoundaryGuard boundary;
         private MissionFlightSafety safety;
-        private enum Phase { Ready, Takeoff, Flight, Failed }
+        private enum Phase { Ready, Takeoff, Flight, Failed, Range }
         private Phase phase;
         private bool bound, handover;
         private float elapsed, timeA = -1f, timeB = -1f, timeC = -1f, timeAfterC = -1f;
@@ -183,8 +186,15 @@ namespace AirCombat
             hitFeedback.ResetEffects();
             escort?.Dispose(); escort = null;
             playerHealth.ResetHealth();
+            rangeAimAtCargo = false;
+            nurs.ClearRangeAim();
             // Rebuild from current Inspector tuning, even on an in-Play R restart.
             convoy?.Dispose(); convoy = null;
+            if (carryallFiringRange)
+            {
+                EnterCarryallRange();
+                return;
+            }
             if (!BuildConvoy() || !convoy.Restart())
             { phase = Phase.Failed; failure = "CONVOY UNAVAILABLE"; return; }
             escortActive = escortEnabled;
@@ -219,12 +229,47 @@ namespace AirCombat
             view.GetComponent<ArcadeCameraFollow>()?.SnapToAircraft();
         }
 
+        private void EnterCarryallRange()
+        {
+            escortActive = false;
+            boost.enabled = false;
+            flames?.SetManeuverFlames(false);
+            boundary.Clear();
+            takeoff.ResetTimer();
+            visual.localRotation = visualRest;
+            failure = null; handover = false;
+            if (carryallFlightPreview == null || !carryallFlightPreview.RangeReady)
+            {
+                phase = Phase.Failed;
+                failure = "INSTALL CA01 FLIGHT PREVIEW FIRST";
+                Debug.LogError("CA06: install CA01 Flight Preview before enabling the range.", this);
+                return;
+            }
+            carryallFlightPreview.RestartRange();
+            flight.PrepareCruiseHandover(); // Retain nominal cruise-speed launch inheritance.
+            nurs.PositionForRange(carryallFlightPreview.RangeGround, carryallFlightPreview.RangeHeading,
+                carryallFlightPreview.RangeAltitude);
+            Physics.SyncTransforms();
+            phase = Phase.Range;
+            trigger.enabled = true;
+            view.GetComponent<ArcadeCameraFollow>()?.SnapToAircraft();
+        }
+
         public void SetAltitude(float altitude) { } // Fixed Y78 for comparable flight tests.
 
         private void Update()
         {
             if (!bound || MissionPause.IsTacticalMapPausedFor(gameObject.scene)) return;
             var keyboard = Keyboard.current;
+            if (phase == Phase.Range)
+            {
+                if (Application.isFocused && keyboard != null && keyboard.nKey.wasPressedThisFrame)
+                    rangeAimAtCargo = !rangeAimAtCargo;
+                if (rangeAimAtCargo && carryallFlightPreview.RangeCargoAlive)
+                    nurs.AimRangeAt(carryallFlightPreview.RangeCargoAim);
+                else nurs.ClearRangeAim();
+                return;
+            }
             if (Application.isFocused && keyboard != null)
             {
                 if (keyboard.gKey.wasPressedThisFrame && guide != null) guide.SetActive(!guide.activeSelf);
@@ -321,6 +366,14 @@ namespace AirCombat
             {
                 textStyle = new GUIStyle(GUI.skin.label) { fontSize = 15, normal = { textColor = Color.white } };
                 pointStyle = new GUIStyle(textStyle) { alignment = TextAnchor.MiddleCenter, fontStyle = FontStyle.Bold, fontSize = 19 };
+            }
+            if (phase == Phase.Range)
+            {
+                GUI.Box(new Rect(12f, 12f, 690f, 87f), GUIContent.none);
+                GUI.Label(new Rect(22f, 18f, 670f, 22f), "CA06 / " + carryallFlightPreview.RangeStatus, textStyle);
+                GUI.Label(new Rect(22f, 41f, 670f, 22f), "LMB AC01 | RMB NURS | J descend | P hold/resume | N aim mode | R reset", textStyle);
+                GUI.Label(new Rect(22f, 64f, 670f, 22f), $"NURS pitch {nurs.RangePitch:F1} deg | {(rangeAimAtCargo ? "LAB AIM" : "NORMAL")}", textStyle);
+                return;
             }
             GUI.Box(new Rect(12f, 12f, 490f, 239f), GUIContent.none);
             GUI.Label(new Rect(22f, 18f, 315f, 22f), $"M02 / {phase}   {elapsed:F1}s airborne", textStyle);

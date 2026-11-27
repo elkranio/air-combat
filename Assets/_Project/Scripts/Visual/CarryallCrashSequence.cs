@@ -94,6 +94,14 @@ namespace AirCombat
                 new Color(1f, .66f, .22f, .9f));
         }
 
+        // Same CG01 breakup used by a direct ground kill, even without a hull crash.
+        public void DestroyGroundCargo()
+        {
+            cargoBreakup.Break(Vector3.zero);
+        }
+
+        public void AdvanceCargoDebris(float dt) => cargoBreakup.Advance(dt);
+
         public void Advance(float dt)
         {
             if (!Active || dt <= 0f) return;

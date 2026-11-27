@@ -130,9 +130,48 @@ namespace AirCombat
             return mode * Mathf.Lerp(1f, turnSpread, turn01) * (1f + recoil);
         }
 
+        private float? rangePitch;
+        internal float RangePitch => rangePitch ?? downwardAngle;
+        internal void ClearRangeAim() => rangePitch = null;
+
+        // Stationary lab only. Retain cruise-speed inheritance so the default
+        // launch trajectory matches real flight; place its nominal centre at CG01.
+        internal void PositionForRange(Vector3 ground, Quaternion heading, float altitude)
+        {
+            ClearRangeAim();
+            owner.SetPositionAndRotation(new Vector3(ground.x, altitude, ground.z), heading);
+            Vector3 origin = (Origin(0) + Origin(1)) * .5f;
+            Vector3 v = Velocity(0f, 0f);
+            float time = Mathf.Max(0f, (origin.y - ground.y - 2.5f) / Mathf.Max(.01f, -v.y));
+            Vector3 landing = origin + v * time;
+            owner.position += Vector3.ProjectOnPlane(ground - landing, Vector3.up);
+        }
+
+        // Optional stand-only aim. Solve the existing straight-line launch
+        // equation for pitch; retain spread, pylons, velocity and all collisions.
+        // No projectile guidance or damage applied here.
+        internal void AimRangeAt(Vector3 point)
+        {
+            Vector3 origin = (Origin(0) + Origin(1)) * .5f;
+            float distance = Vector3.Dot(point - origin, owner.forward);
+            if (distance <= .1f) { ClearRangeAim(); return; }
+            float lo = 5f, hi = 85f;
+            for (int i = 0; i < 16; i++)
+            {
+                float angle = (lo + hi) * .5f;
+                Vector3 v = NursBallistics.LaunchVelocity(owner.forward, owner.right,
+                    flight.CurrentSpeed, muzzleSpeed, -angle, 0f, 0f);
+                float ahead = Vector3.Dot(v, owner.forward);
+                float y = origin.y + v.y * distance / Mathf.Max(.01f, ahead);
+                if (y > point.y) lo = angle;
+                else hi = angle;
+            }
+            rangePitch = (lo + hi) * .5f;
+        }
+
         private Vector3 Origin(int index) => owner.TransformPoint((index & 1) == 0 ? leftPylon : rightPylon);
         private Vector3 Velocity(float yaw, float pitch) => NursBallistics.LaunchVelocity(owner.forward,
-            owner.right, flight.CurrentSpeed, muzzleSpeed, -downwardAngle, yaw, pitch);
+            owner.right, flight.CurrentSpeed, muzzleSpeed, -RangePitch, yaw, pitch);
 
         private void Fire(int index)
         {

@@ -5,7 +5,7 @@ namespace AirCombat
     // Reusable pose/payload sequence. No scene queries, mission rules, radar or damage.
     internal sealed class CarryallPickupSequence
     {
-        internal enum Phase { Approach, Align, Descend, Clamp, Lift, Depart, Complete, Failed }
+        internal enum Phase { Approach, Align, Descend, Clamp, Lift, Depart, Complete, Failed, Abort }
         internal struct Settings
         {
             public float cruiseY, approachDistance, approachLateral, approachSeconds, alignSeconds;
@@ -17,7 +17,8 @@ namespace AirCombat
         private readonly Quaternion heading;
         private Settings tuning;
         private Vector3 contact, cruise, start, staging;
-        private Quaternion approachHeading;
+        private Quaternion approachHeading, abortHeading;
+        private Vector3 abortStart;
         private float elapsed;
         internal Phase CurrentPhase { get; private set; }
         internal bool IsLoaded { get; private set; }
@@ -50,6 +51,24 @@ namespace AirCombat
             carrier.SetPositionAndRotation(start, approachHeading);
         }
 
+        // Range starts directly above the cargo; no approach or teleport during descent.
+        internal void HoldOverCargo()
+        {
+            elapsed = 0f;
+            CurrentPhase = Phase.Descend;
+            carrier.SetPositionAndRotation(cruise, heading);
+        }
+
+        internal void AbortPickup()
+        {
+            if (IsLoaded || CurrentPhase == Phase.Abort || CurrentPhase == Phase.Depart ||
+                CurrentPhase == Phase.Complete) return;
+            abortStart = carrier.position;
+            abortHeading = carrier.rotation;
+            elapsed = 0f;
+            CurrentPhase = Phase.Abort;
+        }
+
         internal void Advance(float dt)
         {
             // Consume leftover time at phase boundaries; a slow frame cannot skip attachment.
@@ -78,6 +97,7 @@ namespace AirCombat
                 case Phase.Descend: seconds = tuning.descendSeconds; break;
                 case Phase.Clamp: seconds = tuning.clampSeconds; break;
                 case Phase.Lift: seconds = tuning.liftSeconds; break;
+                case Phase.Abort: seconds = Mathf.Max(.75f, Mathf.Abs(cruise.y - abortStart.y) / 26f); break;
                 default: seconds = tuning.departSeconds; break;
             }
             return Mathf.Max(.05f, seconds);
@@ -107,6 +127,10 @@ namespace AirCombat
                 case Phase.Lift:
                     position = Vector3.LerpUnclamped(contact, cruise, eased);
                     break;
+                case Phase.Abort:
+                    position = Vector3.LerpUnclamped(abortStart, cruise, eased);
+                    rotation = Quaternion.Slerp(abortHeading, heading, eased);
+                    break;
                 default:
                     // Loaded departure starts at rest and accelerates away without a pose snap.
                     position = cruise + heading * Vector3.forward * (Mathf.Max(20f, tuning.departDistance) * t * t);
@@ -126,7 +150,8 @@ namespace AirCombat
                     CurrentPhase = Phase.Clamp;
                     break;
                 case Phase.Clamp: CurrentPhase = Phase.Lift; break;
-                case Phase.Lift: CurrentPhase = Phase.Depart; break;
+                case Phase.Lift:
+                case Phase.Abort: CurrentPhase = Phase.Depart; break;
                 case Phase.Depart: CurrentPhase = Phase.Complete; break;
             }
         }
