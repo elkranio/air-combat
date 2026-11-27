@@ -9,11 +9,11 @@ import json
 
 ROOT = Path(__file__).resolve().parents[2]
 OUT = ROOT / 'Assets/_Project/Editor/Mission02/BD01Geometry.json'
-PALETTE = {'Concrete': (145, 143, 127), 'Plinth': (101, 104, 94),
-           'Roof': (75, 85, 79), 'RoofTrim': (102, 113, 102),
-           'Steel': (84, 94, 88), 'Recess': (48, 57, 54),
+PALETTE = {'Concrete': (133, 139, 117), 'Plinth': (83, 92, 76),
+           'Roof': (153, 158, 137), 'RoofTrim': (90, 102, 86),
+           'Steel': (75, 85, 76), 'Recess': (49, 57, 54),
            'Glass': (86, 113, 116), 'Red': (153, 56, 48),
-           'Stencil': (193, 194, 169)}
+           'Stencil': (215, 165, 56)}
 SOLIDS = []
 
 def sub(a,b): return tuple(x-y for x,y in zip(a,b))
@@ -44,64 +44,67 @@ def yz(name,asm,mat,x0,x1,profile):
 def box(name,asm,mat,x,y,z,w,h,d):
     yz(name,asm,mat,x-w/2,x+w/2,[(z-d/2,y-h/2),(z+d/2,y-h/2),(z+d/2,y+h/2),(z-d/2,y+h/2)])
 
-# Footprint 44 x 64, foundation at Y0. Four independent perimeter walls.
-box('Concrete footing','Foundation','Plinth',0,.4,0,44,.8,64)
+# Extrude a convex X/Y cross-section along Z.
+def xy(name,asm,mat,z0,z1,profile):
+    n=len(profile); v=[(x,y,z) for z in (z0,z1) for x,y in profile]
+    faces=[tuple(range(n)),tuple(range(n,2*n))]+[(i,(i+1)%n,(i+1)%n+n,i+n) for i in range(n)]
+    solid(name,asm,mat,v,faces)
+
+# Temporary field shelter: no concrete slab, only two transport skids.
+for x in (-6.5,6.5):
+    box('Skid','Foundation','Plinth',x,.22,0,1.05,.44,28)
+for z in (-12.5,0,12.5):
+    box('Cross bearer','Foundation','Steel',0,.28,z,16.8,.36,.8)
 for s,label in [(-1,'Left'),(1,'Right')]:
     asm=label+'Wall'
-    box('Wall',asm,'Concrete',s*20.4,4.4,0,1.2,7.2,61.6)
-    box('Lower band',asm,'Plinth',s*21.03,1.35,0,.22,1.1,61.6)
-    for z in (-25,-12.5,0,12.5,25):
-        box('Buttress',asm,'Steel',s*21.15,4.4,z,.72,7.2,1.4)
-    box('Eave beam',asm,'Steel',s*20.4,7.86,0,1.7,.45,61.6)
+    box('Panel wall',asm,'Concrete',s*8.35,3.17,0,.34,5.46,27)
+    box('Lower rail',asm,'Plinth',s*8.48,.70,0,.34,.48,27.1)
+    box('Eave rail',asm,'Steel',s*8.48,5.76,0,.48,.46,27.1)
+    for z in (-12.85,-4.6,4.6,12.85):
+        box('External upright',asm,'Steel',s*8.55,3.17,z,.48,5.46,.48)
+    for z in (-8.7,0,8.7):
+        box('Panel seam',asm,'RoofTrim',s*8.535,3.1,z,.08,4.95,.11)
 for s,label in [(-1,'Rear'),(1,'Front')]:
-    asm=label+'Wall'
-    box('Wall',asm,'Concrete',0,4.4,s*30.2,39.6,7.2,1.2)
-    box('Lower band',asm,'Plinth',0,1.35,s*30.84,39.6,1.1,.24)
-    for x in (-19,0,19):
-        box('Pilaster',asm,'Steel',x,4.4,s*30.9,1.2,7.2,.7)
-    # Deep dark loading doors, split facade; no actual interior in BD01.
-    for x in (-9.8,9.8):
-        if s==1:
-            box('Door frame',asm,'Recess',x,3.6,31.04,12.0,5.6,.46)
-            box('Roll-up door',asm,'Steel',x,3.45,31.30,10.8,4.95,.13)
-            for y in (2.05,3.25,4.45):
-                box('Door joint',asm,'Recess',x,y,31.38,10.55,.13,.04)
-            box('Header',asm,'RoofTrim',x,6.25,31.29,11.9,.45,.35)
-        else:
-            box('Service vent',asm,'Recess',x,5.9,-31.02,6.8,1.4,.24)
-            for u in (-2,0,2): box('Vent slat',asm,'Steel',x+u,5.9,-31.18,.25,1.1,.09)
+    asm=label+'Wall'; z=s*13.34
+    # Continuous closed wall with a shallow polygonal gable above.
+    box('End panels',asm,'Concrete',0,3.17,z,16.36,5.46,.34)
+    xy('Gable infill',asm,'Concrete',z-.17,z+.17,[(-8.18,5.8),(8.18,5.8),(3,8.6),(-3,8.6)])
+    for x in (-7.95,7.95): box('Corner post',asm,'Steel',x,3.17,s*13.58,.48,5.46,.42)
+    box('End rail',asm,'Steel',0,5.76,s*13.57,16.4,.35,.36)
+    if s==1:
+        box('Door surround',asm,'Recess',0,2.72,13.63,9.2,4.55,.2)
+        box('Door left',asm,'Plinth',-2.13,2.64,13.76,4.13,4.17,.18)
+        box('Door right',asm,'Plinth',2.13,2.64,13.76,4.13,4.17,.18)
+        for x in (-4.45,4.45): box('Door jamb',asm,'Steel',x,2.72,13.83,.28,4.55,.27)
+        box('Door header',asm,'Steel',0,5.0,13.83,9.2,.34,.27)
+        for x in (-.4,.4): box('Handle',asm,'Stencil',x,2.25,13.91,.16,.56,.12)
+    else:
+        box('Vent frame',asm,'Recess',0,4.3,-13.60,4.8,.82,.16)
+        for x in (-1.5,0,1.5): box('Vent slat',asm,'Steel',x,4.3,-13.72,.18,.62,.10)
+    box('Dominion marking',asm,'Red',-6.3,4.7,s*13.64,1.35,.6,.10)
 
-# Three long industrial sawteeth along the length. All roof parts have independent pivots.
-# Rising slope from rear (-Z) to front (+Z); the high vertical face is a dark clerestory.
-for i in range(3):
-    a=-31.5+i*21; b=a+21; asm=f'Roof{i+1:02d}'
-    lo,hi=8.2,11.8
-    def y(z): return lo+(hi-lo)*(z-a)/(b-a)
-    def slab(name,mat,x0,x1,z0,z1,offset,thick):
-        yz(name,asm,mat,x0,x1,[(z0,y(z0)+offset),(z1,y(z1)+offset),(z1,y(z1)+offset+thick),(z0,y(z0)+offset+thick)])
-    slab('Sloped roofing','Roof',-21.8,21.8,a,b,-.32,.32)
-    # Enclosed ends: side profiles follow the roof, separate from the roof skin.
-    for x0,x1 in [(-21.0,-20.25),(20.25,21.0)]:
-        yz('Sawtooth end',asm,'Concrete',x0,x1,[(a,7.85),(b,7.85),(b,11.48),(a,7.88)])
-    box('Clerestory beam',asm,'Steel',0,9.82,b-.38,40.5,3.4,.74)
-    for x in (-12.5,0,12.5):
-        box('Dark clerestory strip',asm,'Glass',x,10.15,b+.02,11.5,1.55,.09)
-    # Silhouette seams: two edge strips and one central seam, not a corrugated texture.
-    for x in (-21.55,0,21.55):
-        slab('Raised seam','RoofTrim',x-.19,x+.19,a+.2,b-.2,.01,.16)
-    slab('High edge cap','RoofTrim',-21.8,21.8,b-.7,b,.01,.19)
-    # Restrained red logistics markings on the first and third sections.
-    if i != 1:
-        slab('Dominion red recognition panel','Red',-17,-10,a+3,a+5,.025,.04)
-    if i == 1:
-        # Large block stencil 01, painted onto the inclined surface (closed thin geometry).
-        glyphs=['111/101/101/101/111','010/110/010/010/111']
-        for j,g in enumerate(glyphs):
-            for row,line in enumerate(g.split('/')):
-                for col,bit in enumerate(line):
-                    if bit=='1':
-                        x=(j*4+col-3)*1.25+4.5; z=a+13-row*1.25
-                        slab('Roof stencil','Stencil',x-.56,x+.56,z-.56,z+.56,.025,.035)
+# Three longitudinal roof sections share the same faceted profile.
+# Low eaves, two broad sloping shoulders, flat crown. No clerestory.
+def roof_y(x): return 8.8-max(0,abs(x)-3)*2.8/6
+
+def strip(name,asm,mat,z0,z1,x0,x1,offset,thick):
+    a,b=roof_y(x0)+offset,roof_y(x1)+offset
+    xy(name,asm,mat,z0,z1,[(x0,a-thick),(x1,b-thick),(x1,b),(x0,a)])
+for i,(a,b) in enumerate(((-14,-4.6),(-4.6,4.6),(4.6,14))):
+    asm=f'Roof{i+1:02d}'
+    for x0,x1 in ((-9,-3),(-3,3),(3,9)):
+        strip('Roof skin',asm,'Roof',a,b,x0,x1,0,.24)
+        # Distinct frame seam at the boundary of each transported roof bay.
+        z=a+.22
+        strip('Transverse roof rib',asm,'RoofTrim',z-.18,z+.18,x0,x1,.16,.22)
+        if i==2:
+            z=b-.22
+            strip('End roof rib',asm,'RoofTrim',z-.18,z+.18,x0,x1,.16,.22)
+    for x in (-3,3):
+        box('Crown joint',asm,'Steel',x,8.87,(a+b)/2,.16,.26,b-a)
+    if i==1:
+        strip('Logistics marking',asm,'Red',-.8,.8,-2.2,2.2,.04,.06)
+        strip('Hazard stripe',asm,'Stencil',1.0,1.33,-2.2,2.2,.04,.06)
 
 def vector(p): return dict(zip('xyz',(round(x,6) for x in p)))
 def export():
@@ -120,8 +123,8 @@ def export():
         groups.append({'name':asm,'pivot':vector(pivot),'vertices':verts,'slots':slots})
     points=[p for *_,v,t in SOLIDS for p in v]
     lo=[min(p[k] for p in points) for k in range(3)]; hi=[max(p[k] for p in points) for k in range(3)]
-    assert all(abs(a-b)<1e-6 for a,b in zip(lo,(-22,0,-32))),lo
-    assert all(abs(a-b)<1e-6 for a,b in zip(hi,(22,12,32))),hi
+    assert all(abs(a-b)<1e-6 for a,b in zip(lo,(-9,0,-14))),lo
+    assert all(abs(a-b)<1e-6 for a,b in zip(hi,(9,9,14))),hi
     OUT.parent.mkdir(parents=True,exist_ok=True)
     OUT.write_text(json.dumps({'palette':[{'name':k,'rgb':list(v)} for k,v in PALETTE.items()], 'assemblies':groups},separators=(',',':'))+'\n',encoding='utf-8')
     print(f'{len(SOLIDS)} source solids / {len(groups)} assemblies / {sum(len(t) for *_,t in SOLIDS)} triangles; bounds {lo} to {hi}')

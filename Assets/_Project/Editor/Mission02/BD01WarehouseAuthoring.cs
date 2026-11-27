@@ -90,7 +90,7 @@ namespace AirCombat
             for (int x = -1; x <= 1; x++)
             for (int z = -1; z <= 1; z++)
             {
-                Vector3 sample = p + rotation * new Vector3(23f*x, 0f, 33f*z);
+                Vector3 sample = p + rotation * new Vector3(10f*x, 0f, 15f*z);
                 if (!operation.Contains(new Vector2(sample.x, sample.z)) ||
                     sample.x < origin.x || sample.x > origin.x + size.x ||
                     sample.z < origin.z || sample.z > origin.z + size.z) return false;
@@ -100,8 +100,8 @@ namespace AirCombat
             if (y - low > .5f) return false;
             // The preview is visual-only, but avoid overlapping existing collidable scene art.
             Physics.SyncTransforms();
-            foreach (var collider in Physics.OverlapBox(new Vector3(p.x, y+6.15f, p.z),
-                new Vector3(22.5f, 6f, 32.5f), rotation, ~0, QueryTriggerInteraction.Ignore))
+            foreach (var collider in Physics.OverlapBox(new Vector3(p.x, y+4.65f, p.z),
+                new Vector3(9.5f, 4.5f, 14.5f), rotation, ~0, QueryTriggerInteraction.Ignore))
                 if (collider != null && !(collider is TerrainCollider)) return false;
             return true;
         }
@@ -125,16 +125,12 @@ namespace AirCombat
             Debug.LogError("BD01: open and save the existing M02 scene first."); return false;
         }
 
-        private static GameObject BuildPrefab()
+        private static GeometryData ReadGeometry()
         {
             var asset = AssetDatabase.LoadAssetAtPath<TextAsset>(Geometry);
             var data = asset != null ? JsonUtility.FromJson<GeometryData>(asset.text) : null;
             if (data == null || data.palette == null || data.assemblies == null || data.assemblies.Length != 8)
                 throw new InvalidOperationException("BD01 geometry missing or invalid.");
-            if (!AssetDatabase.IsValidFolder(ArtParent) || AssetDatabase.IsValidFolder(Art) || AssetDatabase.LoadMainAssetAtPath(Prefab) != null)
-                throw new InvalidOperationException("BD01 asset path occupied or Dominion art folder missing. No overwrite.");
-            var shader = Shader.Find("Universal Render Pipeline/Lit");
-            if (shader == null) throw new InvalidOperationException("BD01 requires URP/Lit.");
             var names = new HashSet<string>(data.palette.Select(p => p.name));
             if (names.Count != data.palette.Length || data.palette.Any(p => p.rgb == null || p.rgb.Length != 3 || p.rgb.Any(c => c < 0 || c > 255)))
                 throw new InvalidOperationException("BD01 palette invalid.");
@@ -146,10 +142,88 @@ namespace AirCombat
                         s.triangles.Any(i => i < 0 || i >= part.vertices.Length)))
                     throw new InvalidOperationException("BD01 invalid mesh: " + part.name);
             var points = data.assemblies.SelectMany(p => p.vertices.Select(v => v + p.pivot)).ToArray();
-            if (points.Length == 0 || Mathf.Abs(points.Min(p=>p.x)+22f)>.001f || Mathf.Abs(points.Max(p=>p.x)-22f)>.001f ||
-                Mathf.Abs(points.Min(p=>p.y))>.001f || Mathf.Abs(points.Max(p=>p.y)-12f)>.001f ||
-                Mathf.Abs(points.Min(p=>p.z)+32f)>.001f || Mathf.Abs(points.Max(p=>p.z)-32f)>.001f)
-                throw new InvalidOperationException("BD01 source bounds differ from 44 x 12 x 64.");
+            if (points.Length == 0 || Mathf.Abs(points.Min(p=>p.x)+9f)>.001f || Mathf.Abs(points.Max(p=>p.x)-9f)>.001f ||
+                Mathf.Abs(points.Min(p=>p.y))>.001f || Mathf.Abs(points.Max(p=>p.y)-9f)>.001f ||
+                Mathf.Abs(points.Min(p=>p.z)+14f)>.001f || Mathf.Abs(points.Max(p=>p.z)-14f)>.001f)
+                throw new InvalidOperationException("BD01 source bounds differ from 18 x 9 x 28.");
+            return data;
+        }
+
+        private static void FillMesh(Mesh mesh, Part part)
+        {
+            var vertices = new List<Vector3>(); var triangles = new List<int[]>();
+            foreach (var slot in part.slots)
+            {
+                int start = vertices.Count;
+                foreach (int index in slot.triangles) vertices.Add(part.vertices[index]);
+                triangles.Add(Enumerable.Range(start, slot.triangles.Length).ToArray());
+            }
+            mesh.Clear(); mesh.vertices = vertices.ToArray(); mesh.subMeshCount = triangles.Count;
+            for (int i = 0; i < triangles.Count; i++) mesh.SetTriangles(triangles[i], i);
+            mesh.RecalculateNormals(); mesh.RecalculateBounds();
+        }
+
+        // Existing visual assets are rewritten in place, not replaced. The eight
+        // assembly names and their prefab file IDs remain stable for destruction.
+        [MenuItem("Air Combat/Missions/M02 - Apply BD01 Field Warehouse V2")]
+        private static void ApplyV2()
+        {
+            if (!TryScene(out var scene)) return;
+            GameObject root = null;
+            try
+            {
+                var data = ReadGeometry();
+                var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(Prefab);
+                if (prefab == null) throw new InvalidOperationException("Build BD01 Warehouse Preview first.");
+                var materials = data.palette.ToDictionary(p => p.name,
+                    p => AssetDatabase.LoadAssetAtPath<Material>(Art+"/BD01_"+p.name+".mat"));
+                var meshes = data.assemblies.ToDictionary(p => p.name,
+                    p => AssetDatabase.LoadAssetAtPath<Mesh>(Art+"/BD01_"+p.name+".asset"));
+                if (materials.Values.Any(m => m == null) || meshes.Values.Any(m => m == null))
+                    throw new InvalidOperationException("BD01 missing existing mesh/material; no changes.");
+                root = PrefabUtility.LoadPrefabContents(Prefab);
+                foreach (var part in data.assemblies)
+                {
+                    var tr = root.transform.Find("Visual/"+part.name);
+                    if (tr == null || tr.GetComponent<MeshFilter>() == null || tr.GetComponent<MeshRenderer>() == null)
+                        throw new InvalidOperationException("BD01 missing assembly: "+part.name);
+                }
+                foreach (var p in data.palette)
+                {
+                    var mat = materials[p.name];
+                    mat.SetColor("_BaseColor", new Color32((byte)p.rgb[0], (byte)p.rgb[1], (byte)p.rgb[2], 255));
+                    EditorUtility.SetDirty(mat);
+                }
+                foreach (var part in data.assemblies)
+                {
+                    var tr = root.transform.Find("Visual/"+part.name);
+                    var mesh = meshes[part.name];
+                    FillMesh(mesh, part); EditorUtility.SetDirty(mesh);
+                    tr.localPosition = part.pivot;
+                    tr.GetComponent<MeshFilter>().sharedMesh = mesh;
+                    tr.GetComponent<MeshRenderer>().sharedMaterials = part.slots.Select(s => materials[s.material]).ToArray();
+                }
+                PrefabUtility.SaveAsPrefabAsset(root, Prefab, out bool success);
+                if (!success) throw new InvalidOperationException("BD01 V2 prefab save failed.");
+                AssetDatabase.SaveAssets();
+                foreach (var mesh in meshes.Values)
+                    AssetDatabase.ImportAsset(AssetDatabase.GetAssetPath(mesh), ImportAssetOptions.ForceSynchronousImport);
+                AssetDatabase.ImportAsset(Prefab, ImportAssetOptions.ForceSynchronousImport);
+                var preview = scene.GetRootGameObjects().SingleOrDefault(r => r.name == Preview);
+                if (preview != null) Selection.activeGameObject = preview;
+                Debug.Log("BD01 V2 applied: 18 x 9 x 28 field shelter. Check Scene view and game camera; no placement changes.");
+            }
+            catch (Exception ex) { Debug.LogError("BD01 V2: " + ex + " Check git diff and revert incomplete asset changes before retrying."); }
+            finally { if (root != null) PrefabUtility.UnloadPrefabContents(root); }
+        }
+
+        private static GameObject BuildPrefab()
+        {
+            var data = ReadGeometry();
+            if (!AssetDatabase.IsValidFolder(ArtParent) || AssetDatabase.IsValidFolder(Art) || AssetDatabase.LoadMainAssetAtPath(Prefab) != null)
+                throw new InvalidOperationException("BD01 asset path occupied or Dominion art folder missing. No overwrite.");
+            var shader = Shader.Find("Universal Render Pipeline/Lit");
+            if (shader == null) throw new InvalidOperationException("BD01 requires URP/Lit.");
             if (string.IsNullOrEmpty(AssetDatabase.CreateFolder(ArtParent, "BD01_SupplyWarehouse")))
                 throw new InvalidOperationException("BD01 could not create asset folder.");
             GameObject root = null;
@@ -167,16 +241,8 @@ namespace AirCombat
                 var visual = new GameObject("Visual"); visual.transform.SetParent(root.transform,false);
                 foreach (var part in data.assemblies)
                 {
-                    var vertices = new List<Vector3>(); var triangles = new List<int[]>();
-                    foreach (var slot in part.slots)
-                    {
-                        int start = vertices.Count;
-                        foreach (int index in slot.triangles) vertices.Add(part.vertices[index]);
-                        triangles.Add(Enumerable.Range(start,slot.triangles.Length).ToArray());
-                    }
-                    var mesh = new Mesh { name = "BD01_"+part.name, vertices = vertices.ToArray(), subMeshCount = triangles.Count };
-                    for (int i=0;i<triangles.Count;i++) mesh.SetTriangles(triangles[i],i);
-                    mesh.RecalculateNormals(); mesh.RecalculateBounds();
+                    var mesh = new Mesh { name = "BD01_"+part.name };
+                    FillMesh(mesh, part);
                     AssetDatabase.CreateAsset(mesh,Art+"/"+mesh.name+".asset");
                     var go = new GameObject(part.name,typeof(MeshFilter),typeof(MeshRenderer));
                     go.transform.SetParent(visual.transform,false); go.transform.localPosition=part.pivot;
