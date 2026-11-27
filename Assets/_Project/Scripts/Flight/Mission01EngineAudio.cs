@@ -2,9 +2,16 @@ using UnityEngine;
 
 namespace AirCombat
 {
-    // Player-only, non-spatial cockpit mix. No effect on thrust or fuel.
+    public enum PlayerEnginePhase { Silent, Ready, Takeoff, Flight, Landing }
+
+    public interface IPlayerEngineAudioContext
+    {
+        PlayerEnginePhase EngineAudioPhase { get; }
+        FlightController EngineAudioFlight { get; }
+    }
+
+    // Shared player-only cockpit mix. Legacy class/script name preserves M01 scene serialization.
     [DisallowMultipleComponent]
-    [RequireComponent(typeof(Mission01LaunchSequence))]
     [DefaultExecutionOrder(140)]
     public sealed class Mission01EngineAudio : MonoBehaviour
     {
@@ -19,7 +26,7 @@ namespace AirCombat
         [SerializeField, Min(.02f)] private float releaseSeconds = .35f;
         [SerializeField, Range(.5f, 2f)] private float cruisePitch = 1f;
         [SerializeField, Range(.5f, 2f)] private float boostPitch = 1f;
-        private Mission01LaunchSequence launch;
+        private IPlayerEngineAudioContext context;
         private Afterburner boost;
         private AudioSource engine, thrust;
         private float blend, engineLevel, pitch;
@@ -31,8 +38,9 @@ namespace AirCombat
 
         private void Awake()
         {
-            launch = GetComponent<Mission01LaunchSequence>();
-            if (flight == null || cruiseLoop == null || boostLoop == null)
+            context = GetComponent<IPlayerEngineAudioContext>();
+            if (flight == null && context != null) flight = context.EngineAudioFlight;
+            if (context == null || flight == null || cruiseLoop == null || boostLoop == null)
             {
                 Debug.LogWarning("AUD-01: missing player or engine clips; run the engine audio installer.", this);
                 enabled = false;
@@ -62,27 +70,24 @@ namespace AirCombat
 
         private void LateUpdate()
         {
-            if (engine == null || thrust == null || launch == null) return;
-            var phase = launch.State;
-            bool active = launch.isActiveAndEnabled && (phase == Mission01LaunchSequence.Phase.Ready ||
-                phase == Mission01LaunchSequence.Phase.Takeoff || phase == Mission01LaunchSequence.Phase.Flight ||
-                phase == Mission01LaunchSequence.Phase.Landing);
-            if (!active) { StopLoops(); return; }
+            if (engine == null || thrust == null || context == null) return;
+            var phase = context.EngineAudioPhase;
+            if (phase == PlayerEnginePhase.Silent) { StopLoops(); return; }
             // Tactical map already owns AudioListener.pause and timeScale.
             // Do not restart the playback heads while Unity reports them paused.
             if (AudioListener.pause || MissionPause.IsTacticalMapPausedFor(gameObject.scene)) return;
             if (!engine.isPlaying) engine.Play();
             if (!thrust.isPlaying) thrust.Play();
 
-            bool takingOff = phase == Mission01LaunchSequence.Phase.Takeoff;
-            bool flying = phase == Mission01LaunchSequence.Phase.Flight;
+            bool takingOff = phase == PlayerEnginePhase.Takeoff;
+            bool flying = phase == PlayerEnginePhase.Flight;
             bool powered = takingOff || (flying && boost.IsActive);
             float targetBlend = powered ? 1f : 0f;
             float dt = Time.deltaTime;
             blend = Mathf.MoveTowards(blend, targetBlend, dt / Mathf.Max(.02f,
                 powered ? attackSeconds : releaseSeconds));
-            float targetLevel = phase == Mission01LaunchSequence.Phase.Ready ? idleVolume :
-                phase == Mission01LaunchSequence.Phase.Landing ? Mathf.Lerp(idleVolume, cruiseVolume, .35f) : cruiseVolume;
+            float targetLevel = phase == PlayerEnginePhase.Ready ? idleVolume :
+                phase == PlayerEnginePhase.Landing ? Mathf.Lerp(idleVolume, cruiseVolume, .35f) : cruiseVolume;
             engineLevel = Mathf.MoveTowards(engineLevel, targetLevel, dt / .3f);
             // Pitch follows the actual motor speed, not the key or debug travel.
             float ratio = flying ? flight.CurrentSpeed / Mathf.Max(1f, flight.CruiseSpeed) : 1f;

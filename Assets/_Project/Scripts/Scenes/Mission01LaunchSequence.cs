@@ -6,7 +6,7 @@ namespace AirCombat
     // Mission-specific launch state. Normal flight remains owned by FlightController.
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-40)] // Before normal flight; E1 session initializes first.
-    public sealed class Mission01LaunchSequence : MonoBehaviour, IAirTargetFlightContext
+    public sealed class Mission01LaunchSequence : MonoBehaviour, IAirTargetFlightContext, IPlayerEngineAudioContext
     {
         public enum Phase { Intro, Ready, Takeoff, Flight, Crashed, BoundaryFailed, Landing, Landed }
 
@@ -67,6 +67,15 @@ namespace AirCombat
         private FlightSession flightSession;
 
         public Phase State { get; private set; } = Phase.Intro;
+        FlightController IPlayerEngineAudioContext.EngineAudioFlight => flight;
+        PlayerEnginePhase IPlayerEngineAudioContext.EngineAudioPhase => !isActiveAndEnabled ? PlayerEnginePhase.Silent : State switch
+        {
+            Phase.Ready => PlayerEnginePhase.Ready,
+            Phase.Takeoff => PlayerEnginePhase.Takeoff,
+            Phase.Flight => PlayerEnginePhase.Flight,
+            Phase.Landing => PlayerEnginePhase.Landing,
+            _ => PlayerEnginePhase.Silent
+        };
         internal MissionBoundaryGuard Boundary => boundary;
         internal ScriptedLanding Landing => landing;
         internal bool LandingTestOnly => landingTestOnly;

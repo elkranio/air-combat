@@ -12,10 +12,10 @@ namespace AirCombat
         [Header("CA07 / cargo evacuation (R applies)")]
         [SerializeField] private TestSite testSite = TestSite.C1;
         [SerializeField] private bool holdTestAircraft = true;
-        [SerializeField, Min(0f)] private float c1DispatchSeconds = 23f;
-        [SerializeField, Min(0f)] private float c2DispatchSeconds = 83f;
+        [SerializeField, Min(0f)] private float c1DispatchSeconds = 49f;
+        [SerializeField, Min(0f)] private float c2DispatchSeconds = 124f;
         [SerializeField, Min(1f)] private float carryallSpeed = 60f;
-        [SerializeField, Min(5f)] private float reserveDelay = 25f;
+        [SerializeField, Min(5f)] private float reserveDelay = 60f;
         [SerializeField, Min(1)] private int hullHp = 5;
         [SerializeField, Min(1)] private int cargoHp = 2;
         [SerializeField] private Terrain terrain;

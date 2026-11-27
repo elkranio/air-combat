@@ -6,7 +6,7 @@ namespace AirCombat
     // M02 timing trial. Visual deployment only; no SAM arming or objectives yet.
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-40)]
-    public sealed class Mission02RouteTrial : MonoBehaviour, IFlightSessionEncounter
+    public sealed class Mission02RouteTrial : MonoBehaviour, IFlightSessionEncounter, IPlayerEngineAudioContext
     {
         [SerializeField] private CombatHud hud;
         [SerializeField] private GameObject guide;
@@ -84,6 +84,15 @@ namespace AirCombat
         { a = convoyStart; b = depot; c = first; c2 = second; twoPartRoute = true; }
         public GameObject RouteGuide => guide;
         internal MissionBoundaryGuard Boundary => boundary;
+
+        FlightController IPlayerEngineAudioContext.EngineAudioFlight => flight;
+        PlayerEnginePhase IPlayerEngineAudioContext.EngineAudioPhase => !bound || !isActiveAndEnabled ? PlayerEnginePhase.Silent : phase switch
+        {
+            Phase.Ready => PlayerEnginePhase.Ready,
+            Phase.Takeoff => PlayerEnginePhase.Takeoff,
+            Phase.Flight => PlayerEnginePhase.Flight,
+            _ => PlayerEnginePhase.Silent
+        };
 
         public string DebugStatus => $"M02 | {phase} | {sortieTime:F1}s";
         internal string ConvoyStatus => convoy != null ? convoy.DebugStatus : "CONVOY UNAVAILABLE";
