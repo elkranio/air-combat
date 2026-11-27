@@ -34,11 +34,14 @@ namespace AirCombat
             if (visual == null || prefab == null) return;
             foreach (Transform child in visual) child.gameObject.SetActive(false);
             var moth = Instantiate(prefab, visual, false);
+            // Arcade readability: enlarge UD01 only, including the rotor.
+            const float mothScale = 4f / 3f;
+            moth.transform.localScale *= mothScale;
             demoRotor = moth.transform.Find("Moth_Rotor");
             if (demoRotor == null)
                 Debug.LogError("UD01: missing cosmetic rotor.", moth);
             var box = GetComponent<BoxCollider>();
-            box.size = new Vector3(6f,1.5f,5f);
+            box.size = new Vector3(6f,1.5f,5f) * mothScale;
             box.center = Vector3.zero;
         }
 
