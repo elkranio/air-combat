@@ -35,9 +35,6 @@ namespace AirCombat
                 var lynx = roots.SingleOrDefault(r => r.name == "PF02_Lynx");
                 if (lynx == null) throw new InvalidOperationException("Existing PF02_Lynx comparison not found.");
                 var existing = roots.SingleOrDefault(r => r.name == Preview);
-                if (existing != null) { Selection.activeGameObject = existing; SceneView.lastActiveSceneView?.FrameSelected(); return; }
-                if (AssetDatabase.LoadMainAssetAtPath(Prefab) != null || AssetDatabase.IsValidFolder(Art))
-                    throw new InvalidOperationException("IN01 art exists without preview. Refusing to overwrite it.");
                 var text = AssetDatabase.LoadAssetAtPath<TextAsset>(Geometry);
                 var data = text != null ? JsonUtility.FromJson<Data>(text.text) : null;
                 var shader = Shader.Find("Universal Render Pipeline/Lit");
@@ -48,6 +45,15 @@ namespace AirCombat
                     data.parts.Any(p => p.vertices == null || p.triangles == null || p.triangles.Length % 3 != 0 ||
                         p.triangles.Any(i => i < 0 || i >= p.vertices.Length) || !data.palette.Any(m => m.name == p.material)))
                     throw new InvalidOperationException("Invalid IN01 geometry, palette or URP shader.");
+                if (existing != null)
+                {
+                    RefreshExisting(existing, data);
+                    Selection.activeGameObject = existing;
+                    SceneView.lastActiveSceneView?.FrameSelected();
+                    return;
+                }
+                if (AssetDatabase.LoadMainAssetAtPath(Prefab) != null || AssetDatabase.IsValidFolder(Art))
+                    throw new InvalidOperationException("IN01 art exists without preview. Refusing to overwrite it.");
                 GameObject model = null;
                 bool folderCreated = false, prefabCreated = false;
                 Undo.IncrementCurrentGroup(); int undo = Undo.GetCurrentGroup(); Undo.SetCurrentGroupName("IN01 interceptor comparison");
@@ -67,10 +73,7 @@ namespace AirCombat
                     foreach (var part in data.parts)
                     {
                         // Flat facets, same outward triangle winding as other authored meshes.
-                        var vertices = part.triangles.Select(i => part.vertices[i]).ToArray();
-                        var mesh = new Mesh { name = "IN01_" + part.name.Replace(' ', '_'), vertices = vertices };
-                        mesh.triangles = Enumerable.Range(0, vertices.Length).ToArray();
-                        mesh.RecalculateNormals(); mesh.RecalculateBounds();
+                        var mesh = BuildMesh(part);
                         AssetDatabase.CreateAsset(mesh, Art + "/" + mesh.name + ".asset");
                         var go = new GameObject(part.name, typeof(MeshFilter), typeof(MeshRenderer));
                         go.transform.SetParent(visual, false);
@@ -104,6 +107,88 @@ namespace AirCombat
                 }
             }
             catch (Exception ex) { Debug.LogError("IN01: " + ex); }
+        }
+
+        private static Mesh BuildMesh(Part part)
+        {
+            var vertices = part.triangles.Select(i => part.vertices[i]).ToArray();
+            var mesh = new Mesh { name = "IN01_" + part.name.Replace(' ', '_'), vertices = vertices };
+            mesh.triangles = Enumerable.Range(0, vertices.Length).ToArray();
+            mesh.RecalculateNormals(); mesh.RecalculateBounds();
+            return mesh;
+        }
+
+        // Visual revisions update the existing assets, preserving prefab and mesh GUIDs.
+        private static void RefreshExisting(GameObject instance, Data data)
+        {
+            var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(Prefab);
+            if (prefab == null || PrefabUtility.GetCorrespondingObjectFromSource(instance) != prefab)
+                throw new InvalidOperationException("IN01 preview is not linked to the expected prefab.");
+            var visual = prefab.transform.Find("Visual");
+            if (visual == null || visual.childCount != data.parts.Length)
+                throw new InvalidOperationException("IN01 visual hierarchy changed; cannot refresh safely.");
+            var mats = data.palette.ToDictionary(p => p.name,
+                p => AssetDatabase.LoadAssetAtPath<Material>(Art + "/IN01_" + p.name + ".mat"));
+            if (mats.Values.Any(m => m == null || !m.HasProperty("_BaseColor")))
+                throw new InvalidOperationException("IN01 material missing.");
+            var originals = new Mesh[data.parts.Length];
+            var generated = new Mesh[data.parts.Length];
+            var backups = new Mesh[data.parts.Length];
+            var oldColors = data.palette.Select(p => mats[p.name].GetColor("_BaseColor")).ToArray();
+            bool editing = false;
+            try
+            {
+                // Preflight every part before modifying persistent assets.
+                for (int i = 0; i < data.parts.Length; i++)
+                {
+                    var part = data.parts[i];
+                    var child = visual.Find(part.name);
+                    var mesh = AssetDatabase.LoadAssetAtPath<Mesh>(Art + "/IN01_" + part.name.Replace(' ', '_') + ".asset");
+                    if (child == null || mesh == null || child.GetComponent<MeshFilter>()?.sharedMesh != mesh ||
+                        child.GetComponent<MeshRenderer>()?.sharedMaterial != mats[part.material])
+                        throw new InvalidOperationException("IN01 asset/hierarchy mismatch: " + part.name);
+                    originals[i] = mesh;
+                    generated[i] = BuildMesh(part);
+                    backups[i] = Object.Instantiate(mesh); backups[i].name = mesh.name;
+                }
+                editing = true;
+                for (int i = 0; i < originals.Length; i++)
+                {
+                    EditorUtility.CopySerialized(generated[i], originals[i]);
+                    EditorUtility.SetDirty(originals[i]);
+                }
+                foreach (var paint in data.palette)
+                {
+                    mats[paint.name].SetColor("_BaseColor", new Color32((byte)paint.rgb[0], (byte)paint.rgb[1], (byte)paint.rgb[2], 255));
+                    EditorUtility.SetDirty(mats[paint.name]);
+                }
+                AssetDatabase.SaveAssets();
+                SceneView.RepaintAll();
+                Debug.Log("IN01 V2 refreshed in place. Existing prefab, comparison pose and GUIDs preserved.", instance);
+            }
+            catch
+            {
+                if (editing)
+                {
+                    for (int i = 0; i < originals.Length; i++)
+                    {
+                        EditorUtility.CopySerialized(backups[i], originals[i]);
+                        EditorUtility.SetDirty(originals[i]);
+                    }
+                    for (int i = 0; i < data.palette.Length; i++)
+                    {
+                        var mat = mats[data.palette[i].name];
+                        mat.SetColor("_BaseColor", oldColors[i]); EditorUtility.SetDirty(mat);
+                    }
+                    AssetDatabase.SaveAssets();
+                }
+                throw;
+            }
+            finally
+            {
+                foreach (var mesh in generated.Concat(backups))
+                    if (mesh != null) Object.DestroyImmediate(mesh);
+            }
         }
     }
 }

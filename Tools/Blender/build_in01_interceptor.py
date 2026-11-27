@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""IN01 Long Dart visual prototype. Unity +Y up, +Z nose; Blender +Z up."""
+"""IN01 Long Dart V2 visual prototype. Unity +Y up, +Z nose; Blender +Z up."""
 from pathlib import Path
 from math import sin, cos, pi
 from collections import Counter
@@ -7,8 +7,8 @@ import json
 
 ROOT = Path(__file__).resolve().parents[2]
 OUT = ROOT / 'Assets/_Project/Editor/IN01Geometry.json'
-PALETTE = {'Hull': (76, 88, 90), 'Wing': (113, 126, 125), 'Dark': (37, 43, 47),
-           'Steel': (145, 155, 154), 'Glass': (40, 103, 123), 'Mark': (190, 65, 43)}
+PALETTE = {'Hull': (81, 93, 107), 'Wing': (105, 119, 133), 'Dark': (35, 42, 52),
+           'Steel': (135, 149, 160), 'Glass': (36, 112, 137), 'Mark': (184, 72, 53)}
 PARTS = []
 
 def sub(a,b): return tuple(x-y for x,y in zip(a,b))
@@ -64,37 +64,35 @@ def wing(name,paint,s,stations):
         v += [(s*x,u,l),(s*x,u,t),(s*x,d,t),(s*x,d,l)]
     add(name,paint,v,[[0,1,2,3],[4,5,6,7],[0,4,5,1],[1,5,6,2],[2,6,7,3],[3,7,4,0]])
 
-# Long radome, narrow forward cockpit, muscular aft fuselage. 17.6 x 10.1 units.
-loft('Central fuselage','Hull',[(-7.60,0,.02,.58,.29),(-6.3,0,.04,.87,.51),(-3.9,0,.08,1.16,.67),(-.6,0,.12,1.21,.72),(2.2,0,.10,.94,.66),(4.7,0,.05,.65,.51),(6.25,0,.0,.45,.37)])
-loft('Radome','Dark',[(6.25,0,0,.45,.37),(7.65,0,-.025,.23,.20),(9.15,0,-.06,.025,.035)])
-loft('Canopy','Glass',[(1.55,0,.64,.26,.12),(2.25,0,.80,.45,.30),(3.65,0,.74,.49,.37),(4.7,0,.49,.28,.17),(5.15,0,.38,.12,.05)])
-loft('Canopy frame','Dark',[(3.18,0,.76,.498,.376),(3.26,0,.75,.498,.376)])
+# V2: long continuous wedge, pinched waist, swept shoulders and distinct aft engines.
+# Keep the full length and span of V1 and the same named parts for in-place Unity upgrades.
+loft('Central fuselage','Hull',[(-7.60,0,.02,.43,.24),(-6.3,0,.04,.63,.40),(-3.9,0,.08,.89,.59),(-.6,0,.12,.96,.68),(2.2,0,.10,.82,.62),(4.7,0,.05,.61,.45),(6.55,0,.0,.34,.29)])
+loft('Radome','Dark',[(6.55,0,0,.34,.29),(7.85,0,-.025,.17,.15),(9.15,0,-.06,.025,.035)])
+loft('Canopy','Glass',[(1.55,0,.60,.23,.10),(2.25,0,.73,.40,.26),(3.65,0,.68,.43,.32),(4.7,0,.43,.25,.15),(5.15,0,.34,.10,.05)])
+loft('Canopy frame','Dark',[(3.18,0,.70,.436,.329),(3.26,0,.70,.436,.329)])
 for s,side in [(-1,'L'),(1,'R')]:
     def n(x): return side+' '+x
-    # Shoulder intakes ahead of the wing; long faceted twin powerplants.
-    loft(n('engine nacelle'),'Hull',[(-7.18,s*1.43,-.10,.81,.73),(-5.85,s*1.46,-.04,.94,.82),(-2.7,s*1.50,-.025,.96,.84),(1.50,s*1.45,-.04,.88,.78),(2.70,s*1.39,-.08,.80,.70)],CHAMFER)
-    loft(n('intake lip'),'Steel',[(2.70,s*1.39,-.08,.80,.70),(2.93,s*1.39,-.08,.73,.63)],CHAMFER)
-    loft(n('intake face'),'Dark',[(2.93,s*1.39,-.08,.62,.51),(2.945,s*1.39,-.08,.62,.51)],CHAMFER)
-    loft(n('exhaust collar'),'Dark',[(-8.42,s*1.43,-.10,.68,.60),(-8.12,s*1.43,-.10,.78,.69),(-7.18,s*1.43,-.10,.81,.73)])
-    loft(n('exhaust throat'),'Steel',[(-8.46,s*1.43,-.10,.48,.42),(-8.42,s*1.43,-.10,.54,.48)])
-    loft(n('exhaust core'),'Dark',[(-8.49,s*1.43,-.10,.39,.34),(-8.46,s*1.43,-.10,.39,.34)])
-    # Strongly swept, short chord outer panels, painted stripe rather than raised geometry.
-    sections=[(1.70,1.65,-4.60,.25,-.23),(3.58,-.93,-4.44,.13,-.12),(4.47,-2.12,-4.37,.085,-.08),(5.05,-2.90,-4.32,.055,-.05)]
-    # One closed wing with material bands represented by adjacent closed sections. Internal caps hidden.
+    # Engines do not read as straight boxes: the forward intakes tuck into the nose shoulders,
+    # the pods grow outward and upward towards the engine section, then taper into the nozzles.
+    loft(n('engine nacelle'),'Hull',[(-7.18,s*1.25,-.10,.65,.62),(-5.85,s*1.36,-.03,.78,.76),(-3.25,s*1.34,.015,.81,.78),(-.60,s*1.15,-.035,.68,.66),(1.65,s*.94,-.10,.52,.51),(3.15,s*.83,-.12,.40,.39)])
+    loft(n('intake lip'),'Steel',[(3.15,s*.83,-.12,.40,.39),(3.35,s*.80,-.13,.34,.33)])
+    loft(n('intake face'),'Dark',[(3.35,s*.80,-.13,.29,.27),(3.365,s*.80,-.13,.29,.27)])
+    loft(n('exhaust collar'),'Dark',[(-8.42,s*1.25,-.10,.53,.51),(-8.12,s*1.25,-.10,.61,.58),(-7.18,s*1.25,-.10,.65,.62)])
+    loft(n('exhaust throat'),'Steel',[(-8.46,s*1.25,-.10,.39,.37),(-8.42,s*1.25,-.10,.43,.41)])
+    loft(n('exhaust core'),'Dark',[(-8.49,s*1.25,-.10,.31,.29),(-8.46,s*1.25,-.10,.31,.29)])
+    # Larger swept wing plane, long root chord and a narrow outer paint band.
+    sections=[(.98,2.55,-4.90,.23,-.22),(4.50,-1.87,-4.69,.075,-.07),(4.77,-2.21,-4.67,.060,-.055),(5.05,-2.56,-4.65,.045,-.04)]
     for k,mat in enumerate(['Wing','Mark','Wing']): wing(n('wing '+str(k+1)),mat,s,sections[k:k+2])
-    wing(n('tailplane'),'Wing',s,[(1.54,-5.12,-7.98,.18,-.15),(3.55,-6.72,-7.65,.07,-.06)])
-    # Paired canted fins on nacelles, tall but narrow in plan view.
-    profile=[(.43,-4.12),(2.48,-6.02),(2.55,-7.00),(.43,-7.82)]
-    def fin(y,z,offset): return (s*(1.48+.19*y)+offset,y,z)
-    plate(n('vertical fin'),'Hull',[fin(y,z,.105) for y,z in profile],[fin(y,z,-.105) for y,z in profile])
-    # Small bright stripe across top of the fin, sits on outer faces.
+    wing(n('tailplane'),'Wing',s,[(1.20,-5.10,-7.82,.13,-.11),(3.12,-6.76,-7.44,.045,-.04)])
+    profile=[(.48,-4.48),(2.16,-6.04),(2.24,-6.80),(.36,-7.66)]
+    def fin(y,z,offset): return (s*(1.29+.19*y)+offset,y,z)
+    plate(n('vertical fin'),'Hull',[fin(y,z,.09) for y,z in profile],[fin(y,z,-.09) for y,z in profile])
     for q in [-1,1]:
-        xoff=q*.109
-        pp=[(1.88,-5.57),(2.08,-5.76),(2.12,-7.10),(1.93,-7.18)]
+        xoff=q*.094
+        pp=[(1.72,-5.97),(1.85,-6.06),(1.89,-6.83),(1.76,-6.91)]
         plate(n('fin insignia '+str(q)),'Mark',[fin(y,z,xoff) for y,z in pp],[fin(y,z,xoff+q*.008) for y,z in pp])
-    # Two compact external missile bodies for role readability (visual only).
-    loft(n('missile body'),'Steel',[(-2.72,s*2.90,-.48,.14,.14),(-.48,s*2.90,-.48,.14,.14),(-.05,s*2.90,-.48,.018,.018)])
-    wing(n('missile pylon'),'Dark',s,[(2.77,-.68,-2.20,-.02,-.40),(3.03,-.68,-2.20,-.02,-.40)])
+    loft(n('missile body'),'Steel',[(-3.40,s*2.90,-.48,.14,.14),(-1.16,s*2.90,-.48,.14,.14),(-.73,s*2.90,-.48,.018,.018)])
+    wing(n('missile pylon'),'Dark',s,[(2.77,-1.30,-2.88,-.02,-.40),(3.03,-1.30,-2.88,-.02,-.40)])
 
 
 def main():
