@@ -329,7 +329,7 @@ namespace AirCombat
                 Quaternion.LookRotation(Vector3.up, Vector3.forward));
             ownedMissiles.Add(missile);
             missile.Launch(target, hitPoints, radar, mobileRoot != null ? mobileRoot : transform, OnMissileFinished);
-            if (IsBastion) missile.BeginAngledLaunch(socket.rotation);
+            if (IsBastion) missile.BeginAngledLaunch(socket.rotation, socket == bastionRightSocket);
             else railPresentation?.PresentLaunch(missile, Time.time, reloadSeconds);
             // Picket already played its three pre-launch beeps.
             if (!UsesPicketTiming)

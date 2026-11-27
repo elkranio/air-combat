@@ -38,6 +38,7 @@ namespace AirCombat
         private System.Action<string> onFinished;
         // Picket uses the authored rail pose instead of a vertical ejection.
         private bool railLaunch;
+        private bool arcadeLead;
         private static readonly RaycastHit[] HitBuffer = new RaycastHit[24];
         private static int lastPhysicsSyncFrame = -1;
 
@@ -69,6 +70,7 @@ namespace AirCombat
             remainingTurn = totalTurnBudget;
             age = phaseElapsed = 0f;
             railLaunch = false;
+            arcadeLead = false;
             phase = FlightPhase.Vertical;
             transform.rotation = Quaternion.LookRotation(Vector3.up, Vector3.forward);
             flying = true;
@@ -77,13 +79,25 @@ namespace AirCombat
         }
 
         // Closed-pod game art uses the projectile's existing mesh at the authored pose.
-        internal void BeginAngledLaunch(Quaternion rotation)
+        internal void BeginAngledLaunch(Quaternion rotation, bool useArcadeLead = false)
         {
+            arcadeLead = useArcadeLead;
             railLaunch = true;
             phase = FlightPhase.PitchOver;
             phaseElapsed = 0f;
             transform.rotation = rotation;
             if (exhaust != null) exhaust.Clear();
+        }
+
+        // Game-only forward aim offset for the second Bastion shot.
+        // Fade it out close to the player; actual hit detection is unchanged.
+        private Vector3 AimDirection(Vector3 from)
+        {
+            Vector3 delta = target.position - from;
+            if (!arcadeLead) return delta;
+            Vector3 heading = Vector3.ProjectOnPlane(target.forward, Vector3.up).normalized;
+            float offset = Mathf.Min(25f, delta.magnitude * .25f);
+            return delta + heading * offset;
         }
 
         // The display mesh is shared with the loaded rail prop. Start the game
@@ -147,7 +161,7 @@ namespace AirCombat
                 phaseElapsed += dt;
                 if (hasTarget)
                 {
-                    Vector3 desired = target.position - from;
+                    Vector3 desired = AimDirection(from);
                     if (desired.sqrMagnitude > .001f)
                     {
                         Quaternion toward = Quaternion.LookRotation(desired, Vector3.up);
@@ -162,7 +176,7 @@ namespace AirCombat
             }
             else if (hasTarget && remainingTurn > 0f)
             {
-                Vector3 desired = target.position - from;
+                Vector3 desired = AimDirection(from);
                 if (desired.sqrMagnitude > .001f)
                 {
                     float angle = Vector3.Angle(transform.forward, desired);
