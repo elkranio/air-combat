@@ -313,6 +313,18 @@ PrefabInstance:
       propertyPath: m_Name
       value: PlayerLynx_Combat
       objectReference: {fileID: 0}
+    - target: {fileID: 611595460606994884, guid: efb1f442fb29f73489904de4db7a7bc4, type: 3}
+      propertyPath: skipTakeoff
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 611595460606994884, guid: efb1f442fb29f73489904de4db7a7bc4, type: 3}
+      propertyPath: tripleSpeed
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 611595460606994884, guid: efb1f442fb29f73489904de4db7a7bc4, type: 3}
+      propertyPath: infiniteAfterburner
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 8444738831885795403, guid: efb1f442fb29f73489904de4db7a7bc4, type: 3}
       propertyPath: m_LocalPosition.x
       value: -1115.0538
