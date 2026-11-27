@@ -29,6 +29,10 @@ namespace AirCombat
         [Header("BD04 / Base deployment trial (R applies)")]
         [SerializeField] private bool baseDeploymentTrial;
         [SerializeField] private bool baseTrialHoldAircraft = true;
+        [Header("BD06 / Base assault trial (R applies)")]
+        [SerializeField] private bool baseAssaultTrial;
+        [SerializeField] private Vector3 baseAssaultSpawn = new Vector3(1640f, 78f, 790f);
+        private bool assaultTrialActive;
         private bool baseTrialActive;
         private Vector3 depotForward;
         [Header("M02D / Convoy march")]
@@ -218,7 +222,8 @@ namespace AirCombat
             if (samThreatHud != null) samThreatHud.BindSam(view, aircraft, null);
             convoy?.Dispose(); convoy = null;
             picketSamActive = picketSamEnabled && !carryallFiringRange;
-            baseTrialActive = baseDeploymentTrial && !carryallFiringRange;
+            assaultTrialActive = baseAssaultTrial && !carryallFiringRange;
+            baseTrialActive = baseDeploymentTrial && !carryallFiringRange && !assaultTrialActive;
             bool cargoInstalled = cargoEvacuation != null && cargoEvacuation.isActiveAndEnabled;
             if (carryallFlightPreview != null)
                 carryallFlightPreview.gameObject.SetActive(carryallFiringRange || !cargoInstalled);
@@ -227,7 +232,7 @@ namespace AirCombat
                 EnterCarryallRange();
                 return;
             }
-            if (!BuildConvoy() || !convoy.Restart(baseTrialActive ? Mathf.Max(0f,convoy.RouteLength-230f) : 0f))
+            if (!BuildConvoy() || !convoy.Restart(baseTrialActive ? Mathf.Max(0f,convoy.RouteLength-230f) : 0f, assaultTrialActive))
             { phase = Phase.Failed; failure = "CONVOY UNAVAILABLE"; return; }
             if (picketSamActive)
             {
@@ -267,9 +272,30 @@ namespace AirCombat
             escortClearedTime = allClearedTime = -1f;
             firstParkedTime = deploymentCompleteTime = -1f;
             failure = null; handover = false; phase = Phase.Ready;
-            if (!baseTrialActive && cargoInstalled && !cargoEvacuation.Restart(radar))
+            if (!baseTrialActive && !assaultTrialActive && cargoInstalled && !cargoEvacuation.Restart(radar))
             { phase = Phase.Failed; failure = "CA07 CARGO UNAVAILABLE"; return; }
-            if (cargoInstalled && cargoEvacuation.TryTestPose(out Vector3 testGround, out Quaternion testHeading))
+            if (assaultTrialActive)
+            {
+                Vector3 p = baseAssaultSpawn; p.y = 78f;
+                Vector3 approach = Vector3.ProjectOnPlane(b - p, Vector3.up);
+                bool safe = boundary.Distance(p) > 250f && approach.sqrMagnitude > 1f;
+                if (picketSamActive)
+                    foreach (var site in convoy.SamSites)
+                        if (site != null && Vector3.ProjectOnPlane(site.RadarPosition - p, Vector3.up).magnitude < site.RadarThreatRadius + 40f)
+                            safe = false;
+                if (!safe)
+                {
+                    phase = Phase.Failed; failure = "BD06 UNSAFE ASSAULT SPAWN";
+                    Debug.LogError("BD06: move Base Assault Spawn outside SAM ranges plus 40 units and boundary warning.", this);
+                    return;
+                }
+                aircraft.SetPositionAndRotation(p, Quaternion.LookRotation(approach, Vector3.up));
+                Physics.SyncTransforms();
+                EnterFlight();
+                if (phase == Phase.Flight && picketSamActive) convoy.TickSamArming();
+                arrivalTime = firstParkedTime = deploymentCompleteTime = 0f;
+            }
+            else if (cargoInstalled && cargoEvacuation.TryTestPose(out Vector3 testGround, out Quaternion testHeading))
             {
                 flight.PrepareCruiseHandover();
                 nurs.PositionForRange(testGround, testHeading, 78f);
@@ -446,7 +472,7 @@ namespace AirCombat
                 return;
             }
             GUI.Box(new Rect(12f, 12f, 490f, 239f), GUIContent.none);
-            GUI.Label(new Rect(22f, 18f, 470f, 22f), baseTrialActive ? $"BD04 BASE TRIAL / {elapsed:F1}s | R retry" : $"M02 / {phase}   {elapsed:F1}s airborne", textStyle);
+            GUI.Label(new Rect(22f, 18f, 470f, 22f), assaultTrialActive ? $"BD06 BASE ASSAULT / {elapsed:F1}s | R retry" : baseTrialActive ? $"BD04 BASE TRIAL / {elapsed:F1}s | R retry" : $"M02 / {phase}   {elapsed:F1}s airborne", textStyle);
             GUI.Label(new Rect(22f, 41f, 470f, 22f), twoPartRoute ?
                 $"From W: A {Split(timeA)} | C1 {Split(timeC)} | C2 {Split(timeC2)} | B {Split(timeB)}" :
                 $"From W: A {Split(timeA)} | C {Split(timeC)} | B {Split(timeB)}", textStyle);

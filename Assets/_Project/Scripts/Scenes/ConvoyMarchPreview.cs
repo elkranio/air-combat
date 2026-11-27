@@ -298,7 +298,7 @@ namespace AirCombat
         public float HalfLength => spacing * (Count - 1) * .5f;
         public float Speed => ready && progress < distance ? speed : 0f;
 
-        public bool Restart(float initialProgress = 0f)
+        public bool Restart(float initialProgress = 0f, bool startDeployed = false)
         {
             ready = false;
             ClearDestruction();
@@ -311,7 +311,8 @@ namespace AirCombat
                 Dispose();
                 return false;
             }
-            progress = Mathf.Clamp(initialProgress, 0f, Mathf.Max(0f,distance-101f));
+            if (startDeployed && !deployAtDepot) return false;
+            progress = startDeployed ? MoveLimit : Mathf.Clamp(initialProgress, 0f, Mathf.Max(0f,distance-101f));
             System.Array.Clear(parked, 0, parked.Length);
             for (int i = 0; i < Count; i++)
             {
@@ -328,7 +329,7 @@ namespace AirCombat
                 Place(i);
                 units[i].gameObject.SetActive(true);
                 // Also cancels any opt-in visual deployment preview.
-                units[i].SetDeploymentImmediate(false);
+                units[i].SetDeploymentImmediate(startDeployed);
                 radar.Register(contacts[i]);
                 units[i].GetComponent<GroundMovementDust>()?.ResetTrail();
             }
