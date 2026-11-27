@@ -228,6 +228,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: M03 / combat camera
       objectReference: {fileID: 0}
+    - target: {fileID: 5299753384366365605, guid: 371922c97e367a140876da6ab486cf44, type: 3}
+      propertyPath: yaw
+      value: 0
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []

@@ -70,7 +70,12 @@ namespace AirCombat
                 spawn.y = airfield.transform.position.y + .8857401f; // Existing M02 ground pose.
                 player.transform.SetPositionAndRotation(spawn, runway.rotation);
                 var camera = Place(cameraPrefab, scene, "M03 / combat camera").GetComponent<CombatCameraRig>();
-                camera.transform.position = spawn + new Vector3(-110f, 166f, -190f);
+                // Match the campaign camera axes; the shared map and radar follow this yaw.
+                var follow = camera.GetComponent<ArcadeCameraFollow>();
+                var cameraSettings = new SerializedObject(follow);
+                cameraSettings.FindProperty("yaw").floatValue = 0f;
+                cameraSettings.ApplyModifiedPropertiesWithoutUndo();
+                camera.transform.position = spawn + new Vector3(0f, 166f, -190f);
                 var hud = Place(hudPrefab, scene, "M03 / combat HUD").GetComponent<CombatHud>();
                 Place(lightPrefab, scene, "M03 / daylight");
                 var missionRoot = new GameObject("M03 / mission");
