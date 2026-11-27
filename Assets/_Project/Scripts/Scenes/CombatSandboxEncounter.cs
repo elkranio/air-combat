@@ -39,8 +39,9 @@ namespace AirCombat
         [SerializeField] private GameObject bastionPrefab;
         [SerializeField] private SurfaceToAirLauncher bastionPicketTemplate;
         [SerializeField, Min(.1f)] private float bastionSalvoGap = .8f;
+        [SerializeField] private bool bastionSixSiteTest = true;
         private bool bastionMode;
-        private SurfaceToAirLauncher bastion;
+        private readonly List<SurfaceToAirLauncher> bastions = new List<SurfaceToAirLauncher>(6);
         private bool groundMode;
         private bool wardenMode;
         private readonly List<WardenCombat> wardens = new List<WardenCombat>();
@@ -112,9 +113,7 @@ namespace AirCombat
             get
             {
                 if (interceptorMode) return interceptor != null ? interceptor.Status : "IN02 UNAVAILABLE";
-                if (bastionMode) return bastion != null
-                    ? $"SAM02 | {bastion.StatusLabel} | SAM {bastion.LaunchedCount} | Reload {bastion.ReloadLeft:F1}s | R retry"
-                    : "SAM02 UNAVAILABLE";
+                if (bastionMode) return BastionStatus();
                 if (convoyMode)
                 {
                     string convoyStatus = convoy != null ? convoy.DebugStatus : "CONVOY UNAVAILABLE";
@@ -298,29 +297,76 @@ namespace AirCombat
                 foreach (var warden in root.GetComponentsInChildren<WardenCombat>(true)) warden.gameObject.SetActive(false);
                 foreach (var sam in root.GetComponentsInChildren<SurfaceToAirLauncher>(true)) sam.gameObject.SetActive(false);
             }
-            Vector3 position = new Vector3(-220f, 0f, 0f);
-            position.y = convoyTerrain.SampleHeight(position) + convoyTerrain.transform.position.y;
-            var instance = Instantiate(bastionPrefab, position, Quaternion.identity, transform);
-            instance.name = "SAM02 / Bastion - COMBAT TRIAL";
-            bastion = instance.AddComponent<SurfaceToAirLauncher>();
-            if (!bastion.BindBastion(bastionPicketTemplate, player.transform, playerHealth, radar, bastionSalvoGap))
+            Vector3 center = new Vector3(-220f, 0f, 0f);
+            // Six independent sites flank a notional north-south airfield.
+            // Keep the one-site baseline available in the Inspector.
+            Vector3[] offsets = bastionSixSiteTest ? new[]
             {
-                Debug.LogError("SAM02: incomplete Bastion visual or Picket template.", instance);
-                instance.SetActive(false);
-                Destroy(instance);
-                bastion = null;
-                return false;
+                new Vector3(-160f, 0f, -180f), new Vector3(160f, 0f, -180f),
+                new Vector3(-160f, 0f,    0f), new Vector3(160f, 0f,    0f),
+                new Vector3(-160f, 0f,  180f), new Vector3(160f, 0f,  180f)
+            } : new[] { Vector3.zero };
+            for (int i = 0; i < offsets.Length; i++)
+            {
+                Vector3 position = center + offsets[i];
+                position.y = convoyTerrain.SampleHeight(position) + convoyTerrain.transform.position.y;
+                var instance = Instantiate(bastionPrefab, position, Quaternion.identity, transform);
+                instance.name = $"SAM02 / Bastion {i + 1:00} - COMBAT TRIAL";
+                var site = instance.AddComponent<SurfaceToAirLauncher>();
+                if (!site.BindBastion(bastionPicketTemplate, player.transform, playerHealth, radar, bastionSalvoGap))
+                {
+                    Debug.LogError("SAM02: incomplete Bastion visual or Picket template.", instance);
+                    instance.SetActive(false);
+                    Destroy(instance);
+                    ReleaseBastions();
+                    return false;
+                }
+                bastions.Add(site);
+                radar.Register(site);
             }
-            radar.Register(bastion);
-            gameObject.AddComponent<EnemyMissileThreatHud>().BindSam(view, player.transform, new[] { bastion });
+            gameObject.AddComponent<EnemyMissileThreatHud>().BindSam(view, player.transform, bastions.ToArray());
             return true;
+        }
+
+        private string BastionStatus()
+        {
+            if (bastions.Count == 0) return "SAM02 UNAVAILABLE";
+            int launched = 0, threatening = 0;
+            foreach (var site in bastions)
+            {
+                if (site == null) continue;
+                launched += site.LaunchedCount;
+                if (site.HasIncomingMissile) threatening++;
+            }
+            if (bastions.Count == 1 && bastions[0] != null)
+            {
+                var site = bastions[0];
+                return $"SAM02 | {site.StatusLabel} | SAM {launched} | Reload {site.ReloadLeft:F1}s | R retry";
+            }
+            return $"SAM02 | Sites {bastions.Count} | Sites with airborne SAM {threatening} | Total launches {launched} | R retry";
         }
 
         private void StopBastion()
         {
-            if (bastion == null) return;
-            bastion.SetArmed(false);
-            bastion.CancelProjectiles();
+            foreach (var site in bastions)
+            {
+                if (site == null) continue;
+                site.SetArmed(false);
+                site.CancelProjectiles();
+            }
+        }
+
+        private void ReleaseBastions()
+        {
+            StopBastion();
+            foreach (var site in bastions)
+            {
+                if (site == null) continue;
+                radar?.Unregister(site);
+                site.gameObject.SetActive(false);
+                Destroy(site.gameObject);
+            }
+            bastions.Clear();
         }
 
         private void Start() { Restart(); }
@@ -352,12 +398,13 @@ namespace AirCombat
                 player.transform.SetPositionAndRotation(new Vector3(-220f, player.transform.position.y, -650f), Quaternion.identity);
                 playerFlight.PrepareCruiseHandover();
                 playerBoost.enabled = false; playerBoost.enabled = true;
-                if (bastion != null)
+                foreach (var site in bastions)
                 {
-                    bastion.ResetEncounter();
-                    bastion.SetArmed(true);
-                    encounterReady = true;
+                    if (site == null) continue;
+                    site.ResetEncounter();
+                    site.SetArmed(true);
                 }
+                encounterReady = bastions.Count > 0;
                 view.GetComponent<ArcadeCameraFollow>()?.SnapToAircraft();
                 return;
             }
@@ -600,7 +647,7 @@ namespace AirCombat
 
         private void OnGUI()
         {
-            if (bastionMode && !defeated && Event.current.type == EventType.Repaint && bastion != null)
+            if (bastionMode && !defeated && Event.current.type == EventType.Repaint && bastions.Count > 0)
             {
                 float width = Mathf.Min(620f, Screen.width - 24f);
                 GUI.Box(new Rect((Screen.width - width) * .5f, 12f, width, 30f), DebugStatus);
@@ -789,8 +836,7 @@ namespace AirCombat
 
         private void OnDestroy()
         {
-            StopBastion();
-            if (bastion != null) radar?.Unregister(bastion);
+            ReleaseBastions();
             interceptor?.Clear();
             convoy?.Dispose();
             interception?.Clear();
