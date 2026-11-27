@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""PG02 V1: stylized low-poly control building. Unity +Y up, +Z front.
+"""PG02 V1B: stylized low-poly control building. Unity +Y up, +Z front.
 Plain Python regenerates Unity geometry; Blender also saves editable source.
 """
 import json
@@ -10,8 +10,8 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 OUT = ROOT / 'Assets/_Project/Editor/PG02Geometry.json'
 PALETTE = {
-    'Concrete': (137, 140, 130), 'Wall': (168, 173, 160),
-    'Annex': (133, 146, 144), 'Roof': (77, 90, 93),
+    'Concrete': (137, 140, 130), 'Wall': (174, 181, 174),
+    'Annex': (126, 142, 145), 'Roof': (77, 90, 93),
     'Trim': (104, 121, 124), 'Dark': (49, 62, 67),
     'Glass': (75, 102, 111), 'Accent': (205, 163, 70),
 }
@@ -25,7 +25,8 @@ def center(v): return tuple(sum(p[i] for p in v)/len(v) for i in range(3))
 
 
 def solid(name, group, mat, vertices, faces):
-    v = [tuple(round(x, 6) for x in p) for p in vertices]
+    # Bake proportions into the mesh, never the scene instance transform.
+    v = [tuple(round(x*s, 6) for x,s in zip(p,(1.22,1.12,1.22))) for p in vertices]
     c = center(v); tris = []
     for face in faces:
         f = list(face); a, b, d = (v[i] for i in f[:3])
@@ -80,44 +81,60 @@ for z in (-6.57,5.47):
     box('Long parapet','Roof','Wall',-2.6,5.75,z,15.65,.46,.32)
 for x in (-10.27,5.07):
     box('Side parapet','Roof','Wall',x,5.75,-.55,.32,.46,11.75)
-box('Annex base','Shell','Trim',7.7,.48,-1.65,5.8,.44,8.2)
-box('Annex walls','Shell','Annex',7.7,2.13,-1.65,5.6,2.86,8.0)
-box('Annex roof trim','Roof','Trim',7.7,3.72,-1.65,5.9,.32,8.3)
-box('Annex roof','Roof','Roof',7.7,3.94,-1.65,5.58,.14,7.98)
+box('Annex base','Shell','Trim',7.7,.48,-2.0,5.8,.44,9.4)
+box('Annex walls','Shell','Annex',7.7,2.32,-2.0,5.6,3.24,9.2)
+box('Annex roof trim','Roof','Trim',7.7,4.10,-2.0,5.9,.32,9.5)
+box('Annex roof','Roof','Roof',7.7,4.32,-2.0,5.58,.14,9.18)
 # Asymmetric entrance: a deep blue-gray recess and thin projecting canopy.
 box('Entry recess','Facade','Dark',1.9,1.95,5.39,3.35,3.3,.15)
 box('Entry door','Facade','Trim',1.9,1.82,5.49,2.25,2.96,.13)
 box('Door seam','Facade','Dark',1.9,1.82,5.57,.09,2.86,.045)
-box('Entry step','Foundation','Concrete',1.9,.38,6.05,3.8,.24,1.3)
-box('Canopy fascia','Facade','Trim',1.9,3.76,6.12,4.2,.32,1.8)
-box('Canopy top','Facade','Roof',1.9,3.96,6.12,4.08,.10,1.68)
+box('Entry step','Foundation','Concrete',1.9,.38,6.42,4.6,.24,2.0)
+box('Canopy fascia','Facade','Trim',1.9,3.76,6.38,4.65,.42,2.42)
+box('Canopy top','Facade','Roof',1.9,4.03,6.38,4.49,.12,2.28)
 # One restrained recognition stripe, not a military badge.
-box('Entrance marker','Facade','Accent',1.9,3.76,7.03,1.7,.14,.06)
+box('Entrance marker','Facade','Accent',1.9,3.76,7.61,2.35,.19,.06)
+# Readable roof-facing entrance marker and a pair of structural piers.
+box('Canopy top accent','Facade','Accent',1.9,4.105,7.12,2.35,.03,.32)
+for x in (-.05,3.85):
+    box('Canopy pier','Facade','Trim',x,2.08,7.10,.36,3.16,.40)
 # Technical glazing, not an office curtain wall. Broad recesses readable at game distance.
 for x in (-7.75,-4.85,-1.95):
     box('Front window frame','Facade','Dark',x,3.25,5.39,2.4,1.42,.15)
     box('Front glazing','Facade','Glass',x,3.25,5.49,2.12,1.12,.10)
-for x in (-7.7,-3.3,1.1):
+for x in (-7.7,1.1):
     box('Rear vent recess','Facade','Dark',x,3.50,-6.49,2.55,.92,.14)
     for dy in (-.23,.23):
         box('Rear louver','Facade','Trim',x,3.50+dy,-6.58,2.24,.13,.08)
+# Break the rear rhythm: a distinct utility access visible from the flight camera.
+box('Rear utility recess','Facade','Dark',-3.3,2.15,-6.49,3.2,3.28,.15)
+box('Rear utility door','Facade','Trim',-3.3,2.10,-6.59,2.82,2.95,.12)
+box('Rear utility lintel','Facade','Accent',-3.3,3.76,-6.65,2.82,.16,.08)
 for z in (-3.9,1.15):
     box('Side window frame','Facade','Dark',-10.19,3.25,z,.13,1.42,2.4)
     box('Side glazing','Facade','Glass',-10.28,3.25,z,.10,1.12,2.12)
-box('Annex service recess','Facade','Dark',7.7,1.85,2.39,3.7,2.65,.15)
-box('Annex service door','Facade','Trim',7.7,1.85,2.49,3.32,2.33,.12)
+box('Annex service recess','Facade','Dark',7.7,1.85,2.63,3.7,2.65,.15)
+box('Annex service door','Facade','Trim',7.7,1.85,2.73,3.32,2.33,.12)
 for x in (6.4,9.0):
-    box('Annex jamb','Facade','Dark',x,1.85,2.57,.11,2.22,.08)
+    box('Annex jamb','Facade','Dark',x,1.85,2.81,.11,2.22,.08)
 # Broad roof features with deliberately different sizes/positions.
 box('HVAC curb','Equipment','Trim',-6.0,5.83,-2.55,4.4,.35,2.8)
 slab('HVAC housing','Equipment','Annex',-6,-2.55,6.0,6.95,4.05,2.45,.19,top=.96)
 box('HVAC dark grille','Equipment','Dark',-6,6.98,-2.55,3.42,.10,1.88)
 for z in (-3.12,-2.55,-1.98):
     box('HVAC grille slat','Equipment','Trim',-6,7.07,z,3.22,.10,.18)
-box('Roof service hatch','Equipment','Trim',1.85,5.86,2.2,2.7,.45,2.0)
-box('Hatch lid','Equipment','Annex',1.85,6.14,2.2,2.55,.16,1.85)
-box('Annex ventilation base','Equipment','Trim',8.2,4.15,-3.35,2.8,.35,2.0)
-box('Annex ventilation cap','Equipment','Dark',8.2,4.43,-3.35,2.55,.22,1.75)
+# Raised rooftop service housing, stepped mass instead of a tiny flat hatch.
+box('Service housing curb','Equipment','Trim',1.45,5.88,1.65,5.1,.46,3.8)
+box('Service housing','Equipment','Annex',1.45,6.48,1.65,4.82,1.10,3.52)
+box('Service housing cap','Equipment','Trim',1.45,7.13,1.65,5.0,.18,3.7)
+box('Service housing dark vent','Equipment','Dark',1.45,6.55,-.14,3.4,.56,.12)
+for x in (.30,1.45,2.60):
+    box('Service housing vent slat','Equipment','Trim',x,6.55,-.22,.15,.48,.08)
+box('Annex ventilation base','Equipment','Trim',7.9,4.54,-3.6,3.8,.30,2.6)
+box('Annex ventilation housing','Equipment','Annex',7.9,4.98,-3.6,3.55,.60,2.35)
+box('Annex ventilation cap','Equipment','Dark',7.9,5.32,-3.6,3.38,.12,2.16)
+for z in (-4.27,-3.6,-2.93):
+    box('Annex ventilation slat','Equipment','Trim',7.9,5.43,z,3.14,.10,.19)
 
 
 def main():
