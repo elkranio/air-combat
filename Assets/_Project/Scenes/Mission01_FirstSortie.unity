@@ -22240,6 +22240,18 @@ PrefabInstance:
       propertyPath: m_Name
       value: Mission01 / Player Lynx
       objectReference: {fileID: 0}
+    - target: {fileID: 611595460606994884, guid: efb1f442fb29f73489904de4db7a7bc4, type: 3}
+      propertyPath: skipTakeoff
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 611595460606994884, guid: efb1f442fb29f73489904de4db7a7bc4, type: 3}
+      propertyPath: tripleSpeed
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 611595460606994884, guid: efb1f442fb29f73489904de4db7a7bc4, type: 3}
+      propertyPath: infiniteAfterburner
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 5909889966356477815, guid: efb1f442fb29f73489904de4db7a7bc4, type: 3}
       propertyPath: m_Enabled
       value: 0
@@ -44495,9 +44507,6 @@ MonoBehaviour:
   - {fileID: 2145265484}
   - {fileID: 765515993}
   - {fileID: 1859142576}
-  debugAirStart: 1
-  debugNoClip: 1
-  debugLandingNearAirfield: 0
   terrainCrashRadius: 3.5
   operationBounds:
     serializedVersion: 2

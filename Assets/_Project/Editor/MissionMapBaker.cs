@@ -14,6 +14,8 @@ namespace AirCombat
         private const int Resolution = 1024;
         private static readonly Color32 Sand = new Color32(153, 139, 115, 255);
         private static readonly Color32 Grid = new Color32(142, 129, 108, 255);
+        private static readonly Color32 Meadow = new Color32(112, 132, 98, 255);
+        private static readonly Color32 MeadowGrid = new Color32(100, 120, 89, 255);
         private static readonly Color32 Stone = new Color32(78, 72, 61, 255);
         private static readonly Color32 Contour = new Color32(193, 178, 147, 255);
         [SerializeField] private Renderer ground;
@@ -65,6 +67,12 @@ namespace AirCombat
             }
             data = AssetDatabase.LoadAssetAtPath<MissionMapData>(AssetPath(scene));
             if (launch == null && data != null) altitude = data.SectionAltitude;
+            var mission03 = roots.SelectMany(g => g.GetComponentsInChildren<Mission03Flight>(true)).SingleOrDefault();
+            if (mission03 != null)
+            {
+                ground = mission03.MapGround; airfield = mission03.MapRunway;
+                altitude = mission03.CruiseAltitude;
+            }
         }
 
         private static string AssetPath(Scene scene)
@@ -144,6 +152,9 @@ namespace AirCombat
         {
             if (ground.gameObject.scene != scene || (airfield != null && airfield.gameObject.scene != scene))
                 throw new InvalidOperationException("Select references from the active scene.");
+            var mission03 = scene.GetRootGameObjects().SelectMany(g =>
+                g.GetComponentsInChildren<Mission03Flight>(true)).SingleOrDefault();
+            if (mission03 != null) altitude = mission03.CruiseAltitude;
             if (float.IsNaN(altitude) || float.IsInfinity(altitude)) throw new InvalidOperationException("Invalid altitude.");
             var b = ground.bounds;
             var world = Rect.MinMaxRect(b.min.x, b.min.z, b.max.x, b.max.z);
@@ -155,6 +166,7 @@ namespace AirCombat
             var routeTrial = scene.GetRootGameObjects().SelectMany(g =>
                 g.GetComponentsInChildren<Mission02RouteTrial>(true)).SingleOrDefault();
             if (routeTrial != null) world = routeTrial.OperationBounds;
+            if (mission03 != null) world = mission03.OperationBounds;
             if (world.width <= .01f || world.height <= .01f) throw new InvalidOperationException("Map has no X/Z extent.");
             if (!TerrainSectionUnion.TryBakeForAuthoring(scene, altitude, out var edges, out var fill, out int count))
                 throw new InvalidOperationException("Terrain union failed. Check readable closed rock meshes; previous bake retained.");
@@ -162,7 +174,7 @@ namespace AirCombat
                 Debug.LogWarning("Map bake: no marked solids cross the requested altitude.");
             int width = Mathf.Max(1, Mathf.RoundToInt(Resolution * world.width / Mathf.Max(world.width, world.height)));
             int height = Mathf.Max(1, Mathf.RoundToInt(Resolution * world.height / Mathf.Max(world.width, world.height)));
-            var pixels = Raster(world, width, height, edges, fill);
+            var pixels = Raster(world, width, height, edges, fill, mission03 != null);
             EnsureFolder(OutputFolder);
             string path = AssetPath(scene);
             var existing = AssetDatabase.LoadMainAssetAtPath(path);
@@ -204,7 +216,7 @@ namespace AirCombat
 
         // Texture coordinates have bottom-left origin. Pixel-center coverage;
         // scanline fill of the shared union triangles, clipped to map extent.
-        private static Color32[] Raster(Rect world, int w, int h, Vector2[] edges, Vector2[] fill)
+        private static Color32[] Raster(Rect world, int w, int h, Vector2[] edges, Vector2[] fill, bool green)
         {
             var pixels = new Color32[w * h];
             for (int y = 0; y < h; y++)
@@ -214,7 +226,7 @@ namespace AirCombat
                     float gz = world.yMin + (y + .5f) * world.height / h;
                     bool line = Mathf.Abs(gx / 400f - Mathf.Round(gx / 400f)) < world.width / w / 800f ||
                                 Mathf.Abs(gz / 400f - Mathf.Round(gz / 400f)) < world.height / h / 800f;
-                    pixels[y * w + x] = line ? Grid : Sand;
+                    pixels[y * w + x] = green ? (line ? MeadowGrid : Meadow) : (line ? Grid : Sand);
                 }
             Vector2 Pixel(Vector2 v) => Vector2.Scale(MissionMapData.ToUV(world, v), new Vector2(w, h));
             for (int i = 0; i < fill.Length; i += 3)

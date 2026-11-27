@@ -50,6 +50,9 @@ namespace AirCombat
         private bool HasMap => map != null && map.Geography != null && map.WorldBounds.width > 0 && map.WorldBounds.height > 0 && player != null;
 
 #if UNITY_EDITOR
+        public MissionMapData GeographyData => map;
+        public void SetGeographyForAuthoring(MissionMapData data) => map = data;
+
         public void ConfigureForAuthoring(MissionMapData data, Transform aircraft, PlannedSam[] sites,
             Transform[] targets, Transform extra, string title)
         {
@@ -253,6 +256,8 @@ namespace AirCombat
         {
             primaryProgress = default;
             if (routeTrial != null) return routeTrial.Boundary;
+            var mission03 = GetComponent<Mission03Flight>();
+            if (mission03 != null) return mission03.Boundary;
             foreach (var root in gameObject.scene.GetRootGameObjects())
                 foreach (var launch in root.GetComponentsInChildren<Mission01LaunchSequence>())
                     if (launch.isActiveAndEnabled && launch.Boundary != null)
@@ -402,6 +407,21 @@ namespace AirCombat
         private void DrawMissionData(Rect rect)
         {
             if (routeTrial != null) { DrawRouteData(rect); return; }
+            if (GetComponent<Mission03Flight>() != null)
+            {
+                Solid(rect,new Color(.075f,.115f,.13f));
+                float left=rect.x+20, top=rect.y+15, width=rect.width-40;
+                Text(new Rect(left,top,width,30),"M03 / FLIGHT FOUNDATION",20,Ink,true);
+                Text(new Rect(left,top+48,width,25),"Primary: protect the complex",18,Cyan,true);
+                Text(new Rect(left,top+82,width,25),"Secondary: both interceptors",18,Gold,true);
+                Text(new Rect(left,top+120,width,24),"Objectives not installed yet.",14,Muted);
+                Solid(new Rect(left,top+160,width,1),new Color(.23f,.34f,.35f));
+                Legend(left,top+186,Cyan,"Player / friendly airfield");
+                Legend(left,top+221,RadarHud.BoundaryInk,"Operation boundary");
+                Legend(left,top+256,new Color(.28f,.26f,.22f),"Terrain obstruction");
+                Text(new Rect(left,top+312,width,25),"Map pauses flight and timing.",14,Muted);
+                return;
+            }
             Solid(rect,new Color(.075f,.115f,.13f));
             float x=rect.x+20, w=rect.width-40, y=rect.y+15;
             Text(new Rect(x,y,w,30),"MISSION DATA",20,Ink,true);

@@ -16,8 +16,10 @@ namespace AirCombat
         [SerializeField] private bool hasAirfield;
         [SerializeField] private Vector2 airfieldPosition;
         [SerializeField] private Vector2 airfieldForward;
+        [SerializeField, HideInInspector] private string sourceFingerprint;
 
         public string SourceSceneGuid => sourceSceneGuid;
+        public string SourceFingerprint => sourceFingerprint;
         public Rect WorldBounds => worldBounds;
         public float SectionAltitude => sectionAltitude;
         public Texture2D Geography => geography;
@@ -34,9 +36,12 @@ namespace AirCombat
             (xz.x - bounds.xMin) / bounds.width, (xz.y - bounds.yMin) / bounds.height);
 
 #if UNITY_EDITOR
+        public void SetSourceFingerprint(string fingerprint) => sourceFingerprint = fingerprint;
+
         public void SetBake(string sceneGuid, Rect bounds, float altitude, Texture2D image,
             int obstacles, int triangles, bool airfield, Vector2 position, Vector2 forward)
         {
+            sourceFingerprint = null; // Manual bakes invalidate any cached authoring signature.
             sourceSceneGuid = sceneGuid; worldBounds = bounds; sectionAltitude = altitude;
             geography = image; obstacleCount = obstacles; sectionTriangleCount = triangles;
             hasAirfield = airfield; airfieldPosition = position; airfieldForward = forward;
