@@ -11,8 +11,23 @@ namespace AirCombat
     {
         public override CombatTargetDomain Domain => CombatTargetDomain.Ground;
         public bool IsDestroyed => destroyed;
-        public string Status => destroyed ? "PG07 / DESTROYED - FIRE ACTIVE / R TO RETRY" :
+        public int FireFocusCount { get; private set; }
+        public string Status => destroyed ? $"PG07 / DESTROYED - {FireFocusCount} FIRE FOCI / R TO RETRY" :
             "PG07 / CONTROL BUILDING / RMB NURS / R TO RETRY";
+
+        // PG02-local sockets on the exposed floor, broken roof and annex.
+        // Choose without replacement; jitter stays within each socket's zone.
+        private static readonly Vector3[] FireSockets = {
+            new Vector3(-8f,3.4f,-3.8f), new Vector3(-3.2f,1.8f,-1.1f),
+            new Vector3(-6.5f,1.7f,3.7f), new Vector3(2.7f,2.2f,3.2f),
+            new Vector3(2.8f,1.5f,-5.3f), new Vector3(9.1f,4.2f,-2.2f)
+        };
+        private const int FlameBudget = 12, SmokeBudget = 18;
+        private readonly int[] socketOrder = new int[FireSockets.Length];
+        private readonly Vector3[] focusOrigins = new Vector3[4];
+        private readonly float[] focusStrengths = new float[4];
+        private System.Random plumeRandom;
+        private Material[] flameMaterials, smokeMaterials;
 
         private Transform intact, wreck;
         private BoxCollider hitbox;
@@ -29,6 +44,7 @@ namespace AirCombat
         private sealed class PlumePiece
         {
             public Transform Node;
+            public MeshRenderer Renderer;
             public Vector3 Origin, Drift;
             public float Delay, Lifetime, Size, Rise, Spin, Aspect, Expansion;
             public bool Fire;
@@ -63,7 +79,9 @@ namespace AirCombat
             blastMaterial = RocketImpactFx.CreateMaterial(effect, out blastMask);
             wreck = new GameObject("PG07 / persistent ruin").transform;
             wreck.SetParent(transform, false);
-            BuildRuin(lit, unlit, plumeVariant);
+            // Independent cosmetic RNG; never alter Unity's gameplay random stream.
+            plumeRandom = new System.Random(unchecked(System.Guid.NewGuid().GetHashCode() + plumeVariant * 7919));
+            BuildRuin(lit, unlit);
             ready = true;
             ResetTarget();
             return true;
@@ -76,6 +94,7 @@ namespace AirCombat
             age = 0f;
             ClearBurst();
             foreach (var p in plume) p.Node.gameObject.SetActive(false);
+            ConfigureFireLayout();
             foreach (var d in debris) d.Node.gameObject.SetActive(false);
             wreck.gameObject.SetActive(false);
             intact.gameObject.SetActive(true);
@@ -97,18 +116,18 @@ namespace AirCombat
             return true;
         }
 
-        private void BuildRuin(Shader lit, Shader unlit, int plumeVariant)
+        private void BuildRuin(Shader lit, Shader unlit)
         {
             var concrete = Paint(lit, "PG07 concrete", new Color32(127, 130, 119, 255));
             var wall = Paint(lit, "PG07 damaged wall", new Color32(137, 138, 126, 255));
             var scorched = Paint(lit, "PG07 char", new Color32(51, 51, 47, 255));
             var roof = Paint(lit, "PG07 roof rubble", new Color32(75, 83, 82, 255));
-            var smoke = new[] {
+            smokeMaterials = new[] {
                 Paint(lit, "PG07 smoke dark", new Color32(52, 53, 54, 255)),
                 Paint(lit, "PG07 smoke medium", new Color32(65, 66, 65, 255)),
                 Paint(lit, "PG07 smoke outer", new Color32(80, 80, 77, 255))
             };
-            var flame = new[] {
+            flameMaterials = new[] {
                 Paint(unlit, "PG07 ember orange", new Color32(231, 79, 20, 255)),
                 Paint(unlit, "PG07 flame", new Color32(255, 148, 35, 255)),
                 Paint(unlit, "PG07 flame core", new Color32(255, 222, 102, 255))
@@ -150,25 +169,53 @@ namespace AirCombat
                     Spin=new Vector3(Range(rng,-280f,280f),Range(rng,-280f,280f),Range(rng,-280f,280f)),
                     Rotation=Quaternion.Euler(0,Range(rng,0f,360f),0) });
             }
-            // Variant zero keeps PG07B exactly. Change only the plume random stream
-            // on the other buildings, not the accepted rubble or thrown debris.
-            if (plumeVariant != 0)
-                rng = new System.Random(unchecked(7402 + plumeVariant * 7919));
-            // Bounded pool; no per-frame allocations or repeated instantiation.
-            for (int i=0; i<10; i++)
+            // A fixed pool, irrespective of how many sockets are burning.
+            for (int i=0; i<FlameBudget; i++) CreatePlume(true);
+            for (int i=0; i<SmokeBudget; i++) CreatePlume(false);
+        }
+
+        private void ConfigureFireLayout()
+        {
+            var rng = plumeRandom;
+            FireFocusCount = rng.Next(2,5);
+            for (int i=0; i<socketOrder.Length; i++) socketOrder[i] = i;
+            for (int i=0; i<FireFocusCount; i++)
             {
-                bool primary = i%2 == 0;
-                float focusScale = primary ? 1.65f : 1.42f;
-                Vector3 origin = primary ? new Vector3(-4f,2.2f,-.7f) : new Vector3(2.7f,1.8f,3.2f);
-                origin += new Vector3(Range(rng,-1.2f,1.2f)*focusScale,0,Range(rng,-1f,1f)*focusScale);
-                AddPlume(flame[i%3], origin, new Vector3(Range(rng,.35f,.95f),0,Range(rng,.1f,.6f)), i*.085f,
-                    Range(rng,.65f,1.15f),Range(rng,2.3f,3.5f)*focusScale,Range(rng,3.2f,5.0f)*focusScale,true,rng);
+                int j = rng.Next(i,socketOrder.Length);
+                int swap = socketOrder[i]; socketOrder[i] = socketOrder[j]; socketOrder[j] = swap;
+                focusOrigins[i] = FireSockets[socketOrder[i]] +
+                    new Vector3(Range(rng,-.65f,.65f),0,Range(rng,-.65f,.65f));
+                // One strong focal point, smaller secondary fires.
+                focusStrengths[i] = i == 0 ? Range(rng,1.4f,1.7f) : Range(rng,.95f,1.4f);
             }
-            for (int i=0; i<15; i++)
+            float densityScale = FireFocusCount == 2 ? 1f : FireFocusCount == 3 ? .91f : .82f;
+            for (int i=0; i<plume.Count; i++)
             {
-                Vector3 origin = new Vector3(-2.6f+Range(rng,-2f,2f),4.2f,Range(rng,-1.8f,1.8f));
-                AddPlume(smoke[i%3],origin,new Vector3(Range(rng,7f,14f),0,Range(rng,1f,6f)),i*.22f+Range(rng,0f,.12f),
-                    Range(rng,3.1f,5.0f),Range(rng,4.2f,6.0f),Range(rng,19f,31f),false,rng);
+                var p = plume[i];
+                int slot = p.Fire ? i : i-FlameBudget;
+                int focus = slot % FireFocusCount;
+                int layer = slot / FireFocusCount;
+                float strength = focusStrengths[focus] * densityScale;
+                Vector3 centre = focusOrigins[focus];
+                var palette = p.Fire ? flameMaterials : smokeMaterials;
+                p.Renderer.sharedMaterial = palette[(layer+focus)%palette.Length];
+                if (p.Fire)
+                {
+                    Vector3 origin = centre + new Vector3(Range(rng,-.85f,.85f)*strength,0,Range(rng,-.75f,.75f)*strength);
+                    ConfigurePlume(p,origin,new Vector3(Range(rng,.35f,.95f),0,Range(rng,.1f,.6f)),
+                        layer*.13f+Range(rng,0f,.09f),Range(rng,.65f,1.15f),
+                        Range(rng,2.3f,3.5f)*strength,Range(rng,3.2f,5.0f)*strength,rng);
+                }
+                else
+                {
+                    // Smoke starts above its own fire; all columns share the
+                    // same general wind, but differ in lift, bulk and timing.
+                    float smokeScale = Mathf.Lerp(.70f,1.12f,Mathf.InverseLerp(.8f,1.7f,strength));
+                    Vector3 origin = centre + new Vector3(Range(rng,-.75f,.75f),1.5f,Range(rng,-.75f,.75f));
+                    ConfigurePlume(p,origin,new Vector3(Range(rng,7f,14f),0,Range(rng,1f,6f)),
+                        layer*.38f+Range(rng,.12f,.38f),Range(rng,3.1f,5.0f),
+                        Range(rng,4.2f,6.0f)*smokeScale,Range(rng,19f,31f)*smokeScale,rng);
+                }
             }
         }
 
@@ -195,15 +242,23 @@ namespace AirCombat
             return go.transform;
         }
 
-        private void AddPlume(Material material,Vector3 origin,Vector3 drift,float delay,float lifetime,float size,float rise,bool fire,System.Random rng)
+        private void CreatePlume(bool fire)
         {
-            var t=Piece(fire ? "Faceted flame" : "Faceted smoke",puff,material,origin,Vector3.one,shadow:false);
-            plume.Add(new PlumePiece { Node=t,Origin=origin,Drift=drift,Delay=delay,Lifetime=lifetime,Size=size,Rise=rise,Fire=fire,
-                Spin=Range(rng,-55f,55f),Aspect=fire ? Range(rng,1.75f,2.1f) : Range(rng,.88f,1.05f),
-                Expansion=fire ? .45f : Range(rng,1.4f,1.85f),
-                Rotation=fire
-                    ? Quaternion.Euler(Range(rng,-12f,12f),Range(rng,0f,360f),Range(rng,-12f,12f))
-                    : Quaternion.Euler(Range(rng,0f,360f),Range(rng,0f,360f),Range(rng,0f,360f)) });
+            var material = fire ? flameMaterials[0] : smokeMaterials[0];
+            var t = Piece(fire ? "Faceted flame" : "Faceted smoke",puff,material,Vector3.zero,Vector3.one,shadow:false);
+            t.gameObject.SetActive(false);
+            plume.Add(new PlumePiece { Node=t, Renderer=t.GetComponent<MeshRenderer>(), Fire=fire });
+        }
+
+        private static void ConfigurePlume(PlumePiece p,Vector3 origin,Vector3 drift,float delay,float lifetime,float size,float rise,System.Random rng)
+        {
+            p.Origin=origin; p.Drift=drift; p.Delay=delay; p.Lifetime=lifetime; p.Size=size; p.Rise=rise;
+            p.Spin=Range(rng,-55f,55f);
+            p.Aspect=p.Fire ? Range(rng,1.75f,2.1f) : Range(rng,.88f,1.05f);
+            p.Expansion=p.Fire ? .45f : Range(rng,1.4f,1.85f);
+            p.Rotation=p.Fire
+                ? Quaternion.Euler(Range(rng,-12f,12f),Range(rng,0f,360f),Range(rng,-12f,12f))
+                : Quaternion.Euler(Range(rng,0f,360f),Range(rng,0f,360f),Range(rng,0f,360f));
         }
 
         private void Update()

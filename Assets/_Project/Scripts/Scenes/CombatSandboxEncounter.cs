@@ -328,12 +328,18 @@ namespace AirCombat
 
         private string DestructionStatus()
         {
-            if (destructionTrials.Count == 0) return "PG07C UNAVAILABLE";
+            if (destructionTrials.Count == 0) return "PG07D UNAVAILABLE";
             int destroyedCount = 0;
+            string foci = "";
             foreach (var trial in destructionTrials)
-                if (trial != null && trial.IsDestroyed) destroyedCount++;
+            {
+                if (foci.Length > 0) foci += "/";
+                bool down = trial != null && trial.IsDestroyed;
+                if (down) destroyedCount++;
+                foci += down ? trial.FireFocusCount.ToString() : "-";
+            }
             string hint = destroyedCount == destructionTrials.Count ? "FIRES ACTIVE" : "RMB NURS";
-            return $"PG07C / BUILDINGS {destroyedCount}/{destructionTrials.Count} DESTROYED / {hint} / R TO RETRY";
+            return $"PG07D / {destroyedCount}/{destructionTrials.Count} DOWN / FOCI {foci} / {hint} / R TO RETRY";
         }
 
         private void ReleaseDestructionTrials()
