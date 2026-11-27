@@ -30,10 +30,13 @@ namespace AirCombat
         private int launchBeepsRemaining;
         private float nextLaunchBeepAt;
         private int hp;
-        private enum LaunchProfile { Legacy, Picket }
+        private enum LaunchProfile { Legacy, Picket, Bastion }
         private LaunchProfile profile;
         private bool armed;
-        private bool IsPicket => profile == LaunchProfile.Picket;
+        private bool IsBastion => profile == LaunchProfile.Bastion;
+        private bool UsesPicketTiming => profile != LaunchProfile.Legacy;
+        private Transform bastionYaw, bastionRightSocket;
+        private float bastionGap, secondShotAt = -1f;
         private PicketRailPresentation railPresentation;
         private Transform mobileRoot;
         private float prelaunchWarningStarted = -1f;
@@ -62,9 +65,10 @@ namespace AirCombat
             get
             {
                 if (IsDown) return "DESTROYED";
-                if (!IsPicket && HasIncomingMissile) return "LAUNCHED / " + missile.PhaseLabel;
+                if (!UsesPicketTiming && HasIncomingMissile) return "LAUNCHED / " + missile.PhaseLabel;
                 if (missilePrefab == null || launchSocket == null) return "UNCONFIGURED";
                 if (target == null || hitPoints == null || !hitPoints.IsAlive) return "NO TARGET";
+                if (IsBastion && secondShotAt >= 0f) return "SALVO / SECOND PENDING";
                 Vector3 flat = target.position - transform.position;
                 flat.y = 0f;
                 if (flat.sqrMagnitude > engagementRange * engagementRange) return "OUT OF RANGE";
@@ -118,16 +122,69 @@ namespace AirCombat
             return true;
         }
 
+        // Bastion shares the Picket projectile and acquisition timing, but commits
+        // two shots from the two visual pods before starting a common reload.
+        internal bool BindBastion(SurfaceToAirLauncher template, Transform aircraft,
+            PlayerHitPoints health, AircraftRadar sensor, float gap)
+        {
+            if (template == null || !template.IsConfigured || aircraft == null ||
+                health == null || sensor == null) return false;
+            var yaw = transform.Find("Visual/Yaw");
+            var left = yaw != null ? yaw.Find("Left") : null;
+            var right = yaw != null ? yaw.Find("Right") : null;
+            if (left == null || right == null) return false;
+            bastionYaw = yaw;
+            launchSocket = BastionSocket(left, -3.58f);
+            bastionRightSocket = BastionSocket(right, 3.58f);
+            missilePrefab = template.missilePrefab;
+            engagementRange = template.engagementRange;
+            lockSeconds = template.lockSeconds;
+            reloadSeconds = template.reloadSeconds;
+            prelaunchWarningSeconds = template.prelaunchWarningSeconds;
+            bastionGap = Mathf.Max(.1f, gap);
+            profile = LaunchProfile.Bastion;
+            armed = false;
+            BindTarget(aircraft, health, sensor);
+            return true;
+        }
+
+        private static Transform BastionSocket(Transform pod, float x)
+        {
+            // V3 artwork is baked at the root origin; this is the visible pod tip.
+            var socket = pod.Find("LaunchSocket");
+            if (socket == null)
+            {
+                socket = new GameObject("LaunchSocket").transform;
+                socket.SetParent(pod, false);
+            }
+            socket.localPosition = new Vector3(x, 6.18f, 3.40f);
+            socket.localRotation = Quaternion.Euler(-29f, 0f, 0f);
+            return socket;
+        }
+
+        private void TrackBastion(Vector3 position)
+        {
+            if (bastionYaw == null) return;
+            Vector3 local = bastionYaw.parent.InverseTransformPoint(position) - bastionYaw.localPosition;
+            if (local.x * local.x + local.z * local.z < .001f) return;
+            var desired = Quaternion.Euler(0f, Mathf.Atan2(local.x, local.z) * Mathf.Rad2Deg, 0f);
+            bastionYaw.localRotation = Quaternion.RotateTowards(bastionYaw.localRotation, desired, 180f * Time.deltaTime);
+        }
+
         public void SetArmed(bool armed)
         {
             this.armed = armed;
-            if (!armed) ClearAcquisition();
+            if (!armed)
+            {
+                secondShotAt = -1f;
+                ClearAcquisition();
+            }
         }
 
         private void ClearAcquisition()
         {
             lockProgress = 0f;
-            if (IsPicket && prelaunchWarningStarted >= 0f)
+            if (UsesPicketTiming && prelaunchWarningStarted >= 0f)
             {
                 prelaunchWarningStarted = -1f;
                 launchBeepsRemaining = 0;
@@ -177,19 +234,21 @@ namespace AirCombat
             nextLaunchBeepAt = 0f;
             warningAudio?.Stop();
             LaunchedCount = 0;
+            secondShotAt = -1f;
+            if (bastionYaw != null) bastionYaw.localRotation = Quaternion.identity;
             railPresentation?.Reset();
             LastFlightReport = "NO LAUNCH";
         }
 
         private void LateUpdate()
         {
-            if (Time.deltaTime <= 0f) return;
+            if (Time.deltaTime <= 0f || (IsBastion && MissionPause.IsTacticalMapPausedFor(gameObject.scene))) return;
             ownedMissiles.RemoveAll(shot => shot == null || !shot.IsFlying);
-            if (IsPicket && !armed) { ClearAcquisition(); return; }
-            if (IsPicket && !IsDown) railPresentation?.TickReload(Time.time);
-            if (!IsPicket) PlayLaunchSignal();
+            if (UsesPicketTiming && !armed) { ClearAcquisition(); return; }
+            if (UsesPicketTiming && !IsDown) railPresentation?.TickReload(Time.time);
+            if (!UsesPicketTiming) PlayLaunchSignal();
             // Picket fires independently of previous shots; preserve the old lab rule.
-            if (!IsPicket && HasIncomingMissile)
+            if (!UsesPicketTiming && HasIncomingMissile)
             {
                 ClearAcquisition();
                 return;
@@ -197,7 +256,21 @@ namespace AirCombat
             if (IsDown || target == null || hitPoints == null || !hitPoints.IsAlive ||
                 missilePrefab == null || launchSocket == null)
             {
+                secondShotAt = -1f;
                 ClearAcquisition();
+                return;
+            }
+            // Once the first shot is away, finish the salvo even if the player
+            // exits the acquisition circle. Disarm/death still cancels it.
+            if (IsBastion && secondShotAt >= 0f)
+            {
+                TrackBastion(target.position);
+                if (Time.time >= secondShotAt)
+                {
+                    secondShotAt = -1f;
+                    nextLaunchAt = Time.time + reloadSeconds;
+                    FireShot(bastionRightSocket);
+                }
                 return;
             }
             Vector3 delta = target.position - transform.position;
@@ -210,17 +283,18 @@ namespace AirCombat
 
             // Cosmetic tracking only: the accepted acquisition/reload clock is unchanged.
             railPresentation?.Track(target.position, Time.deltaTime);
+            if (IsBastion) TrackBastion(target.position);
 
             // Picket reload is the minimum launch-to-launch interval. Acquisition
             // may overlap its tail, but neither launch nor warning can occur early.
-            float acquisitionWindow = IsPicket ? Mathf.Max(lockSeconds, Mathf.Max(.5f, prelaunchWarningSeconds)) : 0f;
+            float acquisitionWindow = UsesPicketTiming ? Mathf.Max(lockSeconds, Mathf.Max(.5f, prelaunchWarningSeconds)) : 0f;
             if (Time.time < nextLaunchAt - acquisitionWindow)
             {
                 ClearAcquisition();
                 return;
             }
             lockProgress += Time.deltaTime;
-            if (IsPicket)
+            if (UsesPicketTiming)
             {
                 // Silent acquisition, then a cancelable pre-launch cue.
                 float lead = Mathf.Max(.5f, prelaunchWarningSeconds);
@@ -242,17 +316,23 @@ namespace AirCombat
             }
             lockProgress = 0f;
             prelaunchWarningStarted = -1f;
-            nextLaunchAt = Time.time + reloadSeconds;
-            // Force +Y ejection even when upgrading a legacy angled prefab.
-            // The missile independently handles the pitch-over and pursuit.
-            Vector3 launchPosition = launchSocket.position;
+            if (IsBastion) secondShotAt = Time.time + bastionGap;
+            nextLaunchAt = Time.time + reloadSeconds + (IsBastion ? bastionGap : 0f);
+            FireShot(launchSocket);
+        }
+
+        private void FireShot(Transform socket)
+        {
+            // Legacy/Picket retain their original ejection/rail presentation.
+            Vector3 launchPosition = socket.position;
             missile = Instantiate(missilePrefab, launchPosition,
                 Quaternion.LookRotation(Vector3.up, Vector3.forward));
             ownedMissiles.Add(missile);
             missile.Launch(target, hitPoints, radar, mobileRoot != null ? mobileRoot : transform, OnMissileFinished);
-            railPresentation?.PresentLaunch(missile, Time.time, reloadSeconds);
+            if (IsBastion) missile.BeginAngledLaunch(socket.rotation);
+            else railPresentation?.PresentLaunch(missile, Time.time, reloadSeconds);
             // Picket already played its three pre-launch beeps.
-            if (!IsPicket)
+            if (!UsesPicketTiming)
             {
                 warningAudio?.Stop();
                 launchBeepsRemaining = 3;
@@ -261,7 +341,7 @@ namespace AirCombat
             }
             LaunchedCount++;
             LastFlightReport = $"SPAWNED #{LaunchedCount} at Y={launchPosition.y:F1}";
-            if (!IsPicket) Debug.Log($"SAM1: {LastFlightReport}; target={target.position}", this);
+            if (!UsesPicketTiming) Debug.Log($"SAM1: {LastFlightReport}; target={target.position}", this);
         }
 
         private void OnMissileFinished(string report)
@@ -285,14 +365,18 @@ namespace AirCombat
                 Time.time < nextLaunchBeepAt) return;
             warningAudio.Play();
             launchBeepsRemaining--;
-            nextLaunchBeepAt = Time.time + (IsPicket ? MissileWarningTiming.PulsePeriod : .15f);
+            nextLaunchBeepAt = Time.time + (UsesPicketTiming ? MissileWarningTiming.PulsePeriod : .15f);
         }
 
         public override bool ApplyDamage(Vector3 point, int damage)
         {
             if (IsDown || damage <= 0) return false;
             hp = Mathf.Max(0, hp - damage);
-            if (IsDown) ClearAcquisition();
+            if (IsDown)
+            {
+                secondShotAt = -1f;
+                ClearAcquisition();
+            }
             return true;
         }
 

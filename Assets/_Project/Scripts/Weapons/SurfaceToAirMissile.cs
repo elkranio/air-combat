@@ -76,6 +76,16 @@ namespace AirCombat
             radar?.Register(this); // Only hostile missiles, not player's ordnance.
         }
 
+        // Closed-pod game art uses the projectile's existing mesh at the authored pose.
+        internal void BeginAngledLaunch(Quaternion rotation)
+        {
+            railLaunch = true;
+            phase = FlightPhase.PitchOver;
+            phaseElapsed = 0f;
+            transform.rotation = rotation;
+            if (exhaust != null) exhaust.Clear();
+        }
+
         // The display mesh is shared with the loaded rail prop. Start the game
         // projectile at that same pose and enter the existing pitch-over phase.
         internal bool AttachRailVisual(Transform source, Vector3 center, Quaternion rotation, float tailLength)

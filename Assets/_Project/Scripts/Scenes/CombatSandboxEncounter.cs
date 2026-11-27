@@ -18,7 +18,7 @@ namespace AirCombat
         [SerializeField] private EnemyMissileStressTest.Settings enemyMissiles = new EnemyMissileStressTest.Settings();
         private EnemyMissileStressTest missileStress;
         // Explicit serialized values: do not reorder or reuse these IDs.
-        public enum SandboxMode { Dogfight = 0, GroundAttack = 1, Interception = 2, Warden = 3, Convoy = 4, Interceptor = 5 }
+        public enum SandboxMode { Dogfight = 0, GroundAttack = 1, Interception = 2, Warden = 3, Convoy = 4, Interceptor = 5, Bastion = 6 }
         [Header("Combat sandbox / select before Play")]
         [SerializeField] private SandboxMode mode = SandboxMode.GroundAttack;
         [Header("IN02 / Interceptor pass")]
@@ -35,6 +35,12 @@ namespace AirCombat
         };
         private bool interceptorMode;
         private InterceptorPairTrial interceptor;
+        [Header("SAM02 / Bastion sandbox")]
+        [SerializeField] private GameObject bastionPrefab;
+        [SerializeField] private SurfaceToAirLauncher bastionPicketTemplate;
+        [SerializeField, Min(.1f)] private float bastionSalvoGap = .8f;
+        private bool bastionMode;
+        private SurfaceToAirLauncher bastion;
         private bool groundMode;
         private bool wardenMode;
         private readonly List<WardenCombat> wardens = new List<WardenCombat>();
@@ -106,6 +112,9 @@ namespace AirCombat
             get
             {
                 if (interceptorMode) return interceptor != null ? interceptor.Status : "IN02 UNAVAILABLE";
+                if (bastionMode) return bastion != null
+                    ? $"SAM02 | {bastion.StatusLabel} | SAM {bastion.LaunchedCount} | Reload {bastion.ReloadLeft:F1}s | R retry"
+                    : "SAM02 UNAVAILABLE";
                 if (convoyMode)
                 {
                     string convoyStatus = convoy != null ? convoy.DebugStatus : "CONVOY UNAVAILABLE";
@@ -150,7 +159,7 @@ namespace AirCombat
         public void Bind(JetAssembly aircraft, Camera camera, AircraftRadar sensor,
             PlayerHitPoints health, float halfExtent)
         {
-            if (mode != SandboxMode.Dogfight && mode != SandboxMode.GroundAttack && mode != SandboxMode.Interception && mode != SandboxMode.Warden && mode != SandboxMode.Convoy && mode != SandboxMode.Interceptor)
+            if (mode != SandboxMode.Dogfight && mode != SandboxMode.GroundAttack && mode != SandboxMode.Interception && mode != SandboxMode.Warden && mode != SandboxMode.Convoy && mode != SandboxMode.Interceptor && mode != SandboxMode.Bastion)
             {
                 Debug.LogError("Combat sandbox: invalid mode.", this);
                 return;
@@ -160,6 +169,7 @@ namespace AirCombat
             wardenMode = mode == SandboxMode.Warden;
             convoyMode = mode == SandboxMode.Convoy;
             interceptorMode = mode == SandboxMode.Interceptor;
+            bastionMode = mode == SandboxMode.Bastion;
             player = aircraft;
             view = camera;
             radar = sensor;
@@ -167,7 +177,9 @@ namespace AirCombat
             boundary = halfExtent;
             if ((mode == SandboxMode.Dogfight && enemyPrefab == null) ||
                 (interceptionMode && (sparrowPrefab == null || missilePrefab == null)) ||
-                (interceptorMode && (interceptorPrefab == null || missilePrefab == null)) || player == null || radar == null || playerHealth == null)
+                (interceptorMode && (interceptorPrefab == null || missilePrefab == null)) ||
+                (bastionMode && (bastionPrefab == null || bastionPicketTemplate == null || convoyTerrain == null)) ||
+                player == null || radar == null || playerHealth == null)
             {
                 Debug.LogError("AIR encounter is missing its prefab or player binding.", this);
                 return;
@@ -271,7 +283,44 @@ namespace AirCombat
                     radar, missileLauncher, missileStress, hitFeedback, interceptorPass, boundary,
                     interceptorWingmanEnabled, interceptorWingmanDelay, interceptorWingmanLateralOffset);
             }
+            if (bastionMode && !BindBastionTrial()) return;
             bound = true;
+        }
+
+        private bool BindBastionTrial()
+        {
+            // Isolate the live SAM trial without changing authored scene assets.
+            foreach (var root in gameObject.scene.GetRootGameObjects())
+            {
+                if (root.name.StartsWith("SAM02 / ") || root.name.StartsWith("IN01 / "))
+                    root.SetActive(false);
+                foreach (var gun in root.GetComponentsInChildren<MantisGun>(true)) gun.gameObject.SetActive(false);
+                foreach (var warden in root.GetComponentsInChildren<WardenCombat>(true)) warden.gameObject.SetActive(false);
+                foreach (var sam in root.GetComponentsInChildren<SurfaceToAirLauncher>(true)) sam.gameObject.SetActive(false);
+            }
+            Vector3 position = new Vector3(-220f, 0f, 0f);
+            position.y = convoyTerrain.SampleHeight(position) + convoyTerrain.transform.position.y;
+            var instance = Instantiate(bastionPrefab, position, Quaternion.identity, transform);
+            instance.name = "SAM02 / Bastion - COMBAT TRIAL";
+            bastion = instance.AddComponent<SurfaceToAirLauncher>();
+            if (!bastion.BindBastion(bastionPicketTemplate, player.transform, playerHealth, radar, bastionSalvoGap))
+            {
+                Debug.LogError("SAM02: incomplete Bastion visual or Picket template.", instance);
+                instance.SetActive(false);
+                Destroy(instance);
+                bastion = null;
+                return false;
+            }
+            radar.Register(bastion);
+            gameObject.AddComponent<EnemyMissileThreatHud>().BindSam(view, player.transform, new[] { bastion });
+            return true;
+        }
+
+        private void StopBastion()
+        {
+            if (bastion == null) return;
+            bastion.SetArmed(false);
+            bastion.CancelProjectiles();
         }
 
         private void Start() { Restart(); }
@@ -298,6 +347,20 @@ namespace AirCombat
             if (playerFlight != null) playerFlight.enabled = true;
             if (playerTrigger != null) playerTrigger.enabled = true;
             defeated = victory = false;
+            if (bastionMode)
+            {
+                player.transform.SetPositionAndRotation(new Vector3(-220f, player.transform.position.y, -650f), Quaternion.identity);
+                playerFlight.PrepareCruiseHandover();
+                playerBoost.enabled = false; playerBoost.enabled = true;
+                if (bastion != null)
+                {
+                    bastion.ResetEncounter();
+                    bastion.SetArmed(true);
+                    encounterReady = true;
+                }
+                view.GetComponent<ArcadeCameraFollow>()?.SnapToAircraft();
+                return;
+            }
             if (interceptorMode)
             {
                 player.transform.SetPositionAndRotation(new Vector3(0f, player.transform.position.y, -400f), Quaternion.Euler(0f, 90f, 0f));
@@ -430,6 +493,7 @@ namespace AirCombat
             if (!playerHealth.IsAlive)
             {
                 defeated = true;
+                StopBastion();
                 interceptor?.Clear();
                 if (missileStress != null) missileStress.StopTest();
                 if (nursLauncher != null) nursLauncher.CeaseFire(Time.time);
@@ -452,6 +516,7 @@ namespace AirCombat
                 return;
             }
 
+            if (bastionMode) return; // SurfaceToAirLauncher owns its LateUpdate.
             if (interceptorMode)
             {
                 interceptor.Tick(Time.deltaTime, Time.time);
@@ -535,6 +600,11 @@ namespace AirCombat
 
         private void OnGUI()
         {
+            if (bastionMode && !defeated && Event.current.type == EventType.Repaint && bastion != null)
+            {
+                float width = Mathf.Min(620f, Screen.width - 24f);
+                GUI.Box(new Rect((Screen.width - width) * .5f, 12f, width, 30f), DebugStatus);
+            }
             if (interceptorMode && !defeated && Event.current.type == EventType.Repaint && interceptor != null)
             {
                 float width = Mathf.Min(880f, Screen.width - 24f);
@@ -719,6 +789,8 @@ namespace AirCombat
 
         private void OnDestroy()
         {
+            StopBastion();
+            if (bastion != null) radar?.Unregister(bastion);
             interceptor?.Clear();
             convoy?.Dispose();
             interception?.Clear();

@@ -3186,7 +3186,7 @@ MonoBehaviour:
     lifetime: 4
     hitRadius: 5
     damage: 6
-  mode: 5
+  mode: 6
   interceptorPrefab: {fileID: 585073388258483318, guid: 0ca69e2e1dc70e44ea012bf38b3d7521, type: 3}
   interceptorWingmanEnabled: 1
   interceptorWingmanDelay: 1.5
@@ -3216,6 +3216,9 @@ MonoBehaviour:
     lifetime: 6
     hitRadius: 5
     damage: 5
+  bastionPrefab: {fileID: 5147233585455714197, guid: 7ceb77f4568832c49a7d69a26e36f0f2, type: 3}
+  bastionPicketTemplate: {fileID: 1298626541, guid: 4758bfb984f508a4c82af3323d448857, type: 3}
+  bastionSalvoGap: 0.8
   convoyPicketPrefab: {fileID: 8201000000000000004, guid: 43c92e56080254d797a874a625f33861, type: 3}
   convoyTerrain: {fileID: 1071449414}
   convoyStart: {x: -290, y: 0, z: -100}
