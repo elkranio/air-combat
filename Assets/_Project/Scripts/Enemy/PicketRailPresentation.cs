@@ -13,6 +13,7 @@ namespace AirCombat
         private const float RailAngle = 35f;
         private const float TurnSpeed = 180f;
         private readonly Transform model;
+        private readonly Transform mobileYaw;
         private readonly Transform[] parts;
         private readonly Vector3[] restPositions;
         private readonly Quaternion[] restRotations;
@@ -21,9 +22,10 @@ namespace AirCombat
         private float yaw;
         private int next;
 
-        private PicketRailPresentation(Transform model, Transform[] parts)
+        private PicketRailPresentation(Transform model, Transform[] parts, Transform mobileYaw = null)
         {
             this.model = model;
+            this.mobileYaw = mobileYaw;
             this.parts = parts;
             restPositions = new Vector3[parts.Length];
             restRotations = new Quaternion[parts.Length];
@@ -39,6 +41,29 @@ namespace AirCombat
                 rocketCenters[i] = new Vector3(mesh.bounds.center.x, RailHeight, Pivot.z);
             }
             Reset();
+        }
+
+        // Mobile art has a real yaw pivot and a separate deployment pitch pivot.
+        // The missile meshes retain the same truck-local baked vertex coordinates.
+        internal static PicketRailPresentation TryBindMobile(Transform vehicle)
+        {
+            var yaw = vehicle.Find("LauncherYaw");
+            var pitch = yaw != null ? yaw.Find("RailPitch") : null;
+            if (pitch == null) return null;
+            var names = new[] { "RailLauncher", "RailAccent", "RailLauncherDark", "MissileL", "MissileR" };
+            var parts = new Transform[names.Length];
+            for (int i = 0; i < names.Length; i++)
+            {
+                parts[i] = pitch.Find(names[i]);
+                if (parts[i] == null) return null;
+                if (i >= 3)
+                {
+                    var mesh = parts[i].GetComponent<MeshFilter>();
+                    if (mesh == null || mesh.sharedMesh == null || parts[i].GetComponent<MeshRenderer>() == null)
+                        return null;
+                }
+            }
+            return new PicketRailPresentation(vehicle, parts, yaw);
         }
 
         public static PicketRailPresentation TryBind(Transform site)
@@ -71,6 +96,11 @@ namespace AirCombat
         private void ApplyYaw()
         {
             Quaternion turn = Quaternion.Euler(0f, yaw, 0f);
+            if (mobileYaw != null)
+            {
+                mobileYaw.localRotation = turn;
+                return; // Do not overwrite the separate RailPitch deployment animation.
+            }
             for (int i = 0; i < parts.Length; i++)
             {
                 parts[i].localPosition = Pivot + turn * (restPositions[i] - Pivot);

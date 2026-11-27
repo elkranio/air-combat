@@ -20,6 +20,11 @@ namespace AirCombat
         [Header("CA06 / stationary firing range (R applies)")]
         [SerializeField] private bool carryallFiringRange;
         private bool rangeAimAtCargo;
+        [Header("BD05 / Picket SAM (R applies)")]
+        [SerializeField] private bool picketSamEnabled;
+        [SerializeField] private SurfaceToAirLauncher picketSamTemplate;
+        private bool picketSamActive;
+        private EnemyMissileThreatHud samThreatHud;
         [Header("BD04 / Base deployment trial (R applies)")]
         [SerializeField] private bool baseDeploymentTrial;
         [SerializeField] private bool baseTrialHoldAircraft = true;
@@ -199,7 +204,9 @@ namespace AirCombat
             rangeAimAtCargo = false;
             nurs.ClearRangeAim();
             // Rebuild from current Inspector tuning, even on an in-Play R restart.
+            if (samThreatHud != null) samThreatHud.BindSam(view, aircraft, null);
             convoy?.Dispose(); convoy = null;
+            picketSamActive = picketSamEnabled && !carryallFiringRange;
             baseTrialActive = baseDeploymentTrial && !carryallFiringRange;
             if (carryallFiringRange)
             {
@@ -208,6 +215,22 @@ namespace AirCombat
             }
             if (!BuildConvoy() || !convoy.Restart(baseTrialActive ? Mathf.Max(0f,convoy.RouteLength-230f) : 0f))
             { phase = Phase.Failed; failure = "CONVOY UNAVAILABLE"; return; }
+            if (picketSamActive)
+            {
+                if (!convoy.EnableSam(picketSamTemplate, aircraft, playerHealth))
+                {
+                    convoy.Dispose(); convoy = null;
+                    phase = Phase.Failed; failure = "BD05 SAM UNAVAILABLE";
+                    Debug.LogError("BD05: assign the stationary Picket SAM template and check mobile rail hierarchy.", this);
+                    return;
+                }
+                if (hud != null)
+                {
+                    samThreatHud = hud.GetComponent<EnemyMissileThreatHud>();
+                    if (samThreatHud == null) samThreatHud = hud.gameObject.AddComponent<EnemyMissileThreatHud>();
+                    samThreatHud.BindSam(view, aircraft, convoy.SamSites);
+                }
+            }
             escortActive = escortEnabled && !baseTrialActive;
             if (escortActive)
             {
@@ -348,6 +371,7 @@ namespace AirCombat
             var result = safety.Check(gameObject.scene, aircraft.position, true, 3.5f, out Vector3 stop);
             if (result != MissionFlightSafety.Result.Clear)
             { Fail(stop, result == MissionFlightSafety.Result.TerrainImpact ? "TERRAIN IMPACT" : "BOUNDARY EXIT"); return; }
+            if (picketSamActive) convoy?.TickSamArming();
             escort?.TickFire(Time.time, Time.deltaTime);
             elapsed += Time.deltaTime;
             if (timeA < 0f && Distance(a) <= arrivalRadius) timeA = sortieTime;
@@ -371,6 +395,7 @@ namespace AirCombat
             flight.enabled = false; boost.enabled = false; trigger.enabled = false;
             nurs?.ResetMagazine(); ClearRounds();
             escort?.Stop();
+            convoy?.StopSam();
             flames?.SetManeuverFlames(false);
             boundary.Clear(); failure = reason; phase = Phase.Failed;
         }
@@ -409,6 +434,11 @@ namespace AirCombat
             GUI.Label(new Rect(22f, 158f, 450f, 22f), $"All Pickets down {Split(clearedTime)} | B ETA {(convoy != null && convoy.AliveCount > 0 && convoySpeed > 0f ? convoy.RemainingDistance / convoySpeed : 0f):F1}s", textStyle);
             GUI.Label(new Rect(22f, 181f, 470f, 22f), $"{EscortStatus} | Down {Split(escortClearedTime)} | All down {Split(allClearedTime)}", textStyle);
             GUI.Label(new Rect(22f, 204f, 470f, 22f), DeploymentStatus, textStyle);
+            if (picketSamActive && convoy != null)
+            {
+                GUI.Box(new Rect(12f, 255f, 490f, 29f), GUIContent.none);
+                GUI.Label(new Rect(22f, 258f, 470f, 22f), convoy.SamStatus, textStyle);
+            }
             DrawPoint(a, "A"); DrawPoint(b, "B"); DrawPoint(c, twoPartRoute ? "C1" : "C");
             if (twoPartRoute) DrawPoint(c2, "C2");
         }

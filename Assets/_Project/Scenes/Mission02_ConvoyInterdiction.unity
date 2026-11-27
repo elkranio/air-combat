@@ -2718,8 +2718,10 @@ MonoBehaviour:
   startAirborne: 1
   carryallFlightPreview: {fileID: 2078675609}
   carryallFiringRange: 0
+  picketSamEnabled: 1
+  picketSamTemplate: {fileID: 1298626541, guid: 4758bfb984f508a4c82af3323d448857, type: 3}
   baseDeploymentTrial: 1
-  baseTrialHoldAircraft: 1
+  baseTrialHoldAircraft: 0
   convoyPrefab: {fileID: 8201000000000000004, guid: 43c92e56080254d797a874a625f33861, type: 3}
   convoyTerrain: {fileID: 2035110805}
   convoyRoute: {fileID: 553010178}

@@ -35,6 +35,7 @@ namespace AirCombat
         private bool armed;
         private bool IsPicket => profile == LaunchProfile.Picket;
         private PicketRailPresentation railPresentation;
+        private Transform mobileRoot;
         private float prelaunchWarningStarted = -1f;
         [SerializeField, Min(.5f)] private float prelaunchWarningSeconds = .65f;
 
@@ -75,7 +76,7 @@ namespace AirCombat
         public RadarContactType RadarKind => RadarContactType.GroundDefense;
         public Vector3 RadarPosition => transform.position;
         public float RadarThreatRadius => engagementRange;
-        public bool IsRadarVisible => isActiveAndEnabled && !IsDown;
+        public bool IsRadarVisible => isActiveAndEnabled && !IsDown && (mobileRoot == null || armed);
 
         // Editor installer/upgrade supplies scene-independent prefab references.
         public void ConfigureArt(Transform muzzle, SurfaceToAirMissile projectile)
@@ -91,6 +92,30 @@ namespace AirCombat
             armed = false;
             if (railPresentation == null) railPresentation = PicketRailPresentation.TryBind(transform);
             BindTarget(aircraft, health, sensor);
+        }
+
+        // The mobile root owns the only collider and damage receiver (PicketHealth).
+        // This collider-free child only owns weapon timing, audio and missiles.
+        internal bool BindMobilePicket(SurfaceToAirLauncher template, Transform vehicle,
+            Transform aircraft, PlayerHitPoints health, AircraftRadar sensor)
+        {
+            if (template == null || !template.IsConfigured || vehicle == null ||
+                aircraft == null || health == null || sensor == null) return false;
+            var rail = vehicle.Find("LauncherYaw/RailPitch");
+            var presentation = PicketRailPresentation.TryBindMobile(vehicle);
+            if (rail == null || presentation == null) return false;
+            mobileRoot = vehicle;
+            launchSocket = rail;
+            missilePrefab = template.missilePrefab;
+            engagementRange = template.engagementRange;
+            lockSeconds = template.lockSeconds;
+            reloadSeconds = template.reloadSeconds;
+            prelaunchWarningSeconds = template.prelaunchWarningSeconds;
+            railPresentation = presentation;
+            profile = LaunchProfile.Picket;
+            armed = false;
+            BindTarget(aircraft, health, sensor);
+            return true;
         }
 
         public void SetArmed(bool armed)
@@ -224,7 +249,7 @@ namespace AirCombat
             missile = Instantiate(missilePrefab, launchPosition,
                 Quaternion.LookRotation(Vector3.up, Vector3.forward));
             ownedMissiles.Add(missile);
-            missile.Launch(target, hitPoints, radar, transform, OnMissileFinished);
+            missile.Launch(target, hitPoints, radar, mobileRoot != null ? mobileRoot : transform, OnMissileFinished);
             railPresentation?.PresentLaunch(missile, Time.time, reloadSeconds);
             // Picket already played its three pre-launch beeps.
             if (!IsPicket)

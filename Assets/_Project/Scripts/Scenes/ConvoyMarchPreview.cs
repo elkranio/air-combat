@@ -19,6 +19,9 @@ namespace AirCombat
         private readonly PicketDeploymentVisual[] units = new PicketDeploymentVisual[Count];
         private readonly PicketHealth[] health = new PicketHealth[Count];
         private readonly MarchContact[] contacts = new MarchContact[Count];
+        private readonly SurfaceToAirLauncher[] samSites = new SurfaceToAirLauncher[Count];
+        private readonly bool[] samArmed = new bool[Count];
+        internal SurfaceToAirLauncher[] SamSites => samSites;
         private readonly GameObject[] destruction = new GameObject[Count];
         private const float DepotInnerRowOffset = 5f, DepotOffset = 65f, DepotTurnRadius = 18f;
         private static readonly float DepotArc = DepotTurnRadius * Mathf.PI * .5f;
@@ -167,6 +170,71 @@ namespace AirCombat
                 (DepotTurnRadius * (1f - Mathf.Cos(angle)) + Mathf.Clamp(travel - DepotArc, 0f, lateral - DepotTurnRadius));
         }
 
+        // M02 opts in after Restart. Sandbox convoy remains visual-only.
+        internal bool EnableSam(SurfaceToAirLauncher template, Transform player, PlayerHitPoints playerHealth)
+        {
+            if (!ready || !deployAtDepot || template == null || !template.IsConfigured) return false;
+            for (int i = 0; i < Count; i++)
+            {
+                if (units[i] == null || samSites[i] != null) return false;
+                var child = new GameObject("BD05 / SAM controller");
+                child.transform.SetParent(units[i].transform, false);
+                var site = child.AddComponent<SurfaceToAirLauncher>();
+                samSites[i] = site;
+                if (!site.BindMobilePicket(template, units[i].transform, player, playerHealth, radar))
+                {
+                    Debug.LogError($"BD05: invalid mobile rail or SAM template on Picket {i+1}.", owner);
+                    return false; // caller disposes the entire failed composition
+                }
+            }
+            return true;
+        }
+
+        // Called even when march progress has reached its cap: the last unit
+        // finishes unfolding after movement ends. Swap, don't duplicate radar contacts.
+        internal void TickSamArming()
+        {
+            for (int i = 0; i < Count; i++)
+            {
+                var site = samSites[i];
+                if (site == null || samArmed[i] || !parked[i] || health[i] == null ||
+                    !health[i].IsAlive || units[i] == null || !units[i].IsDeployed) continue;
+                samArmed[i] = true;
+                radar.Unregister(contacts[i]);
+                site.SetArmed(true);
+                radar.Register(site);
+            }
+        }
+
+        private void DisarmSam(int i)
+        {
+            var site = samSites[i];
+            samArmed[i] = false;
+            if (site == null) return;
+            radar?.Unregister(site);
+            site.SetArmed(false);
+            site.CancelProjectiles();
+        }
+
+        internal void StopSam()
+        {
+            for (int i = 0; i < Count; i++) DisarmSam(i);
+        }
+
+        internal string SamStatus
+        {
+            get
+            {
+                int armedCount = 0, shots = 0;
+                for (int i = 0; i < Count; i++)
+                {
+                    if (samArmed[i]) armedCount++;
+                    if (samSites[i] != null) shots += samSites[i].LaunchedCount;
+                }
+                return $"SAM armed {armedCount}/{AliveCount} | Launches {shots}";
+            }
+        }
+
         public int ParkedCount
         {
             get
@@ -284,6 +352,7 @@ namespace AirCombat
             {
                 if (health[i] != killed) continue;
                 radar.Unregister(contacts[i]);
+                DisarmSam(i);
                 float movementSpeed = deployAtDepot ? (parked[i] ? 0f : speed) : Speed;
                 destruction[i] = PicketDestructionFx.Spawn(killed.transform, terrain,
                     killed.transform.forward * movementSpeed);
@@ -344,6 +413,7 @@ namespace AirCombat
         public void Dispose()
         {
             ready = false;
+            StopSam();
             ClearDestruction();
             for (int i = 0; i < Count; i++)
             {
