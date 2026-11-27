@@ -184,6 +184,10 @@ namespace AirCombat
             foreach (var gun in aircraft.GetComponentsInChildren<AutocannonWeapon>()) gun.ResetContinuous(Time.time);
             ClearRounds();
             hitFeedback.ResetEffects();
+            // Reset only targets owned by this scene, including the BD02 preview instances.
+            foreach (var root in gameObject.scene.GetRootGameObjects())
+                foreach (var building in root.GetComponentsInChildren<DepotBuildingTarget>(true))
+                    building.ResetTarget();
             escort?.Dispose(); escort = null;
             playerHealth.ResetHealth();
             rangeAimAtCargo = false;
