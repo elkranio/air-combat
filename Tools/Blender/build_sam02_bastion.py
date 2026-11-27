@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""SAM02 Bastion V1: fictional low-poly visual asset; Unity Y-up, +Z front.
+"""SAM02 Bastion V2: fictional low-poly visual asset; Unity Y-up, +Z front.
 Blender --background --factory-startup --python Tools/Blender/build_sam02_bastion.py
 Writes deterministic Unity geometry JSON and editable .blend (when bpy is present).
 """
@@ -62,53 +62,61 @@ def cylinder(name,group,mat,y0,y1,r0,r1,x=0,z=0,sides=12):
     p=[(cos(2*pi*i/sides),sin(2*pi*i/sides)) for i in range(sides)]
     loft(name,group,mat,[(y0,x,z,r0,r0),(y1,x,z,r1,r1)],p)
 
-# Integrated fortified structure: no props, no oversized decorative ground pad.
-slab('Foundation skirt','Fixed','Foundation',0,.44,19.2,17.6,3.1,top=.97)
-slab('Sloping concrete bunker','Fixed','Concrete',.44,2.50,18.62,17.07,3.0,top=.77)
-slab('Roof coping','Fixed','Foundation',2.50,2.75,14.65,13.45,2.4,top=.985)
-slab('Inset roof deck','Fixed','Concrete',2.75,2.90,13.55,12.35,2.15,top=1)
-# A recessed-looking service face and two large intake grilles, deliberately sparse.
-box('Service hatch surround','Fixed','Foundation',0,1.38,-7.29,3.8,1.82,.20)
-box('Service hatch','Fixed','Dark',0,1.38,-7.42,3.35,1.52,.13)
-box('Hatch center seam','Fixed','Steel',0,1.38,-7.51,.09,1.42,.05)
+# V2: low octagonal foundation; the launcher, not the bunker, owns the silhouette.
+slab('Foundation skirt','Fixed','Foundation',0,.22,15.4,14.1,2.45,top=.98)
+slab('Sloping concrete bunker','Fixed','Concrete',.22,.91,15.09,13.82,2.4,top=.86)
+slab('Roof coping','Fixed','Foundation',.91,1.02,13.12,12.0,2.10,top=.985)
+slab('Inset roof deck','Fixed','Concrete',1.02,1.13,12.76,11.67,2.0)
+# Service hardware becomes flush, subtle graphics rather than a bunker door.
+box('Service hatch surround','Fixed','Foundation',0,1.15,-4.65,2.5,.10,1.15)
+box('Service hatch','Fixed','Dark',0,1.22,-4.65,2.12,.08,.84)
+box('Hatch center seam','Fixed','Steel',0,1.27,-4.65,.08,.04,.72)
 for s in (-1,1):
-    box('Roof vent '+str(s),'Fixed','Dark',s*5.15,3.04,-3.6,1.35,.28,2.0)
+    box('Roof vent '+str(s),'Fixed','Dark',s*4.65,1.18,-3.55,1.05,.10,1.55)
     for j in (-1,0,1):
-        box('Vent rib '+str(s)+' '+str(j),'Fixed','Steel',s*5.15,3.21,-3.6+j*.52,1.18,.10,.19)
-# Fixed bearing then a low broad traversing silhouette.
-cylinder('Fixed bearing','Fixed','Dark',2.88,3.28,3.90,3.90)
-cylinder('Rotating collar','Yaw','Steel',3.28,3.51,3.68,3.55)
-slab('Turret skirt','Yaw','Dark',3.51,3.85,11.0,8.15,1.45,top=.95)
-slab('Turret shoulder','Yaw','Hull',3.85,4.62,10.45,7.75,1.4,top=.88)
-slab('Central saddle','Yaw','Armor',4.58,5.65,3.0,4.65,.62,top=.82)
-# Two big separate fictional armored pods; sloped nose-up, no real mechanism.
-angle=radians(24)
+        box('Vent rib '+str(s)+' '+str(j),'Fixed','Steel',s*4.65,1.25,-3.55+j*.40,.94,.06,.14)
+# Exposed collar and compact angular carriage; shoulders stop short of the pods.
+cylinder('Fixed bearing','Fixed','Dark',1.10,1.56,3.30,3.12)
+cylinder('Rotating collar','Yaw','Steel',1.56,1.82,2.96,2.82)
+slab('Turret skirt','Yaw','Dark',1.82,2.15,9.55,6.0,1.35,top=.94)
+slab('Turret shoulder','Yaw','Hull',2.15,2.75,8.98,5.65,1.27,top=.77)
+slab('Central saddle','Yaw','Armor',2.72,3.80,2.75,3.45,.70,top=.78)
+# Open dark cradles give the two raised pods clear separation from the platform.
+angle=radians(29)
 def tilt(p):
     x,y,z=p
-    return (x,5.73+y*cos(angle)+z*sin(angle),-.18-y*sin(angle)+z*cos(angle))
+    return (x,4.24+y*cos(angle)+z*sin(angle),-.10-y*sin(angle)+z*cos(angle))
 for s,group in [(-1,'Left'),(1,'Right')]:
-    x=s*3.75
-    box(group+' cradle','Yaw','Dark',x,4.57,-.15,2.1,1.55,3.5)
-    # Pod chamfers on all long edges. Axis is local Z, using the loft helper via a rotation.
+    x=s*3.58
+    slab(group+' cradle','Yaw','Dark',2.34,3.64,1.62,2.32,.45,x=x,z=-.1,top=.72)
+    # Angular armor: wide shoulder tapering to a narrower beveled front face.
     def orient(p):
         a,b,c=p
         return tilt((a,c,b))
-    profile=octagon(3.55,2.35,.42)
-    loft(group+' armored pod',group,'Armor',[(-3.75,x,0,.84,.85),(-3.18,x,0,1,1),(3.05,x,0,1,1),(3.78,x,0,.85,.85)],profile,orient)
-    # Dark end plates sit just proud of the chamfered end. Broad panel graphic, not a tube mechanism.
+    profile=octagon(3.55,2.42,.68)
+    loft(group+' armored pod',group,'Armor',[
+        (-3.85,x,0,.70,.70),(-3.05,x,0,1,1),
+        (1.65,x,0,1,1),(3.45,x,0,.76,.78),(3.88,x,0,.68,.69)],profile,orient)
+    # End caps remain clear, with a single broad contrasting inset at the front.
     for end in (-1,1):
-        z=end*3.81
-        box(group+' end plate '+str(end),group,'Dark',x,0,z,2.69,1.63,.14,tilt)
+        z=-3.89 if end<0 else 3.92
+        box(group+' end plate '+str(end),group,'Dark',x,0,z,1.97,1.23,.10,tilt)
         for q in (-1,1):
-            box(group+' end insert '+str(end)+' '+str(q),group,'Steel',x+q*.63,0,z+end*.085,1.04,1.29,.07,tilt)
-    box(group+' top spine',group,'Hull',x,1.20,-.12,1.20,.15,5.72,tilt)
-    box(group+' faction stripe',group,'Mark',x,1.29,1.87,2.55,.10,.48,tilt)
-    box(group+' side band',group,'Hull',x+s*1.79,0,-.5,.11,1.0,3.8,tilt)
-# Small central sensor, behind the pod fronts; compact dark face framed in armor.
-slab('Sensor pedestal','Yaw','Dark',5.48,6.10,1.75,1.65,.3,z=-1.35,top=.88)
-slab('Sensor head','Yaw','Hull',6.10,7.15,2.45,1.45,.32,z=-1.35,top=.87)
-box('Sensor face','Yaw','Dark',0,6.60,-.61,1.80,.72,.13)
-box('Sensor horizontal bar','Yaw','Steel',0,6.62,-.52,1.53,.13,.08)
+            box(group+' end insert '+str(end)+' '+str(q),group,'Steel',x+q*.45,0,z+end*.065,.76,.91,.06,tilt)
+    slab_profile=octagon(1.48,4.65,.36)
+    loft(group+' top spine',group,'Hull',[(1.16,x,-.57,1,1),(1.32,x,-.57,.72,.90)],slab_profile,tilt)
+    # Short bold stripe on the flat shoulder rather than on the tapered nose.
+    box(group+' faction stripe',group,'Mark',x,1.245,1.02,1.96,.09,.43,tilt)
+    box(group+' side band',group,'Hull',x+s*1.79,0,-.65,.10,.72,3.2,tilt)
+# Raised, angled radar panel. Broad dark face with a readable steel frame.
+slab('Sensor pedestal','Yaw','Dark',3.70,5.14,1.54,1.62,.34,z=-1.40,top=.78)
+angle_sensor=radians(19)
+def sensor(p):
+    x,y,z=p
+    return (x,5.88+y*cos(angle_sensor)+z*sin(angle_sensor),-1.37-y*sin(angle_sensor)+z*cos(angle_sensor))
+loft('Sensor head','Yaw','Hull',[(-.32,0,0,.88,.88),(.30,0,0,1,1)],octagon(2.94,1.95,.32),lambda p:sensor((p[0],p[2],p[1])))
+box('Sensor face','Yaw','Dark',0,0,.34,2.32,1.45,.12,sensor)
+box('Sensor horizontal bar','Yaw','Steel',0,-.49,.42,2.12,.13,.07,sensor)
 
 def main():
     # Batch by stable group/material names for Unity; keep all solids separate in Blender.
