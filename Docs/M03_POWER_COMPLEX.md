@@ -1,0 +1,11 @@
+# M03 — Power complex / visual trials
+
+This is the current environment direction for the protected site, superseding the older off-map target proposal in MISSION_03.md. No combat logic is introduced by the first art pass.
+
+- Primary mission concept: two Sparrow groups threaten a fictional power complex. Protect three individually critical props (two transformers and a control building); loss of any one fails the mission. The precise objective implementation is deferred. Player loadout stays AC01 + AAM, no friendly-fire system for the site in this pass.
+- PG01 is a reusable visual transformer prefab; its local concrete footing is not the whole site. Build the first preview via **Air Combat > Missions > M03 - Build PG01 Transformer Preview**. The authoring tool creates the instance once and preserves its pose on subsequent rebuilds. It never regenerates the scene or changes the friendly runway (45 degrees).
+- Art direction: clean low-poly industrial silhouettes and neutral muted colors. Readability at the existing flight camera matters more than engineering fidelity. The 24 x 18 x 11.07 unit footprint/height is an initial visual trial, not locked scale.
+- Future site composition: one connected yard with appropriate concrete/gravel, a service road leading out into the broader road network, a few stylized transmission pylons and lines continuing beyond the site, sparse trees and irregular vegetation outside the yard, and terrain transitions that integrate it into the green biome. Avoid a giant isolated rectangular pad or a uniform ring of trees. Add these only after the core props and composition are accepted.
+- No target routing, destruction, SAM changes, new collisions, or tactical-map markers in PG01.
+
+Source: `Tools/Blender/build_pg01_transformer.py`; it regenerates `Assets/_Project/Editor/PG01Geometry.json`. Running it in Blender also writes the editable `Resources/Blender/PG01_Transformer.blend`. Keep prefab/mesh/material asset paths stable during art passes.
