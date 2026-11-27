@@ -83,7 +83,10 @@ namespace AirCombat
                 // Preserve the contact pose exactly. Detachment and subsequent fall are independent.
                 cargo.SetParent(owner, true);
                 cargoRotation = cargo.rotation;
-                cargoVelocity = planar * .55f - forward * 3f - carrier.right * sign * 5f;
+                // Inherit the actual crash drift, including the minimum forward impulse.
+                // A small lateral separation keeps the two falling silhouettes readable.
+                cargoVelocity = Vector3.ProjectOnPlane(hullVelocity, Vector3.up) * 1.05f
+                    - carrier.right * sign * 1.5f;
                 cargoVelocity.y = Mathf.Min(0f, velocity.y);
             }
             // Small loss-of-thrust flash, not the main explosion.
