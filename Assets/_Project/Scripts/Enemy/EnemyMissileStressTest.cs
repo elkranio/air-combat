@@ -33,6 +33,11 @@ namespace AirCombat
             public float NextAttempt;
             public float LaunchAt = -1f;
             public float WarningStarted;
+            public bool Manual;
+            public int ShotsRemaining;
+            public float SalvoGap;
+            public Vector3[] LocalMounts;
+            public Action<int> OnShot;
         }
 
         private sealed class MissileContact : IRadarBearingContact
@@ -90,6 +95,29 @@ namespace AirCombat
                 NextAttempt = Time.time + RollCooldown() });
         }
 
+        // Scripted salvo: the caller owns approach and disengagement. The
+        // existing warning, missile flight, radar and damage paths are shared.
+        internal bool TryBeginSalvo(PlayerHitPoints health, float now, float gap, Vector3[] mounts, Action<int> onShot)
+        {
+            if (!WeaponLock.Alive(target) || !WeaponLock.Alive(health) || !CanAcquire(health.transform) ||
+                mounts == null || mounts.Length != 2 || shooters.Exists(s => s.Health == health)) return false;
+            var shooter = new Shooter { Health = health, Manual = true, ShotsRemaining = 2,
+                SalvoGap = Mathf.Max(.1f, gap), LocalMounts = mounts, OnShot = onShot,
+                LaunchAt = now + Mathf.Max(.65f, settings.warningSeconds) };
+            if (now >= nextWarning && warningSource != null)
+            {
+                warningSource.PlayOneShot(warningClip, .65f);
+                lastWarningStarted = now;
+                nextWarning = now + WarningClipSeconds;
+            }
+            shooter.WarningStarted = lastWarningStarted;
+            shooters.Add(shooter);
+            return true;
+        }
+
+        internal bool SalvoPending(PlayerHitPoints health) =>
+            shooters.Exists(s => s.Health == health && s.Manual && s.LaunchAt >= 0f);
+
         public void Unregister(PlayerHitPoints health)
         {
             // A killed shooter loses pending attacks, not its airborne missiles.
@@ -112,11 +140,21 @@ namespace AirCombat
                 {
                     if (now < shooter.LaunchAt) continue;
                     Launch(shooter);
-                    shooter.LaunchAt = -1f;
-                    shooter.NextAttempt = now + RollCooldown();
+                    if (shooter.Manual)
+                    {
+                        int shot = 2 - shooter.ShotsRemaining;
+                        shooter.OnShot?.Invoke(shot);
+                        shooter.ShotsRemaining--;
+                        shooter.LaunchAt = shooter.ShotsRemaining > 0 ? now + shooter.SalvoGap : -1f;
+                    }
+                    else
+                    {
+                        shooter.LaunchAt = -1f;
+                        shooter.NextAttempt = now + RollCooldown();
+                    }
                     continue;
                 }
-                if (now < shooter.NextAttempt || !CanAcquire(shooter.Health.transform)) continue;
+                if (shooter.Manual || now < shooter.NextAttempt || !CanAcquire(shooter.Health.transform)) continue;
                 shooter.LaunchAt = now + Mathf.Max(.65f, settings.warningSeconds);
                 // Nearly simultaneous warnings share one distress cue rather than
                 // stacking identical audio clips at full volume.
@@ -159,10 +197,11 @@ namespace AirCombat
             var chassis = shooter.Aircraft != null ? shooter.Aircraft.Chassis : null;
             var mount = chassis != null ? chassis.MissileMount : null;
             Vector3 point = mount != null ? mount.position : owner.position + owner.forward * 6f;
-            point.y = owner.position.y;
+            if (shooter.Manual) point = owner.TransformPoint(shooter.LocalMounts[2 - shooter.ShotsRemaining]);
+            else point.y = owner.position.y;
             Vector3 heading = Vector3.ProjectOnPlane(owner.forward, Vector3.up).normalized;
             var missile = Instantiate(prefab, point, Quaternion.LookRotation(heading, Vector3.up));
-            missile.name = "Tiger AAM";
+            missile.name = shooter.Manual ? "IN02 Interceptor AAM" : "Tiger AAM";
             // This prefab has no physics collider; ConfigureArcade retains the
             // explicit gameplay radius. Scale only this instance's visible geometry/exhaust.
             missile.transform.localScale *= 1.12f;

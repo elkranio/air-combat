@@ -30,6 +30,12 @@ namespace AirCombat
             ResetHealth();
         }
 
+        internal void ConfigureAircraftHealth(int hp)
+        {
+            maxHp = Mathf.Max(1, hp);
+            ResetHealth();
+        }
+
         public void ResetHealth()
         {
             Hp = maxHp;

@@ -18,9 +18,20 @@ namespace AirCombat
         [SerializeField] private EnemyMissileStressTest.Settings enemyMissiles = new EnemyMissileStressTest.Settings();
         private EnemyMissileStressTest missileStress;
         // Explicit serialized values: do not reorder or reuse these IDs.
-        public enum SandboxMode { Dogfight = 0, GroundAttack = 1, Interception = 2, Warden = 3, Convoy = 4 }
+        public enum SandboxMode { Dogfight = 0, GroundAttack = 1, Interception = 2, Warden = 3, Convoy = 4, Interceptor = 5 }
         [Header("Combat sandbox / select before Play")]
         [SerializeField] private SandboxMode mode = SandboxMode.GroundAttack;
+        [Header("IN02 / Interceptor pass")]
+        [SerializeField] private GameObject interceptorPrefab;
+        [SerializeField] private InterceptorPassTrial.Settings interceptorPass = new InterceptorPassTrial.Settings();
+        [SerializeField] private EnemyMissileStressTest.Settings interceptorMissiles = new EnemyMissileStressTest.Settings
+        {
+            warningSeconds = .65f, minLaunchRange = 110f, maxLaunchRange = 300f,
+            acquisitionHalfAngle = 45f, speed = 180f, turnRate = 70f, turnBudget = 100f,
+            lifetime = 4f, hitRadius = 5f, damage = 5
+        };
+        private bool interceptorMode;
+        private InterceptorPassTrial interceptor;
         private bool groundMode;
         private bool wardenMode;
         private readonly List<WardenCombat> wardens = new List<WardenCombat>();
@@ -91,6 +102,7 @@ namespace AirCombat
         {
             get
             {
+                if (interceptorMode) return interceptor != null ? interceptor.Status : "IN02 UNAVAILABLE";
                 if (convoyMode)
                 {
                     string convoyStatus = convoy != null ? convoy.DebugStatus : "CONVOY UNAVAILABLE";
@@ -135,7 +147,7 @@ namespace AirCombat
         public void Bind(JetAssembly aircraft, Camera camera, AircraftRadar sensor,
             PlayerHitPoints health, float halfExtent)
         {
-            if (mode != SandboxMode.Dogfight && mode != SandboxMode.GroundAttack && mode != SandboxMode.Interception && mode != SandboxMode.Warden && mode != SandboxMode.Convoy)
+            if (mode != SandboxMode.Dogfight && mode != SandboxMode.GroundAttack && mode != SandboxMode.Interception && mode != SandboxMode.Warden && mode != SandboxMode.Convoy && mode != SandboxMode.Interceptor)
             {
                 Debug.LogError("Combat sandbox: invalid mode.", this);
                 return;
@@ -144,13 +156,15 @@ namespace AirCombat
             groundMode = mode == SandboxMode.GroundAttack;
             wardenMode = mode == SandboxMode.Warden;
             convoyMode = mode == SandboxMode.Convoy;
+            interceptorMode = mode == SandboxMode.Interceptor;
             player = aircraft;
             view = camera;
             radar = sensor;
             playerHealth = health;
             boundary = halfExtent;
             if ((mode == SandboxMode.Dogfight && enemyPrefab == null) ||
-                (interceptionMode && (sparrowPrefab == null || missilePrefab == null)) || player == null || radar == null || playerHealth == null)
+                (interceptionMode && (sparrowPrefab == null || missilePrefab == null)) ||
+                (interceptorMode && (interceptorPrefab == null || missilePrefab == null)) || player == null || radar == null || playerHealth == null)
             {
                 Debug.LogError("AIR encounter is missing its prefab or player binding.", this);
                 return;
@@ -185,10 +199,10 @@ namespace AirCombat
             if (hitFeedback == null) hitFeedback = gameObject.AddComponent<CombatHitFeedback>();
             hitFeedback.Bind(view);
             hitFeedback.Track(playerHealth, true);
-            if (mode == SandboxMode.Dogfight && missilePrefab != null)
+            if ((mode == SandboxMode.Dogfight || interceptorMode) && missilePrefab != null)
             {
                 missileStress = gameObject.AddComponent<EnemyMissileStressTest>();
-                missileStress.Bind(playerHealth, missilePrefab, hitFeedback, enemyMissiles, radar);
+                missileStress.Bind(playerHealth, missilePrefab, hitFeedback, interceptorMode ? interceptorMissiles : enemyMissiles, radar);
                 gameObject.AddComponent<EnemyMissileThreatHud>().Bind(view, missileStress);
             }
             // AC-02 remains a prefab option, not an equipped weapon in this test.
@@ -241,6 +255,18 @@ namespace AirCombat
             if (interceptionMode)
                 interception = new InterceptionPlayground(sparrowPrefab, radar, hitFeedback,
                     missileLauncher, interceptionCount, interceptionInterval, interceptionLateralSpread);
+            if (interceptorMode)
+            {
+                foreach (var root in gameObject.scene.GetRootGameObjects())
+                {
+                    if (root.name.StartsWith("IN01 / ")) root.SetActive(false);
+                    foreach (var gun in root.GetComponentsInChildren<MantisGun>(true)) gun.gameObject.SetActive(false);
+                    foreach (var warden in root.GetComponentsInChildren<WardenCombat>(true)) warden.gameObject.SetActive(false);
+                    foreach (var sam in root.GetComponentsInChildren<SurfaceToAirLauncher>(true)) sam.gameObject.SetActive(false);
+                }
+                interceptor = new InterceptorPassTrial(transform, interceptorPrefab, player.transform,
+                    radar, missileLauncher, missileStress, hitFeedback, interceptorPass, boundary);
+            }
             bound = true;
         }
 
@@ -254,6 +280,7 @@ namespace AirCombat
                 if (preview.gameObject.scene == gameObject.scene && preview.isActiveAndEnabled)
                     preview.RestartPreview();
             if (nursLauncher != null) nursLauncher.ResetMagazine();
+            interceptor?.Clear();
             if (missileStress != null) missileStress.ResetTest();
             if (missileLauncher != null) missileLauncher.ResetMagazine();
             if (hitFeedback != null) hitFeedback.ResetEffects();
@@ -267,6 +294,15 @@ namespace AirCombat
             if (playerFlight != null) playerFlight.enabled = true;
             if (playerTrigger != null) playerTrigger.enabled = true;
             defeated = victory = false;
+            if (interceptorMode)
+            {
+                player.transform.SetPositionAndRotation(new Vector3(0f, player.transform.position.y, -300f), Quaternion.identity);
+                playerFlight.PrepareCruiseHandover();
+                playerBoost.enabled = false; playerBoost.enabled = true;
+                encounterReady = interceptor != null && interceptor.Restart();
+                view.GetComponent<ArcadeCameraFollow>()?.SnapToAircraft();
+                return;
+            }
             if (convoyMode)
             {
                 encounterReady = convoy != null && convoy.Restart();
@@ -390,6 +426,7 @@ namespace AirCombat
             if (!playerHealth.IsAlive)
             {
                 defeated = true;
+                interceptor?.Clear();
                 if (missileStress != null) missileStress.StopTest();
                 if (nursLauncher != null) nursLauncher.CeaseFire(Time.time);
                 if (missileLauncher != null) missileLauncher.CancelMissiles();
@@ -411,6 +448,11 @@ namespace AirCombat
                 return;
             }
 
+            if (interceptorMode)
+            {
+                interceptor.Tick(Time.deltaTime, Time.time);
+                return;
+            }
             if (convoyMode)
             {
                 convoy.Tick(Time.deltaTime);
@@ -489,6 +531,8 @@ namespace AirCombat
 
         private void OnGUI()
         {
+            if (interceptorMode && !defeated && Event.current.type == EventType.Repaint && interceptor != null)
+                GUI.Box(new Rect((Screen.width - 590f) * .5f, 12f, 590f, 30f), interceptor.Status);
             if (interceptionMode && !defeated && Event.current.type == EventType.Repaint && interception != null)
             {
                 var counter = new Rect((Screen.width - 340f) * .5f, 12f, 340f, 30f);
@@ -525,6 +569,7 @@ namespace AirCombat
         public void SetAltitude(float y)
         {
             interception?.SetAltitude(y);
+            interceptor?.SetAltitude(y);
             if (convoyMode)
             {
                 escortAltitude = y;
@@ -667,6 +712,7 @@ namespace AirCombat
 
         private void OnDestroy()
         {
+            interceptor?.Clear();
             convoy?.Dispose();
             interception?.Clear();
             ReleaseWardens();

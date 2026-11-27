@@ -3186,7 +3186,32 @@ MonoBehaviour:
     lifetime: 4
     hitRadius: 5
     damage: 6
-  mode: 4
+  mode: 5
+  interceptorPrefab: {fileID: 585073388258483318, guid: 0ca69e2e1dc70e44ea012bf38b3d7521, type: 3}
+  interceptorPass:
+    approachSpeed: 96
+    breakawaySpeed: 55
+    returnSpeed: 125
+    approachTurnRate: 30
+    breakawayTurnRate: 32
+    speedResponse: 45
+    salvoGap: 0.38
+    approachTimeout: 9
+    minimumBreakawaySeconds: 2.2
+    hp: 5
+  interceptorMissiles:
+    minInterval: 8
+    maxInterval: 15
+    warningSeconds: 0.65
+    minLaunchRange: 110
+    maxLaunchRange: 300
+    acquisitionHalfAngle: 45
+    speed: 180
+    turnRate: 70
+    turnBudget: 100
+    lifetime: 4
+    hitRadius: 5
+    damage: 5
   convoyPicketPrefab: {fileID: 8201000000000000004, guid: 43c92e56080254d797a874a625f33861, type: 3}
   convoyTerrain: {fileID: 1071449414}
   convoyStart: {x: -290, y: 0, z: -100}
