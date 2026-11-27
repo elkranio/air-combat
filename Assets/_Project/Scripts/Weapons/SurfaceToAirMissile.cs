@@ -96,7 +96,7 @@ namespace AirCombat
             Vector3 delta = target.position - from;
             if (!arcadeLead) return delta;
             Vector3 heading = Vector3.ProjectOnPlane(target.forward, Vector3.up).normalized;
-            float offset = Mathf.Min(25f, delta.magnitude * .25f);
+            float offset = Mathf.Min(18f, delta.magnitude * .18f);
             return delta + heading * offset;
         }
 
