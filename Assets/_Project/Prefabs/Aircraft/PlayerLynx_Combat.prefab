@@ -88,7 +88,7 @@ MonoBehaviour:
   m_Name:
   m_EditorClassIdentifier: Assembly-CSharp::AirCombat.MissionCheats
   skipTakeoff: 0
-  doubleSpeed: 0
+  tripleSpeed: 0
   noClip: 0
   invulnerable: 0
   infiniteAfterburner: 0

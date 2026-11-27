@@ -100,9 +100,9 @@ namespace AirCombat
             // committed to an angle or locked for a maneuver duration.
             motor.Tick(target, steer, accel, maneuverResponse, yaw, maxBank, bankRate, dt);
 #if UNITY_EDITOR
-            // One additional displacement = exactly x2 travel, not x3.
-            if (cheats != null && cheats.DoubleSpeed && focused && keyboard.spaceKey.isPressed)
-                transform.position += transform.forward * (motor.CurrentSpeed * dt);
+            // Two additional displacements = x3 travel, without accelerating simulation.
+            if (cheats != null && cheats.TripleSpeed && focused && keyboard.spaceKey.isPressed)
+                transform.position += transform.forward * (2f * motor.CurrentSpeed * dt);
 #endif
         }
     }

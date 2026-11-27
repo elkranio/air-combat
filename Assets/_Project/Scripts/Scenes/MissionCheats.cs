@@ -11,8 +11,9 @@ namespace AirCombat
         [Header("Editor-only test options")]
         [Tooltip("Start at the end of the normal takeoff. Applies on Play and R.")]
         [SerializeField] private bool skipTakeoff;
-        [Tooltip("Hold Space for double player displacement; does not accelerate simulation.")]
-        [SerializeField] private bool doubleSpeed;
+        [Tooltip("Hold Space for triple player displacement; does not accelerate simulation.")]
+        [UnityEngine.Serialization.FormerlySerializedAs("doubleSpeed")]
+        [SerializeField] private bool tripleSpeed;
         [Tooltip("Ignore aircraft terrain collision. Operation boundary still applies.")]
         [SerializeField] private bool noClip;
         [Tooltip("Ignore aircraft HP damage. Terrain and mission failure are independent.")]
@@ -23,7 +24,7 @@ namespace AirCombat
         [SerializeField] private bool allowEarlyLanding;
 
         public bool SkipTakeoff => Allows(skipTakeoff);
-        public bool DoubleSpeed => Allows(doubleSpeed);
+        public bool TripleSpeed => Allows(tripleSpeed);
         public bool NoClip => Allows(noClip);
         public bool Invulnerable => Allows(invulnerable);
         public bool InfiniteAfterburner => Allows(infiniteAfterburner);
