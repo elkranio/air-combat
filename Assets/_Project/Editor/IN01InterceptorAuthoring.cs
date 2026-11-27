@@ -17,6 +17,8 @@ namespace AirCombat
         private const string Art = Parent + "/IN01_Interceptor";
         private const string Prefab = "Assets/_Project/Prefabs/Aircraft/IN01_Interceptor.prefab";
         private const string Preview = "IN01 / Interceptor - VISUAL TRIAL";
+        private const string LiveryRoot = "IN01 / Livery comparison (temporary)";
+        private const string LiveryArt = Art + "/LiveryTrials";
         [Serializable] private sealed class Paint { public string name; public int[] rgb; }
         [Serializable] private sealed class Part { public string name, material; public Vector3[] vertices; public int[] triangles; }
         [Serializable] private sealed class Data { public Paint[] palette; public Part[] parts; }
@@ -47,8 +49,13 @@ namespace AirCombat
                     throw new InvalidOperationException("Invalid IN01 geometry, palette or URP shader.");
                 if (existing != null)
                 {
-                    RefreshExisting(existing, data);
-                    Selection.activeGameObject = existing;
+                    var comparison = roots.SingleOrDefault(r => r.name == LiveryRoot);
+                    if (comparison == null)
+                    {
+                        RefreshExisting(existing, data);
+                        comparison = BuildLiveryComparison(existing, data, scene);
+                    }
+                    Selection.objects = new Object[] { existing, comparison };
                     SceneView.lastActiveSceneView?.FrameSelected();
                     return;
                 }
@@ -107,6 +114,78 @@ namespace AirCombat
                 }
             }
             catch (Exception ex) { Debug.LogError("IN01: " + ex); }
+        }
+
+        // Same accepted V2 mesh assets, three scene-only prefab instances and
+        // separate trial materials. Base palette and prefab stay untouched.
+        private static GameObject BuildLiveryComparison(GameObject baseline, Data data, Scene scene)
+        {
+            var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(Prefab);
+            if (prefab == null || AssetDatabase.IsValidFolder(LiveryArt))
+                throw new InvalidOperationException("IN01 livery assets already exist without their comparison root, or prefab missing.");
+            string[] keys = { "Hull", "Wing", "Dark", "Steel", "Glass", "Mark" };
+            if (data.palette.Length != keys.Length || keys.Any(k => !data.palette.Any(p => p.name == k)))
+                throw new InvalidOperationException("IN01 livery comparison requires the V2 material slots.");
+            string[] names = { "B - Titanium", "C - Graphite", "D - Dust Olive" };
+            Color32[][] colors = {
+                new Color32[] { new Color32(166,175,179,255), new Color32(89,103,115,255), new Color32(39,48,58,255), new Color32(141,151,159,255), new Color32(42,105,130,255), new Color32(192,57,44,255) },
+                new Color32[] { new Color32(49,55,62,255), new Color32(61,68,75,255), new Color32(25,31,38,255), new Color32(119,129,139,255), new Color32(42,106,133,255), new Color32(202,65,48,255) },
+                new Color32[] { new Color32(129,132,106,255), new Color32(101,111,91,255), new Color32(51,57,48,255), new Color32(145,148,127,255), new Color32(39,100,113,255), new Color32(192,67,46,255) }
+            };
+            Vector3[] offsets = { new Vector3(-18f,0f,0f), new Vector3(0f,0f,-23f), new Vector3(-18f,0f,-23f) };
+            var originals = keys.ToDictionary(k => k,
+                k => AssetDatabase.LoadAssetAtPath<Material>(Art + "/IN01_" + k + ".mat"));
+            if (originals.Values.Any(m => m == null || !m.HasProperty("_BaseColor")))
+                throw new InvalidOperationException("IN01 livery base materials missing.");
+            Undo.IncrementCurrentGroup(); int undo = Undo.GetCurrentGroup();
+            Undo.SetCurrentGroupName("IN01 livery comparison");
+            bool folderCreated = false;
+            try
+            {
+                AssetDatabase.CreateFolder(Art, "LiveryTrials");
+                folderCreated = AssetDatabase.IsValidFolder(LiveryArt);
+                if (!folderCreated) throw new InvalidOperationException("IN01 livery folder creation failed.");
+                var root = new GameObject(LiveryRoot);
+                Undo.RegisterCreatedObjectUndo(root, "IN01 livery root");
+                for (int v = 0; v < names.Length; v++)
+                {
+                    var mats = new System.Collections.Generic.Dictionary<string, Material>();
+                    for (int k = 0; k < keys.Length; k++)
+                    {
+                        var mat = new Material(originals[keys[k]]) { name = "IN01_Trial_" + (char)('B' + v) + "_" + keys[k] };
+                        mat.SetColor("_BaseColor", colors[v][k]);
+                        AssetDatabase.CreateAsset(mat, LiveryArt + "/" + mat.name + ".mat");
+                        mats.Add(keys[k], mat);
+                    }
+                    var instance = (GameObject)PrefabUtility.InstantiatePrefab(prefab, scene);
+                    Undo.RegisterCreatedObjectUndo(instance, "IN01 livery instance");
+                    instance.name = "IN01 / " + names[v];
+                    instance.transform.SetParent(root.transform, false);
+                    instance.transform.SetPositionAndRotation(baseline.transform.position + offsets[v], baseline.transform.rotation);
+                    instance.transform.localScale = baseline.transform.localScale;
+                    PrefabUtility.RecordPrefabInstancePropertyModifications(instance.transform);
+                    var visual = instance.transform.Find("Visual");
+                    foreach (var part in data.parts)
+                    {
+                        var renderer = visual?.Find(part.name)?.GetComponent<MeshRenderer>();
+                        if (renderer == null) throw new InvalidOperationException("IN01 missing trial part: " + part.name);
+                        renderer.sharedMaterial = mats[part.material];
+                        PrefabUtility.RecordPrefabInstancePropertyModifications(renderer);
+                    }
+                }
+                AssetDatabase.SaveAssets();
+                EditorSceneManager.MarkSceneDirty(scene);
+                if (!EditorSceneManager.SaveScene(scene)) throw new InvalidOperationException("IN01 livery scene save failed.");
+                Undo.CollapseUndoOperations(undo);
+                Debug.Log("IN01 V2 palette comparison: A existing; B Titanium west; C Graphite south; D Dust Olive southwest. Same meshes and pose.", root);
+                return root;
+            }
+            catch
+            {
+                Undo.RevertAllDownToGroup(undo);
+                if (folderCreated) AssetDatabase.DeleteAsset(LiveryArt);
+                throw;
+            }
         }
 
         private static Mesh BuildMesh(Part part)
