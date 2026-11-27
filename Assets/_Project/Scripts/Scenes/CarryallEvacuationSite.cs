@@ -15,7 +15,7 @@ namespace AirCombat
         private readonly Transform carrier, payload, mount;
         private readonly Terrain terrain;
         private readonly AircraftRadar radar;
-        private readonly Vector3[] route; // ground pad -> exterior pocket exit, at cruise altitude
+        private readonly Vector3[] route; // pad -> off-map endpoint, including authored overflight altitude
         private readonly Vector3 ground;
         private readonly Quaternion heading;
         private readonly float speed, reserveDelay;
@@ -28,7 +28,10 @@ namespace AirCombat
         private CarryallPickupSequence sequence;
         private State state;
         private int nextNode, attempts;
-        private float clock, launchAt, alignAge, wreckAge;
+        private float clock, launchAt, alignAge, wreckAge, routeSpeed;
+        private bool returnRequested;
+        private const float RouteAcceleration = 20f;
+        private const float RouteYawRate = 100f;
         private Quaternion alignFrom;
         private Vector3 velocity;
         internal CargoResult Result { get; private set; }
@@ -45,7 +48,8 @@ namespace AirCombat
             ground = route[0];
             ground.y = terrain.SampleHeight(ground) + terrain.transform.position.y + .15f;
             float cruise = Mathf.Max(78f, ground.y + 12f);
-            for (int i = 0; i < route.Length; i++) route[i].y = cruise;
+            // Old routes use low guide heights; new routes may specify higher transit nodes.
+            for (int i = 0; i < route.Length; i++) route[i].y = Mathf.Max(cruise, route[i].y);
             // Align cargo toward the corridor; the four capture sockets remain exact.
             heading = Quaternion.LookRotation(Vector3.ProjectOnPlane(route[1] - route[0], Vector3.up), Vector3.up);
             root = new GameObject("CA07 / " + label);
@@ -117,10 +121,12 @@ namespace AirCombat
                 departDistance = 150f, stopBeforeDeparture = true
             });
             int end = route.Length - 1;
-            carrier.SetPositionAndRotation(route[end], Quaternion.LookRotation(route[end - 1] - route[end], Vector3.up));
+            carrier.SetPositionAndRotation(route[end], FlatHeading(route[end - 1] - route[end]));
             hullTarget.ResetTarget(hullHp);
             rotors.ResetPhase(); effects?.Reset();
-            velocity = Vector3.zero;
+            routeSpeed = speed; // Already cruising when entering from outside the map.
+            returnRequested = false;
+            velocity = (route[end - 1] - route[end]).normalized * routeSpeed;
             nextNode = end - 1;
             state = State.Inbound;
         }
@@ -187,30 +193,97 @@ namespace AirCombat
             crash.AdvanceCargoDebris(dt);
         }
 
+        private Quaternion FlatHeading(Vector3 direction)
+        {
+            Vector3 flat = Vector3.ProjectOnPlane(direction, Vector3.up);
+            return flat.sqrMagnitude > .0001f ? Quaternion.LookRotation(flat, Vector3.up) : carrier.rotation;
+        }
+
+        private float RemainingInbound()
+        {
+            if (nextNode < 0) return 0f;
+            float length = Vector3.Distance(carrier.position, route[nextNode]);
+            for (int i = nextNode; i > 0; i--) length += Vector3.Distance(route[i], route[i - 1]);
+            return length;
+        }
+
         private void AdvanceRoute(float dt, bool inbound)
         {
-            float budget = speed * dt;
-            while (budget > .0001f && nextNode >= 0 && nextNode < route.Length)
+            // Integrate the acceleration in small steps, including on a slow frame.
+            // Only transit uses this; CA03 still owns the vertical pickup/abort poses.
+            float remaining = dt;
+            State original = state;
+            while (remaining > .00001f && state == original)
+            {
+                float step = Mathf.Min(remaining, 1f / 60f);
+                remaining -= step;
+                AdvanceRouteStep(step, inbound);
+            }
+        }
+
+        private void AdvanceRouteStep(float dt, bool inbound)
+        {
+            int direction = inbound ? -1 : 1;
+            while (nextNode >= 0 && nextNode < route.Length &&
+                (route[nextNode] - carrier.position).sqrMagnitude <= .000001f)
+            {
+                carrier.position = route[nextNode];
+                nextNode += direction;
+            }
+            if (FinishRouteIfNeeded(inbound)) return;
+
+            Quaternion desired = FlatHeading(route[nextNode] - carrier.position);
+            carrier.rotation = Quaternion.RotateTowards(carrier.rotation, desired, RouteYawRate * dt);
+            // On abort, face the return corridor before accelerating from rest.
+            if (!inbound && routeSpeed <= .001f && Quaternion.Angle(carrier.rotation, desired) > 5f) return;
+
+            float goal = speed;
+            if (inbound)
+            {
+                float braking = Mathf.Sqrt(2f * RouteAcceleration * RemainingInbound());
+                // One integration-step margin avoids arriving with residual cruise momentum.
+                // A bounded crawl permits the last sub-unit of travel to finish.
+                float arrivalSpeed = Mathf.Max(Mathf.Min(.5f, braking), braking - RouteAcceleration * dt);
+                goal = returnRequested ? 0f : Mathf.Min(speed, arrivalSpeed);
+            }
+            float previous = routeSpeed;
+            routeSpeed = Mathf.MoveTowards(routeSpeed, goal, RouteAcceleration * dt);
+            float budget = .5f * (previous + routeSpeed) * dt;
+            while (budget > .00001f && nextNode >= 0 && nextNode < route.Length)
             {
                 Vector3 delta = route[nextNode] - carrier.position;
                 float distance = delta.magnitude;
-                if (distance > .001f)
+                if (distance > budget)
                 {
-                    float step = Mathf.Min(distance, budget);
-                    carrier.rotation = Quaternion.RotateTowards(carrier.rotation,
-                        Quaternion.LookRotation(delta, Vector3.up), 100f * step / speed);
-                    carrier.position += delta * (step / distance);
-                    budget -= step;
-                    if (step < distance) return;
+                    carrier.position += delta * (budget / distance);
+                    budget = 0f;
+                    break;
                 }
                 carrier.position = route[nextNode];
-                nextNode += inbound ? -1 : 1;
+                budget -= distance;
+                nextNode += direction;
             }
+            if (FinishRouteIfNeeded(inbound)) return;
+            if (inbound && returnRequested && routeSpeed <= .001f)
+            {
+                // Finish braking on the inbound polyline, then retrace it. No snap reversal.
+                nextNode = Mathf.Min(route.Length - 1, nextNode + 1);
+                routeSpeed = 0f;
+                returnRequested = false;
+                state = State.Outbound;
+            }
+        }
+
+        private bool FinishRouteIfNeeded(bool inbound)
+        {
             if (inbound && nextNode < 0)
             {
-                alignFrom = carrier.rotation; alignAge = 0f; state = State.Align;
+                routeSpeed = 0f;
+                if (returnRequested) BeginOutbound();
+                else { alignFrom = carrier.rotation; alignAge = 0f; state = State.Align; }
+                return true;
             }
-            else if (!inbound && nextNode >= route.Length)
+            if (!inbound && nextNode >= route.Length)
             {
                 if (Result == CargoResult.Pending && sequence.IsLoaded)
                 {
@@ -219,11 +292,18 @@ namespace AirCombat
                 }
                 hullTarget.Deactivate(); effects?.Clear(); hull.SetActive(false);
                 state = State.Done;
+                return true;
             }
+            return false;
         }
 
         private void BeginOutbound()
-        { nextNode = 1; state = State.Outbound; }
+        {
+            nextNode = 1;
+            routeSpeed = 0f;
+            returnRequested = false;
+            state = State.Outbound;
+        }
 
         private void KillHull()
         {
@@ -253,9 +333,8 @@ namespace AirCombat
             if (state == State.Waiting) state = State.Done;
             else if (state == State.Inbound)
             {
-                // Turn back along the current segment, never cut across a canyon wall.
-                nextNode = Mathf.Min(route.Length - 1, nextNode + 1);
-                state = State.Outbound;
+                // Brake first, then turn back along the current segment.
+                returnRequested = true;
             }
             else if (state == State.Align) BeginOutbound();
             else if (state == State.Pickup) sequence.AbortPickup();

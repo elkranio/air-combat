@@ -2803,7 +2803,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0a092af4e92e4f239f18886a2f9585d6, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::AirCombat.Mission02CargoEvacuation
-  testSite: 1
+  testSite: 2
   holdTestAircraft: 1
   c1DispatchSeconds: 23
   c2DispatchSeconds: 83
@@ -2815,21 +2815,20 @@ MonoBehaviour:
   carrierPrefab: {fileID: 3665548283049195762, guid: d6db282e8208078419a6280467f7ca11, type: 3}
   cargoPrefab: {fileID: 7593123294971043384, guid: 6e560668bc997ad4188608873c609919, type: 3}
   c1Path:
-  - {x: -2130, y: 0.55, z: 460}
-  - {x: -1890, y: 0.55, z: 260}
-  - {x: -1770, y: 0.55, z: 105}
-  - {x: -1770, y: 0.55, z: -75}
-  - {x: -1910, y: 0.55, z: -260}
+  - {x: -2130, y: 78, z: 460}
+  - {x: -1890, y: 78, z: 260}
+  - {x: -1770, y: 78, z: 105}
+  - {x: -1770, y: 78, z: -75}
+  - {x: -1910, y: 78, z: -260}
+  - {x: -2080, y: 78, z: -420}
+  - {x: -2175, y: 78, z: -590}
+  - {x: -2200, y: 78, z: -790}
+  - {x: -2850, y: 78, z: -900}
   c2Path:
-  - {x: 1510, y: 0.55, z: -2200}
-  - {x: 1550, y: 0.55, z: -2040}
-  - {x: 1700, y: 0.55, z: -1940}
-  - {x: 1870, y: 0.55, z: -1835}
-  - {x: 2020, y: 0.55, z: -1705}
-  - {x: 2020, y: 0.55, z: -1590}
-  - {x: 1900, y: 0.55, z: -1430}
-  - {x: 1735, y: 0.55, z: -1250}
-  - {x: 1610, y: 0.55, z: -1090}
+  - {x: 1510, y: 78, z: -2200}
+  - {x: 1510, y: 78, z: -2230}
+  - {x: 1510, y: 170, z: -2290}
+  - {x: 1510, y: 170, z: -3065}
 --- !u!1 &1573035788
 GameObject:
   m_ObjectHideFlags: 0
