@@ -7,7 +7,7 @@ from pathlib import Path
 from math import sin, cos, pi
 ROOT = Path(__file__).resolve().parents[2]
 OUT = ROOT / 'Assets/_Project/Art/Aircraft/UD01_Moth'
-COLORS = {'Hull': (.14,.15,.16), 'Wing': (.075,.08,.09), 'Dark': (.045,.05,.06), 'Mark': (.86,.055,.045)}
+COLORS = {'Hull': (.14,.15,.16), 'Wing': (.075,.08,.09), 'Dark': (.045,.05,.06), 'Rotor': (.045,.05,.06), 'Mark': (.86,.055,.045)}
 MESH = {k: [] for k in COLORS}
 
 def face(part, pts, normal):
@@ -52,10 +52,10 @@ for s in (-1,1):
         face('Dark',[(x-.09,y,z),(x+.09,y,z),(x+.09,y2,z2),(x-.09,y2,z2)],n)
 shell('Hull',[(-1.86,.36,.28,0),(-1.34,.64,.45,.03),(.94,.58,.43,.03),(1.70,.42,.30,.02),(2.35,.17,.16,0)])
 shell('Dark',[(2.35,.17,.16,0),(2.69,.035,.035,0)])
-# Rear graphic hub and stylized static two-blade icon, no animation or mechanics.
+# Rear graphic hub and separate cosmetic rotor mesh; Unity animates the visual.
 shell('Dark',[(-2.30,.14,.14,0),(-2.12,.27,.27,0),(-1.86,.27,.27,0)])
 for s in (-1,1):
-    slab('Dark',[(s*.14,-2.29),(s*1.00,-2.37),(s*1.12,-2.26),(s*.14,-2.15)],-.055,.055)
+    slab('Rotor',[(s*.14,-2.29),(s*1.00,-2.37),(s*1.12,-2.26),(s*.14,-2.15)],-.055,.055)
 
 def main():
     OUT.mkdir(parents=True,exist_ok=True)

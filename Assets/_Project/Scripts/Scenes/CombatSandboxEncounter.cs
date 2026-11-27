@@ -18,7 +18,7 @@ namespace AirCombat
         [SerializeField] private EnemyMissileStressTest.Settings enemyMissiles = new EnemyMissileStressTest.Settings();
         private EnemyMissileStressTest missileStress;
         // Explicit serialized values: do not reorder or reuse these IDs.
-        public enum SandboxMode { Dogfight = 0, GroundAttack = 1, Interception = 2, Warden = 3, Convoy = 4, Interceptor = 5, Bastion = 6, BuildingDestruction = 7, SparrowAttack = 8 }
+        public enum SandboxMode { Dogfight = 0, GroundAttack = 1, Interception = 2, Warden = 3, Convoy = 4, Interceptor = 5, Bastion = 6, BuildingDestruction = 7, MothAttack = 8 }
         [Header("Combat sandbox / select before Play")]
         [SerializeField] private SandboxMode mode = SandboxMode.GroundAttack;
         [Header("IN02 / Interceptor pass")]
@@ -79,11 +79,12 @@ namespace AirCombat
         [SerializeField, Min(1)] private int interceptionCount = 10;
         [SerializeField, Min(.1f)] private float interceptionInterval = .7f;
         [SerializeField, Min(0f)] private float interceptionLateralSpread = 60f;
-        [Header("Sparrow Attack / local arcade trial")]
-        [SerializeField, Min(1)] private int sparrowAttackCount = 3;
-        [SerializeField, Min(.1f)] private float sparrowAttackInterval = .65f;
-        private bool sparrowAttackMode;
-        private BuildingDestructionTrial sparrowDemoSite;
+        [Header("Moth Attack / local arcade trial")]
+        [SerializeField] private GameObject mothVisualPrefab;
+        [SerializeField, Min(1)] private int mothAttackCount = 3;
+        [SerializeField, Min(.1f)] private float mothAttackInterval = .65f;
+        private bool mothAttackMode;
+        private BuildingDestructionTrial mothDemoSite;
         private InterceptionPlayground interception;
         private bool interceptionMode;
         private ArcadeNursLauncher nursLauncher;
@@ -168,13 +169,13 @@ namespace AirCombat
         public void Bind(JetAssembly aircraft, Camera camera, AircraftRadar sensor,
             PlayerHitPoints health, float halfExtent)
         {
-            if (mode != SandboxMode.Dogfight && mode != SandboxMode.GroundAttack && mode != SandboxMode.Interception && mode != SandboxMode.Warden && mode != SandboxMode.Convoy && mode != SandboxMode.Interceptor && mode != SandboxMode.Bastion && mode != SandboxMode.BuildingDestruction && mode != SandboxMode.SparrowAttack)
+            if (mode != SandboxMode.Dogfight && mode != SandboxMode.GroundAttack && mode != SandboxMode.Interception && mode != SandboxMode.Warden && mode != SandboxMode.Convoy && mode != SandboxMode.Interceptor && mode != SandboxMode.Bastion && mode != SandboxMode.BuildingDestruction && mode != SandboxMode.MothAttack)
             {
                 Debug.LogError("Combat sandbox: invalid mode.", this);
                 return;
             }
-            sparrowAttackMode = mode == SandboxMode.SparrowAttack;
-            interceptionMode = mode == SandboxMode.Interception || sparrowAttackMode;
+            mothAttackMode = mode == SandboxMode.MothAttack;
+            interceptionMode = mode == SandboxMode.Interception || mothAttackMode;
             groundMode = mode == SandboxMode.GroundAttack;
             wardenMode = mode == SandboxMode.Warden;
             convoyMode = mode == SandboxMode.Convoy;
@@ -188,9 +189,10 @@ namespace AirCombat
             boundary = halfExtent;
             if ((mode == SandboxMode.Dogfight && enemyPrefab == null) ||
                 (interceptionMode && (sparrowPrefab == null || missilePrefab == null)) ||
+                (mothAttackMode && mothVisualPrefab == null) ||
                 (interceptorMode && (interceptorPrefab == null || missilePrefab == null)) ||
                 (bastionMode && (bastionPrefab == null || bastionPicketTemplate == null || convoyTerrain == null)) ||
-                ((destructionMode || sparrowAttackMode) && (destructionBuildingPrefab == null || convoyTerrain == null)) ||
+                ((destructionMode || mothAttackMode) && (destructionBuildingPrefab == null || convoyTerrain == null)) ||
                 player == null || radar == null || playerHealth == null)
             {
                 Debug.LogError("AIR encounter is missing its prefab or player binding.", this);
@@ -279,12 +281,12 @@ namespace AirCombat
                 else Debug.LogError("AIR encounter: missing AAM missile prefab.", this);
                 playerTrigger.ConfigureDualSlots(missileLauncher);
             }
-            if (sparrowAttackMode && !BindSparrowDemoSite()) return;
+            if (mothAttackMode && !BindMothDemoSite()) return;
             if (interceptionMode)
                 interception = new InterceptionPlayground(sparrowPrefab, radar, hitFeedback,
-                    missileLauncher, sparrowAttackMode ? sparrowAttackCount : interceptionCount,
-                    sparrowAttackMode ? sparrowAttackInterval : interceptionInterval,
-                    interceptionLateralSpread, sparrowAttackMode, sparrowDemoSite);
+                    missileLauncher, mothAttackMode ? mothAttackCount : interceptionCount,
+                    mothAttackMode ? mothAttackInterval : interceptionInterval,
+                    interceptionLateralSpread, mothAttackMode, mothDemoSite, mothVisualPrefab);
             if (interceptorMode)
             {
                 foreach (var root in gameObject.scene.GetRootGameObjects())
@@ -303,7 +305,7 @@ namespace AirCombat
             bound = true;
         }
 
-        private bool BindSparrowDemoSite()
+        private bool BindMothDemoSite()
         {
             foreach (var root in gameObject.scene.GetRootGameObjects())
             {
@@ -318,13 +320,13 @@ namespace AirCombat
             position.y = convoyTerrain.SampleHeight(position) + convoyTerrain.transform.position.y;
             var instance = Instantiate(destructionBuildingPrefab, position, Quaternion.identity);
             UnityEngine.SceneManagement.SceneManager.MoveGameObjectToScene(instance, gameObject.scene);
-            instance.name = "Sparrow Attack / protected test prop";
-            sparrowDemoSite = instance.AddComponent<BuildingDestructionTrial>();
-            if (sparrowDemoSite.Initialize(0, BuildingDestructionTrial.RuinProfile.ControlBuilding, false, false))
+            instance.name = "Moth Attack / protected test prop";
+            mothDemoSite = instance.AddComponent<BuildingDestructionTrial>();
+            if (mothDemoSite.Initialize(0, BuildingDestructionTrial.RuinProfile.ControlBuilding, false, false))
                 return true;
             instance.SetActive(false);
             Destroy(instance);
-            sparrowDemoSite = null;
+            mothDemoSite = null;
             return false;
         }
 
@@ -561,11 +563,11 @@ namespace AirCombat
             }
             if (interceptionMode)
             {
-                if (sparrowAttackMode)
+                if (mothAttackMode)
                 {
-                    if (sparrowDemoSite == null) return;
-                    sparrowDemoSite.ResetTarget();
-                    Vector3 start = sparrowDemoSite.transform.position + new Vector3(-185f, 0f, -40f);
+                    if (mothDemoSite == null) return;
+                    mothDemoSite.ResetTarget();
+                    Vector3 start = mothDemoSite.transform.position + new Vector3(-185f, 0f, -40f);
                     start.y = player.transform.position.y;
                     player.transform.SetPositionAndRotation(start, Quaternion.Euler(0f, 90f, 0f));
                     playerFlight.PrepareCruiseHandover();
@@ -791,7 +793,7 @@ namespace AirCombat
             }
             if (interceptionMode && !defeated && Event.current.type == EventType.Repaint && interception != null)
             {
-                float width = Mathf.Min(sparrowAttackMode ? 760f : 340f, Screen.width - 24f);
+                float width = Mathf.Min(mothAttackMode ? 760f : 340f, Screen.width - 24f);
                 var counter = new Rect((Screen.width - width) * .5f, 12f, width, 30f);
                 GUI.Box(counter, interception.DebugStatus);
             }
@@ -974,7 +976,7 @@ namespace AirCombat
             interceptor?.Clear();
             convoy?.Dispose();
             interception?.Clear();
-            if (sparrowDemoSite != null) Destroy(sparrowDemoSite.gameObject);
+            if (mothDemoSite != null) Destroy(mothDemoSite.gameObject);
             ReleaseWardens();
             foreach (var gun in groundGuns) if (gun != null) gun.Unbind();
             groundGuns.Clear();

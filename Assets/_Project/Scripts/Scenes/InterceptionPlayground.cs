@@ -15,6 +15,7 @@ namespace AirCombat
         private readonly ArcadeMissileLauncher aam;
         private readonly bool diveTrial;
         private readonly BuildingDestructionTrial demoSite;
+        private readonly GameObject mothVisualPrefab;
         private float safeExtent;
         private readonly List<CruiseMissileTarget> live = new List<CruiseMissileTarget>();
         private Vector3[] route;
@@ -24,10 +25,11 @@ namespace AirCombat
 
         public InterceptionPlayground(CruiseMissileTarget prefab, AircraftRadar radar,
             CombatHitFeedback feedback, ArcadeMissileLauncher aam, int count, float interval, float lateralSpread,
-            bool diveTrial = false, BuildingDestructionTrial demoSite = null)
+            bool diveTrial = false, BuildingDestructionTrial demoSite = null, GameObject mothVisualPrefab = null)
         {
             this.diveTrial = diveTrial;
             this.demoSite = demoSite;
+            this.mothVisualPrefab = mothVisualPrefab;
             this.prefab = prefab;
             this.radar = radar;
             this.feedback = feedback;
@@ -38,7 +40,7 @@ namespace AirCombat
         }
 
         public string DebugStatus => diveTrial
-            ? $"SPARROW ATTACK / {destroyed}/{count} DOWN / {diveIntercepted} DIVE SAVES / {impacts} IMPACTS / {live.Count} LIVE"
+            ? $"MOTH ATTACK / {destroyed}/{count} DOWN / {diveIntercepted} DIVE SAVES / {impacts} IMPACTS / {live.Count} LIVE"
             : $"Sparrow {destroyed}/{count} DOWN   {escaped} ESCAPED   {live.Count} LIVE";
 
         public void Restart(Vector3 origin, float boundary, float now)
@@ -115,11 +117,11 @@ namespace AirCombat
                 };
                 var target = Object.Instantiate(prefab, lane[0], Quaternion.identity);
                 ++spawned;
-                target.name = demoSite != null ? $"Sparrow Attack / Drone {spawned:00}" : $"CM-01 Sparrow {spawned:00}";
+                target.name = demoSite != null ? $"UD-01 Moth {spawned:00}" : $"CM-01 Sparrow {spawned:00}";
                 if (demoSite != null)
                 {
                     UnityEngine.SceneManagement.SceneManager.MoveGameObjectToScene(target.gameObject, demoSite.gameObject.scene);
-                    target.InstallSandboxDroneVisual();
+                    target.InstallMothVisual(mothVisualPrefab);
                 }
                 target.Begin(lane);
                 live.Add(target);

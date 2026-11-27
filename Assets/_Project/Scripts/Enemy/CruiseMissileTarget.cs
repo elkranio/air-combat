@@ -27,40 +27,19 @@ namespace AirCombat
         public bool IsRadarVisible => Alive && isActiveAndEnabled;
         public RadarContactType RadarKind => RadarContactType.Aircraft;
 
-        // Temporary game-art proxy: distinguish the local Sparrow trial from CM01.
-        // No source prefab or production mesh is changed.
-        public void InstallSandboxDroneVisual()
+        // Original UD01 game art under the existing cosmetic flight pivot.
+        public void InstallMothVisual(GameObject prefab)
         {
             var visual = transform.Find("VisualRoot");
-            if (visual == null) return;
-            var renderer = visual.GetComponentInChildren<MeshRenderer>(true);
-            var material = renderer != null ? renderer.sharedMaterial : null;
+            if (visual == null || prefab == null) return;
             foreach (Transform child in visual) child.gameObject.SetActive(false);
-            VisualBlock(visual, material, "Drone body", new Vector3(0,0,0), new Vector3(1.4f,1f,4.6f), 0f);
-            VisualBlock(visual, material, "Wing L", new Vector3(-1.7f,0,-.5f), new Vector3(2.7f,.24f,2.2f), -24f);
-            VisualBlock(visual, material, "Wing R", new Vector3(1.7f,0,-.5f), new Vector3(2.7f,.24f,2.2f), 24f);
-            demoRotor = new GameObject("Visual rotor").transform;
-            demoRotor.SetParent(visual, false);
-            demoRotor.localPosition = new Vector3(0,0,-2.45f);
-            VisualBlock(demoRotor, material, "Rotor bar", Vector3.zero, new Vector3(2f,.18f,.12f), 0f);
+            var moth = Instantiate(prefab, visual, false);
+            demoRotor = moth.transform.Find("Moth_Rotor");
+            if (demoRotor == null)
+                Debug.LogError("UD01: missing cosmetic rotor.", moth);
             var box = GetComponent<BoxCollider>();
             box.size = new Vector3(6f,1.5f,5f);
             box.center = Vector3.zero;
-        }
-
-        private static void VisualBlock(Transform parent, Material material, string label,
-            Vector3 position, Vector3 scale, float yaw)
-        {
-            var part = GameObject.CreatePrimitive(PrimitiveType.Cube);
-            part.name = label;
-            part.transform.SetParent(parent, false);
-            part.transform.localPosition = position;
-            part.transform.localRotation = Quaternion.Euler(0,yaw,0);
-            part.transform.localScale = scale;
-            var collider = part.GetComponent<Collider>();
-            collider.enabled = false;
-            Destroy(collider);
-            if (material != null) part.GetComponent<MeshRenderer>().sharedMaterial = material;
         }
 
         public void Begin(Vector3[] route)

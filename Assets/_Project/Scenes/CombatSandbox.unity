@@ -3284,8 +3284,9 @@ MonoBehaviour:
   interceptionCount: 10
   interceptionInterval: 0.7
   interceptionLateralSpread: 60
-  sparrowAttackCount: 3
-  sparrowAttackInterval: 0.65
+  mothVisualPrefab: {fileID: 8100100000000000001, guid: 461f726aabf4212f1d14a29124d0862f, type: 3}
+  mothAttackCount: 3
+  mothAttackInterval: 0.65
 --- !u!1001 &2025167888
 PrefabInstance:
   m_ObjectHideFlags: 0
