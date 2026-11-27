@@ -17,6 +17,7 @@ namespace AirCombat
         [SerializeField, Min(1f)] private float arrivalRadius = 75f;
         [SerializeField] private bool startAirborne;
         [SerializeField] private CarryallFlightPreview carryallFlightPreview;
+        [SerializeField] private Mission02CargoEvacuation cargoEvacuation;
         [Header("CA06 / stationary firing range (R applies)")]
         [SerializeField] private bool carryallFiringRange;
         private bool rangeAimAtCargo;
@@ -195,6 +196,7 @@ namespace AirCombat
             foreach (var gun in aircraft.GetComponentsInChildren<AutocannonWeapon>()) gun.ResetContinuous(Time.time);
             ClearRounds();
             hitFeedback.ResetEffects();
+            cargoEvacuation?.Clear();
             // Reset only targets owned by this scene, including the BD02 preview instances.
             foreach (var root in gameObject.scene.GetRootGameObjects())
                 foreach (var building in root.GetComponentsInChildren<DepotBuildingTarget>(true))
@@ -208,6 +210,9 @@ namespace AirCombat
             convoy?.Dispose(); convoy = null;
             picketSamActive = picketSamEnabled && !carryallFiringRange;
             baseTrialActive = baseDeploymentTrial && !carryallFiringRange;
+            bool cargoInstalled = cargoEvacuation != null && cargoEvacuation.isActiveAndEnabled;
+            if (carryallFlightPreview != null)
+                carryallFlightPreview.gameObject.SetActive(carryallFiringRange || !cargoInstalled);
             if (carryallFiringRange)
             {
                 EnterCarryallRange();
@@ -253,7 +258,17 @@ namespace AirCombat
             escortClearedTime = allClearedTime = -1f;
             firstParkedTime = deploymentCompleteTime = -1f;
             failure = null; handover = false; phase = Phase.Ready;
-            if (baseTrialActive)
+            if (!baseTrialActive && cargoInstalled && !cargoEvacuation.Restart(radar))
+            { phase = Phase.Failed; failure = "CA07 CARGO UNAVAILABLE"; return; }
+            if (cargoInstalled && cargoEvacuation.TryTestPose(out Vector3 testGround, out Quaternion testHeading))
+            {
+                flight.PrepareCruiseHandover();
+                nurs.PositionForRange(testGround, testHeading, 78f);
+                Physics.SyncTransforms();
+                EnterFlight();
+                if (phase == Phase.Flight && cargoEvacuation.HoldTestAircraft) flight.enabled = false;
+            }
+            else if (baseTrialActive)
             {
                 Vector3 p = b - depotForward*55f;
                 p.y = 78f;
@@ -267,7 +282,8 @@ namespace AirCombat
                 p.y = 78f; aircraft.position = p;
                 EnterFlight();
             }
-            carryallFlightPreview?.RestartPreview();
+            if (carryallFlightPreview != null && carryallFlightPreview.gameObject.activeInHierarchy)
+                carryallFlightPreview.RestartPreview();
             view.GetComponent<ArcadeCameraFollow>()?.SnapToAircraft();
         }
 
@@ -327,6 +343,7 @@ namespace AirCombat
             if (phase == Phase.Takeoff || phase == Phase.Flight)
             {
                 sortieTime += Time.deltaTime;
+                cargoEvacuation?.Tick(Time.deltaTime, sortieTime);
                 if (convoy != null && convoy.AliveCount > 0)
                 {
                     convoy.Tick(Time.deltaTime);
@@ -438,6 +455,14 @@ namespace AirCombat
             {
                 GUI.Box(new Rect(12f, 255f, 490f, 29f), GUIContent.none);
                 GUI.Label(new Rect(22f, 258f, 470f, 22f), convoy.SamStatus, textStyle);
+            }
+            if (cargoEvacuation != null && cargoEvacuation.Active)
+            {
+                float y = picketSamActive && convoy != null ? 289f : 255f;
+                GUI.Box(new Rect(12f, y, 620f, 76f), GUIContent.none);
+                GUI.Label(new Rect(22f, y + 4f, 600f, 22f), cargoEvacuation.FirstStatus(sortieTime), textStyle);
+                GUI.Label(new Rect(22f, y + 27f, 600f, 22f), cargoEvacuation.SecondStatus(sortieTime), textStyle);
+                GUI.Label(new Rect(22f, y + 50f, 600f, 22f), cargoEvacuation.Status, textStyle);
             }
             DrawPoint(a, "A"); DrawPoint(b, "B"); DrawPoint(c, twoPartRoute ? "C1" : "C");
             if (twoPartRoute) DrawPoint(c2, "C2");

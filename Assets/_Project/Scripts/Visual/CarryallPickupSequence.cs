@@ -10,6 +10,7 @@ namespace AirCombat
         {
             public float cruiseY, approachDistance, approachLateral, approachSeconds, alignSeconds;
             public float descendSeconds, clampSeconds, liftSeconds, departSeconds, departDistance;
+            public bool stopBeforeDeparture; // Mission owner follows a validated exit path.
         }
 
         private readonly Transform carrier, payload, mount, groundParent;
@@ -151,7 +152,7 @@ namespace AirCombat
                     break;
                 case Phase.Clamp: CurrentPhase = Phase.Lift; break;
                 case Phase.Lift:
-                case Phase.Abort: CurrentPhase = Phase.Depart; break;
+                case Phase.Abort: CurrentPhase = tuning.stopBeforeDeparture ? Phase.Complete : Phase.Depart; break;
                 case Phase.Depart: CurrentPhase = Phase.Complete; break;
             }
         }

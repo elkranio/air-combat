@@ -2682,6 +2682,7 @@ GameObject:
   - component: {fileID: 1325795058}
   - component: {fileID: 1325795057}
   - component: {fileID: 1325795060}
+  - component: {fileID: 1325795061}
   m_Layer: 0
   m_Name: M02 / route trial session
   m_TagString: Untagged
@@ -2717,10 +2718,11 @@ MonoBehaviour:
   arrivalRadius: 75
   startAirborne: 1
   carryallFlightPreview: {fileID: 2078675609}
+  cargoEvacuation: {fileID: 1325795061}
   carryallFiringRange: 0
   picketSamEnabled: 1
   picketSamTemplate: {fileID: 1298626541, guid: 4758bfb984f508a4c82af3323d448857, type: 3}
-  baseDeploymentTrial: 1
+  baseDeploymentTrial: 0
   baseTrialHoldAircraft: 0
   convoyPrefab: {fileID: 8201000000000000004, guid: 43c92e56080254d797a874a625f33861, type: 3}
   convoyTerrain: {fileID: 2035110805}
@@ -2789,6 +2791,45 @@ MonoBehaviour:
   plannedSam: []
   recon: []
   optionalTarget: {fileID: 0}
+--- !u!114 &1325795061
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1325795056}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0a092af4e92e4f239f18886a2f9585d6, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::AirCombat.Mission02CargoEvacuation
+  testSite: 1
+  holdTestAircraft: 1
+  c1DispatchSeconds: 23
+  c2DispatchSeconds: 83
+  carryallSpeed: 60
+  reserveDelay: 25
+  hullHp: 5
+  cargoHp: 2
+  terrain: {fileID: 2035110805}
+  carrierPrefab: {fileID: 3665548283049195762, guid: d6db282e8208078419a6280467f7ca11, type: 3}
+  cargoPrefab: {fileID: 7593123294971043384, guid: 6e560668bc997ad4188608873c609919, type: 3}
+  c1Path:
+  - {x: -2130, y: 0.55, z: 460}
+  - {x: -1890, y: 0.55, z: 260}
+  - {x: -1770, y: 0.55, z: 105}
+  - {x: -1770, y: 0.55, z: -75}
+  - {x: -1910, y: 0.55, z: -260}
+  c2Path:
+  - {x: 1510, y: 0.55, z: -2200}
+  - {x: 1550, y: 0.55, z: -2040}
+  - {x: 1700, y: 0.55, z: -1940}
+  - {x: 1870, y: 0.55, z: -1835}
+  - {x: 2020, y: 0.55, z: -1705}
+  - {x: 2020, y: 0.55, z: -1590}
+  - {x: 1900, y: 0.55, z: -1430}
+  - {x: 1735, y: 0.55, z: -1250}
+  - {x: 1610, y: 0.55, z: -1090}
 --- !u!1 &1573035788
 GameObject:
   m_ObjectHideFlags: 0
