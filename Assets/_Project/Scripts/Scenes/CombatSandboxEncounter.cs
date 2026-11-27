@@ -18,7 +18,7 @@ namespace AirCombat
         [SerializeField] private EnemyMissileStressTest.Settings enemyMissiles = new EnemyMissileStressTest.Settings();
         private EnemyMissileStressTest missileStress;
         // Explicit serialized values: do not reorder or reuse these IDs.
-        public enum SandboxMode { Dogfight = 0, GroundAttack = 1, Interception = 2, Warden = 3, Convoy = 4, Interceptor = 5, Bastion = 6, BuildingDestruction = 7 }
+        public enum SandboxMode { Dogfight = 0, GroundAttack = 1, Interception = 2, Warden = 3, Convoy = 4, Interceptor = 5, Bastion = 6, BuildingDestruction = 7, SparrowAttack = 8 }
         [Header("Combat sandbox / select before Play")]
         [SerializeField] private SandboxMode mode = SandboxMode.GroundAttack;
         [Header("IN02 / Interceptor pass")]
@@ -79,7 +79,11 @@ namespace AirCombat
         [SerializeField, Min(1)] private int interceptionCount = 10;
         [SerializeField, Min(.1f)] private float interceptionInterval = .7f;
         [SerializeField, Min(0f)] private float interceptionLateralSpread = 60f;
-        [SerializeField] private bool interceptionDiveTrial;
+        [Header("Sparrow Attack / local arcade trial")]
+        [SerializeField, Min(1)] private int sparrowAttackCount = 3;
+        [SerializeField, Min(.1f)] private float sparrowAttackInterval = .65f;
+        private bool sparrowAttackMode;
+        private BuildingDestructionTrial sparrowDemoSite;
         private InterceptionPlayground interception;
         private bool interceptionMode;
         private ArcadeNursLauncher nursLauncher;
@@ -164,12 +168,13 @@ namespace AirCombat
         public void Bind(JetAssembly aircraft, Camera camera, AircraftRadar sensor,
             PlayerHitPoints health, float halfExtent)
         {
-            if (mode != SandboxMode.Dogfight && mode != SandboxMode.GroundAttack && mode != SandboxMode.Interception && mode != SandboxMode.Warden && mode != SandboxMode.Convoy && mode != SandboxMode.Interceptor && mode != SandboxMode.Bastion && mode != SandboxMode.BuildingDestruction)
+            if (mode != SandboxMode.Dogfight && mode != SandboxMode.GroundAttack && mode != SandboxMode.Interception && mode != SandboxMode.Warden && mode != SandboxMode.Convoy && mode != SandboxMode.Interceptor && mode != SandboxMode.Bastion && mode != SandboxMode.BuildingDestruction && mode != SandboxMode.SparrowAttack)
             {
                 Debug.LogError("Combat sandbox: invalid mode.", this);
                 return;
             }
-            interceptionMode = mode == SandboxMode.Interception;
+            sparrowAttackMode = mode == SandboxMode.SparrowAttack;
+            interceptionMode = mode == SandboxMode.Interception || sparrowAttackMode;
             groundMode = mode == SandboxMode.GroundAttack;
             wardenMode = mode == SandboxMode.Warden;
             convoyMode = mode == SandboxMode.Convoy;
@@ -185,7 +190,7 @@ namespace AirCombat
                 (interceptionMode && (sparrowPrefab == null || missilePrefab == null)) ||
                 (interceptorMode && (interceptorPrefab == null || missilePrefab == null)) ||
                 (bastionMode && (bastionPrefab == null || bastionPicketTemplate == null || convoyTerrain == null)) ||
-                (destructionMode && (destructionBuildingPrefab == null || convoyTerrain == null)) ||
+                ((destructionMode || sparrowAttackMode) && (destructionBuildingPrefab == null || convoyTerrain == null)) ||
                 player == null || radar == null || playerHealth == null)
             {
                 Debug.LogError("AIR encounter is missing its prefab or player binding.", this);
@@ -274,9 +279,12 @@ namespace AirCombat
                 else Debug.LogError("AIR encounter: missing AAM missile prefab.", this);
                 playerTrigger.ConfigureDualSlots(missileLauncher);
             }
+            if (sparrowAttackMode && !BindSparrowDemoSite()) return;
             if (interceptionMode)
                 interception = new InterceptionPlayground(sparrowPrefab, radar, hitFeedback,
-                    missileLauncher, interceptionCount, interceptionInterval, interceptionLateralSpread, interceptionDiveTrial);
+                    missileLauncher, sparrowAttackMode ? sparrowAttackCount : interceptionCount,
+                    sparrowAttackMode ? sparrowAttackInterval : interceptionInterval,
+                    interceptionLateralSpread, sparrowAttackMode, sparrowDemoSite);
             if (interceptorMode)
             {
                 foreach (var root in gameObject.scene.GetRootGameObjects())
@@ -293,6 +301,31 @@ namespace AirCombat
             if (bastionMode && !BindBastionTrial()) return;
             if (destructionMode && !BindDestructionTrial()) return;
             bound = true;
+        }
+
+        private bool BindSparrowDemoSite()
+        {
+            foreach (var root in gameObject.scene.GetRootGameObjects())
+            {
+                if (root.name.StartsWith("IN01 / ") || root.name.StartsWith("SAM02 / ") ||
+                    root.name.StartsWith("D1 / EF-01 Tiger")) root.SetActive(false);
+                foreach (var gun in root.GetComponentsInChildren<MantisGun>(true)) gun.gameObject.SetActive(false);
+                foreach (var warden in root.GetComponentsInChildren<WardenCombat>(true)) warden.gameObject.SetActive(false);
+                foreach (var sam in root.GetComponentsInChildren<SurfaceToAirLauncher>(true)) sam.gameObject.SetActive(false);
+            }
+            // Reuse the proven flat PG07 test area and a single protected prop.
+            Vector3 position = new Vector3(-290f, 0f, -100f);
+            position.y = convoyTerrain.SampleHeight(position) + convoyTerrain.transform.position.y;
+            var instance = Instantiate(destructionBuildingPrefab, position, Quaternion.identity);
+            UnityEngine.SceneManagement.SceneManager.MoveGameObjectToScene(instance, gameObject.scene);
+            instance.name = "Sparrow Attack / protected test prop";
+            sparrowDemoSite = instance.AddComponent<BuildingDestructionTrial>();
+            if (sparrowDemoSite.Initialize(0, BuildingDestructionTrial.RuinProfile.ControlBuilding, false, false))
+                return true;
+            instance.SetActive(false);
+            Destroy(instance);
+            sparrowDemoSite = null;
+            return false;
         }
 
         private bool BindDestructionTrial()
@@ -528,6 +561,17 @@ namespace AirCombat
             }
             if (interceptionMode)
             {
+                if (sparrowAttackMode)
+                {
+                    if (sparrowDemoSite == null) return;
+                    sparrowDemoSite.ResetTarget();
+                    Vector3 start = sparrowDemoSite.transform.position + new Vector3(-185f, 0f, -40f);
+                    start.y = player.transform.position.y;
+                    player.transform.SetPositionAndRotation(start, Quaternion.Euler(0f, 90f, 0f));
+                    playerFlight.PrepareCruiseHandover();
+                    playerBoost.enabled = false; playerBoost.enabled = true;
+                    view.GetComponent<ArcadeCameraFollow>()?.SnapToAircraft();
+                }
                 interception?.Restart(player.transform.position, boundary, Time.time);
                 encounterReady = true;
                 return;
@@ -747,7 +791,7 @@ namespace AirCombat
             }
             if (interceptionMode && !defeated && Event.current.type == EventType.Repaint && interception != null)
             {
-                float width = Mathf.Min(interceptionDiveTrial ? 640f : 340f, Screen.width - 24f);
+                float width = Mathf.Min(sparrowAttackMode ? 760f : 340f, Screen.width - 24f);
                 var counter = new Rect((Screen.width - width) * .5f, 12f, width, 30f);
                 GUI.Box(counter, interception.DebugStatus);
             }
@@ -930,6 +974,7 @@ namespace AirCombat
             interceptor?.Clear();
             convoy?.Dispose();
             interception?.Clear();
+            if (sparrowDemoSite != null) Destroy(sparrowDemoSite.gameObject);
             ReleaseWardens();
             foreach (var gun in groundGuns) if (gun != null) gun.Unbind();
             groundGuns.Clear();

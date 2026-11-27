@@ -14,6 +14,7 @@ namespace AirCombat
         private readonly float lateralSpread;
         private readonly ArcadeMissileLauncher aam;
         private readonly bool diveTrial;
+        private readonly BuildingDestructionTrial demoSite;
         private float safeExtent;
         private readonly List<CruiseMissileTarget> live = new List<CruiseMissileTarget>();
         private Vector3[] route;
@@ -23,9 +24,10 @@ namespace AirCombat
 
         public InterceptionPlayground(CruiseMissileTarget prefab, AircraftRadar radar,
             CombatHitFeedback feedback, ArcadeMissileLauncher aam, int count, float interval, float lateralSpread,
-            bool diveTrial = false)
+            bool diveTrial = false, BuildingDestructionTrial demoSite = null)
         {
             this.diveTrial = diveTrial;
+            this.demoSite = demoSite;
             this.prefab = prefab;
             this.radar = radar;
             this.feedback = feedback;
@@ -36,7 +38,7 @@ namespace AirCombat
         }
 
         public string DebugStatus => diveTrial
-            ? $"DIVE / {destroyed}/{count} DOWN / {diveIntercepted} DIVE SAVES / {impacts} IMPACTS / {live.Count} LIVE"
+            ? $"SPARROW ATTACK / {destroyed}/{count} DOWN / {diveIntercepted} DIVE SAVES / {impacts} IMPACTS / {live.Count} LIVE"
             : $"Sparrow {destroyed}/{count} DOWN   {escaped} ESCAPED   {live.Count} LIVE";
 
         public void Restart(Vector3 origin, float boundary, float now)
@@ -49,6 +51,16 @@ namespace AirCombat
             float endX = diveTrial ? Mathf.Clamp(origin.x + 160f, -safe + 50f, Mathf.Max(-safe + 50f, safe - 150f)) : safe;
             float startX = Mathf.Clamp(origin.x - 200f, -safe, endX - 50f);
             route = new[] { new Vector3(startX, origin.y, z), new Vector3(endX, origin.y, z) };
+            if (demoSite != null)
+            {
+                // Short, fixed stage for observing the existing arcade animation.
+                // All values are local to this fictional Sandbox vignette.
+                Vector3 centre = demoSite.transform.position;
+                route = new[] {
+                    new Vector3(centre.x - 210f, origin.y, centre.z),
+                    new Vector3(centre.x - 120f, origin.y, centre.z)
+                };
+            }
             nextSpawn = now;
             running = true;
             Tick(now, 0f);
@@ -75,13 +87,16 @@ namespace AirCombat
                 {
                     // Remove the seeker entry immediately, not the live target.
                     aam?.Unregister(target);
-                    target.BeginDive();
+                    target.BeginDive(demoSite != null ? demoSite.transform.position.y + .8f : .8f);
                     continue;
                 }
                 if (diveTrial)
                 {
                     impacts++;
-                    feedback?.EmitInterceptionBurst(target.transform.position, target.transform.forward);
+                    // The protected prop is a scripted game outcome, not a player weapon receiver.
+                    if (demoSite != null && !demoSite.IsDestroyed)
+                        demoSite.ApplyDamage(target.transform.position, 1);
+                    else feedback?.EmitInterceptionBurst(target.transform.position, target.transform.forward);
                 }
                 else escaped++;
                 Remove(i);
@@ -93,12 +108,19 @@ namespace AirCombat
                 // Sample inside the map rather than clamping multiple lanes onto its edge.
                 float z = Random.Range(Mathf.Max(-safeExtent, route[0].z - lateralSpread),
                     Mathf.Min(safeExtent, route[0].z + lateralSpread));
+                if (demoSite != null) z = route[0].z + Random.Range(-3f, 3f);
                 var lane = new[] {
                     new Vector3(route[0].x, route[0].y, z),
                     new Vector3(route[1].x, route[1].y, z)
                 };
                 var target = Object.Instantiate(prefab, lane[0], Quaternion.identity);
-                target.name = $"CM-01 Sparrow {++spawned:00}";
+                ++spawned;
+                target.name = demoSite != null ? $"Sparrow Attack / Drone {spawned:00}" : $"CM-01 Sparrow {spawned:00}";
+                if (demoSite != null)
+                {
+                    UnityEngine.SceneManagement.SceneManager.MoveGameObjectToScene(target.gameObject, demoSite.gameObject.scene);
+                    target.InstallSandboxDroneVisual();
+                }
                 target.Begin(lane);
                 live.Add(target);
                 radar.Register(target);
