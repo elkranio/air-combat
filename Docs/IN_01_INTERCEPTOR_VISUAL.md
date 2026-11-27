@@ -1,0 +1,9 @@
+# IN01 — Long Dart interceptor visual trial
+
+Heavy Dominion interceptor, first silhouette/livery pass only. Long pointed dark radome, twin chamfered intakes and long engine pods, narrow swept wings, twin canted fins, two cosmetic missiles. Slate graphite, lighter wing surfaces, red-orange wing bands and fin accents. Unity +Z nose, +Y up. No AI, weapons, colliders, sockets or mission changes yet. The missile bodies are cosmetic; runtime weapon presentation comes later.
+
+Apply the patch and run **Air Combat > Sandbox > IN01 - Build Interceptor Preview**. The menu opens CombatSandbox after asking to save dirty scenes, generates a visual-only prefab and mesh/material assets, places it 18 units west of the existing PF02_Lynx and frames the instance. Existing comparison models are untouched. The menu refuses to overwrite orphaned assets; selecting the existing preview is safe on repeat. Save/commit generated assets and scene after visual acceptance. No Blender installation needed for the Unity preview.
+
+Editable source: `Tools/Blender/build_in01_interceptor.py`. Run with Blender's bundled Python from a factory-empty background session (the script clears the current Blender scene): `blender --background --factory-startup --python-exit-code 1 --python Tools/Blender/build_in01_interceptor.py`. This regenerates the deterministic JSON and writes `Resources/Blender/IN01_Interceptor.blend`. Never run this in an unsaved working Blender scene.
+
+Offline checks: closed directed edges per solid and nondegenerate triangles. Inspect the model from above and in the normal game camera before accepting; confirm size, airframe shape, paint and placement. Unity compilation and Blender execution are local gates. No gameplay tuning in this atom.
