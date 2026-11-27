@@ -51,19 +51,20 @@ namespace AirCombat
             this.feedback = feedback; this.tuning = tuning ?? new Settings(); this.boundary = boundary;
         }
 
-        internal string Status => $"IN02 | {phase}{(passedWithoutShot ? " / NO LOCK" : "")} | " +
-            $"HP {(health != null ? health.Hp : phase == Phase.Destroyed ? 0 : tuning.hp)} | " +
-            $"{speed:F0} u/s | AAM {shots}/2 | Hits {enemyMissiles.Hits} | R retry";
+        internal string Status => $"{phase}{(passedWithoutShot ? " / NO LOCK" : "")} | " +
+            $"HP {(health != null ? health.Hp.ToString() : phase == Phase.Destroyed ? "0" : "-")} | " +
+            $"{speed:F0} u/s | AAM {shots}/2";
 
-        internal bool Restart()
+        internal bool Restart(float startX, string callsign)
         {
             Clear();
-            if (prefab == null || playerMissiles == null || enemyMissiles == null || boundary <= 760f)
+            if (prefab == null || playerMissiles == null || enemyMissiles == null ||
+                boundary <= 760f || Mathf.Abs(startX) >= boundary - 110f)
             { Debug.LogError("IN02: missing model, launcher or test space.", owner); return false; }
-            // Crossing test: player (0,-400) eastbound, interceptor (0,+650) southbound.
-            actor = Object.Instantiate(prefab, new Vector3(0f, player.position.y, 650f),
+            // Each pass starts southbound; the pair owner supplies lateral separation.
+            actor = Object.Instantiate(prefab, new Vector3(startX, player.position.y, 650f),
                 Quaternion.Euler(0f, 180f, 0f), owner);
-            actor.name = "IN02 / Interceptor combat";
+            actor.name = "IN02 / Interceptor " + callsign;
             Transform visual = actor.transform.Find("Visual");
             for (int i = 0; i < missileProps.Length; i++)
             {
@@ -180,5 +181,90 @@ namespace AirCombat
         }
 
         internal void Clear() => RemoveActor();
+    }
+
+    // Sandbox composition only. Each interceptor keeps its own flight phase,
+    // health, mounts and salvo; the shared missile service owns live projectiles.
+    internal sealed class InterceptorPairTrial
+    {
+        private readonly Transform owner;
+        private readonly EnemyMissileStressTest enemyMissiles;
+        private readonly InterceptorPassTrial alpha, bravo;
+        private readonly bool includeBravo;
+        private readonly float delay, lateralOffset;
+        private float remaining;
+        private bool running, bravoPending, bravoStarted;
+
+        internal InterceptorPairTrial(Transform owner, GameObject prefab, Transform player,
+            AircraftRadar radar, ArcadeMissileLauncher playerMissiles, EnemyMissileStressTest enemyMissiles,
+            CombatHitFeedback feedback, InterceptorPassTrial.Settings tuning, float boundary,
+            bool includeBravo, float delay, float lateralOffset)
+        {
+            this.owner = owner;
+            this.enemyMissiles = enemyMissiles;
+            this.includeBravo = includeBravo;
+            this.delay = Mathf.Max(0f, delay);
+            this.lateralOffset = Mathf.Max(0f, lateralOffset);
+            alpha = new InterceptorPassTrial(owner, prefab, player, radar, playerMissiles,
+                enemyMissiles, feedback, tuning, boundary);
+            bravo = new InterceptorPassTrial(owner, prefab, player, radar, playerMissiles,
+                enemyMissiles, feedback, tuning, boundary);
+        }
+
+        internal string Status
+        {
+            get
+            {
+                if (!running) return "IN02 | INACTIVE";
+                string wingman = !includeBravo ? "" : bravoPending ? $" | B: INBOUND {remaining:F1}s" :
+                    bravoStarted ? $" | B: {bravo.Status}" : " | B: UNAVAILABLE";
+                return $"IN02 | A: {alpha.Status}{wingman} | Hits {enemyMissiles.Hits} | R retry";
+            }
+        }
+
+        internal bool Restart()
+        {
+            Clear();
+            running = alpha.Restart(0f, "Alpha");
+            if (!running) return false;
+            remaining = delay;
+            bravoPending = includeBravo;
+            if (bravoPending && remaining <= 0f) SpawnBravo();
+            return true;
+        }
+
+        internal void Tick(float dt, float now)
+        {
+            if (!running || dt <= 0f || MissionPause.IsTacticalMapPausedFor(owner.gameObject.scene)) return;
+            alpha.Tick(dt, now);
+            if (bravoPending)
+            {
+                remaining = Mathf.Max(0f, remaining - dt);
+                if (remaining <= 0f) SpawnBravo();
+            }
+            else if (bravoStarted) bravo.Tick(dt, now);
+        }
+
+        private void SpawnBravo()
+        {
+            bravoPending = false;
+            // Local right of a southbound approach is world -X. Delayed entry
+            // gives longitudinal separation without spawning outside the arena.
+            bravoStarted = bravo.Restart(-lateralOffset, "Bravo");
+        }
+
+        internal void SetAltitude(float y)
+        {
+            alpha.SetAltitude(y);
+            bravo.SetAltitude(y); // A pending Bravo will spawn at the player's altitude.
+        }
+
+        internal void Clear()
+        {
+            running = bravoPending = bravoStarted = false;
+            remaining = 0f;
+            alpha.Clear();
+            bravo.Clear();
+        }
     }
 }

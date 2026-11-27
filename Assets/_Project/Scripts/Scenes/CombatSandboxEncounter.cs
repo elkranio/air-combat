@@ -23,6 +23,9 @@ namespace AirCombat
         [SerializeField] private SandboxMode mode = SandboxMode.GroundAttack;
         [Header("IN02 / Interceptor pass")]
         [SerializeField] private GameObject interceptorPrefab;
+        [SerializeField] private bool interceptorWingmanEnabled = true;
+        [SerializeField, Range(0f, 4f)] private float interceptorWingmanDelay = 1.5f;
+        [SerializeField, Range(0f, 300f)] private float interceptorWingmanLateralOffset = 120f;
         [SerializeField] private InterceptorPassTrial.Settings interceptorPass = new InterceptorPassTrial.Settings();
         [SerializeField] private EnemyMissileStressTest.Settings interceptorMissiles = new EnemyMissileStressTest.Settings
         {
@@ -31,7 +34,7 @@ namespace AirCombat
             lifetime = 6f, hitRadius = 5f, damage = 5
         };
         private bool interceptorMode;
-        private InterceptorPassTrial interceptor;
+        private InterceptorPairTrial interceptor;
         private bool groundMode;
         private bool wardenMode;
         private readonly List<WardenCombat> wardens = new List<WardenCombat>();
@@ -264,8 +267,9 @@ namespace AirCombat
                     foreach (var warden in root.GetComponentsInChildren<WardenCombat>(true)) warden.gameObject.SetActive(false);
                     foreach (var sam in root.GetComponentsInChildren<SurfaceToAirLauncher>(true)) sam.gameObject.SetActive(false);
                 }
-                interceptor = new InterceptorPassTrial(transform, interceptorPrefab, player.transform,
-                    radar, missileLauncher, missileStress, hitFeedback, interceptorPass, boundary);
+                interceptor = new InterceptorPairTrial(transform, interceptorPrefab, player.transform,
+                    radar, missileLauncher, missileStress, hitFeedback, interceptorPass, boundary,
+                    interceptorWingmanEnabled, interceptorWingmanDelay, interceptorWingmanLateralOffset);
             }
             bound = true;
         }
@@ -532,7 +536,10 @@ namespace AirCombat
         private void OnGUI()
         {
             if (interceptorMode && !defeated && Event.current.type == EventType.Repaint && interceptor != null)
-                GUI.Box(new Rect((Screen.width - 590f) * .5f, 12f, 590f, 30f), interceptor.Status);
+            {
+                float width = Mathf.Min(880f, Screen.width - 24f);
+                GUI.Box(new Rect((Screen.width - width) * .5f, 12f, width, 30f), interceptor.Status);
+            }
             if (interceptionMode && !defeated && Event.current.type == EventType.Repaint && interception != null)
             {
                 var counter = new Rect((Screen.width - 340f) * .5f, 12f, 340f, 30f);

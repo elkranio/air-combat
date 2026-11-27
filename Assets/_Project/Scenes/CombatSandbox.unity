@@ -3188,6 +3188,9 @@ MonoBehaviour:
     damage: 6
   mode: 5
   interceptorPrefab: {fileID: 585073388258483318, guid: 0ca69e2e1dc70e44ea012bf38b3d7521, type: 3}
+  interceptorWingmanEnabled: 1
+  interceptorWingmanDelay: 1.5
+  interceptorWingmanLateralOffset: 120
   interceptorPass:
     approachSpeed: 175
     breakawaySpeed: 55
