@@ -23,6 +23,7 @@ namespace AirCombat
         private const float DepotRowSpacing = 50f, DepotOffset = 65f, DepotTurnRadius = 18f;
         private static readonly float DepotArc = DepotTurnRadius * Mathf.PI * .5f;
         private static readonly float DepotSpur = DepotArc + DepotOffset - DepotTurnRadius;
+        private const float DepotVehicleRadius = 12f;
         private readonly bool[] parked = new bool[Count];
         private bool deployAtDepot;
         private float progress;
@@ -86,16 +87,50 @@ namespace AirCombat
         {
             if (ready || route == null || distance - routeDistances[route.Length - 2] <= 2f * DepotRowSpacing)
                 return false;
-            for (int i = 0; i < Count; i++)
-                for (int step = 0; step <= 16; step++)
+            // Validate a conservative swept envelope over the actual shared-progress
+            // schedule, including parked vehicles. Fixed slots survive convoy losses.
+            var buildings = new System.Collections.Generic.List<BoxCollider>();
+            foreach (var root in owner.gameObject.scene.GetRootGameObjects())
+                foreach (var target in root.GetComponentsInChildren<DepotBuildingTarget>(true))
                 {
-                    Vector3 p = SampleDepot(i, DepotSpur * step / 16f, out _);
-                    if (!safeArea.Contains(new Vector2(p.x, p.z)) || !InsideTerrain(p)) return false;
+                    var box = target.GetComponent<BoxCollider>();
+                    if (box != null) buildings.Add(box); // include destroyed buildings too
                 }
+            float finish = distance;
+            for (int i = 0; i < Count; i++) finish = Mathf.Max(finish, DepotBranch(i) + spacing*i + DepotSpurFor(i));
+            float begin = Mathf.Max(0f, distance - 400f - spacing*(Count-1));
+            var positions = new Vector3[Count];
+            int steps = Mathf.CeilToInt(finish-begin);
+            for (int step = 0; step <= steps; step++)
+            {
+                float along = Mathf.Min(finish, begin+step);
+                for (int i = 0; i < Count; i++)
+                {
+                    float travel = along-spacing*i-DepotBranch(i);
+                    Vector3 p = travel >= 0f ? SampleDepot(i, travel, out _) : Sample(along-spacing*i, out _);
+                    positions[i] = p;
+                    if (!safeArea.Contains(new Vector2(p.x,p.z)) || !InsideTerrain(p)) return false;
+                    foreach (var box in buildings)
+                    {
+                        Vector3 local = box.transform.InverseTransformPoint(p)-box.center;
+                        Vector3 half = box.size*.5f;
+                        float dx = Mathf.Max(0f, Mathf.Abs(local.x)-half.x);
+                        float dz = Mathf.Max(0f, Mathf.Abs(local.z)-half.z);
+                        if (dx*dx+dz*dz < 13f*13f)
+                        { Debug.LogError($"BD04: Picket {i+1} route intersects {box.name} at progress {along:F1}.", owner); return false; }
+                    }
+                    for (int j=0;j<i;j++)
+                        if ((positions[j]-p).sqrMagnitude < (DepotVehicleRadius*2f+1f)*(DepotVehicleRadius*2f+1f))
+                        { Debug.LogError($"BD04: Pickets {j+1}/{i+1} clearance at progress {along:F1}.", owner); return false; }
+                }
+            }
             deployAtDepot = true;
             return true;
         }
 
+        private static float DepotSpurFor(int index) => index < 2
+            ? DepotSpur + DepotArc + (index == 0 ? 115f : 103f) - 2f*DepotTurnRadius
+            : DepotSpur + (index >= 4 ? 8f : 0f);
         private float DepotBranch(int index) => distance - (index / 2) * DepotRowSpacing;
         private float DepotTravel(int index) => progress - spacing * index - DepotBranch(index);
         private float MoveLimit
@@ -105,7 +140,7 @@ namespace AirCombat
                 if (!deployAtDepot) return distance;
                 float end = distance;
                 for (int i = 0; i < Count; i++)
-                    end = Mathf.Max(end, DepotBranch(i) + spacing * i + DepotSpur);
+                    end = Mathf.Max(end, DepotBranch(i) + spacing * i + DepotSpurFor(i));
                 return end;
             }
         }
@@ -114,10 +149,21 @@ namespace AirCombat
         {
             Vector3 origin = Sample(DepotBranch(index), out Vector3 axis);
             Vector3 side = Vector3.Cross(Vector3.up, axis) * (index % 2 == 0 ? 1f : -1f);
+            travel = Mathf.Clamp(travel, 0f, DepotSpurFor(index));
+            if (index < 2 && travel > DepotSpur)
+            {
+                // First pair turns along the outside of the warehouse row.
+                float extra = travel - DepotSpur;
+                float a = Mathf.Clamp(extra / DepotTurnRadius, 0f, Mathf.PI*.5f);
+                heading = (side*Mathf.Cos(a)+axis*Mathf.Sin(a)).normalized;
+                return origin + side*(DepotOffset+DepotTurnRadius*Mathf.Sin(a)) +
+                    axis*(DepotTurnRadius+DepotTurnRadius*(1f-Mathf.Cos(a))+Mathf.Max(0f,extra-DepotArc));
+            }
             float angle = Mathf.Clamp(travel / DepotTurnRadius, 0f, Mathf.PI * .5f);
             heading = (axis * Mathf.Cos(angle) + side * Mathf.Sin(angle)).normalized;
+            float lateral = DepotOffset + (index >= 4 ? 8f : 0f);
             return origin + axis * (DepotTurnRadius * Mathf.Sin(angle)) + side *
-                (DepotTurnRadius * (1f - Mathf.Cos(angle)) + Mathf.Clamp(travel - DepotArc, 0f, DepotOffset - DepotTurnRadius));
+                (DepotTurnRadius * (1f - Mathf.Cos(angle)) + Mathf.Clamp(travel - DepotArc, 0f, lateral - DepotTurnRadius));
         }
 
         public int ParkedCount
@@ -183,7 +229,7 @@ namespace AirCombat
         public float HalfLength => spacing * (Count - 1) * .5f;
         public float Speed => ready && progress < distance ? speed : 0f;
 
-        public bool Restart()
+        public bool Restart(float initialProgress = 0f)
         {
             ready = false;
             ClearDestruction();
@@ -196,7 +242,7 @@ namespace AirCombat
                 Dispose();
                 return false;
             }
-            progress = 0f;
+            progress = Mathf.Clamp(initialProgress, 0f, Mathf.Max(0f,distance-101f));
             System.Array.Clear(parked, 0, parked.Length);
             for (int i = 0; i < Count; i++)
             {
@@ -274,7 +320,7 @@ namespace AirCombat
             units[i].transform.SetPositionAndRotation(p, Quaternion.LookRotation(tangent, normal));
             // Stop before unfolding. Allow a small epsilon at the capped final
             // travel distance to avoid a float-rounding stall on the last slot.
-            if (deployAtDepot && !parked[i] && depotTravel >= DepotSpur - .001f)
+            if (deployAtDepot && !parked[i] && depotTravel >= DepotSpurFor(i) - .001f)
             {
                 parked[i] = true;
                 units[i].SetDeploymentTarget(true);

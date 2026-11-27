@@ -30,11 +30,11 @@ namespace AirCombat
             { this.type = type; this.name = name; centre = new Vector2(x,z); }
         }
         private static Slot[] Slots() => new[] {
-            new Slot(0,"WH01 / Warehouse A",-34,50),
-            new Slot(0,"WH01 / Warehouse B",34,56),
-            new Slot(0,"WH01 / Warehouse C",-30,98),
-            new Slot(1,"WH02 / Equipment",34,99),
-            new Slot(2,"WH03 / Supply",5,130)
+            new Slot(0,"WH01 / Warehouse A",-44,65),
+            new Slot(0,"WH01 / Warehouse B",0,65),
+            new Slot(0,"WH01 / Warehouse C",44,65),
+            new Slot(1,"WH02 / Equipment",-30,110),
+            new Slot(2,"WH03 / Supply",29,113)
         };
 
         [MenuItem("Air Combat/Missions/M02 - Install BD03 Forward Base")]
@@ -148,6 +148,80 @@ namespace AirCombat
                 catch { Undo.RevertAllDownToGroup(undo); throw; }
             }
             catch(Exception ex) { Debug.LogError("BD03: "+ex); }
+        }
+
+        [MenuItem("Air Combat/Missions/M02 - Apply BD04 Base Layout and Trial")]
+        private static void ApplyLayoutV2()
+        {
+            if (EditorApplication.isPlayingOrWillChangePlaymode) return;
+            Scene scene = SceneManager.GetActiveScene();
+            if (scene.path != Mission || scene.isDirty)
+            { Debug.LogError("BD04: open and save M02 first."); return; }
+            try
+            {
+                var roots = scene.GetRootGameObjects();
+                var root = roots.Single(r => r.name == RootName);
+                var trial = roots.SelectMany(r => r.GetComponentsInChildren<Mission02RouteTrial>(true)).Single();
+                var serialized = new SerializedObject(trial);
+                var terrain = serialized.FindProperty("convoyTerrain").objectReferenceValue as Terrain;
+                var line = serialized.FindProperty("convoyRoute").objectReferenceValue as LineRenderer;
+                if (terrain == null || terrain.terrainData == null || line == null || line.positionCount < 2)
+                    throw new InvalidOperationException("Missing terrain or route.");
+                var points = new Vector3[line.positionCount]; line.GetPositions(points);
+                for (int i = 0; i < points.Length; i++)
+                { if (!line.useWorldSpace) points[i] = line.transform.TransformPoint(points[i]); points[i].y = 0f; }
+                Vector3 end = points[points.Length-1], delta = end - points[points.Length-2];
+                Vector3 b = trial.PointB; b.y = 0f;
+                if (delta.magnitude <= 380f || (end-b).sqrMagnitude > 1f)
+                    throw new InvalidOperationException("BD04 requires final straight leg >380 and endpoint B.");
+                Quaternion rotation = Quaternion.LookRotation(delta.normalized, Vector3.up);
+                var slots = Slots();
+                if (root.transform.childCount != slots.Length)
+                    throw new InvalidOperationException("Expected five existing BD03 buildings.");
+                var instances = new Transform[slots.Length];
+                Physics.SyncTransforms();
+                for (int i = 0; i < slots.Length; i++)
+                {
+                    var slot = slots[i]; var size = Sizes[slot.type];
+                    var tr = root.transform.Cast<Transform>().SingleOrDefault(t => t.name == slot.name);
+                    var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(Prefabs+Types[slot.type]+".prefab");
+                    if (tr == null || prefab == null || PrefabUtility.GetCorrespondingObjectFromSource(tr.gameObject) != prefab ||
+                        tr.GetComponent<DepotBuildingTarget>() == null || tr.GetComponent<BoxCollider>() == null)
+                        throw new InvalidOperationException("Unexpected building: "+slot.name);
+                    instances[i] = tr;
+                    for (int j = 0; j < i; j++)
+                    {
+                        var other = slots[j]; var os = Sizes[other.type]; var d = slot.centre-other.centre;
+                        if (Mathf.Abs(d.x) < (size.x+os.x)*.5f+8f && Mathf.Abs(d.y) < (size.z+os.z)*.5f+8f)
+                            throw new InvalidOperationException("Building clearance: "+slot.name);
+                    }
+                    slot.world = end+rotation*new Vector3(slot.centre.x,0f,slot.centre.y);
+                    slot.world.y = CheckPad(terrain,trial.OperationBounds,slot.world,rotation,size,slot.name,new List<GameObject>{root});
+                }
+                Undo.IncrementCurrentGroup(); int undo = Undo.GetCurrentGroup();
+                Undo.SetCurrentGroupName("BD04 base layout and trial");
+                try
+                {
+                    for (int i = 0; i < slots.Length; i++)
+                    {
+                        Undo.RecordObject(instances[i], "BD04 move building");
+                        instances[i].SetPositionAndRotation(slots[i].world,rotation);
+                        PrefabUtility.RecordPrefabInstancePropertyModifications(instances[i]);
+                    }
+                    Undo.RecordObject(trial,"BD04 enable trial");
+                    serialized.Update();
+                    serialized.FindProperty("baseDeploymentTrial").boolValue = true;
+                    serialized.FindProperty("baseTrialHoldAircraft").boolValue = true;
+                    serialized.FindProperty("carryallFiringRange").boolValue = false;
+                    serialized.ApplyModifiedProperties();
+                    EditorSceneManager.MarkSceneDirty(scene);
+                    if (!EditorSceneManager.SaveScene(scene)) throw new InvalidOperationException("BD04 save failed.");
+                    Undo.CollapseUndoOperations(undo); Selection.activeGameObject = root;
+                    Debug.Log("BD04: moved five existing buildings. Base Deployment Trial enabled; Play / R.",root);
+                }
+                catch { Undo.RevertAllDownToGroup(undo); throw; }
+            }
+            catch (Exception ex) { Debug.LogError("BD04: "+ex); }
         }
 
         private static bool Intersects(Vector2 a,Vector2 b,Vector2 half)

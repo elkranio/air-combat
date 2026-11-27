@@ -20,6 +20,11 @@ namespace AirCombat
         [Header("CA06 / stationary firing range (R applies)")]
         [SerializeField] private bool carryallFiringRange;
         private bool rangeAimAtCargo;
+        [Header("BD04 / Base deployment trial (R applies)")]
+        [SerializeField] private bool baseDeploymentTrial;
+        [SerializeField] private bool baseTrialHoldAircraft = true;
+        private bool baseTrialActive;
+        private Vector3 depotForward;
         [Header("M02D / Convoy march")]
         [SerializeField] private PicketDeploymentVisual convoyPrefab;
         [SerializeField] private Terrain convoyTerrain;
@@ -112,6 +117,7 @@ namespace AirCombat
             if (!Inside(tail)) { Debug.LogError("M02D: initial tail outside safe area.", this); return false; }
             foreach (var point in points)
                 if (!Inside(point)) { Debug.LogError("M02D: route outside safe area.", this); return false; }
+            depotForward = (points[points.Length-1]-points[points.Length-2]).normalized;
             convoy = new ConvoyMarchPreview(convoyPrefab, convoyTerrain, radar, transform,
                 points, convoySpacing, convoySpeed);
             if (!convoy.EnableDepotDeployment(inset))
@@ -194,14 +200,15 @@ namespace AirCombat
             nurs.ClearRangeAim();
             // Rebuild from current Inspector tuning, even on an in-Play R restart.
             convoy?.Dispose(); convoy = null;
+            baseTrialActive = baseDeploymentTrial && !carryallFiringRange;
             if (carryallFiringRange)
             {
                 EnterCarryallRange();
                 return;
             }
-            if (!BuildConvoy() || !convoy.Restart())
+            if (!BuildConvoy() || !convoy.Restart(baseTrialActive ? Mathf.Max(0f,convoy.RouteLength-230f) : 0f))
             { phase = Phase.Failed; failure = "CONVOY UNAVAILABLE"; return; }
-            escortActive = escortEnabled;
+            escortActive = escortEnabled && !baseTrialActive;
             if (escortActive)
             {
                 if (escortPrefab == null)
@@ -223,7 +230,15 @@ namespace AirCombat
             escortClearedTime = allClearedTime = -1f;
             firstParkedTime = deploymentCompleteTime = -1f;
             failure = null; handover = false; phase = Phase.Ready;
-            if (startAirborne)
+            if (baseTrialActive)
+            {
+                Vector3 p = b - depotForward*55f;
+                p.y = 78f;
+                aircraft.SetPositionAndRotation(p,Quaternion.LookRotation(depotForward,Vector3.up));
+                EnterFlight();
+                if (baseTrialHoldAircraft) flight.enabled = false; // weapons and convoy still tick
+            }
+            else if (startAirborne)
             {
                 Vector3 p = runwayPosition + runwayRotation * Vector3.forward * (flight.CruiseSpeed * 3.6f);
                 p.y = 78f; aircraft.position = p;
@@ -380,7 +395,7 @@ namespace AirCombat
                 return;
             }
             GUI.Box(new Rect(12f, 12f, 490f, 239f), GUIContent.none);
-            GUI.Label(new Rect(22f, 18f, 315f, 22f), $"M02 / {phase}   {elapsed:F1}s airborne", textStyle);
+            GUI.Label(new Rect(22f, 18f, 470f, 22f), baseTrialActive ? $"BD04 BASE TRIAL / {elapsed:F1}s | R retry" : $"M02 / {phase}   {elapsed:F1}s airborne", textStyle);
             GUI.Label(new Rect(22f, 41f, 470f, 22f), twoPartRoute ?
                 $"From W: A {Split(timeA)} | C1 {Split(timeC)} | C2 {Split(timeC2)} | B {Split(timeB)}" :
                 $"From W: A {Split(timeA)} | C {Split(timeC)} | B {Split(timeB)}", textStyle);
