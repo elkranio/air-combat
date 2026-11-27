@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""SAM03 Sentinel V1: fictional low-poly visual asset; Unity Y-up, +Z front.
+"""SAM03 Sentinel V1B: fictional low-poly visual asset; Unity Y-up, +Z front.
 Blender --background --factory-startup --python Tools/Blender/build_sam03_sentinel.py
 Writes deterministic Unity geometry JSON and editable .blend (when bpy is present).
 """
@@ -15,8 +15,15 @@ PALETTE = {
     'Dark': [41, 54, 66], 'Steel': [113, 134, 151],
     'Sensor': [62, 91, 110], 'Mark': [226, 143, 48],
     'Insignia': [219, 229, 235],
+    'BaseHull': [57, 72, 85], 'BaseDeck': [83, 101, 116],
 }
 PARTS = []
+
+def paint_for(group, mat):
+    # Keep original mesh batch names; isolate chassis paint from the turret/pods.
+    if group == 'Fixed':
+        return {'Hull': 'BaseHull', 'Armor': 'BaseDeck'}.get(mat, mat)
+    return mat
 
 def sub(a,b): return tuple(x-y for x,y in zip(a,b))
 def dot(a,b): return sum(x*y for x,y in zip(a,b))
@@ -122,7 +129,7 @@ def main():
     for name,group,mat,v,tris in PARTS:
         b=batches.setdefault((group,mat),[[],[]]); offset=len(b[0]); b[0].extend(v); b[1].extend(i+offset for t in tris for i in t)
     data={'palette':[{'name':k,'rgb':v} for k,v in PALETTE.items()], 'parts':[
-        {'name':group+'_'+mat,'group':group,'material':mat,'vertices':[dict(zip('xyz',p)) for p in v],'triangles':t}
+        {'name':group+'_'+mat,'group':group,'material':paint_for(group,mat),'vertices':[dict(zip('xyz',p)) for p in v],'triangles':t}
         for (group,mat),(v,t) in batches.items()]}
     OUT.parent.mkdir(parents=True,exist_ok=True)
     OUT.write_text(json.dumps(data,separators=(',',':'))+'\n',encoding='utf-8')
@@ -141,7 +148,7 @@ def main():
     for name,group,mat,v,tris in PARTS:
         mesh=bpy.data.meshes.new(name); mesh.from_pydata([(x,-z,y) for x,y,z in v],[],tris)
         assert not mesh.validate(verbose=True), name
-        mesh.update(); mesh.materials.append(materials[mat]); obj=bpy.data.objects.new(name,mesh); collections[group].objects.link(obj)
+        mesh.update(); mesh.materials.append(materials[paint_for(group,mat)]); obj=bpy.data.objects.new(name,mesh); collections[group].objects.link(obj)
         c=center(v); origin=(c[0],-c[2],c[1]); obj.location=origin
         for vert in mesh.vertices:
             for i in range(3): vert.co[i]-=origin[i]

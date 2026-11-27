@@ -42,7 +42,7 @@ namespace AirCombat
                     data.parts.Select(p => p.name).Distinct().Count() != data.parts.Length ||
                     data.palette.Select(p => p.name).Distinct().Count() != data.palette.Length ||
                     data.palette.Any(p => p.rgb == null || p.rgb.Length != 3 || p.rgb.Any(c => c < 0 || c > 255)) ||
-                    data.parts.Any(p => !Groups.Contains(p.group) || p.name != p.group + "_" + p.material ||
+                    data.parts.Any(p => !Groups.Contains(p.group) || !HasStableBatchName(p) ||
                         p.vertices == null || p.triangles == null || p.triangles.Length == 0 || p.triangles.Length % 3 != 0 ||
                         p.triangles.Any(i => i < 0 || i >= p.vertices.Length) || !data.palette.Any(m => m.name == p.material)))
                     throw new InvalidOperationException("Invalid SAM03 geometry, palette or URP shader.");
@@ -116,10 +116,21 @@ namespace AirCombat
                 }
                 Selection.activeGameObject = instance;
                 SceneView.lastActiveSceneView?.FrameSelected();
-                Debug.Log("SAM03 V1 visual only. Preview selected; save Sandbox if desired. No gameplay components added.", instance);
+                Debug.Log("SAM03 V1B visual only. Preview selected; save Sandbox if desired. No gameplay components added.", instance);
             }
             catch (Exception ex) { Debug.LogError("SAM03: " + ex); }
             finally { if (model != null) Object.DestroyImmediate(model); }
+        }
+
+        // Chassis paint is independent, but its existing mesh/object paths are retained.
+        private static bool HasStableBatchName(Part part)
+        {
+            if (part.group == "Fixed")
+            {
+                if (part.material == "BaseHull") return part.name == "Fixed_Hull";
+                if (part.material == "BaseDeck") return part.name == "Fixed_Armor";
+            }
+            return part.name == part.group + "_" + part.material;
         }
 
         private static Transform Child(Transform parent, string name)
