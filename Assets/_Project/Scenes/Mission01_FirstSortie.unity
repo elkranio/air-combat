@@ -21903,19 +21903,19 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 5873373495131327965, guid: d5110f3e56ef9894c825455424d41a82, type: 3}
       propertyPath: m_LocalRotation.w
-      value: 1
+      value: 0.81458404
       objectReference: {fileID: 0}
     - target: {fileID: 5873373495131327965, guid: d5110f3e56ef9894c825455424d41a82, type: 3}
       propertyPath: m_LocalRotation.x
-      value: 0
+      value: 0.37984678
       objectReference: {fileID: 0}
     - target: {fileID: 5873373495131327965, guid: d5110f3e56ef9894c825455424d41a82, type: 3}
       propertyPath: m_LocalRotation.y
-      value: 0
+      value: 0.39729918
       objectReference: {fileID: 0}
     - target: {fileID: 5873373495131327965, guid: d5110f3e56ef9894c825455424d41a82, type: 3}
       propertyPath: m_LocalRotation.z
-      value: 0
+      value: -0.18526365
       objectReference: {fileID: 0}
     - target: {fileID: 5873373495131327965, guid: d5110f3e56ef9894c825455424d41a82, type: 3}
       propertyPath: m_LocalEulerAnglesHint.x
@@ -44449,10 +44449,6 @@ MonoBehaviour:
   airContacts: []
   resetHalfExtent: 850
   altitudeComparison: 0
-  tightTurnSpeed: 35
-  boostTurnMultiplier: 0.6
-  tightTurnMultiplier: 2
-  maneuverResponse: 140
 --- !u!4 &2020064467
 Transform:
   m_ObjectHideFlags: 0
@@ -44525,6 +44521,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::AirCombat.TacticalMapView
   map: {fileID: 11400000, guid: 7247b9d3e02c67c48bbd944b8f9ce148, type: 2}
+  autoBakeMap: 1
   player: {fileID: 1109986514}
   missionTitle: FIRST SORTIE
   plannedSam:
@@ -44583,15 +44580,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::AirCombat.Mission01EngineAudio
   flight: {fileID: 1109986520}
-  cruiseLoop: {fileID: 8300000, guid: e781bafdb5ef9f9489ceb8dd6831ed3b, type: 3}
-  boostLoop: {fileID: 8300000, guid: 84d2506ee0f0a664f8426711bd4cb12b, type: 3}
-  idleVolume: 0.16
-  cruiseVolume: 0.38
-  boostVolume: 0.55
-  attackSeconds: 0.22
-  releaseSeconds: 0.35
-  cruisePitch: 1
-  boostPitch: 1
+  profile: {fileID: 11400000, guid: 7d5e7f0afc79418a9dbce90b3b0dcf41, type: 2}
 --- !u!1 &2024757286
 GameObject:
   m_ObjectHideFlags: 0

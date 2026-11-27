@@ -40,8 +40,7 @@ namespace AirCombat
                 var hudPrefab = Load<GameObject>("Prefabs/UI/CombatHUD.prefab");
                 var lightPrefab = Load<GameObject>("Prefabs/Environment/CombatLightingRig.prefab");
                 var missile = Load<GameObject>("Art/Weapons/Missile.prefab").GetComponent<MissileProjectile>();
-                var cruise = Load<AudioClip>("Art/Aircraft/Audio/Lynx_Engine_Cruise.wav");
-                var boost = Load<AudioClip>("Art/Aircraft/Audio/Lynx_Engine_Boost.wav");
+                var audioProfile = Load<MissionEngineAudioProfile>("Settings/Lynx_EngineAudio.asset");
                 var shader = Shader.Find("Universal Render Pipeline/Lit");
                 if (shader == null || missile == null || playerPrefab.GetComponent<JetAssembly>() == null ||
                     playerPrefab.GetComponent<MissionCheats>() == null || cameraPrefab.GetComponent<CombatCameraRig>() == null ||
@@ -55,10 +54,9 @@ namespace AirCombat
                 var ground = CreateGround(shader);
                 var airfield = Place(basePrefab, scene, "M03 / Trident airfield");
                 Transform pavement = FindPavement(airfield);
-                // Keep the existing airfield geometry. Align its actual runway to
-                // northeast (45 degrees), then place the center at the SVG v0 home coordinates.
+                // Align only on first creation; never change the existing scene.
                 float yaw = Mathf.Atan2(pavement.forward.x, pavement.forward.z) * Mathf.Rad2Deg;
-                airfield.transform.rotation = Quaternion.AngleAxis(45f - yaw, Vector3.up) * airfield.transform.rotation;
+                airfield.transform.rotation = Quaternion.AngleAxis(Mission03FriendlyAirfieldAuthoring.RunwayHeading - yaw, Vector3.up) * airfield.transform.rotation;
                 Vector3 center = pavement.TransformPoint(new Vector3(125f, 0f, 0f));
                 airfield.transform.position += new Vector3(Home.x - center.x, 0f, Home.y - center.z);
                 var runway = new GameObject("M03 / friendly runway center").transform;
@@ -80,13 +78,13 @@ namespace AirCombat
                 session.Configure(player.GetComponent<JetAssembly>(), camera, 1500f);
                 session.ConfigureHud(hud, Array.Empty<RadarAirContact>());
                 missionRoot.AddComponent<Mission01EngineAudio>().ConfigureForAuthoring(
-                    player.GetComponent<FlightController>(), cruise, boost);
+                    player.GetComponent<FlightController>(), audioProfile);
                 var map = missionRoot.AddComponent<TacticalMapView>();
                 map.ConfigureForAuthoring(null, player.transform, Array.Empty<TacticalMapView.PlannedSam>(),
                     Array.Empty<Transform>(), null, "SPARROW INTERCEPTION");
                 AssetDatabase.SaveAssets();
                 if (!EditorSceneManager.SaveScene(scene, ScenePath)) throw new IOException("Could not save M03 scene.");
-                Mission03AutoMap.Refresh(mission, map, true);
+                MissionAutoMap.Refresh(map, true);
                 if (!EditorSceneManager.SaveScene(scene)) throw new IOException("Could not save M03 map reference.");
                 Selection.activeGameObject = player;
                 Debug.Log("M03 foundation created. W takeoff, TAB map, R retry. Mission Cheats are on Lynx. M01/M02 untouched.");

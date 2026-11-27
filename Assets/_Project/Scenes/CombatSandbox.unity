@@ -2236,19 +2236,19 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 5873373495131327965, guid: d5110f3e56ef9894c825455424d41a82, type: 3}
       propertyPath: m_LocalRotation.w
-      value: 1
+      value: 0.81458404
       objectReference: {fileID: 0}
     - target: {fileID: 5873373495131327965, guid: d5110f3e56ef9894c825455424d41a82, type: 3}
       propertyPath: m_LocalRotation.x
-      value: 0
+      value: 0.37984678
       objectReference: {fileID: 0}
     - target: {fileID: 5873373495131327965, guid: d5110f3e56ef9894c825455424d41a82, type: 3}
       propertyPath: m_LocalRotation.y
-      value: 0
+      value: 0.39729918
       objectReference: {fileID: 0}
     - target: {fileID: 5873373495131327965, guid: d5110f3e56ef9894c825455424d41a82, type: 3}
       propertyPath: m_LocalRotation.z
-      value: 0
+      value: -0.18526365
       objectReference: {fileID: 0}
     - target: {fileID: 5873373495131327965, guid: d5110f3e56ef9894c825455424d41a82, type: 3}
       propertyPath: m_LocalEulerAnglesHint.x
@@ -2261,18 +2261,6 @@ PrefabInstance:
     - target: {fileID: 5873373495131327965, guid: d5110f3e56ef9894c825455424d41a82, type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 7445552645641753148, guid: d5110f3e56ef9894c825455424d41a82, type: 3}
-      propertyPath: azimuth
-      value: 52
-      objectReference: {fileID: 0}
-    - target: {fileID: 7445552645641753148, guid: d5110f3e56ef9894c825455424d41a82, type: 3}
-      propertyPath: pipeline
-      value: 
-      objectReference: {fileID: 11400000, guid: 0f5a2e57d1598de438328dc96c0345c6, type: 2}
-    - target: {fileID: 7445552645641753148, guid: d5110f3e56ef9894c825455424d41a82, type: 3}
-      propertyPath: elevationOffset
-      value: -15
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -3199,10 +3187,6 @@ MonoBehaviour:
   - {fileID: 474682792}
   resetHalfExtent: 850
   altitudeComparison: 1
-  tightTurnSpeed: 35
-  boostTurnMultiplier: 0.6
-  tightTurnMultiplier: 2
-  maneuverResponse: 140
 --- !u!4 &2020064467
 Transform:
   m_ObjectHideFlags: 0

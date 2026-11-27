@@ -10,6 +10,8 @@ namespace AirCombat
     // Update the existing scene without rebuilding the foundation.
     internal static class Mission03FriendlyAirfieldAuthoring
     {
+        internal const float RunwayHeading = 45f;
+
         [MenuItem("Air Combat/Missions/M03 - Rotate Friendly Airfield")]
         private static void RotateFriendlyAirfield()
         {
@@ -36,7 +38,7 @@ namespace AirCombat
             var anchor = pavement.TransformPoint(new Vector3(125f, 0f, 0f));
             float yaw = Mathf.Atan2(pavement.forward.x, pavement.forward.z) * Mathf.Rad2Deg;
             Undo.RecordObjects(new UnityEngine.Object[] { airfield, runway, player, camera }, "Rotate M03 friendly airfield");
-            airfield.rotation = Quaternion.AngleAxis(45f - yaw, Vector3.up) * airfield.rotation;
+            airfield.rotation = Quaternion.AngleAxis(RunwayHeading - yaw, Vector3.up) * airfield.rotation;
             airfield.position += anchor - pavement.TransformPoint(new Vector3(125f, 0f, 0f));
             runway.SetPositionAndRotation(anchor, Quaternion.LookRotation(pavement.forward, Vector3.up));
             Vector3 spawn = pavement.TransformPoint(new Vector3(125f, 0f, -92f));
@@ -46,7 +48,7 @@ namespace AirCombat
             foreach (var t in new[] { airfield, runway, player, camera })
                 PrefabUtility.RecordPrefabInstancePropertyModifications(t);
             EditorSceneManager.MarkSceneDirty(scene);
-            Mission03AutoMap.Refresh(mission, map, true);
+            MissionAutoMap.Refresh(map, true);
             Debug.Log("M03 friendly airfield: northeast (45 degrees). Save the scene; auto-map will reuse or refresh on Play.");
         }
     }

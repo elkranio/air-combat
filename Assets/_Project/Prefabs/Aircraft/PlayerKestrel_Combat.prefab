@@ -63,6 +63,10 @@ MonoBehaviour:
   turnRate: 125
   maxBank: 40
   bankRate: 160
+  tightSpeed: 35
+  boostTurnMultiplier: 0.6
+  tightTurnMultiplier: 2
+  maneuverResponse: 140
 --- !u!114 &296407285340714469
 MonoBehaviour:
   m_ObjectHideFlags: 0

@@ -26,22 +26,18 @@ namespace AirCombat
         private MissionCheats cheats;
         private AircraftMotor motor;
         private bool waitForBoostRelease;
-        private float tightSpeed = 35f, boostTurnMultiplier = .6f, tightTurnMultiplier = 2f, maneuverResponse = 140f;
 
-        // The flight session supplies authored maneuverability tuning.
-        public void ConfigureVariableManeuverability(float slowSpeed, float boostTurn,
-            float tightTurn, float response)
-        {
-            tightSpeed = Mathf.Clamp(slowSpeed, minSpeed, cruiseSpeed);
-            boostTurnMultiplier = Mathf.Max(.01f, boostTurn);
-            tightTurnMultiplier = Mathf.Max(.01f, tightTurn);
-            maneuverResponse = Mathf.Max(.1f, response);
-        }
+        [Header("Powered maneuverability")]
+        [SerializeField, Min(.1f)] private float tightSpeed = 35f;
+        [SerializeField, Range(.1f, 1f)] private float boostTurnMultiplier = .6f;
+        [SerializeField, Min(1f)] private float tightTurnMultiplier = 2f;
+        [SerializeField, Min(.1f)] private float maneuverResponse = 140f;
 
         private void OnValidate()
         {
             cruiseSpeed = Mathf.Max(minSpeed, cruiseSpeed);
             maxSpeed = Mathf.Max(cruiseSpeed, maxSpeed);
+            tightSpeed = Mathf.Clamp(tightSpeed, minSpeed, cruiseSpeed);
         }
 
         private void Awake()
@@ -83,7 +79,7 @@ namespace AirCombat
             float accel = maneuverResponse;
             if (powered && tightHeld)
             {
-                target = tightSpeed;
+                target = Mathf.Clamp(tightSpeed, minSpeed, cruiseSpeed);
                 yaw *= tightTurnMultiplier;
             }
             else if (powered && boostHeld)

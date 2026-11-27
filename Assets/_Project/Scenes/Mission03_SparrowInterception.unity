@@ -145,19 +145,19 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 5873373495131327965, guid: d5110f3e56ef9894c825455424d41a82, type: 3}
       propertyPath: m_LocalRotation.w
-      value: 0.89400536
+      value: 0.81458404
       objectReference: {fileID: 0}
     - target: {fileID: 5873373495131327965, guid: d5110f3e56ef9894c825455424d41a82, type: 3}
       propertyPath: m_LocalRotation.x
-      value: 0.30783072
+      value: 0.37984678
       objectReference: {fileID: 0}
     - target: {fileID: 5873373495131327965, guid: d5110f3e56ef9894c825455424d41a82, type: 3}
       propertyPath: m_LocalRotation.y
-      value: -0.30783072
+      value: 0.39729918
       objectReference: {fileID: 0}
     - target: {fileID: 5873373495131327965, guid: d5110f3e56ef9894c825455424d41a82, type: 3}
       propertyPath: m_LocalRotation.z
-      value: 0.10599461
+      value: -0.18526365
       objectReference: {fileID: 0}
     - target: {fileID: 5873373495131327965, guid: d5110f3e56ef9894c825455424d41a82, type: 3}
       propertyPath: m_LocalEulerAnglesHint.x
@@ -454,6 +454,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::AirCombat.TacticalMapView
   map: {fileID: 11400000, guid: 83c745c1f2117f4468b93b3a10eca085, type: 2}
+  autoBakeMap: 1
   player: {fileID: 1125634139}
   missionTitle: SPARROW INTERCEPTION
   plannedSam: []
@@ -472,15 +473,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::AirCombat.Mission01EngineAudio
   flight: {fileID: 1125634140}
-  cruiseLoop: {fileID: 8300000, guid: e781bafdb5ef9f9489ceb8dd6831ed3b, type: 3}
-  boostLoop: {fileID: 8300000, guid: 84d2506ee0f0a664f8426711bd4cb12b, type: 3}
-  idleVolume: 0.16
-  cruiseVolume: 0.38
-  boostVolume: 0.55
-  attackSeconds: 0.22
-  releaseSeconds: 0.35
-  cruisePitch: 1
-  boostPitch: 1
+  profile: {fileID: 11400000, guid: 7d5e7f0afc79418a9dbce90b3b0dcf41, type: 2}
 --- !u!114 &1432029453
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -499,10 +492,6 @@ MonoBehaviour:
   airContacts: []
   resetHalfExtent: 1500
   altitudeComparison: 0
-  tightTurnSpeed: 35
-  boostTurnMultiplier: 0.6
-  tightTurnMultiplier: 2
-  maneuverResponse: 140
 --- !u!114 &1432029454
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -526,7 +515,6 @@ MonoBehaviour:
     width: 3000
     height: 2400
   cruiseAltitude: 78
-  autoBakeMap: 1
 --- !u!4 &1432029455
 Transform:
   m_ObjectHideFlags: 0

@@ -15,13 +15,11 @@ namespace AirCombat
         [SerializeField] private MissileProjectile missilePrefab;
         [SerializeField] private Rect operationBounds = new Rect(-1500f, -1200f, 3000f, 2400f);
         [SerializeField, Min(1f)] private float cruiseAltitude = 78f;
-        [SerializeField] private bool autoBakeMap = true;
 
         public Renderer MapGround => ground;
         public Transform MapRunway => runway;
         public Rect OperationBounds => operationBounds;
         public float CruiseAltitude => cruiseAltitude;
-        public bool AutoBakeMap => autoBakeMap;
         internal MissionBoundaryGuard Boundary => boundary;
         public bool FlightActive => phase == Phase.Flight;
 

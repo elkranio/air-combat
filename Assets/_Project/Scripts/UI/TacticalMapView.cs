@@ -23,6 +23,7 @@ namespace AirCombat
                 (Launcher == null || Launcher.IsRadarVisible);
         }
         [SerializeField] private MissionMapData map;
+        [SerializeField] private bool autoBakeMap = true;
         [SerializeField] private Transform player;
         [SerializeField] private string missionTitle = "FIRST SORTIE";
         [SerializeField] private PlannedSam[] plannedSam = Array.Empty<PlannedSam>();
@@ -50,6 +51,7 @@ namespace AirCombat
         private bool HasMap => map != null && map.Geography != null && map.WorldBounds.width > 0 && map.WorldBounds.height > 0 && player != null;
 
 #if UNITY_EDITOR
+        public bool AutoBakeMap => autoBakeMap;
         public MissionMapData GeographyData => map;
         public void SetGeographyForAuthoring(MissionMapData data) => map = data;
 

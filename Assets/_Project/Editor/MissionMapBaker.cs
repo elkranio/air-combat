@@ -45,34 +45,10 @@ namespace AirCombat
             string guid = AssetDatabase.AssetPathToGUID(scene.path);
             if (!force && boundScene == guid) return;
             boundScene = guid; status = null;
-            var roots = scene.GetRootGameObjects();
-            // Convenience discovery only. Other missions can assign their own
-            // ground and airfield references without a code change.
-            ground = roots.FirstOrDefault(g => g.name == "Mission01 / Faceted surface")?.GetComponent<Renderer>();
-            var baseRoot = roots.FirstOrDefault(g => g.name == "Mission01 / Airfield");
-            airfield = baseRoot != null ? baseRoot.GetComponentsInChildren<Transform>(true)
-                .FirstOrDefault(t => t.name == "Runway and apron") ?? baseRoot.transform : null;
-            var launch = roots.SelectMany(g => g.GetComponentsInChildren<Mission01LaunchSequence>(true)).FirstOrDefault();
-            if (roots.Any(g => g.GetComponent<Mission02RouteTrial>() != null))
-            {
-                ground = roots.FirstOrDefault(g => g.name == "M02 / visible sand")?.GetComponent<Renderer>();
-                airfield = roots.SelectMany(g => g.GetComponentsInChildren<JetAssembly>(true))
-                    .FirstOrDefault()?.transform;
-            }
-            altitude = 78f;
-            if (launch != null)
-            {
-                var property = new SerializedObject(launch).FindProperty("cruiseAltitude");
-                if (property != null) altitude = property.floatValue;
-            }
             data = AssetDatabase.LoadAssetAtPath<MissionMapData>(AssetPath(scene));
-            if (launch == null && data != null) altitude = data.SectionAltitude;
-            var mission03 = roots.SelectMany(g => g.GetComponentsInChildren<Mission03Flight>(true)).SingleOrDefault();
-            if (mission03 != null)
-            {
-                ground = mission03.MapGround; airfield = mission03.MapRunway;
-                altitude = mission03.CruiseAltitude;
-            }
+            if (!MissionAutoMap.TryResolve(scene, out ground, out airfield, out altitude))
+                altitude = data != null ? data.SectionAltitude : 78f;
+            // The manual window still permits explicit ground/runway selection.
         }
 
         private static string AssetPath(Scene scene)
@@ -136,12 +112,12 @@ namespace AirCombat
         }
 
         // Explicit authoring entry point; shares the same raster/asset pipeline as the window.
-        internal static MissionMapData BakeForRouteTrial(Scene scene, Renderer surface, Transform runway)
+        internal static MissionMapData BakeForRouteTrial(Scene scene, Renderer surface, Transform runway, float sectionAltitude = 78f)
         {
             var baker = CreateInstance<MissionMapBaker>();
             try
             {
-                baker.ground = surface; baker.airfield = runway; baker.altitude = 78f;
+                baker.ground = surface; baker.airfield = runway; baker.altitude = sectionAltitude;
                 baker.Bake(scene);
                 return baker.data;
             }

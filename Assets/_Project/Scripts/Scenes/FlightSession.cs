@@ -16,12 +16,6 @@ namespace AirCombat
         [SerializeField, Min(100f)] private float resetHalfExtent = 850f;
         [SerializeField] private bool altitudeComparison; // E1c only, disabled in other scenes.
 
-        [Header("FLIGHT-02 / Variable maneuverability")]
-        [SerializeField, Min(.1f)] private float tightTurnSpeed = 35f;
-        [SerializeField, Range(.1f, 1f)] private float boostTurnMultiplier = .6f;
-        [SerializeField, Min(1f)] private float tightTurnMultiplier = 2f;
-        [SerializeField, Min(.1f)] private float maneuverResponse = 140f;
-
         private IFlightSessionEncounter encounter;
         private FlightController flight;
         private Afterburner boost;
@@ -70,8 +64,6 @@ namespace AirCombat
 
             spawnPosition = player.transform.position;
             spawnRotation = player.transform.rotation;
-            flight.ConfigureVariableManeuverability(tightTurnSpeed, boostTurnMultiplier,
-                tightTurnMultiplier, maneuverResponse);
             cameraRig.BindPlayer(player.transform, boost, false);
 
             encounter = GetComponent<IFlightSessionEncounter>();

@@ -16,41 +16,32 @@ namespace AirCombat
     public sealed class Mission01EngineAudio : MonoBehaviour
     {
         [SerializeField] private FlightController flight;
-        [SerializeField] private AudioClip cruiseLoop;
-        [SerializeField] private AudioClip boostLoop;
-        [Header("Mix (v0)")]
-        [SerializeField, Range(0f, 1f)] private float idleVolume = .16f;
-        [SerializeField, Range(0f, 1f)] private float cruiseVolume = .38f;
-        [SerializeField, Range(0f, 1f)] private float boostVolume = .55f;
-        [SerializeField, Min(.02f)] private float attackSeconds = .22f;
-        [SerializeField, Min(.02f)] private float releaseSeconds = .35f;
-        [SerializeField, Range(.5f, 2f)] private float cruisePitch = 1f;
-        [SerializeField, Range(.5f, 2f)] private float boostPitch = 1f;
+        [SerializeField] private MissionEngineAudioProfile profile;
         private IPlayerEngineAudioContext context;
         private Afterburner boost;
         private AudioSource engine, thrust;
         private float blend, engineLevel, pitch;
 
 #if UNITY_EDITOR
-        public void ConfigureForAuthoring(FlightController player, AudioClip cruise, AudioClip afterburner)
-        { flight = player; cruiseLoop = cruise; boostLoop = afterburner; }
+        public void ConfigureForAuthoring(FlightController player, MissionEngineAudioProfile sharedProfile)
+        { flight = player; profile = sharedProfile; }
 #endif
 
         private void Awake()
         {
             context = GetComponent<IPlayerEngineAudioContext>();
             if (flight == null && context != null) flight = context.EngineAudioFlight;
-            if (context == null || flight == null || cruiseLoop == null || boostLoop == null)
+            if (context == null || flight == null || profile == null || profile.cruiseLoop == null || profile.boostLoop == null)
             {
-                Debug.LogWarning("AUD-01: missing player or engine clips; run the engine audio installer.", this);
+                Debug.LogWarning("Engine audio: missing player or shared engine profile.", this);
                 enabled = false;
                 return;
             }
             boost = flight.GetComponent<Afterburner>();
             if (boost == null) { enabled = false; return; }
-            engine = CreateSource("Cruise engine", cruiseLoop);
-            thrust = CreateSource("Afterburner engine", boostLoop);
-            pitch = cruisePitch;
+            engine = CreateSource("Cruise engine", profile.cruiseLoop);
+            thrust = CreateSource("Afterburner engine", profile.boostLoop);
+            pitch = profile.cruisePitch;
         }
 
         private AudioSource CreateSource(string objectName, AudioClip clip)
@@ -85,13 +76,13 @@ namespace AirCombat
             float targetBlend = powered ? 1f : 0f;
             float dt = Time.deltaTime;
             blend = Mathf.MoveTowards(blend, targetBlend, dt / Mathf.Max(.02f,
-                powered ? attackSeconds : releaseSeconds));
-            float targetLevel = phase == PlayerEnginePhase.Ready ? idleVolume :
-                phase == PlayerEnginePhase.Landing ? Mathf.Lerp(idleVolume, cruiseVolume, .35f) : cruiseVolume;
+                powered ? profile.attackSeconds : profile.releaseSeconds));
+            float targetLevel = phase == PlayerEnginePhase.Ready ? profile.idleVolume :
+                phase == PlayerEnginePhase.Landing ? Mathf.Lerp(profile.idleVolume, profile.cruiseVolume, .35f) : profile.cruiseVolume;
             engineLevel = Mathf.MoveTowards(engineLevel, targetLevel, dt / .3f);
             // Pitch follows the actual motor speed, not the key or debug travel.
             float ratio = flying ? flight.CurrentSpeed / Mathf.Max(1f, flight.CruiseSpeed) : 1f;
-            float targetPitch = cruisePitch * (takingOff ? 1.06f : flying ? Mathf.Clamp(1f + (ratio - 1f) * .12f, .9f, 1.12f) : .9f);
+            float targetPitch = profile.cruisePitch * (takingOff ? 1.06f : flying ? Mathf.Clamp(1f + (ratio - 1f) * .12f, .9f, 1.12f) : .9f);
             pitch = Mathf.MoveTowards(pitch, targetPitch, dt * .65f);
             // Replace the cruise sound with the boost sound instead of layering them.
             // Both loops keep their playback heads running; only the short transition
@@ -99,8 +90,8 @@ namespace AirCombat
             float mix = Mathf.SmoothStep(0f, 1f, blend);
             engine.volume = engineLevel * (1f - mix);
             engine.pitch = pitch;
-            thrust.volume = boostVolume * mix;
-            thrust.pitch = boostPitch;
+            thrust.volume = profile.boostVolume * mix;
+            thrust.pitch = profile.boostPitch;
         }
 
         private void StopLoops()
@@ -108,7 +99,7 @@ namespace AirCombat
             if (engine != null) { engine.Stop(); engine.volume = 0f; }
             if (thrust != null) { thrust.Stop(); thrust.volume = 0f; }
             blend = engineLevel = 0f;
-            pitch = cruisePitch;
+            pitch = profile != null ? profile.cruisePitch : 1f;
         }
 
         private void OnDisable() => StopLoops();
