@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""PG03 V1: stylized low-poly power-grid prop. Unity +Y up, +Z front.
+"""PG03 V1B: stylized low-poly power-grid prop. Unity +Y up, +Z front.
 Plain Python regenerates Unity geometry; Blender also saves editable source.
 """
 import json
@@ -82,14 +82,17 @@ slab('Lid','Body','Lid',0,0,5.66,6.0,18.3,11.7,.85,top=.96)
 for s, centers in [(-1, (0,)), (1, (-3.35, 3.35))]:
     for z in centers:
         length = 9.6 if s < 0 else 4.35
-        box('Cooling housing','Cooling','Dark',s*10.25,3.1,z,2.45,3.5,length)
+        # Keep the housing underside above the fin bottoms: no coincident faces.
+        box('Cooling housing','Cooling','Dark',s*10.25,3.175,z,2.45,3.35,length)
         positions = (-3.9,-1.95,0,1.95,3.9) if s < 0 else (-1.12,1.12)
         for dz in positions:
             slab('Cooling panel','Cooling','Steel',s*10.7,z+dz,1.35,4.98,3.6,1.35,.22,top=.94)
             box('Cooling panel cap','Cooling','Hull',s*10.7,5.05,z+dz,3.25,.18,1.12)
         box('Upper rail','Cooling','Steel',s*11.6,5.25,z,.48,.32,length-.3)
-        for dz in (-length/2+.18,length/2-.18):
-            box('Bank end cap','Cooling','Hull',s*10.3,3.16,z+dz,2.75,3.5,.36)
+        # Caps overlap the housing internally but project past its end plane.
+        # Leave clearance to the outermost fin rather than sharing a face.
+        for dz in (-length/2-.04,length/2+.04):
+            box('Bank end cap','Cooling','Hull',s*10.3,3.16,z+dz,2.75,3.5,.44)
 # Wider crown spacing and a shallow second row give the roof a distinct rhythm.
 for x in (-5.6,0,5.6):
     for z,h,r,n in [(2.0,3.55,1.08,4),(-1.1,1.55,.76,2)]:
