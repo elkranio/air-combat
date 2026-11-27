@@ -567,7 +567,7 @@ namespace AirCombat
                 {
                     if (mothDemoSite == null) return;
                     mothDemoSite.ResetTarget();
-                    Vector3 start = mothDemoSite.transform.position + new Vector3(-185f, 0f, -40f);
+                    Vector3 start = mothDemoSite.transform.position + new Vector3(-250f, 0f, 0f);
                     start.y = player.transform.position.y;
                     player.transform.SetPositionAndRotation(start, Quaternion.Euler(0f, 90f, 0f));
                     playerFlight.PrepareCruiseHandover();
