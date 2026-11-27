@@ -13,16 +13,19 @@ namespace AirCombat
         private readonly float interval;
         private readonly float lateralSpread;
         private readonly ArcadeMissileLauncher aam;
+        private readonly bool diveTrial;
         private float safeExtent;
         private readonly List<CruiseMissileTarget> live = new List<CruiseMissileTarget>();
         private Vector3[] route;
         private float nextSpawn;
-        private int spawned, destroyed, escaped;
+        private int spawned, destroyed, escaped, diveIntercepted, impacts;
         private bool running;
 
         public InterceptionPlayground(CruiseMissileTarget prefab, AircraftRadar radar,
-            CombatHitFeedback feedback, ArcadeMissileLauncher aam, int count, float interval, float lateralSpread)
+            CombatHitFeedback feedback, ArcadeMissileLauncher aam, int count, float interval, float lateralSpread,
+            bool diveTrial = false)
         {
+            this.diveTrial = diveTrial;
             this.prefab = prefab;
             this.radar = radar;
             this.feedback = feedback;
@@ -32,17 +35,20 @@ namespace AirCombat
             this.aam = aam;
         }
 
-        public string DebugStatus => $"Sparrow {destroyed}/{count} DOWN   {escaped} ESCAPED   {live.Count} LIVE";
+        public string DebugStatus => diveTrial
+            ? $"DIVE / {destroyed}/{count} DOWN / {diveIntercepted} DIVE SAVES / {impacts} IMPACTS / {live.Count} LIVE"
+            : $"Sparrow {destroyed}/{count} DOWN   {escaped} ESCAPED   {live.Count} LIVE";
 
         public void Restart(Vector3 origin, float boundary, float now)
         {
             Clear();
-            spawned = destroyed = escaped = 0;
+            spawned = destroyed = escaped = diveIntercepted = impacts = 0;
             float safe = safeExtent = Mathf.Max(50f, boundary - 65f);
             // Simple straight authoring-test lane across the map, at combat altitude.
             float z = Mathf.Clamp(origin.z + 100f, -safe, safe);
-            float startX = Mathf.Clamp(origin.x - 200f, -safe, safe - 50f);
-            route = new[] { new Vector3(startX, origin.y, z), new Vector3(safe, origin.y, z) };
+            float endX = diveTrial ? Mathf.Clamp(origin.x + 160f, -safe + 50f, Mathf.Max(-safe + 50f, safe - 150f)) : safe;
+            float startX = Mathf.Clamp(origin.x - 200f, -safe, endX - 50f);
+            route = new[] { new Vector3(startX, origin.y, z), new Vector3(endX, origin.y, z) };
             nextSpawn = now;
             running = true;
             Tick(now, 0f);
@@ -58,12 +64,27 @@ namespace AirCombat
                 if (!target.Alive)
                 {
                     destroyed++;
+                    if (target.IsDiving) diveIntercepted++;
                     if (feedback != null) feedback.EmitInterceptionBurst(target.transform.position, target.transform.forward);
                     Remove(i);
                     continue;
                 }
                 target.Tick(dt);
-                if (target.Finished) { escaped++; Remove(i); }
+                if (!target.Finished) continue;
+                if (diveTrial && !target.IsDiving)
+                {
+                    // Remove the seeker entry immediately, not the live target.
+                    aam?.Unregister(target);
+                    target.BeginDive();
+                    continue;
+                }
+                if (diveTrial)
+                {
+                    impacts++;
+                    feedback?.EmitInterceptionBurst(target.transform.position, target.transform.forward);
+                }
+                else escaped++;
+                Remove(i);
             }
             // At most one spawn per frame: no overlapping catch-up batch after a stall.
             if (spawned < count && now >= nextSpawn)

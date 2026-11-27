@@ -79,6 +79,7 @@ namespace AirCombat
         [SerializeField, Min(1)] private int interceptionCount = 10;
         [SerializeField, Min(.1f)] private float interceptionInterval = .7f;
         [SerializeField, Min(0f)] private float interceptionLateralSpread = 60f;
+        [SerializeField] private bool interceptionDiveTrial;
         private InterceptionPlayground interception;
         private bool interceptionMode;
         private ArcadeNursLauncher nursLauncher;
@@ -275,7 +276,7 @@ namespace AirCombat
             }
             if (interceptionMode)
                 interception = new InterceptionPlayground(sparrowPrefab, radar, hitFeedback,
-                    missileLauncher, interceptionCount, interceptionInterval, interceptionLateralSpread);
+                    missileLauncher, interceptionCount, interceptionInterval, interceptionLateralSpread, interceptionDiveTrial);
             if (interceptorMode)
             {
                 foreach (var root in gameObject.scene.GetRootGameObjects())
@@ -746,7 +747,8 @@ namespace AirCombat
             }
             if (interceptionMode && !defeated && Event.current.type == EventType.Repaint && interception != null)
             {
-                var counter = new Rect((Screen.width - 340f) * .5f, 12f, 340f, 30f);
+                float width = Mathf.Min(interceptionDiveTrial ? 640f : 340f, Screen.width - 24f);
+                var counter = new Rect((Screen.width - width) * .5f, 12f, width, 30f);
                 GUI.Box(counter, interception.DebugStatus);
             }
             if ((!victory && !defeated && !EscortCleared) || Event.current.type != EventType.Repaint) return;

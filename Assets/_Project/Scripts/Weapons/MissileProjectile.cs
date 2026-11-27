@@ -90,6 +90,14 @@ namespace AirCombat
             var from = transform.position;
             bool hasTarget = target != null && target.gameObject.activeInHierarchy;
             if (arcadeExhaust != null && !WeaponLock.Alive(arcadeTarget)) hasTarget = false;
+            // Opt-in presentation for the fictional Sparrow dive only. The
+            // original horizontal AAM steering and budget remain unchanged.
+            bool followDive = hasTarget && arcadeTarget is CruiseMissileTarget sparrow && sparrow.IsDiving;
+            if (followDive)
+            {
+                Vector3 flat = Vector3.ProjectOnPlane(transform.forward, Vector3.up);
+                if (flat.sqrMagnitude > .0001f) transform.rotation = Quaternion.LookRotation(flat, Vector3.up);
+            }
             if (hasTarget && RemainingManeuverBudget > 0f)
             {
                 var direction = target.position - from;
@@ -106,6 +114,14 @@ namespace AirCombat
                 }
             }
             var to = from + transform.forward * speed * dt;
+            if (followDive)
+            {
+                // Cosmetic altitude blend; no new physical guidance model.
+                to.y = Mathf.Lerp(from.y, target.position.y, Mathf.Clamp01(dt * 12f));
+                Vector3 visualTravel = to - from;
+                if (visualTravel.sqrMagnitude > .000001f)
+                    transform.rotation = Quaternion.LookRotation(visualTravel, Vector3.up);
+            }
             bool terrainHit = RadarTerrainObstacle.TryProjectileHit(gameObject.scene, from, to,
                 out float terrainAt, out Vector3 terrainPoint);
             if (hasTarget)
@@ -113,7 +129,9 @@ namespace AirCombat
                 // Sweep in relative space so fast missiles cannot tunnel through a moving target.
                 var relativeStart = from - lastTargetPosition;
                 var relativeEnd = to - target.position;
-                relativeStart.y = relativeEnd.y = 0f;
+                // A dive interception must also be visibly close in height.
+                // All ordinary targets retain the accepted planar hit rule.
+                if (!followDive) relativeStart.y = relativeEnd.y = 0f;
                 var segment = relativeEnd - relativeStart;
                 float t = segment.sqrMagnitude > 0.000001f ?
                     Mathf.Clamp01(-Vector3.Dot(relativeStart, segment) / segment.sqrMagnitude) : 0f;

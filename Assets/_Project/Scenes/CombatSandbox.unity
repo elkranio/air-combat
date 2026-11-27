@@ -3231,7 +3231,7 @@ MonoBehaviour:
     lifetime: 4
     hitRadius: 5
     damage: 6
-  mode: 7
+  mode: 2
   interceptorPrefab: {fileID: 585073388258483318, guid: 0ca69e2e1dc70e44ea012bf38b3d7521, type: 3}
   interceptorWingmanEnabled: 1
   interceptorWingmanDelay: 1.5
@@ -3284,6 +3284,7 @@ MonoBehaviour:
   interceptionCount: 10
   interceptionInterval: 0.7
   interceptionLateralSpread: 60
+  interceptionDiveTrial: 0
 --- !u!1001 &2025167888
 PrefabInstance:
   m_ObjectHideFlags: 0
