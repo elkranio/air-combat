@@ -10,6 +10,7 @@ namespace AirCombat
     public sealed class BuildingDestructionTrial : DamageableTarget
     {
         public override CombatTargetDomain Domain => CombatTargetDomain.Ground;
+        public bool IsDestroyed => destroyed;
         public string Status => destroyed ? "PG07 / DESTROYED - FIRE ACTIVE / R TO RETRY" :
             "PG07 / CONTROL BUILDING / RMB NURS / R TO RETRY";
 
@@ -42,7 +43,7 @@ namespace AirCombat
             public Quaternion Rotation;
         }
 
-        public bool Initialize()
+        public bool Initialize(int plumeVariant = 0)
         {
             if (ready) return true;
             intact = transform.Find("Visual");
@@ -62,7 +63,7 @@ namespace AirCombat
             blastMaterial = RocketImpactFx.CreateMaterial(effect, out blastMask);
             wreck = new GameObject("PG07 / persistent ruin").transform;
             wreck.SetParent(transform, false);
-            BuildRuin(lit, unlit);
+            BuildRuin(lit, unlit, plumeVariant);
             ready = true;
             ResetTarget();
             return true;
@@ -96,7 +97,7 @@ namespace AirCombat
             return true;
         }
 
-        private void BuildRuin(Shader lit, Shader unlit)
+        private void BuildRuin(Shader lit, Shader unlit, int plumeVariant)
         {
             var concrete = Paint(lit, "PG07 concrete", new Color32(127, 130, 119, 255));
             var wall = Paint(lit, "PG07 damaged wall", new Color32(137, 138, 126, 255));
@@ -149,6 +150,10 @@ namespace AirCombat
                     Spin=new Vector3(Range(rng,-280f,280f),Range(rng,-280f,280f),Range(rng,-280f,280f)),
                     Rotation=Quaternion.Euler(0,Range(rng,0f,360f),0) });
             }
+            // Variant zero keeps PG07B exactly. Change only the plume random stream
+            // on the other buildings, not the accepted rubble or thrown debris.
+            if (plumeVariant != 0)
+                rng = new System.Random(unchecked(7402 + plumeVariant * 7919));
             // Bounded pool; no per-frame allocations or repeated instantiation.
             for (int i=0; i<10; i++)
             {

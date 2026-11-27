@@ -45,7 +45,7 @@ namespace AirCombat
         [Header("PG07 / Building destruction sandbox")]
         [SerializeField] private GameObject destructionBuildingPrefab;
         private bool destructionMode;
-        private BuildingDestructionTrial destructionTrial;
+        private readonly List<BuildingDestructionTrial> destructionTrials = new List<BuildingDestructionTrial>(3);
         private bool groundMode;
         private bool wardenMode;
         private readonly List<WardenCombat> wardens = new List<WardenCombat>();
@@ -118,7 +118,7 @@ namespace AirCombat
             {
                 if (interceptorMode) return interceptor != null ? interceptor.Status : "IN02 UNAVAILABLE";
                 if (bastionMode) return BastionStatus();
-                if (destructionMode) return destructionTrial != null ? destructionTrial.Status : "PG07 UNAVAILABLE";
+                if (destructionMode) return DestructionStatus();
                 if (convoyMode)
                 {
                     string convoyStatus = convoy != null ? convoy.DebugStatus : "CONVOY UNAVAILABLE";
@@ -304,15 +304,47 @@ namespace AirCombat
                 foreach (var warden in root.GetComponentsInChildren<WardenCombat>(true)) warden.gameObject.SetActive(false);
                 foreach (var sam in root.GetComponentsInChildren<SurfaceToAirLauncher>(true)) sam.gameObject.SetActive(false);
             }
-            Vector3 position = new Vector3(-290f, 0f, -100f);
-            position.y = convoyTerrain.SampleHeight(position) + convoyTerrain.transform.position.y;
-            var instance = Instantiate(destructionBuildingPrefab, position, Quaternion.identity);
-            UnityEngine.SceneManagement.SceneManager.MoveGameObjectToScene(instance, gameObject.scene);
-            instance.name = "PG07 / Control building trial";
-            destructionTrial = instance.AddComponent<BuildingDestructionTrial>();
-            if (destructionTrial.Initialize()) return true;
-            instance.SetActive(false); Destroy(instance); destructionTrial = null;
-            return false;
+            // PG07C: keep the original approach target and stagger two more behind it.
+            // Identical footprints let us compare the fires without changing the art.
+            Vector3 origin = new Vector3(-290f, 0f, -100f);
+            var offsets = new[] { Vector3.zero, new Vector3(-36f, 0f, 30f), new Vector3(36f, 0f, 30f) };
+            for (int i = 0; i < offsets.Length; i++)
+            {
+                Vector3 position = origin + offsets[i];
+                position.y = convoyTerrain.SampleHeight(position) + convoyTerrain.transform.position.y;
+                var instance = Instantiate(destructionBuildingPrefab, position, Quaternion.identity);
+                UnityEngine.SceneManagement.SceneManager.MoveGameObjectToScene(instance, gameObject.scene);
+                instance.name = $"PG07C / Control building {i + 1}";
+                var trial = instance.AddComponent<BuildingDestructionTrial>();
+                destructionTrials.Add(trial);
+                if (!trial.Initialize(i))
+                {
+                    ReleaseDestructionTrials();
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        private string DestructionStatus()
+        {
+            if (destructionTrials.Count == 0) return "PG07C UNAVAILABLE";
+            int destroyedCount = 0;
+            foreach (var trial in destructionTrials)
+                if (trial != null && trial.IsDestroyed) destroyedCount++;
+            string hint = destroyedCount == destructionTrials.Count ? "FIRES ACTIVE" : "RMB NURS";
+            return $"PG07C / BUILDINGS {destroyedCount}/{destructionTrials.Count} DESTROYED / {hint} / R TO RETRY";
+        }
+
+        private void ReleaseDestructionTrials()
+        {
+            foreach (var trial in destructionTrials)
+            {
+                if (trial == null) continue;
+                trial.gameObject.SetActive(false);
+                Destroy(trial.gameObject);
+            }
+            destructionTrials.Clear();
         }
 
         private bool BindBastionTrial()
@@ -424,8 +456,10 @@ namespace AirCombat
             defeated = victory = false;
             if (destructionMode)
             {
-                destructionTrial.ResetTarget();
-                Vector3 start = destructionTrial.transform.position + Vector3.back * 300f;
+                if (destructionTrials.Count == 0) return;
+                foreach (var trial in destructionTrials)
+                    if (trial != null) trial.ResetTarget();
+                Vector3 start = destructionTrials[0].transform.position + Vector3.back * 300f;
                 start.y = player.transform.position.y;
                 player.transform.SetPositionAndRotation(start, Quaternion.identity);
                 playerFlight.PrepareCruiseHandover();
@@ -689,7 +723,7 @@ namespace AirCombat
 
         private void OnGUI()
         {
-            if (destructionMode && !defeated && Event.current.type == EventType.Repaint && destructionTrial != null)
+            if (destructionMode && !defeated && Event.current.type == EventType.Repaint && destructionTrials.Count > 0)
             {
                 float width = Mathf.Min(620f, Screen.width - 24f);
                 GUI.Box(new Rect((Screen.width - width) * .5f, 12f, width, 30f), DebugStatus);
@@ -883,7 +917,7 @@ namespace AirCombat
 
         private void OnDestroy()
         {
-            if (destructionTrial != null) Destroy(destructionTrial.gameObject);
+            ReleaseDestructionTrials();
             ReleaseBastions();
             interceptor?.Clear();
             convoy?.Dispose();
