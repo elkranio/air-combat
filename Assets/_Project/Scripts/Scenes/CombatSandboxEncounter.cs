@@ -26,7 +26,7 @@ namespace AirCombat
         [SerializeField] private InterceptorPassTrial.Settings interceptorPass = new InterceptorPassTrial.Settings();
         [SerializeField] private EnemyMissileStressTest.Settings interceptorMissiles = new EnemyMissileStressTest.Settings
         {
-            warningSeconds = .65f, minLaunchRange = 110f, maxLaunchRange = 300f,
+            warningSeconds = .65f, minLaunchRange = 110f, maxLaunchRange = 570f,
             acquisitionHalfAngle = 45f, speed = 180f, turnRate = 70f, turnBudget = 100f,
             lifetime = 4f, hitRadius = 5f, damage = 5
         };
@@ -296,7 +296,7 @@ namespace AirCombat
             defeated = victory = false;
             if (interceptorMode)
             {
-                player.transform.SetPositionAndRotation(new Vector3(0f, player.transform.position.y, -300f), Quaternion.identity);
+                player.transform.SetPositionAndRotation(new Vector3(0f, player.transform.position.y, -400f), Quaternion.Euler(0f, 90f, 0f));
                 playerFlight.PrepareCruiseHandover();
                 playerBoost.enabled = false; playerBoost.enabled = true;
                 encounterReady = interceptor != null && interceptor.Restart();

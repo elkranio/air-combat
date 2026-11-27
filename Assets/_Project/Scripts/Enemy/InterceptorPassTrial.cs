@@ -10,12 +10,13 @@ namespace AirCombat
         [Serializable]
         internal sealed class Settings
         {
-            [Min(1f)] public float approachSpeed = 96f;
+            [Min(1f)] public float approachSpeed = 175f;
             [Min(1f)] public float breakawaySpeed = 55f;
-            [Min(1f)] public float returnSpeed = 125f;
+            [Min(1f)] public float returnSpeed = 165f;
             [Min(1f)] public float approachTurnRate = 30f;
             [Min(1f)] public float breakawayTurnRate = 32f;
             [Min(1f)] public float speedResponse = 45f;
+            [Min(1f)] public float breakawayDeceleration = 100f;
             [Min(.1f)] public float salvoGap = .38f;
             [Min(1f)] public float approachTimeout = 9f;
             [Min(0f)] public float minimumBreakawaySeconds = 2.2f;
@@ -57,10 +58,10 @@ namespace AirCombat
         internal bool Restart()
         {
             Clear();
-            if (prefab == null || playerMissiles == null || enemyMissiles == null || boundary < 500f)
+            if (prefab == null || playerMissiles == null || enemyMissiles == null || boundary <= 760f)
             { Debug.LogError("IN02: missing model, launcher or test space.", owner); return false; }
-            // Deterministic head-on test: player (0,-300), interceptor (0,+300).
-            actor = Object.Instantiate(prefab, new Vector3(0f, player.position.y, 300f),
+            // Crossing test: player (0,-400) eastbound, interceptor (0,+650) southbound.
+            actor = Object.Instantiate(prefab, new Vector3(0f, player.position.y, 650f),
                 Quaternion.Euler(0f, 180f, 0f), owner);
             actor.name = "IN02 / Interceptor combat";
             Transform visual = actor.transform.Find("Visual");
@@ -133,7 +134,9 @@ namespace AirCombat
             {
                 targetSpeed = tuning.returnSpeed;
             }
-            speed = Mathf.MoveTowards(speed, Mathf.Max(1f, targetSpeed), Mathf.Max(1f, tuning.speedResponse) * dt);
+            float response = phase == Phase.Breakaway && speed > targetSpeed
+                ? tuning.breakawayDeceleration : tuning.speedResponse;
+            speed = Mathf.MoveTowards(speed, Mathf.Max(1f, targetSpeed), Mathf.Max(1f, response) * dt);
             Quaternion rotation = Quaternion.Euler(0f, yaw, 0f);
             actor.transform.SetPositionAndRotation(position + rotation * Vector3.forward * (speed * dt), rotation);
             // Test-zone exit, not an airfield landing. Keep already launched AAMs alive.

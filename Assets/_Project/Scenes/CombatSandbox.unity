@@ -3189,12 +3189,13 @@ MonoBehaviour:
   mode: 5
   interceptorPrefab: {fileID: 585073388258483318, guid: 0ca69e2e1dc70e44ea012bf38b3d7521, type: 3}
   interceptorPass:
-    approachSpeed: 96
+    approachSpeed: 175
     breakawaySpeed: 55
-    returnSpeed: 125
+    returnSpeed: 165
     approachTurnRate: 30
     breakawayTurnRate: 32
     speedResponse: 45
+    breakawayDeceleration: 100
     salvoGap: 0.38
     approachTimeout: 9
     minimumBreakawaySeconds: 2.2
@@ -3204,7 +3205,7 @@ MonoBehaviour:
     maxInterval: 15
     warningSeconds: 0.65
     minLaunchRange: 110
-    maxLaunchRange: 300
+    maxLaunchRange: 570
     acquisitionHalfAngle: 45
     speed: 180
     turnRate: 70

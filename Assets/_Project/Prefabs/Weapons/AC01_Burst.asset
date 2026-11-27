@@ -17,7 +17,7 @@ MonoBehaviour:
   burstSize: 4
   burstCooldown: 0.45
   muzzleVelocity: 420
-  maxRange: 430
+  maxRange: 170
   hitDamage: 1
   tracerMaterial: {fileID: 2100000, guid: 925da85cab297e040b35d238acf3fbd4, type: 2}
   tracerLength: 8
