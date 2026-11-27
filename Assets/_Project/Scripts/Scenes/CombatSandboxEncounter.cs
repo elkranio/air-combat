@@ -27,8 +27,8 @@ namespace AirCombat
         [SerializeField] private EnemyMissileStressTest.Settings interceptorMissiles = new EnemyMissileStressTest.Settings
         {
             warningSeconds = .65f, minLaunchRange = 110f, maxLaunchRange = 570f,
-            acquisitionHalfAngle = 45f, speed = 180f, turnRate = 70f, turnBudget = 100f,
-            lifetime = 4f, hitRadius = 5f, damage = 5
+            acquisitionHalfAngle = 45f, speed = 225f, turnRate = 77f, turnBudget = 110f,
+            lifetime = 6f, hitRadius = 5f, damage = 5
         };
         private bool interceptorMode;
         private InterceptorPassTrial interceptor;

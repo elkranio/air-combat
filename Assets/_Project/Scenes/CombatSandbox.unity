@@ -3207,10 +3207,10 @@ MonoBehaviour:
     minLaunchRange: 110
     maxLaunchRange: 570
     acquisitionHalfAngle: 45
-    speed: 180
-    turnRate: 70
-    turnBudget: 100
-    lifetime: 4
+    speed: 225
+    turnRate: 77
+    turnBudget: 110
+    lifetime: 6
     hitRadius: 5
     damage: 5
   convoyPicketPrefab: {fileID: 8201000000000000004, guid: 43c92e56080254d797a874a625f33861, type: 3}
