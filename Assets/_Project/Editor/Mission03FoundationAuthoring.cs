@@ -56,9 +56,9 @@ namespace AirCombat
                 var airfield = Place(basePrefab, scene, "M03 / Trident airfield");
                 Transform pavement = FindPavement(airfield);
                 // Keep the existing airfield geometry. Align its actual runway to
-                // north, then place the center at the SVG v0 home coordinates.
+                // east, then place the center at the SVG v0 home coordinates.
                 float yaw = Mathf.Atan2(pavement.forward.x, pavement.forward.z) * Mathf.Rad2Deg;
-                airfield.transform.rotation = Quaternion.Euler(0f, -yaw, 0f);
+                airfield.transform.rotation = Quaternion.AngleAxis(90f - yaw, Vector3.up) * airfield.transform.rotation;
                 Vector3 center = pavement.TransformPoint(new Vector3(125f, 0f, 0f));
                 airfield.transform.position += new Vector3(Home.x - center.x, 0f, Home.y - center.z);
                 var runway = new GameObject("M03 / friendly runway center").transform;
