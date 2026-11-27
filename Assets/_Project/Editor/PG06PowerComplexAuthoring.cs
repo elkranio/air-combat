@@ -154,8 +154,8 @@ namespace AirCombat
                 }
                 SetPose(line,Origin+new Vector3(0,Ground,60),Quaternion.identity);
                 // Preserve the accepted line geometry and its intended span length.
-                for (int i=0;i<3;i++) SetLocalPose(line.transform.Find("PG05 / Pylon "+(i+1)),i*SpanLength);
-                for (int i=0;i<2;i++) SetLocalPose(line.transform.Find("PG05 / Span "+(i+1)),i*SpanLength);
+                for (int i=0;i<3;i++) SetLocalPose(FindLineChild(line,"PG05 / Pylon "+(i+1)),i*SpanLength);
+                for (int i=0;i<2;i++) SetLocalPose(FindLineChild(line,"PG05 / Span "+(i+1)),i*SpanLength);
                 var yard=new GameObject(YardName); Undo.RegisterCreatedObjectUndo(yard,"PG06 yard"); yard.transform.position=Origin;
                 for(int i=0;i<labels.Length;i++)
                 {
@@ -211,9 +211,16 @@ namespace AirCombat
         }
         private static void ValidateChild(GameObject parent,string name,GameObject prefab)
         {
-            var child=parent.transform.Find(name);
-            if(child==null) throw new InvalidOperationException("Missing PG05 child: "+name);
-            RequireInstance(child.gameObject,prefab);
+            RequireInstance(FindLineChild(parent,name).gameObject,prefab);
+        }
+        private static Transform FindLineChild(GameObject parent,string name)
+        {
+            // Transform.Find treats '/' as a hierarchy separator, but PG05
+            // preview children contain literal slashes in their object names.
+            var matches=parent.transform.Cast<Transform>().Where(t=>t.name==name).ToArray();
+            if(matches.Length!=1)
+                throw new InvalidOperationException("Expected exactly one PG05 child: "+name+"; found "+matches.Length);
+            return matches[0];
         }
         private static GameObject Place(GameObject prefab,Scene scene,string name)
         {
