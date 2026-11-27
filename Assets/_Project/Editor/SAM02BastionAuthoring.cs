@@ -114,7 +114,7 @@ namespace AirCombat
                 }
                 Selection.activeGameObject = instance;
                 SceneView.lastActiveSceneView?.FrameSelected();
-                Debug.Log("SAM02 V2 visual only. Preview selected; save Sandbox if desired. No gameplay components added.", instance);
+                Debug.Log("SAM02 V3 visual only. Preview selected; save Sandbox if desired. No gameplay components added.", instance);
             }
             catch (Exception ex) { Debug.LogError("SAM02: " + ex); }
             finally { if (model != null) Object.DestroyImmediate(model); }

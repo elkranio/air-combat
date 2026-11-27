@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""SAM02 Bastion V2: fictional low-poly visual asset; Unity Y-up, +Z front.
+"""SAM02 Bastion V3: fictional low-poly visual asset; Unity Y-up, +Z front.
 Blender --background --factory-startup --python Tools/Blender/build_sam02_bastion.py
 Writes deterministic Unity geometry JSON and editable .blend (when bpy is present).
 """
@@ -11,9 +11,9 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 OUT = ROOT / 'Assets/_Project/Editor/SAM02Geometry.json'
 PALETTE = {
-    'Concrete': [119, 121, 113], 'Foundation': [83, 86, 82],
-    'Hull': [66, 72, 65], 'Armor': [88, 94, 81],
-    'Dark': [39, 44, 44], 'Steel': [139, 144, 130], 'Mark': [174, 57, 44],
+    'Concrete': [146, 149, 146], 'Foundation': [109, 114, 110],
+    'Hull': [71, 79, 69], 'Armor': [94, 105, 82],
+    'Dark': [31, 37, 40], 'Steel': [158, 162, 148], 'Mark': [192, 66, 52],
 }
 PARTS = []
 
