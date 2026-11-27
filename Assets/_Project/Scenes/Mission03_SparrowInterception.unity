@@ -1258,6 +1258,10 @@ MonoBehaviour:
     width: 3000
     height: 2400
   cruiseAltitude: 78
+  waveTargetPrefab: {fileID: 8176654010010000020, guid: 69cd2d1011a85dce9593357073f49dbc, type: 3}
+  mothVisualPrefab: {fileID: 8100100000000000001, guid: 461f726aabf4212f1d14a29124d0862f, type: 3}
+  waveStartDistance: 1200
+  waveSpacing: 55
 --- !u!4 &1432029455
 Transform:
   m_ObjectHideFlags: 0

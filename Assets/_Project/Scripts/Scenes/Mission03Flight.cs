@@ -3,8 +3,7 @@ using UnityEngine.InputSystem;
 
 namespace AirCombat
 {
-    // M03 foundation. Only flight lifecycle and shared aircraft systems live here;
-    // Sparrow waves, interceptor sorties and objectives will be separate owners.
+    // Flight lifecycle and shared aircraft systems. Wave presentation is owned separately.
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-40)]
     public sealed class Mission03Flight : MonoBehaviour, IFlightSessionEncounter, IPlayerEngineAudioContext
@@ -15,6 +14,11 @@ namespace AirCombat
         [SerializeField] private MissileProjectile missilePrefab;
         [SerializeField] private Rect operationBounds = new Rect(-1500f, -1200f, 3000f, 2400f);
         [SerializeField, Min(1f)] private float cruiseAltitude = 78f;
+        [Header("M03 / first arcade wave preview")]
+        [SerializeField] private CruiseMissileTarget waveTargetPrefab;
+        [SerializeField] private GameObject mothVisualPrefab;
+        [SerializeField, Range(700f, 1500f)] private float waveStartDistance = 1200f;
+        [SerializeField, Range(20f, 100f)] private float waveSpacing = 55f;
 
         public Renderer MapGround => ground;
         public Transform MapRunway => runway;
@@ -41,6 +45,7 @@ namespace AirCombat
         private CombatHitFeedback feedback;
         private Camera view;
         internal Mission03PowerComplex PowerComplex { get; private set; }
+        private Mission03WavePreview wave;
         private MissionBoundaryGuard boundary;
         private MissionFlightSafety safety;
         private ScriptedTakeoff takeoff;
@@ -48,7 +53,7 @@ namespace AirCombat
         private GUIStyle messageStyle;
         private const float Roll = 2.2f, Climb = 2.5f, MaxPitch = 18f;
 
-        public string DebugStatus => $"M03 | {phase} | flight foundation";
+        public string DebugStatus => $"M03 | {phase} | {wave?.Status ?? "WAVE UNAVAILABLE"}";
         FlightController IPlayerEngineAudioContext.EngineAudioFlight => flight;
         PlayerEnginePhase IPlayerEngineAudioContext.EngineAudioPhase => !bound || !isActiveAndEnabled
             ? PlayerEnginePhase.Silent : phase switch
@@ -116,6 +121,10 @@ namespace AirCombat
             missiles.Bind(camera, cursor, player, missilePrefab, feedback);
             trigger.ConfigureDualSlots(missiles);
             PowerComplex = Mission03PowerComplex.Bind(gameObject.scene);
+            if (PowerComplex != null && waveTargetPrefab != null && mothVisualPrefab != null)
+                wave = new Mission03WavePreview(PowerComplex, waveTargetPrefab, mothVisualPrefab,
+                    radar, missiles, feedback, cruiseAltitude, waveStartDistance, waveSpacing);
+            else Debug.LogError("M03: wave preview is missing a game prop or prefab.", this);
             bound = true;
         }
 
@@ -139,6 +148,7 @@ namespace AirCombat
         public void Restart()
         {
             if (!bound) return;
+            wave?.Clear();
             MissionPause.Release(this);
             boundary.Clear(); landing.Clear();
             flight.enabled = false; trigger.enabled = false; cursor.enabled = false;
@@ -186,6 +196,8 @@ namespace AirCombat
             }
             if (phase == Phase.Takeoff)
                 handover = takeoff.Tick(Time.deltaTime, flight.CruiseSpeed, Roll, Climb, cruiseAltitude, MaxPitch);
+            else if (phase == Phase.Flight)
+                wave?.Tick(Time.deltaTime);
             else if (phase == Phase.Landing && landing.TickLanding(aircraft, visual, Time.deltaTime))
                 phase = Phase.Landed;
         }
@@ -199,6 +211,7 @@ namespace AirCombat
             { Fail(stop, "OPERATION AREA ABANDONED", false, true); return; }
             flight.enabled = true; trigger.enabled = true; cursor.enabled = true;
             hud.gameObject.SetActive(true);
+            wave?.Begin();
         }
 
         private void LateUpdate()
@@ -224,6 +237,7 @@ namespace AirCombat
 
         private void StopCombat()
         {
+            wave?.Clear();
             flight.enabled = false; trigger.enabled = false; cursor.enabled = false;
             boost.enabled = false; flames.SetManeuverFlames(false);
             missiles.CancelMissiles(); ClearRounds();
@@ -255,6 +269,11 @@ namespace AirCombat
         private void OnGUI()
         {
             if (!bound || Event.current.type != EventType.Repaint || MissionPause.IsTacticalMapPausedFor(gameObject.scene)) return;
+            if (phase == Phase.Flight && wave != null)
+            {
+                float width = Mathf.Min(720f, Screen.width - 24f);
+                GUI.Box(new Rect((Screen.width - width) * .5f, 12f, width, 30f), wave.Status);
+            }
             string message = phase switch
             {
                 Phase.Ready => "PRESS W TO TAKE OFF",
@@ -280,6 +299,7 @@ namespace AirCombat
 
         private void OnDisable()
         {
+            wave?.Clear();
             MissionRetry.Unregister(this); MissionPause.Release(this);
             boundary?.Clear(); landing?.Clear();
         }
