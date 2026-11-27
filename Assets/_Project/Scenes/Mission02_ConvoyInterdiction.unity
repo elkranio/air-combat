@@ -2510,7 +2510,7 @@ MonoBehaviour:
   twoPartRoute: 1
   c2: {x: 1510, y: 0, z: -2200}
   arrivalRadius: 75
-  startAirborne: 1
+  startAirborne: 0
   carryallFlightPreview: {fileID: 2078675609}
   cargoEvacuation: {fileID: 1325795061}
   carryallFiringRange: 0
@@ -2523,7 +2523,7 @@ MonoBehaviour:
   convoyRoute: {fileID: 553010178}
   convoySpacing: 30
   convoySpeed: 24
-  escortEnabled: 0
+  escortEnabled: 1
   escortPrefab: {fileID: 8101000000000000325, guid: 70862499e8055692b5d61df5de489a90, type: 3}
   escortLateralRadius: 55
   escortEndClearance: 45
@@ -2597,12 +2597,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0a092af4e92e4f239f18886a2f9585d6, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::AirCombat.Mission02CargoEvacuation
-  testSite: 1
-  holdTestAircraft: 1
+  testSite: 0
+  holdTestAircraft: 0
   c1DispatchSeconds: 23
   c2DispatchSeconds: 83
   carryallSpeed: 60
-  reserveDelay: 25
+  reserveDelay: 60
   hullHp: 5
   cargoHp: 2
   terrain: {fileID: 2035110805}
