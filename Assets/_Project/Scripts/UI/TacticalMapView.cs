@@ -343,7 +343,7 @@ namespace AirCombat
                 if (site == null || !Inside(map.WorldToUV(site.position))) continue;
                 Vector2 p = Point(rect,site);
                 Rotate(Texture(new Rect(0,0,14,14),arrow,Cyan),p,0f);
-                Text(new Rect(p.x+10,p.y-10,100,20),i == 0 ? "FRIENDLY SAM" : $"SAM {i + 1:00}",12,Cyan,true);
+                Text(new Rect(p.x+10,p.y-10,100,20),$"SAM {i + 2:00}",12,Cyan,true);
             }
             if (map.HasAirfield && Inside(map.WorldToUV(map.AirfieldPosition)))
             {

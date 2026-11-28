@@ -18,14 +18,24 @@ namespace AirCombat
         [SerializeField] private CruiseMissileTarget waveTargetPrefab;
         [SerializeField] private GameObject mothVisualPrefab;
         [SerializeField, Range(20f, 100f)] private float waveSpacing = 55f;
+        [Header("M03 / IN02 arcade encounter")]
+        [SerializeField] private GameObject interceptorPrefab;
+        [SerializeField] private Vector2 interceptorEntry = new Vector2(950f, 750f);
+        [SerializeField, Min(0f)] private float interceptorWingmanDelay = 2f;
+        [SerializeField, Min(0f)] private float interceptorWingmanOffset = 120f;
+        [SerializeField] private InterceptorPassTrial.Settings interceptorPass = new InterceptorPassTrial.Settings();
+        [SerializeField] private EnemyMissileStressTest.Settings interceptorMissiles = new EnemyMissileStressTest.Settings
+        {
+            warningSeconds = .65f, minLaunchRange = 110f, maxLaunchRange = 570f,
+            acquisitionHalfAngle = 45f, speed = 225f, turnRate = 77f, turnBudget = 110f,
+            lifetime = 6f, hitRadius = 5f, damage = 5
+        };
         [Header("M03 / decorative friendly sites")]
-        [SerializeField] private Transform friendlySite;
         [SerializeField] private Transform[] additionalFriendlySites = System.Array.Empty<Transform>();
-        [SerializeField, Min(0f)] private float friendlyMapRadius = 110f;
         [SerializeField, Min(0f)] private float additionalFriendlyMapRadius = 155f;
-        internal int FriendlySiteCount => 1 + (additionalFriendlySites?.Length ?? 0);
-        internal Transform FriendlySiteAt(int index) => index == 0 ? friendlySite : additionalFriendlySites[index - 1];
-        internal float FriendlyMapRadiusAt(int index) => index == 0 ? friendlyMapRadius : additionalFriendlyMapRadius;
+        internal int FriendlySiteCount => additionalFriendlySites?.Length ?? 0;
+        internal Transform FriendlySiteAt(int index) => additionalFriendlySites[index];
+        internal float FriendlyMapRadiusAt(int index) => additionalFriendlyMapRadius;
 
         public Renderer MapGround => ground;
         public Transform MapRunway => runway;
@@ -53,6 +63,10 @@ namespace AirCombat
         private Camera view;
         internal Mission03PowerComplex PowerComplex { get; private set; }
         private Mission03WavePreview wave;
+        private InterceptorPairTrial interceptors;
+        private EnemyMissileStressTest interceptorThreats;
+        private bool interceptorAttempted, interceptorStarted, interceptorResolved;
+        private float interceptorTime;
         private MissionBoundaryGuard boundary;
         private MissionFlightSafety safety;
         private ScriptedTakeoff takeoff;
@@ -137,6 +151,16 @@ namespace AirCombat
                 wave = new Mission03WavePreview(PowerComplex, waveTargetPrefab, mothVisualPrefab,
                     radar, missiles, feedback, cruiseAltitude, operationBounds, waveSpacing);
             else Debug.LogError("M03: wave preview is missing a game prop or prefab.", this);
+            if (interceptorPrefab != null)
+            {
+                interceptorThreats = gameObject.AddComponent<EnemyMissileStressTest>();
+                interceptorThreats.Bind(health, missilePrefab, feedback, interceptorMissiles, radar);
+                gameObject.AddComponent<EnemyMissileThreatHud>().Bind(view, interceptorThreats);
+                interceptors = new InterceptorPairTrial(transform, interceptorPrefab, aircraft,
+                    radar, missiles, interceptorThreats, feedback, interceptorPass, halfExtent,
+                    true, interceptorWingmanDelay, interceptorWingmanOffset, operationBounds, interceptorEntry);
+            }
+            else Debug.LogError("M03: missing IN02 interceptor prefab.", this);
             bound = true;
         }
 
@@ -199,6 +223,10 @@ namespace AirCombat
         {
             if (!bound) return;
             wave?.Clear();
+            interceptors?.Clear();
+            if (interceptorThreats != null) interceptorThreats.ResetTest();
+            interceptorAttempted = interceptorStarted = interceptorResolved = false;
+            interceptorTime = 0f;
             MissionPause.Release(this);
             boundary.Clear(); landing.Clear();
             flight.enabled = false; trigger.enabled = false; cursor.enabled = false;
@@ -254,6 +282,16 @@ namespace AirCombat
             {
                 if (wave != null && !wave.IsComplete) sortieTime += Time.deltaTime;
                 wave?.Tick(Time.deltaTime);
+                if (!interceptorAttempted && wave != null && wave.AllDown && health.IsAlive)
+                {
+                    interceptorAttempted = true;
+                    interceptorStarted = interceptors != null && interceptors.Restart();
+                }
+                else if (interceptorStarted && !interceptorResolved)
+                {
+                    interceptorTime += Time.deltaTime;
+                    interceptors.Tick(Time.deltaTime, Time.time);
+                }
             }
             else if (phase == Phase.Landing && landing.TickLanding(aircraft, visual, Time.deltaTime))
                 phase = Phase.Landed;
@@ -283,6 +321,11 @@ namespace AirCombat
             { Fail(stop, "TERRAIN IMPACT", true, false); return; }
             if (result == MissionFlightSafety.Result.BoundaryExit)
             { Fail(stop, "OPERATION AREA ABANDONED", false, true); return; }
+            if (interceptorStarted && !interceptorResolved)
+            {
+                interceptorThreats.Tick(Time.time);
+                interceptorResolved = interceptors.IsResolved && interceptorThreats.InFlight == 0;
+            }
             if (!Application.isFocused) { landing.Clear(); return; }
             // No normal victory/RTB before actual objectives exist. DEV01 can
             // already exercise the same assisted landing path as M01.
@@ -295,6 +338,8 @@ namespace AirCombat
         private void StopCombat()
         {
             wave?.Clear();
+            interceptors?.Clear();
+            if (interceptorThreats != null) interceptorThreats.StopTest();
             flight.enabled = false; trigger.enabled = false; cursor.enabled = false;
             boost.enabled = false; flames.SetManeuverFlames(false);
             missiles.CancelMissiles(); ClearRounds();
@@ -331,6 +376,13 @@ namespace AirCombat
                 float width = Mathf.Min(720f, Screen.width - 24f);
                 GUI.Box(new Rect((Screen.width - width) * .5f, 12f, width, 30f), wave.Status);
                 GUI.Box(new Rect((Screen.width - width) * .5f, 42f, width, 25f), SortieTiming);
+                if (interceptorAttempted)
+                {
+                    float inWidth = Mathf.Min(1050f, Screen.width - 24f);
+                    string status = !interceptorStarted ? "IN02 / UNAVAILABLE" :
+                        $"{interceptors.Status} | PHASE {interceptorTime:F1}s{(interceptorResolved ? " / COMPLETE" : "")}";
+                    GUI.Box(new Rect((Screen.width - inWidth) * .5f, 67f, inWidth, 25f), status);
+                }
             }
             string message = phase switch
             {
@@ -358,6 +410,8 @@ namespace AirCombat
         private void OnDisable()
         {
             wave?.Clear();
+            interceptors?.Clear();
+            if (interceptorThreats != null) interceptorThreats.StopTest();
             MissionRetry.Unregister(this); MissionPause.Release(this);
             boundary?.Clear(); landing?.Clear();
         }

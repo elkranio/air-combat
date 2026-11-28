@@ -32,6 +32,9 @@ namespace AirCombat
         private readonly CombatHitFeedback feedback;
         private readonly Settings tuning;
         private readonly float boundary;
+        private readonly Rect? campaignBounds;
+        private readonly Vector2? campaignEntry;
+        private Vector3 returnPoint;
         private GameObject actor;
         private PlayerHitPoints health;
         private RadarAirContact contact;
@@ -44,13 +47,16 @@ namespace AirCombat
 
         internal InterceptorPassTrial(Transform owner, GameObject prefab, Transform player,
             AircraftRadar radar, ArcadeMissileLauncher playerMissiles, EnemyMissileStressTest enemyMissiles,
-            CombatHitFeedback feedback, Settings tuning, float boundary)
+            CombatHitFeedback feedback, Settings tuning, float boundary,
+            Rect? campaignBounds = null, Vector2? campaignEntry = null)
         {
             this.owner = owner; this.prefab = prefab; this.player = player; this.radar = radar;
             this.playerMissiles = playerMissiles; this.enemyMissiles = enemyMissiles;
             this.feedback = feedback; this.tuning = tuning ?? new Settings(); this.boundary = boundary;
+            this.campaignBounds = campaignBounds; this.campaignEntry = campaignEntry;
         }
 
+        internal bool IsResolved => phase == Phase.Escaped || phase == Phase.Destroyed;
         internal string Status => $"{phase}{(passedWithoutShot ? " / NO LOCK" : "")} | " +
             $"HP {(health != null ? health.Hp.ToString() : phase == Phase.Destroyed ? "0" : "-")} | " +
             $"{speed:F0} u/s | AAM {shots}/2";
@@ -58,12 +64,15 @@ namespace AirCombat
         internal bool Restart(float startX, string callsign)
         {
             Clear();
+            Vector2 entry = campaignEntry ?? new Vector2(0f, 650f);
+            Vector3 start = new Vector3(entry.x + startX, player.position.y, entry.y);
             if (prefab == null || playerMissiles == null || enemyMissiles == null ||
-                boundary <= 760f || Mathf.Abs(startX) >= boundary - 110f)
+                (!campaignBounds.HasValue && boundary <= 760f) || NearEdge(start, 110f))
             { Debug.LogError("IN02: missing model, launcher or test space.", owner); return false; }
-            // Each pass starts southbound; the pair owner supplies lateral separation.
-            actor = Object.Instantiate(prefab, new Vector3(startX, player.position.y, 650f),
-                Quaternion.Euler(0f, 180f, 0f), owner);
+            // Campaign entry is an authored arcade staging point. Sandbox stays southbound.
+            returnPoint = start;
+            float initialYaw = campaignEntry.HasValue ? 225f : 180f;
+            actor = Object.Instantiate(prefab, start, Quaternion.Euler(0f, initialYaw, 0f), owner);
             actor.name = "IN02 / Interceptor " + callsign;
             Transform visual = actor.transform.Find("Visual");
             for (int i = 0; i < missileProps.Length; i++)
@@ -88,7 +97,7 @@ namespace AirCombat
             radar.Register(contact);
             playerMissiles.Register(health);
             speed = Mathf.Max(1f, tuning.approachSpeed);
-            yaw = 180f; age = 0f; shots = 0; passedWithoutShot = false;
+            yaw = initialYaw; age = 0f; shots = 0; passedWithoutShot = false;
             phase = Phase.Approach;
             Physics.SyncTransforms();
             return true;
@@ -127,21 +136,27 @@ namespace AirCombat
             else if (phase == Phase.Breakaway)
             {
                 targetSpeed = tuning.breakawaySpeed;
-                TurnToward(0f, tuning.breakawayTurnRate, dt);
-                if (Mathf.Abs(Mathf.DeltaAngle(yaw, 0f)) < .1f && age >= tuning.minimumBreakawaySeconds)
+                float exitYaw = ReturnYaw(position);
+                TurnToward(exitYaw, tuning.breakawayTurnRate, dt);
+                if (Mathf.Abs(Mathf.DeltaAngle(yaw, exitYaw)) < (campaignEntry.HasValue ? 1f : .1f) && age >= tuning.minimumBreakawaySeconds)
                 { phase = Phase.Return; age = 0f; }
             }
             else if (phase == Phase.Return)
             {
                 targetSpeed = tuning.returnSpeed;
+                if (campaignEntry.HasValue) TurnToward(ReturnYaw(position), tuning.breakawayTurnRate, dt);
             }
             float response = phase == Phase.Breakaway && speed > targetSpeed
                 ? tuning.breakawayDeceleration : tuning.speedResponse;
             speed = Mathf.MoveTowards(speed, Mathf.Max(1f, targetSpeed), Mathf.Max(1f, response) * dt);
             Quaternion rotation = Quaternion.Euler(0f, yaw, 0f);
             actor.transform.SetPositionAndRotation(position + rotation * Vector3.forward * (speed * dt), rotation);
-            // Test-zone exit, not an airfield landing. Keep already launched AAMs alive.
-            if (NearEdge(actor.transform.position, 10f))
+            // Exit the preview at its authored staging point (or the scene edge).
+            // Already launched AAMs remain owned by the shared projectile service.
+            bool returned = campaignEntry.HasValue && phase == Phase.Return &&
+                Vector2.Distance(new Vector2(actor.transform.position.x, actor.transform.position.z),
+                    new Vector2(returnPoint.x, returnPoint.z)) <= 90f;
+            if (returned || NearEdge(actor.transform.position, 10f))
             { RemoveActor(); phase = Phase.Escaped; speed = 0f; }
         }
 
@@ -150,8 +165,22 @@ namespace AirCombat
 
         private void BeginBreakaway() { phase = Phase.Breakaway; age = 0f; }
 
-        private bool NearEdge(Vector3 p, float margin) =>
-            Mathf.Abs(p.x) >= boundary - margin || Mathf.Abs(p.z) >= boundary - margin;
+        private float ReturnYaw(Vector3 p)
+        {
+            if (!campaignEntry.HasValue) return 0f;
+            Vector3 delta = returnPoint - p;
+            return delta.x * delta.x + delta.z * delta.z > .01f
+                ? Mathf.Atan2(delta.x, delta.z) * Mathf.Rad2Deg : yaw;
+        }
+
+        private bool NearEdge(Vector3 p, float margin)
+        {
+            if (!campaignBounds.HasValue)
+                return Mathf.Abs(p.x) >= boundary - margin || Mathf.Abs(p.z) >= boundary - margin;
+            Rect b = campaignBounds.Value;
+            return p.x <= b.xMin + margin || p.x >= b.xMax - margin ||
+                p.z <= b.yMin + margin || p.z >= b.yMax - margin;
+        }
 
         private void OnShot(int index)
         {
@@ -183,7 +212,7 @@ namespace AirCombat
         internal void Clear() => RemoveActor();
     }
 
-    // Sandbox composition only. Each interceptor keeps its own flight phase,
+    // Shared arcade preview pair. Each interceptor keeps its own flight phase,
     // health, mounts and salvo; the shared missile service owns live projectiles.
     internal sealed class InterceptorPairTrial
     {
@@ -198,7 +227,8 @@ namespace AirCombat
         internal InterceptorPairTrial(Transform owner, GameObject prefab, Transform player,
             AircraftRadar radar, ArcadeMissileLauncher playerMissiles, EnemyMissileStressTest enemyMissiles,
             CombatHitFeedback feedback, InterceptorPassTrial.Settings tuning, float boundary,
-            bool includeBravo, float delay, float lateralOffset)
+            bool includeBravo, float delay, float lateralOffset,
+            Rect? campaignBounds = null, Vector2? campaignEntry = null)
         {
             this.owner = owner;
             this.enemyMissiles = enemyMissiles;
@@ -206,11 +236,13 @@ namespace AirCombat
             this.delay = Mathf.Max(0f, delay);
             this.lateralOffset = Mathf.Max(0f, lateralOffset);
             alpha = new InterceptorPassTrial(owner, prefab, player, radar, playerMissiles,
-                enemyMissiles, feedback, tuning, boundary);
+                enemyMissiles, feedback, tuning, boundary, campaignBounds, campaignEntry);
             bravo = new InterceptorPassTrial(owner, prefab, player, radar, playerMissiles,
-                enemyMissiles, feedback, tuning, boundary);
+                enemyMissiles, feedback, tuning, boundary, campaignBounds, campaignEntry);
         }
 
+        internal bool IsResolved => running && alpha.IsResolved && !bravoPending &&
+            (!bravoStarted || bravo.IsResolved);
         internal string Status
         {
             get
