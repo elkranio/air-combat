@@ -55,6 +55,10 @@ namespace AirCombat
         private ScriptedTakeoff takeoff;
         private ScriptedLanding landing;
         private GUIStyle messageStyle;
+        private float sortieTime;
+        private string SortieTiming => wave != null && wave.IsComplete
+            ? $"SORTIE {sortieTime:F1}s / {(wave.AllDown ? "LAST TARGET DOWN" : "WAVE RESOLVED / NOT ALL DOWN")}"
+            : $"SORTIE {sortieTime:F1}s";
         private const float Roll = 2.2f, Climb = 2.5f, MaxPitch = 18f;
 
         public string DebugStatus => $"M03 | {phase} | {wave?.Status ?? "WAVE UNAVAILABLE"}";
@@ -124,12 +128,51 @@ namespace AirCombat
             missiles.gameObject.SetActive(true);
             missiles.Bind(camera, cursor, player, missilePrefab, feedback);
             trigger.ConfigureDualSlots(missiles);
+            SeatFriendlySite();
             PowerComplex = Mission03PowerComplex.Bind(gameObject.scene);
             if (PowerComplex != null && waveTargetPrefab != null && mothVisualPrefab != null)
                 wave = new Mission03WavePreview(PowerComplex, waveTargetPrefab, mothVisualPrefab,
                     radar, missiles, feedback, cruiseAltitude, operationBounds, waveSpacing);
             else Debug.LogError("M03: wave preview is missing a game prop or prefab.", this);
             bound = true;
+        }
+
+        // M03 meadow is an authored mesh, not a Unity Terrain. Sample its actual
+        // triangles once; no persistent physics collider or gameplay change.
+        private void SeatFriendlySite()
+        {
+            if (friendlySite == null) return;
+            var filter = ground.GetComponent<MeshFilter>();
+            var mesh = filter != null ? filter.sharedMesh : null;
+            if (mesh == null || !mesh.isReadable)
+            {
+                Debug.LogWarning("M03: cannot sample decorative site ground mesh.", this);
+                return;
+            }
+            Vector3 p = friendlySite.position;
+            var vertices = mesh.vertices;
+            var triangles = mesh.triangles;
+            float height = float.NegativeInfinity;
+            for (int i = 0; i < triangles.Length; i += 3)
+            {
+                Vector3 a = filter.transform.TransformPoint(vertices[triangles[i]]);
+                Vector3 b = filter.transform.TransformPoint(vertices[triangles[i+1]]);
+                Vector3 c = filter.transform.TransformPoint(vertices[triangles[i+2]]);
+                float den = (b.z-c.z)*(a.x-c.x) + (c.x-b.x)*(a.z-c.z);
+                if (Mathf.Abs(den) < .0001f) continue;
+                float u = ((b.z-c.z)*(p.x-c.x) + (c.x-b.x)*(p.z-c.z))/den;
+                float v = ((c.z-a.z)*(p.x-c.x) + (a.x-c.x)*(p.z-c.z))/den;
+                float w = 1f-u-v;
+                if (u < -.00001f || v < -.00001f || w < -.00001f) continue;
+                height = Mathf.Max(height, u*a.y + v*b.y + w*c.y);
+            }
+            if (float.IsNegativeInfinity(height))
+            {
+                Debug.LogWarning("M03: decorative site is outside the meadow mesh.", this);
+                return;
+            }
+            p.y = height + .08f;
+            friendlySite.position = p;
         }
 
         private void OnEnable()
@@ -165,6 +208,7 @@ namespace AirCombat
             flames.SetManeuverFlames(false);
             aircraft.SetPositionAndRotation(spawn, spawnRotation); visual.localRotation = visualRest;
             takeoff.ResetTimer(); handover = false; failure = null; phase = Phase.Ready;
+            sortieTime = 0f;
             PowerComplex?.ResetTargets();
             hud.gameObject.SetActive(false);
 #if UNITY_EDITOR
@@ -199,9 +243,15 @@ namespace AirCombat
                 phase = Phase.Takeoff; flames.SetManeuverFlames(true); return;
             }
             if (phase == Phase.Takeoff)
+            {
+                sortieTime += Time.deltaTime;
                 handover = takeoff.Tick(Time.deltaTime, flight.CruiseSpeed, Roll, Climb, cruiseAltitude, MaxPitch);
+            }
             else if (phase == Phase.Flight)
+            {
+                if (wave != null && !wave.IsComplete) sortieTime += Time.deltaTime;
                 wave?.Tick(Time.deltaTime);
+            }
             else if (phase == Phase.Landing && landing.TickLanding(aircraft, visual, Time.deltaTime))
                 phase = Phase.Landed;
         }
@@ -277,6 +327,7 @@ namespace AirCombat
             {
                 float width = Mathf.Min(720f, Screen.width - 24f);
                 GUI.Box(new Rect((Screen.width - width) * .5f, 12f, width, 30f), wave.Status);
+                GUI.Box(new Rect((Screen.width - width) * .5f, 42f, width, 25f), SortieTiming);
             }
             string message = phase switch
             {

@@ -313,6 +313,27 @@ namespace AirCombat
         {
             if (routeTrial != null) DrawRouteTrial(rect);
             var mission03 = GetComponent<Mission03Flight>();
+            if (mission03 != null && mission03.PowerComplex != null)
+            {
+                Vector3 center = Vector3.zero;
+                int count = 0;
+                foreach (var target in mission03.PowerComplex.Targets)
+                {
+                    if (target == null) continue;
+                    center += target.transform.position;
+                    count++;
+                }
+                if (count > 0)
+                {
+                    Vector2 uv = map.WorldToUV(center / count);
+                    if (Inside(uv))
+                    {
+                        Vector2 p = Point(rect, uv);
+                        Diamond(p, 8f, Cyan);
+                        Text(new Rect(p.x+12,p.y-10,144,20),"POWER COMPLEX",12,Cyan,true);
+                    }
+                }
+            }
             if (mission03 != null && mission03.FriendlySite != null && Inside(map.WorldToUV(mission03.FriendlySite.position)))
             {
                 Vector2 p = Point(rect,mission03.FriendlySite);
@@ -462,7 +483,8 @@ namespace AirCombat
                 Legend(left,top+256,new Color(.28f,.26f,.22f),"Terrain obstruction");
                 Legend(left,top+291,Red,"Airborne hostile contacts");
                 Legend(left,top+326,Cyan,"Friendly SAM / decorative zone");
-                Text(new Rect(left,top+381,width,25),"Map pauses flight and timing.",14,Muted);
+                Legend(left,top+361,Cyan,"Protected power complex");
+                Text(new Rect(left,top+416,width,25),"Map pauses flight and timing.",14,Muted);
                 return;
             }
             Solid(rect,new Color(.075f,.115f,.13f));

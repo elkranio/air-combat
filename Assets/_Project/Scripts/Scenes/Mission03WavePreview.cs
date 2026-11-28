@@ -41,6 +41,9 @@ namespace AirCombat
             this.spacing = Mathf.Clamp(spacing, 20f, 100f);
         }
 
+        internal bool IsComplete => started && total > 0 && spawned == total && live.Count == 0;
+        internal bool AllDown => IsComplete && down == total;
+
         internal string Status => !started ? "WAVE 1 / READY" :
             $"WAVE 1 / {down}/{total} DOWN / {saves} DIVE SAVES / {impacts} IMPACTS / {live.Count} LIVE" +
             (spawned < total ? $" / {total - spawned} QUEUED" :
