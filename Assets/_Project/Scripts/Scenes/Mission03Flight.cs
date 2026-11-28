@@ -17,8 +17,12 @@ namespace AirCombat
         [Header("M03 / first arcade wave preview")]
         [SerializeField] private CruiseMissileTarget waveTargetPrefab;
         [SerializeField] private GameObject mothVisualPrefab;
-        [SerializeField, Range(700f, 1500f)] private float waveStartDistance = 1200f;
         [SerializeField, Range(20f, 100f)] private float waveSpacing = 55f;
+        [Header("M03 / decorative friendly site")]
+        [SerializeField] private Transform friendlySite;
+        [SerializeField, Min(0f)] private float friendlyMapRadius = 110f;
+        internal Transform FriendlySite => friendlySite;
+        internal float FriendlyMapRadius => friendlyMapRadius;
 
         public Renderer MapGround => ground;
         public Transform MapRunway => runway;
@@ -123,7 +127,7 @@ namespace AirCombat
             PowerComplex = Mission03PowerComplex.Bind(gameObject.scene);
             if (PowerComplex != null && waveTargetPrefab != null && mothVisualPrefab != null)
                 wave = new Mission03WavePreview(PowerComplex, waveTargetPrefab, mothVisualPrefab,
-                    radar, missiles, feedback, cruiseAltitude, waveStartDistance, waveSpacing);
+                    radar, missiles, feedback, cruiseAltitude, operationBounds, waveSpacing);
             else Debug.LogError("M03: wave preview is missing a game prop or prefab.", this);
             bound = true;
         }

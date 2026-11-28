@@ -239,19 +239,27 @@ namespace AirCombat
                 Vector2 uv=map.WorldToUV(sam.site.position);
                 Vector2 p=new Vector2(uv.x*w,(1-uv.y)*h);
                 float r=sam.Radius*mapScale;
-                DrawClippedRing(new Rect(p.x-r,p.y-r,r*2,r*2),w,h);
+                DrawClippedRing(new Rect(p.x-r,p.y-r,r*2,r*2),w,h,Red);
+            }
+            var mission03 = GetComponent<Mission03Flight>();
+            if (mission03 != null && mission03.FriendlySite != null && mission03.FriendlyMapRadius > 0f)
+            {
+                Vector2 uv = map.WorldToUV(mission03.FriendlySite.position);
+                Vector2 p = new Vector2(uv.x*w,(1-uv.y)*h);
+                float r = mission03.FriendlyMapRadius*mapScale;
+                DrawClippedRing(new Rect(p.x-r,p.y-r,r*2,r*2),w,h,Cyan);
             }
             drawParent=panel;
         }
         // Crop in original map coordinates before rotating the layer. Unlike
         // a screen-aligned RectMask, this clips to the actual mission boundary.
-        private void DrawClippedRing(Rect full,float w,float h)
+        private void DrawClippedRing(Rect full,float w,float h,Color tint)
         {
             float x0=Mathf.Max(0,full.xMin), x1=Mathf.Min(w,full.xMax);
             float y0=Mathf.Max(0,full.yMin), y1=Mathf.Min(h,full.yMax);
             if (x1<=x0 || y1<=y0) return;
             var clipped=Rect.MinMaxRect(x0,y0,x1,y1);
-            var graphic=Texture(clipped,ring,Red).GetComponent<RawImage>();
+            var graphic=Texture(clipped,ring,tint).GetComponent<RawImage>();
             graphic.uvRect=new Rect((x0-full.xMin)/full.width,(full.yMax-y1)/full.height,
                 clipped.width/full.width,clipped.height/full.height);
         }
@@ -304,6 +312,13 @@ namespace AirCombat
         private void DrawMap(Rect rect)
         {
             if (routeTrial != null) DrawRouteTrial(rect);
+            var mission03 = GetComponent<Mission03Flight>();
+            if (mission03 != null && mission03.FriendlySite != null && Inside(map.WorldToUV(mission03.FriendlySite.position)))
+            {
+                Vector2 p = Point(rect,mission03.FriendlySite);
+                Rotate(Texture(new Rect(0,0,14,14),arrow,Cyan),p,0f);
+                Text(new Rect(p.x+10,p.y-10,100,20),"FRIENDLY SAM",12,Cyan,true);
+            }
             if (map.HasAirfield && Inside(map.WorldToUV(map.AirfieldPosition)))
             {
                 Vector2 p = Point(rect,map.WorldToUV(map.AirfieldPosition));
@@ -446,7 +461,8 @@ namespace AirCombat
                 Legend(left,top+221,RadarHud.BoundaryInk,"Operation boundary");
                 Legend(left,top+256,new Color(.28f,.26f,.22f),"Terrain obstruction");
                 Legend(left,top+291,Red,"Airborne hostile contacts");
-                Text(new Rect(left,top+346,width,25),"Map pauses flight and timing.",14,Muted);
+                Legend(left,top+326,Cyan,"Friendly SAM / decorative zone");
+                Text(new Rect(left,top+381,width,25),"Map pauses flight and timing.",14,Muted);
                 return;
             }
             Solid(rect,new Color(.075f,.115f,.13f));

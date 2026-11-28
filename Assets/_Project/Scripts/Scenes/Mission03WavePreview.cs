@@ -14,7 +14,8 @@ namespace AirCombat
         private readonly AircraftRadar radar;
         private readonly ArcadeMissileLauncher aam;
         private readonly CombatHitFeedback feedback;
-        private readonly float altitude, startDistance, spacing;
+        private readonly float altitude, spacing;
+        private readonly Rect bounds;
         // Game-only preview pacing: three repetitions of the existing animation clips.
         private const int PreviewCount = 9;
         private const float PreviewSpawnInterval = 1.15f;
@@ -32,11 +33,11 @@ namespace AirCombat
 
         internal Mission03WavePreview(Mission03PowerComplex site, CruiseMissileTarget prefab,
             GameObject visualPrefab, AircraftRadar radar, ArcadeMissileLauncher aam,
-            CombatHitFeedback feedback, float altitude, float startDistance, float spacing)
+            CombatHitFeedback feedback, float altitude, Rect bounds, float spacing)
         {
             this.site = site; this.prefab = prefab; this.visualPrefab = visualPrefab;
             this.radar = radar; this.aam = aam; this.feedback = feedback;
-            this.altitude = altitude; this.startDistance = Mathf.Clamp(startDistance, 700f, 1500f);
+            this.altitude = altitude; this.bounds = bounds;
             this.spacing = Mathf.Clamp(spacing, 20f, 100f);
         }
 
@@ -65,14 +66,18 @@ namespace AirCombat
             var props = site.Targets;
             int i = spawned % props.Count;
             var prop = props[i];
-            // Replay the same authored game animation, with separate entrance cues.
+            // Fixed arcade entrance and scenic bend. No terrain/defense queries.
             float side = i - (props.Count - 1) * .5f;
-            Vector3 start = stage + new Vector3(side * spacing, 0f,
-                startDistance + (i == 1 ? -spacing * .6f : 0f));
+            Vector3 start = new Vector3(Mathf.Lerp(bounds.xMin, bounds.xMax, .20f) + side * spacing,
+                altitude, bounds.yMax - 12f);
+            Vector3 scenicA = new Vector3(Mathf.Lerp(bounds.xMin, bounds.xMax, .26f) + side * spacing,
+                altitude, Mathf.Lerp(bounds.yMin, bounds.yMax, .72f));
+            Vector3 scenicB = new Vector3(Mathf.Lerp(bounds.xMin, bounds.xMax, .36f) + side * spacing,
+                altitude, Mathf.Lerp(bounds.yMin, bounds.yMax, .55f));
             Vector3 stageEnd = stage + new Vector3(side * spacing, 0f, 520f);
             Vector3 mark = prop.transform.position;
             mark.y = altitude;
-            var clip = new[] { start, stageEnd, mark + Vector3.forward * 300f,
+            var clip = new[] { start, scenicA, scenicB, stageEnd, mark + Vector3.forward * 300f,
                 mark + Vector3.forward * 120f };
             var actor = Object.Instantiate(prefab, start, Quaternion.identity);
             SceneManager.MoveGameObjectToScene(actor.gameObject, prop.gameObject.scene);
