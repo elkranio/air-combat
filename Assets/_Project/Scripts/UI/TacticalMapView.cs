@@ -325,10 +325,10 @@ namespace AirCombat
                 }
                 if (count > 0)
                 {
-                    Vector2 uv = map.WorldToUV(center / count);
-                    if (Inside(uv))
+                    Vector2 complexUv = map.WorldToUV(center / count);
+                    if (Inside(complexUv))
                     {
-                        Vector2 p = Point(rect, uv);
+                        Vector2 p = Point(rect, complexUv);
                         Diamond(p, 8f, Cyan);
                         Text(new Rect(p.x+12,p.y-10,144,20),"POWER COMPLEX",12,Cyan,true);
                     }
