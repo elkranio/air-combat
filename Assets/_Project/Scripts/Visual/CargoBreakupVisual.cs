@@ -143,8 +143,7 @@ namespace AirCombat
                 Vector3 corner = bounds.center + Vector3.Scale(bounds.extents, new Vector3(x, y, z));
                 Vector3 offset = rotation * Vector3.Scale(corner, scale);
                 Vector3 point = position + offset;
-                float ground = terrain != null && terrain.terrainData != null
-                    ? terrain.SampleHeight(point) + terrain.transform.position.y : 0f;
+                float ground = GroundSurface.TerrainHeightClamped(terrain, point);
                 floor = Mathf.Max(floor, ground - offset.y);
             }
             return floor + .08f;

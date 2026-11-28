@@ -200,11 +200,7 @@ namespace AirCombat
             return floor + .12f;
         }
 
-        private float GroundAt(Vector3 p)
-        {
-            if (terrain == null || terrain.terrainData == null) return 0f;
-            return terrain.SampleHeight(p) + terrain.transform.position.y;
-        }
+        private float GroundAt(Vector3 p) => GroundSurface.TerrainHeightClamped(terrain, p);
 
         private void CharHull()
         {

@@ -30,15 +30,7 @@ namespace AirCombat
         // v0; routes must avoid buildings and separate plateau meshes.
         public Vector3 Project(Vector3 world, out Vector3 normal)
         {
-            normal = Vector3.up;
-            if (terrain == null || terrain.terrainData == null) return world;
-            Vector3 origin = terrain.transform.position;
-            Vector3 size = terrain.terrainData.size;
-            float u = (world.x - origin.x) / size.x;
-            float v = (world.z - origin.z) / size.z;
-            if (u < 0f || u > 1f || v < 0f || v > 1f) return world;
-            world.y = terrain.SampleHeight(world) + origin.y;
-            normal = terrain.transform.TransformDirection(terrain.terrainData.GetInterpolatedNormal(u, v)).normalized;
+            if (GroundSurface.TryTerrain(terrain, world, out float height, out normal)) world.y = height;
             return world;
         }
 

@@ -71,6 +71,7 @@ namespace AirCombat
         private readonly Dictionary<PlayerHitPoints, Tracked> targets =
             new Dictionary<PlayerHitPoints, Tracked>();
         private readonly List<AircraftWreck> wrecks = new List<AircraftWreck>();
+        internal GroundSurface Surface { get; private set; }
         // Separate random stream: presentation cannot change enemy spawn/AI RNG.
         private readonly System.Random random = new System.Random(8153);
         private GroundCrashFeedback groundCrash;
@@ -87,11 +88,14 @@ namespace AirCombat
         private float edgeUntil;
         private float nextHitSound;
 
-        public void Bind(Camera camera)
+        public void Bind(Camera camera) => Bind(camera, null);
+
+        internal void Bind(Camera camera, MeshFilter groundMesh)
         {
             view = camera;
             cameraFollow = camera != null ? camera.GetComponent<ArcadeCameraFollow>() : null;
             if (audioSource != null) return;
+            Surface = new GroundSurface(gameObject.scene, groundMesh);
             // The existing sandbox effect shader reads vertex/particle colors.
             // The optional white-default mask is used only by the impact puffs.
             Shader shader = Shader.Find("AirCombat/SandboxEffect");
@@ -199,7 +203,7 @@ namespace AirCombat
             if (!tracked.DamageAnchor.IsValid && !tracked.AnchorAttempted)
                 tracked.DamageAnchor = DamageSurfaceAnchor.Choose(tracked.Visual, tracked.HullMeshes, random);
             var wreck = AircraftWreck.Create(health.transform, tracked.HullMeshes,
-                speed, tracked.DamageAnchor, random);
+                speed, tracked.DamageAnchor, random, Surface ?? new GroundSurface(health.gameObject.scene));
             if (wreck == null) return;
             wrecks.Add(wreck);
             if (tracked.IsPlayer && tracked.Visual != null)

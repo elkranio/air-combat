@@ -275,14 +275,8 @@ namespace AirCombat
             if (piece.Velocity.sqrMagnitude < 1f && piece.Spin.sqrMagnitude < 225f) piece.Settled = true;
         }
 
-        private float GroundHeight(Vector3 point)
-        {
-            if (terrain == null || terrain.terrainData == null) return transform.position.y;
-            Vector3 origin = terrain.transform.position;
-            Vector3 size = terrain.terrainData.size;
-            return origin.y + terrain.terrainData.GetInterpolatedHeight(
-                Mathf.Clamp01((point.x - origin.x) / size.x), Mathf.Clamp01((point.z - origin.z) / size.z));
-        }
+        private float GroundHeight(Vector3 point) =>
+            GroundSurface.TerrainHeightClamped(terrain, point, transform.position.y);
 
         private void OnDestroy()
         {

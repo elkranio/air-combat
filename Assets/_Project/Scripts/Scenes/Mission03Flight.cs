@@ -138,7 +138,7 @@ namespace AirCombat
             landing = new ScriptedLanding(transform, landingRunway, visualRest, operationBounds,
                 150f, 350f, 1f, 550f, 15f, 1f, 65f, 65f);
             feedback = gameObject.AddComponent<CombatHitFeedback>();
-            feedback.Bind(camera); feedback.Track(health, true);
+            feedback.Bind(camera, ground.GetComponent<MeshFilter>()); feedback.Track(health, true);
             nurs.gameObject.SetActive(false);
             cursor = camera.gameObject.AddComponent<TargetingCursor>();
             cursor.Bind(camera); cursor.enabled = false;
@@ -164,38 +164,13 @@ namespace AirCombat
             bound = true;
         }
 
-        // M03 meadow is an authored mesh, not a Unity Terrain. Sample its actual
-        // triangles once per decoration; no persistent physics collider or gameplay change.
         private void SeatFriendlySite(Transform site)
         {
             if (site == null) return;
-            var filter = ground.GetComponent<MeshFilter>();
-            var mesh = filter != null ? filter.sharedMesh : null;
-            if (mesh == null || !mesh.isReadable)
-            {
-                Debug.LogWarning("M03: cannot sample decorative site ground mesh.", this);
-                return;
-            }
             Vector3 p = site.position;
-            var vertices = mesh.vertices;
-            var triangles = mesh.triangles;
-            float height = float.NegativeInfinity;
-            for (int i = 0; i < triangles.Length; i += 3)
+            if (!feedback.Surface.TrySample(p, out float height))
             {
-                Vector3 a = filter.transform.TransformPoint(vertices[triangles[i]]);
-                Vector3 b = filter.transform.TransformPoint(vertices[triangles[i+1]]);
-                Vector3 c = filter.transform.TransformPoint(vertices[triangles[i+2]]);
-                float den = (b.z-c.z)*(a.x-c.x) + (c.x-b.x)*(a.z-c.z);
-                if (Mathf.Abs(den) < .0001f) continue;
-                float u = ((b.z-c.z)*(p.x-c.x) + (c.x-b.x)*(p.z-c.z))/den;
-                float v = ((c.z-a.z)*(p.x-c.x) + (a.x-c.x)*(p.z-c.z))/den;
-                float w = 1f-u-v;
-                if (u < -.00001f || v < -.00001f || w < -.00001f) continue;
-                height = Mathf.Max(height, u*a.y + v*b.y + w*c.y);
-            }
-            if (float.IsNegativeInfinity(height))
-            {
-                Debug.LogWarning("M03: decorative site is outside the meadow mesh.", this);
+                Debug.LogWarning("M03: decorative site is outside the ground surface.", this);
                 return;
             }
             p.y = height + .08f;

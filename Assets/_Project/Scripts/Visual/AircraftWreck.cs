@@ -9,7 +9,7 @@ namespace AirCombat
     public sealed class AircraftWreck
     {
         private readonly Transform root;
-        private readonly Terrain[] terrains;
+        private readonly GroundSurface surface;
         private readonly Vector3 anchorLocal;
         private readonly Vector3 heading;
         private readonly Quaternion initialRotation;
@@ -24,10 +24,10 @@ namespace AirCombat
         public bool HitGround { get; private set; }
 
         private AircraftWreck(Transform root, Vector3 forward, float speed,
-            bool hasAnchor, Vector3 anchor, System.Random rng)
+            bool hasAnchor, Vector3 anchor, System.Random rng, GroundSurface surface)
         {
             this.root = root;
-            terrains = Terrain.activeTerrains;
+            this.surface = surface;
             heading = Vector3.ProjectOnPlane(forward, Vector3.up).normalized;
             initialRotation = root.rotation;
             initialSpeed = Mathf.Clamp(speed, 15f, 180f);
@@ -40,10 +40,16 @@ namespace AirCombat
         }
 
         public static AircraftWreck Create(Transform aircraft, MeshFilter[] hull,
-            float speed, DamageSurfaceAnchor anchor, System.Random rng)
+            float speed, DamageSurfaceAnchor anchor, System.Random rng) =>
+            aircraft == null ? null : Create(aircraft, hull, speed, anchor, rng,
+                new GroundSurface(aircraft.gameObject.scene));
+
+        internal static AircraftWreck Create(Transform aircraft, MeshFilter[] hull,
+            float speed, DamageSurfaceAnchor anchor, System.Random rng, GroundSurface surface)
         {
             if (aircraft == null || hull == null || hull.Length == 0) return null;
             var go = new GameObject("Aircraft wreck / " + aircraft.name);
+            UnityEngine.SceneManagement.SceneManager.MoveGameObjectToScene(go, aircraft.gameObject.scene);
             var root = go.transform;
             root.SetPositionAndRotation(aircraft.position, aircraft.rotation);
             root.localScale = aircraft.lossyScale;
@@ -74,7 +80,7 @@ namespace AirCombat
             }
             if (count == 0) { Object.Destroy(go); return null; }
             return new AircraftWreck(root, aircraft.forward, speed, anchor.IsValid,
-                anchor.IsValid ? anchor.WorldPosition : aircraft.position, rng);
+                anchor.IsValid ? anchor.WorldPosition : aircraft.position, rng, surface);
         }
 
         private static Transform CopyPath(Transform source, Transform aircraft,
@@ -133,20 +139,7 @@ namespace AirCombat
             return elapsed < 8f; // Safety bound for unsupported/off-map terrain.
         }
 
-        private float GroundHeight(Vector3 point)
-        {
-            foreach (var terrain in terrains)
-            {
-                if (terrain == null || terrain.terrainData == null) continue;
-                Vector3 origin = terrain.transform.position;
-                Vector3 size = terrain.terrainData.size;
-                if (point.x < origin.x || point.x > origin.x + size.x ||
-                    point.z < origin.z || point.z > origin.z + size.z) continue;
-                return origin.y + terrain.terrainData.GetInterpolatedHeight(
-                    (point.x - origin.x) / size.x, (point.z - origin.z) / size.z);
-            }
-            return 0f;
-        }
+        private float GroundHeight(Vector3 point) => surface.HeightOr(point);
 
         public void Dispose()
         {
