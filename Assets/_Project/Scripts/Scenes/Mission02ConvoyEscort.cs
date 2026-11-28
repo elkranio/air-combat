@@ -157,8 +157,14 @@ namespace AirCombat
 #if UNITY_EDITOR
             TracePlacement(index, p, head, forward, angle, dt);
 #endif
-            units[index].transform.SetPositionAndRotation(p,
-                Quaternion.LookRotation(velocity.sqrMagnitude > .01f ? velocity : tangent, Vector3.up));
+            Transform unit = units[index].transform;
+            Quaternion heading = Quaternion.LookRotation(velocity.sqrMagnitude > .01f ? velocity : tangent, Vector3.up);
+            // Position follows the orbit exactly; only the model heading is rate-limited.
+            const float headingTurnRate = 90f;
+            Quaternion rotation = dt > 0f
+                ? Quaternion.RotateTowards(unit.rotation, heading, headingTurnRate * dt)
+                : heading;
+            unit.SetPositionAndRotation(p, rotation);
         }
 
 #if UNITY_EDITOR
