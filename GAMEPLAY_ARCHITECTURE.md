@@ -27,6 +27,13 @@ M01/Sandbox in Build Settings, M02 editor-only; M03 not built. FlightSession (-8
 - `InterceptorPassTrial` is a sandbox-owned single-aircraft composition with phase/motion, damage, launch props and explicit contact registration. It uses the IN01 visual-only prefab; not a Tiger pilot. Reuse or extract reusable encounter-independent behavior before M03, rather than making campaign depend on Sandbox.
 - `GroundPatrolRoute` / `GroundPatrolPath` authored route/rounded geometry, `GroundPatrolMotor` motion, `MantisGun` / `MantisVerticalRocket` mobile rocket AA. `DamageableTarget` separates air/ground; `PlayerHitPoints` and ground receivers own health. `CombatHitFeedback` / `AirTargetCombatEffects` own effects, not objectives.
 
+## AAM asset ownership (MAINT02b)
+
+- `Prefabs/Weapons/AAM_Player.prefab`, `AAM_Tiger.prefab`, and `AAM_Interceptor.prefab` own their projectile flight values and hit damage. All use `MissileProjectile` and reference the same visual mesh/material resources; no launch-time tuning override.
+- Both player aircraft reference `AAM_Player` directly on `ArcadeMissileLauncher`. The aircraft still owns lock, grace, magazine and reload policy.
+- `Settings/AAM_Tiger_Loadout.asset` and `Settings/AAM_Interceptor_Loadout.asset` own enemy attack policy plus the projectile reference. Sandbox and M03 bind the same interceptor loadout. Scenes do not own enemy AAM tuning. Runtime warning, radar, cancellation and salvo behavior remain in `EnemyMissileStressTest`.
+- MAINT02b preserves the values from `503875b`; the original IN02 balance restoration is deferred to MAINT03. The legacy `Art/Weapons/Missile.prefab` is retained pending the dependency sweep in MAINT02d.
+
 ## Presentation
 
 `CombatCameraRig` binds one `ArcadeCameraFollow` (fixed world yaw, heading/boost lead). `AircraftRadar` receives explicit `IRadarContact` sources. CombatHud, RadarHud, FlightHud, WeaponHud, TargetMarkerHud, EnemyMissileThreatHud and TerrainCollisionWarning display runtime state. Mission01ObjectiveHud/Mission01StatusHud are runtime views. TacticalMapView owns UI/input; objective state remains in controllers. `Mission01EngineAudio` retains its historical name/GUID but reads `IPlayerEngineAudioContext` from M01/M02; shared mixer reuses Lynx cruise/boost loops. `CockpitWarningAudio` handles warnings. Future radio/debrief systems not implemented.

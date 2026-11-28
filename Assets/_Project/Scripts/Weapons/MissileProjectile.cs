@@ -12,7 +12,9 @@ namespace AirCombat
         [SerializeField, Min(0f)] private float maneuverBudget = 150f;
         [SerializeField, Min(0.1f)] private float lifetime = 5f;
         [SerializeField, Min(0.1f)] private float hitRadius = 4f;
+        [SerializeField, Min(1)] private int hitDamage = 5;
         [SerializeField] private TrailRenderer trail;
+        public int HitDamage => Mathf.Max(1, hitDamage);
         private Transform target;
         private Action<Vector3, Transform> onHit;
         private Action<Vector3> onTerrainImpact;
@@ -26,16 +28,15 @@ namespace AirCombat
         private Vector3 previousExhaust;
         private Vector3 exhaustLocal = new Vector3(0f, 0f, -1.9f);
 
-        // Per-instance production tuning. The prefab and lab launchers keep their defaults.
-        public void ConfigureArcade(AirDamageableTarget aimTarget, float velocity, float yawRate,
-            float budget, float flightSeconds, float radius, Action<Vector3, Vector3> exhaust)
+        // Bind only instance state; gameplay tuning belongs to the projectile prefab.
+        public void ConfigureArcade(AirDamageableTarget aimTarget, Action<Vector3, Vector3> exhaust)
         {
             arcadeTarget = aimTarget;
-            speed = Mathf.Max(.1f, velocity);
-            turnRate = Mathf.Max(1f, yawRate);
-            maneuverBudget = Mathf.Max(0f, budget);
-            lifetime = Mathf.Max(.1f, flightSeconds);
-            hitRadius = Mathf.Max(.1f, radius);
+            speed = Mathf.Max(.1f, speed);
+            turnRate = Mathf.Max(1f, turnRate);
+            maneuverBudget = Mathf.Max(0f, maneuverBudget);
+            lifetime = Mathf.Max(.1f, lifetime);
+            hitRadius = Mathf.Max(.1f, hitRadius);
             arcadeExhaust = exhaust;
             if (trail != null)
             {

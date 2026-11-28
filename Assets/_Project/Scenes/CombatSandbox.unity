@@ -3215,22 +3215,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::AirCombat.CombatSandboxEncounter
   enemyPrefab: {fileID: 36626630230575987, guid: e59bcec657b57044ea9bbfbb12121973, type: 3}
-  missilePrefab: {fileID: 1166229602950883390, guid: 22d60401b2f22264a94c1483e5f97a30, type: 3}
   spawnRadius: 550
   pairSpacing: 45
-  enemyMissiles:
-    minInterval: 2
-    maxInterval: 3.2
-    warningSeconds: 0.8
-    minLaunchRange: 90
-    maxLaunchRange: 300
-    acquisitionHalfAngle: 75
-    speed: 140
-    turnRate: 95
-    turnBudget: 120
-    lifetime: 4
-    hitRadius: 5
-    damage: 6
+  tigerAam: {fileID: 11400000, guid: a80e020b000040008000000000000005, type: 2}
   mode: 8
   interceptorPrefab: {fileID: 585073388258483318, guid: 0ca69e2e1dc70e44ea012bf38b3d7521, type: 3}
   interceptorWingmanEnabled: 1
@@ -3248,19 +3235,7 @@ MonoBehaviour:
     approachTimeout: 9
     minimumBreakawaySeconds: 2.2
     hp: 5
-  interceptorMissiles:
-    minInterval: 8
-    maxInterval: 15
-    warningSeconds: 0.65
-    minLaunchRange: 110
-    maxLaunchRange: 570
-    acquisitionHalfAngle: 45
-    speed: 225
-    turnRate: 77
-    turnBudget: 110
-    lifetime: 6
-    hitRadius: 5
-    damage: 5
+  interceptorAam: {fileID: 11400000, guid: a80e020b000040008000000000000006, type: 2}
   bastionPrefab: {fileID: 5147233585455714197, guid: 7ceb77f4568832c49a7d69a26e36f0f2, type: 3}
   bastionPicketTemplate: {fileID: 1298626541, guid: 4758bfb984f508a4c82af3323d448857, type: 3}
   bastionSalvoGap: 0.8

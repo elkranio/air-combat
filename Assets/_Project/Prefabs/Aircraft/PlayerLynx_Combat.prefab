@@ -457,12 +457,7 @@ MonoBehaviour:
   partialGraceSeconds: 0.5
   lockedGraceSeconds: 1
   reloadSeconds: 20
-  hitDamage: 5
-  missileSpeed: 190
-  missileTurnRate: 220
-  missileTurnBudget: 270
-  missileLifetime: 3
-  missileHitRadius: 5
+  prefab: {fileID: 1166229602950883390, guid: a80e020b000040008000000000000001, type: 3}
 --- !u!1 &5321065832118784924
 GameObject:
   m_ObjectHideFlags: 0

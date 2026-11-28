@@ -11,7 +11,6 @@ namespace AirCombat
         [SerializeField] private CombatHud hud;
         [SerializeField] private Renderer ground;
         [SerializeField] private Transform runway;
-        [SerializeField] private MissileProjectile missilePrefab;
         [SerializeField] private Rect operationBounds = new Rect(-1500f, -1200f, 3000f, 2400f);
         [SerializeField, Min(1f)] private float cruiseAltitude = 78f;
         [Header("M03 / first arcade wave preview")]
@@ -24,12 +23,7 @@ namespace AirCombat
         [SerializeField, Min(0f)] private float interceptorWingmanDelay = 2f;
         [SerializeField, Min(0f)] private float interceptorWingmanOffset = 120f;
         [SerializeField] private InterceptorPassTrial.Settings interceptorPass = new InterceptorPassTrial.Settings();
-        [SerializeField] private EnemyMissileStressTest.Settings interceptorMissiles = new EnemyMissileStressTest.Settings
-        {
-            warningSeconds = .65f, minLaunchRange = 110f, maxLaunchRange = 570f,
-            acquisitionHalfAngle = 45f, speed = 225f, turnRate = 77f, turnBudget = 110f,
-            lifetime = 6f, hitRadius = 5f, damage = 5
-        };
+        [SerializeField] private EnemyAamLoadout interceptorAam;
         [Header("M03 / decorative friendly sites")]
         [SerializeField] private Transform[] additionalFriendlySites = System.Array.Empty<Transform>();
         [SerializeField, Min(0f)] private float additionalFriendlyMapRadius = 155f;
@@ -92,10 +86,10 @@ namespace AirCombat
 
 #if UNITY_EDITOR
         public void ConfigureForAuthoring(CombatHud display, Renderer surface, Transform runwayCenter,
-            MissileProjectile projectile, Rect bounds)
+            EnemyAamLoadout interceptorLoadout, Rect bounds)
         {
             hud = display; ground = surface; runway = runwayCenter;
-            missilePrefab = projectile; operationBounds = bounds;
+            interceptorAam = interceptorLoadout; operationBounds = bounds;
         }
 #endif
 
@@ -115,7 +109,8 @@ namespace AirCombat
             if (flight == null || boost == null || trigger == null || health == null ||
                 radar == null || visual == null || flames == null || missiles == null ||
                 nurs == null || team == null || camera == null || hud == null ||
-                runway == null || ground == null || missilePrefab == null)
+                runway == null || ground == null || !missiles.HasProjectile ||
+                (interceptorPrefab != null && (interceptorAam == null || !interceptorAam.IsConfigured)))
             {
                 Debug.LogError("M03: incomplete shared flight references.", this);
                 if (flight != null) flight.enabled = false;
@@ -143,7 +138,7 @@ namespace AirCombat
             cursor = camera.gameObject.AddComponent<TargetingCursor>();
             cursor.Bind(camera); cursor.enabled = false;
             missiles.gameObject.SetActive(true);
-            missiles.Bind(camera, cursor, player, missilePrefab, feedback);
+            missiles.Bind(camera, cursor, player, feedback);
             trigger.ConfigureDualSlots(missiles);
             for (int i = 0; i < FriendlySiteCount; i++) SeatFriendlySite(FriendlySiteAt(i));
             PowerComplex = Mission03PowerComplex.Bind(gameObject.scene);
@@ -154,7 +149,7 @@ namespace AirCombat
             if (interceptorPrefab != null)
             {
                 interceptorThreats = gameObject.AddComponent<EnemyMissileStressTest>();
-                interceptorThreats.Bind(health, missilePrefab, feedback, interceptorMissiles, radar);
+                interceptorThreats.Bind(health, interceptorAam, feedback, radar);
                 gameObject.AddComponent<EnemyMissileThreatHud>().Bind(view, interceptorThreats);
                 interceptors = new InterceptorPairTrial(transform, interceptorPrefab, aircraft,
                     radar, missiles, interceptorThreats, feedback, interceptorPass, halfExtent,

@@ -1250,7 +1250,6 @@ MonoBehaviour:
   hud: {fileID: 2095464051}
   ground: {fileID: 1134352586}
   runway: {fileID: 2139774250}
-  missilePrefab: {fileID: 1166229602950883390, guid: 22d60401b2f22264a94c1483e5f97a30, type: 3}
   operationBounds:
     serializedVersion: 2
     x: -1500
@@ -1277,19 +1276,7 @@ MonoBehaviour:
     approachTimeout: 9
     minimumBreakawaySeconds: 2.2
     hp: 5
-  interceptorMissiles:
-    minInterval: 8
-    maxInterval: 15
-    warningSeconds: 0.65
-    minLaunchRange: 110
-    maxLaunchRange: 570
-    acquisitionHalfAngle: 45
-    speed: 225
-    turnRate: 77
-    turnBudget: 110
-    lifetime: 6
-    hitRadius: 5
-    damage: 5
+  interceptorAam: {fileID: 11400000, guid: a80e020b000040008000000000000006, type: 2}
   additionalFriendlySites:
   - {fileID: 1979000112}
   - {fileID: 1979000122}

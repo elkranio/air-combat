@@ -10,12 +10,11 @@ namespace AirCombat
     public sealed class CombatSandboxEncounter : MonoBehaviour, IFlightSessionEncounter
     {
         [SerializeField] private GameObject enemyPrefab;
-        [SerializeField] private MissileProjectile missilePrefab;
         [SerializeField, Min(1f)] private float spawnRadius = 550f;
         [SerializeField, Min(20f)] private float pairSpacing = 45f;
 
         [Header("Enemy AAM / independent attack cooldown")]
-        [SerializeField] private EnemyMissileStressTest.Settings enemyMissiles = new EnemyMissileStressTest.Settings();
+        [SerializeField] private EnemyAamLoadout tigerAam;
         private EnemyMissileStressTest missileStress;
         // Explicit serialized values: do not reorder or reuse these IDs.
         public enum SandboxMode { Dogfight = 0, GroundAttack = 1, Interception = 2, Warden = 3, Convoy = 4, Interceptor = 5, Bastion = 6, BuildingDestruction = 7, MothAttack = 8 }
@@ -27,12 +26,7 @@ namespace AirCombat
         [SerializeField, Range(0f, 4f)] private float interceptorWingmanDelay = 1.5f;
         [SerializeField, Range(0f, 300f)] private float interceptorWingmanLateralOffset = 120f;
         [SerializeField] private InterceptorPassTrial.Settings interceptorPass = new InterceptorPassTrial.Settings();
-        [SerializeField] private EnemyMissileStressTest.Settings interceptorMissiles = new EnemyMissileStressTest.Settings
-        {
-            warningSeconds = .65f, minLaunchRange = 110f, maxLaunchRange = 570f,
-            acquisitionHalfAngle = 45f, speed = 225f, turnRate = 77f, turnBudget = 110f,
-            lifetime = 6f, hitRadius = 5f, damage = 5
-        };
+        [SerializeField] private EnemyAamLoadout interceptorAam;
         private bool interceptorMode;
         private InterceptorPairTrial interceptor;
         [Header("SAM02 / Bastion sandbox")]
@@ -187,10 +181,10 @@ namespace AirCombat
             radar = sensor;
             playerHealth = health;
             boundary = halfExtent;
-            if ((mode == SandboxMode.Dogfight && enemyPrefab == null) ||
-                (interceptionMode && (sparrowPrefab == null || missilePrefab == null)) ||
+            if ((mode == SandboxMode.Dogfight && (enemyPrefab == null || tigerAam == null || !tigerAam.IsConfigured)) ||
+                (interceptionMode && sparrowPrefab == null) ||
                 (mothAttackMode && mothVisualPrefab == null) ||
-                (interceptorMode && (interceptorPrefab == null || missilePrefab == null)) ||
+                (interceptorMode && (interceptorPrefab == null || interceptorAam == null || !interceptorAam.IsConfigured)) ||
                 (bastionMode && (bastionPrefab == null || bastionPicketTemplate == null || convoyTerrain == null)) ||
                 ((destructionMode || mothAttackMode) && (destructionBuildingPrefab == null || convoyTerrain == null)) ||
                 player == null || radar == null || playerHealth == null)
@@ -205,7 +199,8 @@ namespace AirCombat
             var groundLauncher = player.GetComponentInChildren<ArcadeNursLauncher>(true);
             var airLauncher = player.GetComponentInChildren<ArcadeMissileLauncher>(true);
             if (team == null || playerFlight == null || playerTrigger == null || playerBoost == null ||
-                groundLauncher == null || airLauncher == null || view == null)
+                groundLauncher == null || airLauncher == null || view == null ||
+                (!groundMode && !convoyMode && !wardenMode && !destructionMode && !airLauncher.HasProjectile))
             {
                 Debug.LogError("AIR encounter: incomplete PlayerKestrel_Combat prefab.", player);
                 return;
@@ -228,10 +223,10 @@ namespace AirCombat
             if (hitFeedback == null) hitFeedback = gameObject.AddComponent<CombatHitFeedback>();
             hitFeedback.Bind(view);
             hitFeedback.Track(playerHealth, true);
-            if ((mode == SandboxMode.Dogfight || interceptorMode) && missilePrefab != null)
+            if (mode == SandboxMode.Dogfight || interceptorMode)
             {
                 missileStress = gameObject.AddComponent<EnemyMissileStressTest>();
-                missileStress.Bind(playerHealth, missilePrefab, hitFeedback, interceptorMode ? interceptorMissiles : enemyMissiles, radar);
+                missileStress.Bind(playerHealth, interceptorMode ? interceptorAam : tigerAam, hitFeedback, radar);
                 gameObject.AddComponent<EnemyMissileThreatHud>().Bind(view, missileStress);
             }
             // AC-02 remains a prefab option, not an equipped weapon in this test.
@@ -272,11 +267,11 @@ namespace AirCombat
             {
                 targetingCursor = view.gameObject.AddComponent<TargetingCursor>();
                 targetingCursor.Bind(view);
-                if (missilePrefab != null)
+                if (airLauncher.HasProjectile)
                 {
                     missileLauncher = airLauncher;
                     missileLauncher.gameObject.SetActive(true);
-                    missileLauncher.Bind(view, targetingCursor, player, missilePrefab, hitFeedback);
+                    missileLauncher.Bind(view, targetingCursor, player, hitFeedback);
                 }
                 else Debug.LogError("AIR encounter: missing AAM missile prefab.", this);
                 playerTrigger.ConfigureDualSlots(missileLauncher);

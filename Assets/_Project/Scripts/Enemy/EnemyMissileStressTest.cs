@@ -18,12 +18,6 @@ namespace AirCombat
             [Min(0f)] public float minLaunchRange = 90f;
             [Min(1f)] public float maxLaunchRange = 300f;
             [Range(1f, 180f)] public float acquisitionHalfAngle = 75f;
-            [Min(.1f)] public float speed = 140f;
-            [Min(1f)] public float turnRate = 95f;
-            [Min(0f)] public float turnBudget = 120f;
-            [Min(.1f)] public float lifetime = 4f;
-            [Min(.1f)] public float hitRadius = 5f;
-            [Min(1)] public int damage = 6;
         }
 
         private sealed class Shooter
@@ -74,14 +68,14 @@ namespace AirCombat
         public int Hits { get; private set; }
         public int InFlight => live.Count;
 
-        public void Bind(PlayerHitPoints player, MissileProjectile projectile,
-            CombatHitFeedback hitFeedback, Settings config, AircraftRadar sensor)
+        public void Bind(PlayerHitPoints player, EnemyAamLoadout loadout,
+            CombatHitFeedback hitFeedback, AircraftRadar sensor)
         {
             target = player;
-            prefab = projectile;
+            prefab = loadout.Projectile;
             feedback = hitFeedback;
             radar = sensor;
-            settings = config ?? new Settings();
+            settings = loadout.Policy;
             warningSource = gameObject.AddComponent<AudioSource>();
             warningSource.playOnAwake = false;
             warningSource.spatialBlend = 0f;
@@ -206,8 +200,8 @@ namespace AirCombat
             // explicit gameplay radius. Scale only this instance's visible geometry/exhaust.
             missile.transform.localScale *= 1.12f;
             float coreDebt = 1f, cloudDebt = 1f;
-            missile.ConfigureArcade(target, settings.speed, settings.turnRate, settings.turnBudget,
-                settings.lifetime, settings.hitRadius, (from, to) =>
+            int hitDamage = missile.HitDamage;
+            missile.ConfigureArcade(target, (from, to) =>
                 {
                     if (feedback != null) feedback.EmitMissileExhaust(from, to, ref coreDebt, ref cloudDebt, true);
                 });
@@ -222,7 +216,7 @@ namespace AirCombat
             }
             missile.Launch(target.transform, (hitPoint, hit) =>
             {
-                if (WeaponLock.Alive(target) && target.ApplyDamage(hitPoint, settings.damage)) Hits++;
+                if (WeaponLock.Alive(target) && target.ApplyDamage(hitPoint, hitDamage)) Hits++;
             }, terrainPoint =>
             {
                 if (feedback != null) feedback.EmitInterceptionBurst(terrainPoint, missile.transform.forward);

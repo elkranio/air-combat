@@ -11,16 +11,11 @@ namespace AirCombat
         [SerializeField, Min(0f)] private float partialGraceSeconds = .5f;
         [SerializeField, Min(0f)] private float lockedGraceSeconds = 1f;
         [SerializeField, Min(.1f)] private float reloadSeconds = 20f;
-        [SerializeField, Min(1)] private int hitDamage = 5;
-        [SerializeField, Min(.1f)] private float missileSpeed = 190f;
-        [SerializeField, Min(1f)] private float missileTurnRate = 220f;
-        [SerializeField, Min(0f)] private float missileTurnBudget = 270f;
-        [SerializeField, Min(.1f)] private float missileLifetime = 3f;
-        [SerializeField, Min(.1f)] private float missileHitRadius = 5f;
+        [SerializeField] private MissileProjectile prefab;
         private const int Capacity = 2;
         private int rounds = Capacity;
         private float reloadUntil;
-        private MissileProjectile prefab;
+        public bool HasProjectile => prefab != null;
         private JetAssembly aircraft;
         private CombatHitFeedback feedback;
         private readonly List<MissileProjectile> live = new List<MissileProjectile>();
@@ -62,12 +57,11 @@ namespace AirCombat
         public AirDamageableTarget LockedTarget => selected && rounds > 0 && seeker.IsLocked ? seeker.Target : null;
 
         public void Bind(Camera camera, TargetingCursor pointer, JetAssembly owner,
-            MissileProjectile missilePrefab, CombatHitFeedback hitFeedback)
+            CombatHitFeedback hitFeedback)
         {
             view = camera;
             cursor = pointer;
             aircraft = owner;
-            prefab = missilePrefab;
             feedback = hitFeedback;
             beepSource = gameObject.AddComponent<AudioSource>();
             launchSource = gameObject.AddComponent<AudioSource>();
@@ -112,8 +106,8 @@ namespace AirCombat
             var missile = Instantiate(prefab, position, Quaternion.LookRotation(forward, Vector3.up));
             // Every shot owns independent spacing accumulators; no attachment to the aircraft.
             float coreDebt = 1f, cloudDebt = 1f;
-            missile.ConfigureArcade(target, missileSpeed, missileTurnRate, missileTurnBudget,
-                missileLifetime, missileHitRadius, (from, to) =>
+            int hitDamage = missile.HitDamage;
+            missile.ConfigureArcade(target, (from, to) =>
                 {
                     if (feedback != null) feedback.EmitMissileExhaust(from, to, ref coreDebt, ref cloudDebt);
                 });

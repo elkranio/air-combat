@@ -39,10 +39,11 @@ namespace AirCombat
                 var cameraPrefab = Load<GameObject>("Prefabs/Camera/ArcadeCameraRig.prefab");
                 var hudPrefab = Load<GameObject>("Prefabs/UI/CombatHUD.prefab");
                 var lightPrefab = Load<GameObject>("Prefabs/Environment/CombatLightingRig.prefab");
-                var missile = Load<GameObject>("Art/Weapons/Missile.prefab").GetComponent<MissileProjectile>();
+                var interceptorAam = Load<EnemyAamLoadout>("Settings/AAM_Interceptor_Loadout.asset");
                 var audioProfile = Load<MissionEngineAudioProfile>("Settings/Lynx_EngineAudio.asset");
                 var shader = Shader.Find("Universal Render Pipeline/Lit");
-                if (shader == null || missile == null || playerPrefab.GetComponent<JetAssembly>() == null ||
+                if (shader == null || !interceptorAam.IsConfigured || playerPrefab.GetComponent<JetAssembly>() == null ||
+                    playerPrefab.GetComponentInChildren<ArcadeMissileLauncher>(true)?.HasProjectile != true ||
                     playerPrefab.GetComponent<MissionCheats>() == null || cameraPrefab.GetComponent<CombatCameraRig>() == null ||
                     hudPrefab.GetComponent<CombatHud>() == null || lightPrefab.GetComponent<CombatLightingRig>() == null)
                     throw new InvalidOperationException("Missing shared campaign components (including DEV01).");
@@ -73,7 +74,7 @@ namespace AirCombat
                 Place(lightPrefab, scene, "M03 / daylight");
                 var missionRoot = new GameObject("M03 / mission");
                 var mission = missionRoot.AddComponent<Mission03Flight>();
-                mission.ConfigureForAuthoring(hud, ground, runway, missile, Bounds);
+                mission.ConfigureForAuthoring(hud, ground, runway, interceptorAam, Bounds);
                 var session = missionRoot.AddComponent<FlightSession>();
                 session.Configure(player.GetComponent<JetAssembly>(), camera, 1500f);
                 session.ConfigureHud(hud, Array.Empty<RadarAirContact>());
