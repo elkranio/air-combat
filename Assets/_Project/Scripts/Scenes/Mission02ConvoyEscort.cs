@@ -7,6 +7,7 @@ namespace AirCombat
     internal sealed class Mission02ConvoyEscort
     {
         private const int Count = 2, ArcSamples = 256;
+        private const float OrbitTurnRate = 4f; // degrees per second; shared orbit basis
         private readonly ConvoyMarchPreview convoy;
         private readonly WardenCombat prefab;
         private readonly AircraftRadar radar;
@@ -17,14 +18,15 @@ namespace AirCombat
         private readonly float lateral, longitudinal, patrolSpeed;
         private readonly float[] acquireDelay, arc = new float[ArcSamples + 1], worldSpeed = new float[Count];
         private readonly WardenCombat[] units = new WardenCombat[Count];
-        private float phaseDistance;
+        private readonly Vector3[] placedPosition = new Vector3[Count];
+        private float phaseDistance, orbitYaw;
         private bool ready;
 #if UNITY_EDITOR
         // Temporary movement diagnostics. One sample per placement, logs only
         // route turns, anomalous displacement or the onset of a long frame.
         private readonly bool[] traceValid = new bool[Count], traceHitch = new bool[Count];
         private readonly Vector3[] tracePosition = new Vector3[Count], traceHead = new Vector3[Count],
-            traceForward = new Vector3[Count];
+            traceForward = new Vector3[Count], traceRouteForward = new Vector3[Count];
         private readonly float[] traceAngle = new float[Count];
         private float traceElapsed;
 #endif
@@ -61,6 +63,7 @@ namespace AirCombat
 
         internal bool Spawn()
         {
+            orbitYaw = RouteYaw();
             for (int i = 0; i < Count; i++)
             {
                 var unit = units[i] = Object.Instantiate(prefab, owner);
@@ -88,6 +91,9 @@ namespace AirCombat
 #if UNITY_EDITOR
             traceElapsed += dt;
 #endif
+            // The road is a polyline: its heading jumps at a node. Rotate the
+            // shared ellipse once per tick rather than rotating each actor instantly.
+            orbitYaw = Mathf.MoveTowardsAngle(orbitYaw, RouteYaw(), OrbitTurnRate * dt);
             phaseDistance = Mathf.Repeat(phaseDistance + patrolSpeed * dt, arc[ArcSamples]);
             for (int i = 0; i < Count; i++)
             {
@@ -125,17 +131,28 @@ namespace AirCombat
             return 2f * Mathf.PI * (low + fraction) / ArcSamples;
         }
 
+        private float RouteYaw()
+        {
+            Vector3 direction = convoy.Forward;
+            return Mathf.Atan2(direction.x, direction.z) * Mathf.Rad2Deg;
+        }
+
         private void Place(int index, float dt = 0f)
         {
             float angle = Angle(index);
             Vector2 offset = Offset(angle);
-            Vector3 forward = convoy.Forward;
+            Vector3 forward = Quaternion.Euler(0f, orbitYaw, 0f) * Vector3.forward;
             Vector3 right = Vector3.Cross(Vector3.up, forward);
             Vector3 head = convoy.HeadPosition;
             Vector3 p = head - forward * convoy.HalfLength + right * offset.x + forward * offset.y;
             p.y = 78f; // M02 fixed flight plane, not the runway spawn altitude.
             Vector3 tangent = (right * (lateral * Mathf.Sin(angle)) + forward * (longitudinal * Mathf.Cos(angle))).normalized;
-            Vector3 velocity = tangent * patrolSpeed + forward * (convoy.AliveCount > 0 ? convoy.Speed : 0f);
+            // Actual world displacement includes the head translation and the
+            // gentle rotation of the ellipse. Use it for heading and wreck speed.
+            // Spawn uses the analytical tangent because there is no prior pose.
+            Vector3 velocity = dt > 0f ? (p - placedPosition[index]) / dt :
+                tangent * patrolSpeed + convoy.Forward * (convoy.AliveCount > 0 ? convoy.Speed : 0f);
+            placedPosition[index] = p;
             worldSpeed[index] = velocity.magnitude;
 #if UNITY_EDITOR
             TracePlacement(index, p, head, forward, angle, dt);
@@ -153,9 +170,15 @@ namespace AirCombat
                 Vector3 before = units[i].transform.position;
                 float step = Vector3.Distance(p, tracePosition[i]);
                 float external = Vector3.Distance(before, tracePosition[i]);
-                float turn = Vector3.SignedAngle(traceForward[i], forward, Vector3.up);
+                Vector3 routeForward = convoy.Forward;
+                float turn = Vector3.SignedAngle(traceRouteForward[i], routeForward, Vector3.up);
+                float orbitTurn = Vector3.SignedAngle(traceForward[i], forward, Vector3.up);
                 float headStep = Vector3.Distance(head, traceHead[i]);
-                float limit = patrolSpeed * dt + headStep + .15f;
+                // Bound the additional movement independently of the measured
+                // basisShift, using the configured maximum orbit turn rate.
+                Vector2 radial = Offset(angle) - new Vector2(0f, convoy.HalfLength);
+                float turnAllowance = radial.magnitude * OrbitTurnRate * Mathf.Deg2Rad * dt;
+                float limit = patrolSpeed * dt + headStep + turnAllowance + .15f;
                 // Recompute the same orbit point with the prior frame's basis.
                 // The difference isolates a heading-induced displacement.
                 Vector2 offset = Offset(angle);
@@ -171,7 +194,8 @@ namespace AirCombat
                     Debug.Log($"[WARDEN_TRACE] {(i == 0 ? "Alpha" : "Bravo")} " +
                         $"t={traceElapsed:F3}s frame={Time.frameCount} dt={dt:F4} realDt={Time.unscaledDeltaTime:F4} " +
                         $"step={step:F3} limit={limit:F3} external={external:F3} " +
-                        $"turn={turn:F2}deg basisShift={basisShift:F3} headStep={headStep:F3} " +
+                        $"turn={turn:F2}deg orbitTurn={orbitTurn:F4}deg basisShift={basisShift:F3} " +
+                        $"turnAllowance={turnAllowance:F3} headStep={headStep:F3} " +
                         $"angle={traceAngle[i]*Mathf.Rad2Deg:F2}->{angle*Mathf.Rad2Deg:F2} " +
                         $"routeRemaining={convoy.RemainingDistance:F2} playerDist={Vector3.Distance(p, player.transform.position):F1} " +
                         $"prev={tracePosition[i].ToString("F3")} before={before.ToString("F3")} next={p.ToString("F3")} " +
@@ -183,6 +207,7 @@ namespace AirCombat
             tracePosition[i] = p;
             traceHead[i] = head;
             traceForward[i] = forward;
+            traceRouteForward[i] = convoy.Forward;
             traceAngle[i] = angle;
         }
 #endif
