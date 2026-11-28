@@ -19,6 +19,15 @@ namespace AirCombat
         private readonly WardenCombat[] units = new WardenCombat[Count];
         private float phaseDistance;
         private bool ready;
+#if UNITY_EDITOR
+        // Temporary movement diagnostics. One sample per placement, logs only
+        // route turns, anomalous displacement or the onset of a long frame.
+        private readonly bool[] traceValid = new bool[Count], traceHitch = new bool[Count];
+        private readonly Vector3[] tracePosition = new Vector3[Count], traceHead = new Vector3[Count],
+            traceForward = new Vector3[Count];
+        private readonly float[] traceAngle = new float[Count];
+        private float traceElapsed;
+#endif
 
         internal Mission02ConvoyEscort(ConvoyMarchPreview convoy, WardenCombat prefab,
             AircraftRadar radar, Transform owner, PlayerHitPoints player, FlightController flight,
@@ -76,12 +85,15 @@ namespace AirCombat
         internal void TickMovement(float dt)
         {
             if (!ready || dt <= 0f) return;
+#if UNITY_EDITOR
+            traceElapsed += dt;
+#endif
             phaseDistance = Mathf.Repeat(phaseDistance + patrolSpeed * dt, arc[ArcSamples]);
             for (int i = 0; i < Count; i++)
             {
                 var unit = units[i];
                 if (unit == null) continue;
-                if (unit.Alive) Place(i);
+                if (unit.Alive) Place(i, dt);
                 else if (unit.gameObject.activeSelf)
                 {
                     ClearRounds(unit.transform);
@@ -113,20 +125,67 @@ namespace AirCombat
             return 2f * Mathf.PI * (low + fraction) / ArcSamples;
         }
 
-        private void Place(int index)
+        private void Place(int index, float dt = 0f)
         {
             float angle = Angle(index);
             Vector2 offset = Offset(angle);
             Vector3 forward = convoy.Forward;
             Vector3 right = Vector3.Cross(Vector3.up, forward);
-            Vector3 p = convoy.HeadPosition - forward * convoy.HalfLength + right * offset.x + forward * offset.y;
+            Vector3 head = convoy.HeadPosition;
+            Vector3 p = head - forward * convoy.HalfLength + right * offset.x + forward * offset.y;
             p.y = 78f; // M02 fixed flight plane, not the runway spawn altitude.
             Vector3 tangent = (right * (lateral * Mathf.Sin(angle)) + forward * (longitudinal * Mathf.Cos(angle))).normalized;
             Vector3 velocity = tangent * patrolSpeed + forward * (convoy.AliveCount > 0 ? convoy.Speed : 0f);
             worldSpeed[index] = velocity.magnitude;
+#if UNITY_EDITOR
+            TracePlacement(index, p, head, forward, angle, dt);
+#endif
             units[index].transform.SetPositionAndRotation(p,
                 Quaternion.LookRotation(velocity.sqrMagnitude > .01f ? velocity : tangent, Vector3.up));
         }
+
+#if UNITY_EDITOR
+        private void TracePlacement(int i, Vector3 p, Vector3 head, Vector3 forward, float angle, float dt)
+        {
+            bool hitch = dt > .05f;
+            if (traceValid[i] && dt > 0f)
+            {
+                Vector3 before = units[i].transform.position;
+                float step = Vector3.Distance(p, tracePosition[i]);
+                float external = Vector3.Distance(before, tracePosition[i]);
+                float turn = Vector3.SignedAngle(traceForward[i], forward, Vector3.up);
+                float headStep = Vector3.Distance(head, traceHead[i]);
+                float limit = patrolSpeed * dt + headStep + .15f;
+                // Recompute the same orbit point with the prior frame's basis.
+                // The difference isolates a heading-induced displacement.
+                Vector2 offset = Offset(angle);
+                Vector3 oldForward = traceForward[i];
+                Vector3 oldBasis = head - oldForward * convoy.HalfLength +
+                    Vector3.Cross(Vector3.up, oldForward) * offset.x + oldForward * offset.y;
+                oldBasis.y = p.y;
+                float basisShift = Vector3.Distance(oldBasis, p);
+                bool routeTurn = Mathf.Abs(turn) > .1f;
+                bool jump = step > limit || external > .10f;
+                if (jump || routeTurn || (hitch && !traceHitch[i]))
+                {
+                    Debug.Log($"[WARDEN_TRACE] {(i == 0 ? "Alpha" : "Bravo")} " +
+                        $"t={traceElapsed:F3}s frame={Time.frameCount} dt={dt:F4} realDt={Time.unscaledDeltaTime:F4} " +
+                        $"step={step:F3} limit={limit:F3} external={external:F3} " +
+                        $"turn={turn:F2}deg basisShift={basisShift:F3} headStep={headStep:F3} " +
+                        $"angle={traceAngle[i]*Mathf.Rad2Deg:F2}->{angle*Mathf.Rad2Deg:F2} " +
+                        $"routeRemaining={convoy.RemainingDistance:F2} playerDist={Vector3.Distance(p, player.transform.position):F1} " +
+                        $"prev={tracePosition[i].ToString("F3")} before={before.ToString("F3")} next={p.ToString("F3")} " +
+                        $"head={head.ToString("F3")} flags={(jump ? "JUMP " : "")}{(routeTurn ? "TURN " : "")}{(hitch ? "HITCH" : "")}", owner);
+                }
+            }
+            traceValid[i] = true;
+            traceHitch[i] = hitch;
+            tracePosition[i] = p;
+            traceHead[i] = head;
+            traceForward[i] = forward;
+            traceAngle[i] = angle;
+        }
+#endif
 
         private static void ClearRounds(Transform source)
         {
