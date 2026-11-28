@@ -20,7 +20,6 @@ namespace AirCombat
         private const int PreviewCount = 9;
         private const float PreviewSpawnInterval = 1.15f;
         private readonly List<Entry> live = new List<Entry>(PreviewCount);
-        private Vector3 stage;
         private float spawnClock;
         private int total, spawned, down, saves, impacts;
         private bool started;
@@ -53,11 +52,6 @@ namespace AirCombat
         {
             Clear();
             started = true;
-            var props = site.Targets;
-            stage = Vector3.zero;
-            foreach (var prop in props) stage += prop.transform.position;
-            stage /= props.Count;
-            stage.y = altitude;
             total = PreviewCount;
             SpawnNext();
             spawnClock = PreviewSpawnInterval;
@@ -69,19 +63,22 @@ namespace AirCombat
             var props = site.Targets;
             int i = spawned % props.Count;
             var prop = props[i];
-            // Fixed arcade entrance and scenic bend. No terrain/defense queries.
+            // Hand-authored arcade animation based on the M03 composition sketch.
+            // Decorative sites have no effect on actor behavior.
             float side = i - (props.Count - 1) * .5f;
-            Vector3 start = new Vector3(Mathf.Lerp(bounds.xMin, bounds.xMax, .20f) + side * spacing,
-                altitude, bounds.yMax - 12f);
-            Vector3 scenicA = new Vector3(Mathf.Lerp(bounds.xMin, bounds.xMax, .26f) + side * spacing,
-                altitude, Mathf.Lerp(bounds.yMin, bounds.yMax, .72f));
-            Vector3 scenicB = new Vector3(Mathf.Lerp(bounds.xMin, bounds.xMax, .36f) + side * spacing,
-                altitude, Mathf.Lerp(bounds.yMin, bounds.yMax, .55f));
-            Vector3 stageEnd = stage + new Vector3(side * spacing, 0f, 520f);
+            Vector3 Scenic(float u, float v, float offsetX, float offsetZ) => new Vector3(
+                Mathf.Lerp(bounds.xMin, bounds.xMax, u) + side * spacing * offsetX,
+                altitude, Mathf.Lerp(bounds.yMin, bounds.yMax, v) + side * spacing * offsetZ);
+            Vector3 start = Scenic(.016f, .92f, 0f, 1f);
+            Vector3 scenicA = Scenic(.12f, .88f, 0f, 1f);
+            Vector3 scenicB = Scenic(.17f, .80f, 1f, 0f);
+            Vector3 scenicC = Scenic(.17f, .59f, 1f, 0f);
+            Vector3 scenicD = Scenic(.23f, .45f, 1f, 0f);
+            Vector3 scenicE = Scenic(.33f, .29f, 1f, 0f);
             Vector3 mark = prop.transform.position;
             mark.y = altitude;
-            var clip = new[] { start, scenicA, scenicB, stageEnd, mark + Vector3.forward * 300f,
-                mark + Vector3.forward * 120f };
+            var clip = new[] { start, scenicA, scenicB, scenicC, scenicD, scenicE,
+                mark + Vector3.forward * 300f, mark + Vector3.forward * 120f };
             var actor = Object.Instantiate(prefab, start, Quaternion.identity);
             SceneManager.MoveGameObjectToScene(actor.gameObject, prop.gameObject.scene);
             actor.name = $"M03 / UD01 Moth {++spawned:00}";

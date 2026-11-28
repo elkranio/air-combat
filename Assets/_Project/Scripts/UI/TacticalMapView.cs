@@ -242,11 +242,14 @@ namespace AirCombat
                 DrawClippedRing(new Rect(p.x-r,p.y-r,r*2,r*2),w,h,Red);
             }
             var mission03 = GetComponent<Mission03Flight>();
-            if (mission03 != null && mission03.FriendlySite != null && mission03.FriendlyMapRadius > 0f)
+            if (mission03 != null) for (int i = 0; i < mission03.FriendlySiteCount; i++)
             {
-                Vector2 uv = map.WorldToUV(mission03.FriendlySite.position);
+                var site = mission03.FriendlySiteAt(i);
+                float radius = mission03.FriendlyMapRadiusAt(i);
+                if (site == null || radius <= 0f) continue;
+                Vector2 uv = map.WorldToUV(site.position);
                 Vector2 p = new Vector2(uv.x*w,(1-uv.y)*h);
-                float r = mission03.FriendlyMapRadius*mapScale;
+                float r = radius*mapScale;
                 DrawClippedRing(new Rect(p.x-r,p.y-r,r*2,r*2),w,h,Cyan);
             }
             drawParent=panel;
@@ -334,11 +337,13 @@ namespace AirCombat
                     }
                 }
             }
-            if (mission03 != null && mission03.FriendlySite != null && Inside(map.WorldToUV(mission03.FriendlySite.position)))
+            if (mission03 != null) for (int i = 0; i < mission03.FriendlySiteCount; i++)
             {
-                Vector2 p = Point(rect,mission03.FriendlySite);
+                var site = mission03.FriendlySiteAt(i);
+                if (site == null || !Inside(map.WorldToUV(site.position))) continue;
+                Vector2 p = Point(rect,site);
                 Rotate(Texture(new Rect(0,0,14,14),arrow,Cyan),p,0f);
-                Text(new Rect(p.x+10,p.y-10,100,20),"FRIENDLY SAM",12,Cyan,true);
+                Text(new Rect(p.x+10,p.y-10,100,20),i == 0 ? "FRIENDLY SAM" : $"SAM {i + 1:00}",12,Cyan,true);
             }
             if (map.HasAirfield && Inside(map.WorldToUV(map.AirfieldPosition)))
             {

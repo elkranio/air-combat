@@ -18,11 +18,14 @@ namespace AirCombat
         [SerializeField] private CruiseMissileTarget waveTargetPrefab;
         [SerializeField] private GameObject mothVisualPrefab;
         [SerializeField, Range(20f, 100f)] private float waveSpacing = 55f;
-        [Header("M03 / decorative friendly site")]
+        [Header("M03 / decorative friendly sites")]
         [SerializeField] private Transform friendlySite;
+        [SerializeField] private Transform[] additionalFriendlySites = System.Array.Empty<Transform>();
         [SerializeField, Min(0f)] private float friendlyMapRadius = 110f;
-        internal Transform FriendlySite => friendlySite;
-        internal float FriendlyMapRadius => friendlyMapRadius;
+        [SerializeField, Min(0f)] private float additionalFriendlyMapRadius = 155f;
+        internal int FriendlySiteCount => 1 + (additionalFriendlySites?.Length ?? 0);
+        internal Transform FriendlySiteAt(int index) => index == 0 ? friendlySite : additionalFriendlySites[index - 1];
+        internal float FriendlyMapRadiusAt(int index) => index == 0 ? friendlyMapRadius : additionalFriendlyMapRadius;
 
         public Renderer MapGround => ground;
         public Transform MapRunway => runway;
@@ -128,7 +131,7 @@ namespace AirCombat
             missiles.gameObject.SetActive(true);
             missiles.Bind(camera, cursor, player, missilePrefab, feedback);
             trigger.ConfigureDualSlots(missiles);
-            SeatFriendlySite();
+            for (int i = 0; i < FriendlySiteCount; i++) SeatFriendlySite(FriendlySiteAt(i));
             PowerComplex = Mission03PowerComplex.Bind(gameObject.scene);
             if (PowerComplex != null && waveTargetPrefab != null && mothVisualPrefab != null)
                 wave = new Mission03WavePreview(PowerComplex, waveTargetPrefab, mothVisualPrefab,
@@ -138,10 +141,10 @@ namespace AirCombat
         }
 
         // M03 meadow is an authored mesh, not a Unity Terrain. Sample its actual
-        // triangles once; no persistent physics collider or gameplay change.
-        private void SeatFriendlySite()
+        // triangles once per decoration; no persistent physics collider or gameplay change.
+        private void SeatFriendlySite(Transform site)
         {
-            if (friendlySite == null) return;
+            if (site == null) return;
             var filter = ground.GetComponent<MeshFilter>();
             var mesh = filter != null ? filter.sharedMesh : null;
             if (mesh == null || !mesh.isReadable)
@@ -149,7 +152,7 @@ namespace AirCombat
                 Debug.LogWarning("M03: cannot sample decorative site ground mesh.", this);
                 return;
             }
-            Vector3 p = friendlySite.position;
+            Vector3 p = site.position;
             var vertices = mesh.vertices;
             var triangles = mesh.triangles;
             float height = float.NegativeInfinity;
@@ -172,7 +175,7 @@ namespace AirCombat
                 return;
             }
             p.y = height + .08f;
-            friendlySite.position = p;
+            site.position = p;
         }
 
         private void OnEnable()
