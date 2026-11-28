@@ -25,7 +25,6 @@ namespace AirCombat
         public Transform Visual => visual; // Shared with optional flight maneuvers.
         private MissionCheats cheats;
         private AircraftMotor motor;
-        private bool waitForBoostRelease;
 
         [Header("Powered maneuverability")]
         [SerializeField, Min(.1f)] private float tightSpeed = 35f;
@@ -51,7 +50,6 @@ namespace AirCombat
         public void PrepareCruiseHandover()
         {
             motor = new AircraftMotor(transform, visual, CruiseSpeed);
-            waitForBoostRelease = Keyboard.current != null && Keyboard.current.wKey.isPressed;
         }
 
         private void Update()
@@ -66,9 +64,7 @@ namespace AirCombat
             bool focused = Application.isFocused && keyboard != null;
             // S takes priority if both are held; fuel is consumed exactly once.
             bool tightHeld = focused && keyboard.sKey.isPressed;
-            if (waitForBoostRelease && keyboard != null && !keyboard.wKey.isPressed)
-                waitForBoostRelease = false;
-            bool boostHeld = focused && !tightHeld && !waitForBoostRelease && keyboard.wKey.isPressed;
+            bool boostHeld = focused && !tightHeld && keyboard.wKey.isPressed;
             float steer = focused ? (keyboard.dKey.isPressed ? 1f : 0f)
                 - (keyboard.aKey.isPressed ? 1f : 0f) : 0f;
 
