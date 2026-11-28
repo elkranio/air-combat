@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.SceneManagement;
@@ -40,6 +41,7 @@ namespace AirCombat
         private bool cameraUp;
         private MissionBoundaryGuard operationBoundary;
         private Mission02RouteTrial routeTrial;
+        private readonly List<RadarDetection> airContacts = new List<RadarDetection>();
         private ObjectiveProgress primaryProgress;
         private static readonly Color Ink = new Color(.80f,.89f,.87f);
         private static readonly Color Muted = new Color(.53f,.66f,.65f);
@@ -327,6 +329,7 @@ namespace AirCombat
                 var target = optionalTarget.GetComponent<IObjectiveTarget>();
                 if (target == null || ObjectiveStatusText.IsActive(target.ObjectiveState)) Diamond(Point(rect,optionalTarget),7,Gold);
             }
+            if (GetComponent<Mission03Flight>() != null) DrawAirContacts(rect);
             Vector2 uv=map.WorldToUV(player.position);
             Vector2 pos=Point(rect,new Vector2(Mathf.Clamp(uv.x,.025f,.975f),Mathf.Clamp(uv.y,.025f,.975f)));
             Vector3 heading=player.forward;
@@ -340,6 +343,27 @@ namespace AirCombat
                 -Mathf.Atan2(north.x,north.y)*Mathf.Rad2Deg);
             Text(new Rect(compass.x-10,compass.y+12,20,20),"N",14,Ink,true,TextAnchor.MiddleCenter);
         }
+
+        // Snapshot the registered airborne contacts on each map open. Radar.Sample
+        // includes aircraft outside sensor range; no new detection rules are needed.
+        private void DrawAirContacts(Rect rect)
+        {
+            var radar = player.GetComponent<AircraftRadar>();
+            if (radar == null) return;
+            radar.Sample(airContacts);
+            foreach (var contact in airContacts)
+            {
+                if (contact.Kind != RadarContactType.Aircraft) continue;
+                Vector2 uv = map.WorldToUV(contact.WorldPosition);
+                if (!Inside(uv)) continue;
+                Vector2 p = Point(rect, uv);
+                Vector2 heading = Display(contact.Heading);
+                if (heading.sqrMagnitude < .0001f) { Diamond(p,4f,Red); continue; }
+                float angle = Mathf.Atan2(heading.x,heading.y)*Mathf.Rad2Deg;
+                Rotate(Texture(new Rect(0,0,11,11),arrow,Red),p,-angle);
+            }
+        }
+
         private void DrawRouteTrial(Rect rect)
         {
             // Use the authored world-space guide geometry, even if G hides it in flight.
@@ -421,7 +445,8 @@ namespace AirCombat
                 Legend(left,top+186,Cyan,"Player / friendly airfield");
                 Legend(left,top+221,RadarHud.BoundaryInk,"Operation boundary");
                 Legend(left,top+256,new Color(.28f,.26f,.22f),"Terrain obstruction");
-                Text(new Rect(left,top+312,width,25),"Map pauses flight and timing.",14,Muted);
+                Legend(left,top+291,Red,"Airborne hostile contacts");
+                Text(new Rect(left,top+346,width,25),"Map pauses flight and timing.",14,Muted);
                 return;
             }
             Solid(rect,new Color(.075f,.115f,.13f));
