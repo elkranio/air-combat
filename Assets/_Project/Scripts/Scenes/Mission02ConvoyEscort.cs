@@ -158,7 +158,12 @@ namespace AirCombat
             TracePlacement(index, p, head, forward, angle, dt);
 #endif
             Transform unit = units[index].transform;
-            Quaternion heading = Quaternion.LookRotation(velocity.sqrMagnitude > .01f ? velocity : tangent, Vector3.up);
+            // Use the continuous orbit tangent for presentation. Actual displacement
+            // includes the transient from starting/stopping rotation of the orbit
+            // and the instantaneous heading change of the convoy at a route node.
+            // Keep that displacement for wreck speed, not for the model's nose.
+            Vector3 course = tangent * patrolSpeed + forward * (convoy.AliveCount > 0 ? convoy.Speed : 0f);
+            Quaternion heading = Quaternion.LookRotation(course.sqrMagnitude > .01f ? course : tangent, Vector3.up);
             // Position follows the orbit exactly; only the model heading is rate-limited.
             const float headingTurnRate = 90f;
             Quaternion rotation = dt > 0f
